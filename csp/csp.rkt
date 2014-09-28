@@ -4,7 +4,7 @@
 ;; http://aima-python.googlecode.com/svn/trunk/csp.py
 
 (require racket/list racket/bool racket/contract)
-(require "csp-utils.rkt" "csp-search.rkt")
+(require "utils.rkt" "search.rkt")
 
 #|
 
