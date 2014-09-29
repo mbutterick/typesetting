@@ -93,8 +93,8 @@ This class describes finite-domain Constraint Satisfaction Problems.
                     (when (not (hash-has-key? assignment B))
                       (for ([b (in-list (hash-ref curr_domains B))])
                         (when (not (constraints var val B b))
-                          (remove b (hash-ref curr_domains B))
-                          (append (hash-ref pruned var) (cons B b))))))))
+                          (hash-update! curr_domains B (λ(v) (remove v b)))
+                          (hash-update! pruned var (λ(v) (append v (cons B b))))))))))
               
               (define/public (display assignment)
                 ;; Show a human-readable representation of the CSP.
@@ -106,27 +106,33 @@ This class describes finite-domain Constraint Satisfaction Problems.
                 ;; Return a list of (action, state) pairs
                 (if (= (length assignment) (length vars))
                     null
-                    (let ()
-                      (define var (find_if (λ(v) (not (hash-has-key? assignment v))) vars))
-                      (define result null)
-                      (for ([val (in-list (hash-ref domains var))])
-                        (when (= (nconflicts var val assignment) 0)
-                          (define a (hash-copy assignment)) ;; !! typo fix in original
-                          (hash-set! a var val)
-                          (set! result (append result (cons (cons var val) a)))))
-                      result)))
+                    (let ([var (find_if (λ(v) (not (hash-has-key? assignment v))) vars)])
+                      (for/list ([val (in-list (hash-ref domains var))] #:when (= (nconflicts var val assignment) 0))
+                        (define a (hash-copy assignment))
+                        (hash-set! a var val)
+                        (cons (cons var val) a)))))
               
-              ;; todo: calls to append need to mutate. 
+              (define/override (goal_test assignment)
+                ;; The goal is to assign all vars, with all constraints satisfied.
+                (and (= (length assignment) (length vars))
+                     (every (λ(var) (= (nconflicts var (hash-ref assignment var) assignment) 0)) vars)))
               
-              
-              
-              (define/public (AC3 csp [queue #f])
-                (void))
-              
+              ;; This is for min_conflicts search
+              (define/public (conflicted_vars current)
+                ;; Return a list of variables in current assignment that are in conflict
+                (for/list ([var (in-list vars)] 
+                           #:when (> (nconflicts var (hash-ref current var) current) 0))
+                  var))
               ))
 
+;;______________________________________________________________________________
+;; CSP Backtracking Search
 
 
+
+
+(define (AC3 csp queue)
+  (void))
 
 #|
 (define (actions csp state)
