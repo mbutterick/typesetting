@@ -3,7 +3,7 @@
 ;; Adapted from work by Peter Norvig
 ;; http://aima-python.googlecode.com/svn/trunk/csp.py
 
-(require racket/list racket/bool racket/contract racket/class)
+(require racket/list racket/bool racket/contract racket/class racket/match)
 (require "utils.rkt" "search.rkt")
 
 (define CSP (class Problem
@@ -82,22 +82,49 @@ This class describes finite-domain Constraint Satisfaction Problems.
               
               (define/public (forward_check var val assignment)
                 ;; Do forward checking (current domain reduction) for this assignment.
-                (void))
+                (when curr_domains
+                  ;; Restore prunings from previous value of var
+                  (for ([Bb-pair (in-list (hash-ref pruned var))])
+                    (match-define (cons B b) Bb-pair)
+                    (hash-update! curr_domains B (λ(v) (append v b))))
+                  (hash-set! pruned var #f)
+                  ;; Prune any other B=b assignment that conflicts with var=val
+                  (for ([B (in-list (hash-ref neighbors var))])
+                    (when (not (hash-has-key? assignment B))
+                      (for ([b (in-list (hash-ref curr_domains B))])
+                        (when (not (constraints var val B b))
+                          (remove b (hash-ref curr_domains B))
+                          (append (hash-ref pruned var) (cons B b))))))))
               
-              (define/public (AC3 csp [queue #f])
-                (void))
+              (define/public (display assignment)
+                ;; Show a human-readable representation of the CSP.
+                (displayln (format "CSP: ~a with assignment: ~a" this assignment)))
               
-              ))
-
-
-
-
-(define (display csp assignment)
-  ;; Show a human-readable representation of the CSP.
-  (displayln (format "CSP: ~a with assignment: ~a" csp (hash-ref csp assignment))))
-
-
-#|
+              ;; These methods are for the tree and graph search interface:
+              
+              (define/public (succ assignment)
+                ;; Return a list of (action, state) pairs
+                (if (= (length assignment) (length vars))
+                    null
+                    (let ()
+                      (define var (find_if (λ(v) (not (hash-has-key? assignment v))) vars))
+                      (define result null)
+                      (for ([val (in-list (hash-ref domains var))])
+                        (when (= (nconflicts var val assignment) 0)
+                          ;; what does this mean?
+                          ;; a = assignment.copy; a[var] = val
+                                        
+                                        
+                                        
+                                        (define/public (AC3 csp [queue #f])
+                                          (void))
+                                        
+                                        ))
+                                  
+                                  
+                                  
+                                  
+                                  #|
 (define (actions csp state)
   ;; Return a list of applicable actions: nonconflicting
   ;; assignments to an unassigned variable.
@@ -109,8 +136,8 @@ This class describes finite-domain Constraint Satisfaction Problems.
         (map (λ(val) (list var val)) 
              (filter (λ(val) (= 0 (nconflicts csp var val assignment))) (hash-ref (hash-ref csp 'domains) var))))))
 |#
-
-#|
+                                  
+                                  #|
 
     def actions(self, state):
         """Return a list of applicable actions: nonconflicting
@@ -503,3 +530,4 @@ def solve_zebra(algorithm=min_conflicts, **args):
                
     
 |#
+                                  
