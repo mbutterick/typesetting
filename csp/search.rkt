@@ -69,11 +69,10 @@
     
     (define/public (path)
       ;; Create a list of nodes from the root to this node.
-      (let ([parent (get-field parent this)])
-        (cons this 
-              (if (not parent)
-                  null
-                  (send parent path)))))
+      (define parent (get-field parent this))
+      (cons this (if (not parent)
+                     null
+                     (send parent path))))
     
     (define/public (expand problem)
       ;; Return a list of nodes reachable from this node.
