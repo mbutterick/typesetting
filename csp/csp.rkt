@@ -111,20 +111,24 @@ This class describes finite-domain Constraint Satisfaction Problems.
                       (define result null)
                       (for ([val (in-list (hash-ref domains var))])
                         (when (= (nconflicts var val assignment) 0)
-                          ;; what does this mean?
-                          ;; a = assignment.copy; a[var] = val
-                                        
-                                        
-                                        
-                                        (define/public (AC3 csp [queue #f])
-                                          (void))
-                                        
-                                        ))
-                                  
-                                  
-                                  
-                                  
-                                  #|
+                          (define a (hash-copy assignment)) ;; !! typo fix in original
+                          (hash-set! a var val)
+                          (set! result (append result (cons (cons var val) a)))))
+                      result)))
+              
+              ;; todo: calls to append need to mutate. 
+              
+              
+              
+              (define/public (AC3 csp [queue #f])
+                (void))
+              
+              ))
+
+
+
+
+#|
 (define (actions csp state)
   ;; Return a list of applicable actions: nonconflicting
   ;; assignments to an unassigned variable.
@@ -136,8 +140,8 @@ This class describes finite-domain Constraint Satisfaction Problems.
         (map (λ(val) (list var val)) 
              (filter (λ(val) (= 0 (nconflicts csp var val assignment))) (hash-ref (hash-ref csp 'domains) var))))))
 |#
-                                  
-                                  #|
+
+#|
 
     def actions(self, state):
         """Return a list of applicable actions: nonconflicting
@@ -530,4 +534,3 @@ def solve_zebra(algorithm=min_conflicts, **args):
                
     
 |#
-                                  
