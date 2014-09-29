@@ -6,10 +6,9 @@
 (require racket/list racket/bool racket/contract racket/class)
 (require "utils.rkt" "search.rkt")
 
-#|
-
-class CSP(search.Problem):
-    """This class describes finite-domain Constraint Satisfaction Problems.
+(define CSP (class Problem
+              #|
+This class describes finite-domain Constraint Satisfaction Problems.
     A CSP is specified by the following inputs:
         vars        A list of variables; each is atomic (e.g. int or string).
         domains     A dict of {var:[possible_value, ...]} entries.
@@ -42,46 +41,63 @@ class CSP(search.Problem):
     The following are just for debugging purposes:
         nassigns                Slot: tracks the number of assignments made
         display(a)              Print a human-readable representation
-
-    >>> search.depth_first_graph_search(australia)
-    <Node (('WA', 'B'), ('Q', 'B'), ('T', 'B'), ('V', 'B'), ('SA', 'G'), ('NT', 'R'), ('NSW', 'R'))>
-    """
-
 |#
+              (super-new)
+              
+              ;; Construct a CSP problem. If vars is empty, it becomes domains.keys().
+              (init-field vars domains neighbors constraints)
+              (when (not vars) (set! vars (hash-keys domains)))
+              (inherit-field initial)
+              (set! initial (hash))
+              (field [curr_domains #f][pruned #f][nassigns 0][fc #f][mac #f])
+              
+              (define/public (assign var val assignment)
+                ;; Add {var: val} to assignment; Discard the old value if any.
+                ;; Do bookkeeping for curr_domains and nassigns.
+                (set! nassigns (add1 nassigns))
+                (hash-set! assignment var val)
+                (if curr_domains
+                    (when fc
+                      (forward_check var val assignment))
+                    (when mac
+                      (AC3 (map (λ(Xk) (cons Xk var)) (hash-ref neighbors var))))))
+              
+              (define/public (unassign var val assignment)
+                ;; Remove {var: val} from assignment; that is backtrack.
+                ;; DO NOT call this if you are changing a variable to a new value;
+                ;; just call assign for that.
+                (when (hash-has-key? assignment var)
+                  ;; Reset the curr_domain to be the full original domain
+                  (when curr_domains
+                    (hash-set! curr_domains var (hash-ref domains var)))
+                  (hash-remove! assignment var)))
+              
+              (define/public (nconflicts var val assignment)
+                ;; Return the number of conflicts var=val has with other variables.
+                ;; Subclasses may implement this more efficiently
+                (define (conflict var2)
+                  (define val2 (hash-ref assignment var2 #f))
+                  (and val2 (not (constraints var val var2 val2))))
+                (count_if conflict (hash-ref neighbors var)))
+              
+              (define/public (forward_check var val assignment)
+                ;; Do forward checking (current domain reduction) for this assignment.
+                (void))
+              
+              (define/public (AC3 csp [queue #f])
+                (void))
+              
+              ))
 
-(define csp% (class problem%))
-
-(define (?init csp vars domains neighbors constraints)
-  ;; Construct a CSP problem. If vars is empty, it becomes domains.keys().
-  (define vars (if (null? vars) (hash-keys domains) vars))
-  (hash-set*! csp 'vars vars 'domains domains
-          'neighbors neighbors 'constraints constraints
-          'initial null 'curr_domains null 'nassigns 0))
-
-(define (assign csp var val assignment)
-  ;; Add {var: val} to assignment; Discard the old value if any.
-  (hash-set! assignment var val)
-  (hash-update! csp 'nassigns add1))
 
 
-(define (unassign csp var assignment)
-  ;; Remove {var: val} from assignment.
-  ;; DO NOT call this if you are changing a variable to a new value;
-  ;; just call assign for that.
-  (hash-remove! csp var))
-
-
-(define (nconflicts csp var val assignment)
-  ;; Return the number of conflicts var=val has with other variables.
-  (define (conflict var2)
-    (and (hash-has-key? assignment var2)
-         (not ((hash-ref csp 'constraints) var val var2 (hash-ref assignment var2)))))
-  (length (filter-not false? (map conflict (hash-ref (hash-ref csp 'neighbors) var)))))
 
 (define (display csp assignment)
   ;; Show a human-readable representation of the CSP.
   (displayln (format "CSP: ~a with assignment: ~a" csp (hash-ref csp assignment))))
 
+
+#|
 (define (actions csp state)
   ;; Return a list of applicable actions: nonconflicting
   ;; assignments to an unassigned variable.
@@ -92,8 +108,8 @@ class CSP(search.Problem):
         (define var (findf (λ(v) (not (hash-has-key? assignment v))) (hash-ref csp 'vars)))
         (map (λ(val) (list var val)) 
              (filter (λ(val) (= 0 (nconflicts csp var val assignment))) (hash-ref (hash-ref csp 'domains) var))))))
-  
-  
+|#
+
 #|
 
     def actions(self, state):
