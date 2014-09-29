@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class)
+(require racket/class racket/match)
 
 (provide (all-defined-out))
 
@@ -12,7 +12,7 @@
   (class object%
     (super-new)
     
-    (init-field initial [goal null])
+    (init-field initial [goal #f])
     ;; The constructor specifies the initial state, and possibly a goal
     ;; state, if there is a unique goal.  Your subclass's constructor can add
     ;; other arguments.
@@ -42,3 +42,53 @@
     ;; and related algorithms try to maximize this value.
     ))
 
+(require describe)
+
+(define Node
+  #| A node in a search tree. Contains a pointer to the parent (the node
+    that this is a successor of) and to the actual state for this node. Note
+    that if a state is arrived at by two paths, then there are two nodes with
+    the same state.  Also includes the action that got us to this state, and
+    the total path_cost (also known as g) to reach the node.  Other functions
+    may add an f and h value; see best_first_graph_search and astar_search for
+    an explanation of how the f and h values are handled. You will not need to
+    subclass this class.
+|#
+  
+  (class* object% (printable<%>)
+    (super-new)
+    
+    (init-field state [parent #f] [action #f] [path_cost 0])
+    (field [depth (if parent (add1 (get-field depth parent)) 0)])
+    ;; Create a search tree Node, derived from a parent by an action.
+    
+    (define (repr) (format "<Node ~v>" (get-field state this)))
+    (define/public (custom-print out quoting-depth) (print (repr) out))
+    (define/public (custom-display out) (displayln (repr) out))
+    (define/public (custom-write out) (write (repr) out))
+    
+    (define/public (path)
+      ;; Create a list of nodes from the root to this node.
+      (let ([parent (get-field parent this)])
+        (cons this 
+              (if (not parent)
+                  null
+                  (send parent path)))))
+    
+    (define/public (expand problem)
+      ;; Return a list of nodes reachable from this node.
+      (for/list ([action-state-pair (in-list (send problem successor state))])
+        (match-define (cons act next) action-state-pair)
+        (new Node [state next][parent this][action act]
+             [path_cost (send problem path_cost path_cost state act next)])))    
+    ))
+
+(module+ main
+  (require racket/format)  
+  (define gp (new Node [state 'grandparent]))
+  (define p (new Node [state 'parent][parent gp]))
+  (get-field state p)
+  (get-field depth p)
+  (define c (new Node [state 'child] [parent p]))
+  (get-field depth c)
+  (send c path))
