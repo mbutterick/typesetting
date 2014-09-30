@@ -72,13 +72,14 @@
       (when (variable . in? . _variables)
         (error 'addVariable (format "Tried to insert duplicated variable ~a" variable)))
       (cond 
-        [(list? domain) (report domain) (set! domain (new Domain [set domain]))]
+        [(list? domain) (set! domain (new Domain [set domain]))]
         ;; todo: test for `instance-of-Domain?` ; how to copy domain?
-        [(object? domain) (report 'foo) (report domain)  (set! domain '(copy.copy domain))]
+        [(object? domain) (set! domain '(copy.copy domain))]
         [else (error 'addVariable "Domains must be instances of subclasses of Domain")])
+      (when (not (object? domain)) (error 'fudge))
       (when (not domain) ; todo: check this test
         (error 'addVariable "Domain is empty"))
-      (hash-set! _variables variable (get-field _list domain)))
+      (hash-set! _variables variable domain))
     
     (define/public (addVariables variables domain)
       ;; Add one or more variables to the problem
@@ -115,10 +116,10 @@
         (for ([domain (in-list (hash-values domains))])
           (send domain resetState)
           (when (not domain)
-            (set! result (values null null null))
+            (set! result (list null null null))
             (done)))
-        (set! result (values domains constraints vconstraints)))
-      result)
+        (set! result (list domains constraints vconstraints)))
+      (apply values result))
     
     
     ))
@@ -130,20 +131,15 @@
   
   (define problem (new Problem))
   (send problem addVariable "a" '(1 2))
-  (check-equal? (hash-ref (get-field _variables problem) "a") '(1 2)) 
+  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1 2)) 
   (send problem reset)
   (check-equal? (get-field _variables problem) (make-hash))
   (send problem addVariables '("a" "b") '(1 2 3))
-  (check-equal? (hash-ref (get-field _variables problem) "a") '(1 2 3))
-  (check-equal? (hash-ref (get-field _variables problem) "b") '(1 2 3))
+  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1 2 3))
+  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "b")) '(1 2 3))
   (get-field _variables problem)
   (send problem getSolutions)
   )
-
-
-(define BacktrackingSolver 
-  (class object%
-    (super-new)))
 
 
 ;; ----------------------------------------------------------------------
@@ -159,7 +155,49 @@
   (class object%
     (super-new)
     (init-field set)
-    (field [_list set])))
+    (field [_list set][_hidden null][_states null])
+    
+    (define/public (resetState)
+      ;; Reset to the original domain state, including all possible values
+      (set! _list (append _list _hidden))
+      (set! _hidden null)
+      (set! _states null))
+    
+    ))
+
+
+;; ----------------------------------------------------------------------
+;; Solvers
+;; ----------------------------------------------------------------------
+
+(define Solver
+  ;; Abstract base class for solvers
+  (class object%
+    (super-new)
+    (abstract getSolution)
+    (abstract getSolutions)
+    (abstract getSolutionIter)))
+
+
+(define BacktrackingSolver
+  ;; Problem solver with backtracking capabilities
+  (class Solver
+    (super-new)
+    (init-field [forwardCheck #t])
+    
+    (define/override (getSolutionIter domains constraints vconstraints)
+      ;; resume here
+      (void))
+    
+    (define/override (getSolution domains constraints vconstraints)
+      ;; todo: repair this properly
+      (car (getSolutions domains constraints vconstraints)))
+    
+    (define/override (getSolutions domains constraints vconstraints)
+      (getSolutionIter domains constraints vconstraints))
+    
+    ))
+
 
 (module+ main
   (define p (new Problem))
