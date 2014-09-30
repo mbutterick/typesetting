@@ -6,6 +6,8 @@
 (require racket/list racket/bool racket/contract racket/class racket/match racket/generator racket/string)
 (require "utils.rkt" "search.rkt")
 
+(module+ test (require rackunit))
+
 (define CSP (class Problem
               #|
 This class describes finite-domain Constraint Satisfaction Problems.
@@ -280,7 +282,7 @@ Set up to do recursive backtracking search. Allow the following options:
   nh)
 
 (module+ test
-  (parse_neighbors "X: Y Z; Y: Z")) 
+  (check-equal?  (sort (hash->list (parse_neighbors "X: Y Z; Y: Z")) string<? #:key car) '(("X" "Y" "Z") ("Y" "X" "Z") ("Z" "X" "Y"))))
 
 
 ;; ______________________________________________________________________________
@@ -316,13 +318,40 @@ Set up to do recursive backtracking search. Allow the following options:
   (define (zebra_constraint A a B b [recurse 0])
     (define same (= a b))
     (define next_to (= (abs (- a b)) 1))
-    ;; resume here
-    (void))
+    (cond
+      [(and (equal? A 'Englishman) (equal? B 'Red)) same]
+      [(and (equal? A 'Spaniard) (equal? B 'Dog)) same]
+      [(and (equal? A 'Chesterfields) (equal? B 'Fox)) next_to]
+      [(and (equal? A 'Norwegian) (equal? B 'Blue)) next_to]
+      [(and (equal? A 'Kools) (equal? B 'Yellow)) same]
+      [(and (equal? A 'Winston) (equal? B 'Snails)) same]
+      [(and (equal? A 'LuckyStrike) (equal? B 'OJ)) same]
+      [(and (equal? A 'Ukrainian) (equal? B 'Tea)) same]
+      [(and (equal? A 'Japanese) (equal? B 'Parliaments)) same]
+      [(and (equal? A 'Kools) (equal? B 'Horse)) next_to]
+      [(and (equal? A 'Coffee) (equal? B 'Green)) same]
+      [(and (equal? A 'Green) (equal? B 'Ivory)) (= (- a 1) b)]
+      [(= recurse 0) (zebra_constraint B b A a 1)]
+      [(or (and (member A Colors) (member B Colors))
+           (and (member A Pets) (member B Pets))
+           (and (member A Drinks) (member B Drinks))
+           (and (member A Countries) (member B Countries))
+           (and (member A Smokes) (member B Smokes))) (not same)] 
+      [else (error 'zebra-fudged)]))
   
   
   (new CSP [vars vars] [domains domains] [neighbors neighbors] [constraints zebra_constraint]))
 
 
+(define (solve_zebra [algorithm min_conflicts] . args)
+  (define z (zebra))
+  (define ans (apply algorithm args))
+  (for ([h (in-range 1 6)])
+    (display (format "House ~a: ~a" h))
+    (for ([(var val) (in-hash ans)])
+      (when (= h val) (display var) (display " ")))
+    (displayln))
+  (list (hash-ref ans 'Zebra) (hash-ref ans 'Water) (get-field nassigns z) ans))
+
 (module+ main
- ; (zebra)
-  )
+  (solve_zebra))
