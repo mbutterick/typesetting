@@ -227,6 +227,7 @@ def min_conflicts(csp, max_steps=1000000):
         csp.assign(var, val, current)
     # Now repeapedly choose a random conflicted variable and change it
     for i in range(max_steps):
+        print i
         conflicted = csp.conflicted_vars(current)
         if not conflicted:
             return current
@@ -447,4 +448,4 @@ def solve_zebra(algorithm=min_conflicts, **args):
         print
     return ans['Zebra'], ans['Water'], z.nassigns, ans,
                
-    
+solve_zebra()

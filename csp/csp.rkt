@@ -4,6 +4,7 @@
 ;; http://aima-python.googlecode.com/svn/trunk/csp.py
 
 (require racket/list racket/bool racket/contract racket/class racket/match racket/generator racket/string)
+(require sugar/debug)
 (require "utils.rkt" "search.rkt")
 
 (module+ test (require rackunit))
@@ -310,9 +311,9 @@ Set up to do recursive backtracking search. Allow the following options:
          [A (in-list type)]
          [B (in-list type)])
     (when (not (equal? A B))
-      (when (not (memq B (hash-ref neighbors A)))
+      (when (not (member B (report (hash-ref neighbors A))))
         (hash-update! neighbors A (λ(v) (append v B))))
-      (when (not (memq A (hash-ref neighbors B)))
+      (when (not (member A (hash-ref neighbors B)))
         (hash-update! neighbors B (λ(v) (append v A))))))
   
   (define (zebra_constraint A a B b [recurse 0])
