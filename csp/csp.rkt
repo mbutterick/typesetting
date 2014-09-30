@@ -248,12 +248,70 @@ Set up to do recursive backtracking search. Allow the following options:
       (define val (min_conflicts_value csp var current))
       (send csp assign var val current)))
   (and found-result current))
+
+(define (min_conflicts_value csp var current)
+  ;; Return the value that will give var the least number of conflicts.
+  ;; If there is a tie, choose at random.
+  (argmin_random_tie (hash-ref (get-field domains csp) var)
+                     (λ(val) (send csp nconflicts var val current))))
+
+;; ______________________________________________________________________________
+;; Map-Coloring Problems
+
+(define (parse_neighbors neighbors [vars null])
+  #|
+ Convert a string of the form 'X: Y Z; Y: Z' into a dict mapping
+    regions to neighbors.  The syntax is a region name followed by a ':'
+    followed by zero or more region names, followed by ';', repeated for
+    each region name.  If you say 'X: Y' you don't need 'Y: X'.
+    >>> parse_neighbors('X: Y Z; Y: Z')
+    {'Y': ['X', 'Z'], 'X': ['Y', 'Z'], 'Z': ['X', 'Y']}
+|#
+  (define nh (hash))
   
- (define (min_conflicts_value csp var current)
-   ;; Return the value that will give var the least number of conflicts.
-   ;; If there is a tie, choose at random.
-   (argmin_random_tie (hash-ref (get-field domains csp) var)
-                      (λ(val) (send csp nconflicts var val current))))
+  nh)
 
 
-   
+;; ______________________________________________________________________________
+;; The Zebra Puzzle
+
+(define (zebra)
+  ;; Return an instance of the Zebra Puzzle.
+  (define Colors '(Red Yellow Blue Green Ivory))
+  (define Pets '(Dog Fox Snails Horse Zebra))
+  (define Drinks '(OJ Tea Coffee Milk Water))
+  (define Countries '(Englishman Spaniard Norwegian Ukranian Japanese))
+  (define Smokes '(Kools Chesterfields Winston LuckyStrike Parliaments))
+  (define vars (apply append (list Colors Pets Drinks Countries Smokes)))
+  (define domains (make-hash))
+  (for-each (λ(var) (hash-set! domains var (range 1 6))) vars)
+  (hash-set! domains 'Norwegian '(1))
+  (hash-set! domains 'Milk '(3))
+  (define neighbors (parse_neighbors "Englishman: Red;
+                Spaniard: Dog; Kools: Yellow; Chesterfields: Fox;
+                Norwegian: Blue; Winston: Snails; LuckyStrike: OJ;
+                Ukranian: Tea; Japanese: Parliaments; Kools: Horse;
+                Coffee: Green; Green: Ivory" vars))
+  
+  (for* ([type (in-list (list Colors Pets Drinks Countries Smokes))]
+         [A (in-list type)]
+         [B (in-list type)])
+    (when (not (equal? A B))
+      (when (not (memq B (hash-ref neighbors A)))
+        (hash-update! neighbors A (λ(v) (append v B))))
+      (when (not (memq A (hash-ref neighbors B)))
+        (hash-update! neighbors B (λ(v) (append v A))))))
+  
+  (define (zebra_constraint A a B b [recurse 0])
+    (define same (= a b))
+    (define next_to (= (abs (- a b)) 1))
+    ;; resume here
+    (void))
+  
+  
+  (new CSP [vars vars] [domains domains] [neighbors neighbors] [constraints zebra_constraint]))
+
+
+(module+ main
+ ; (zebra)
+  )
