@@ -3,7 +3,7 @@
 ;; Adapted from work by Peter Norvig
 ;; http://aima-python.googlecode.com/svn/trunk/csp.py
 
-(require racket/list racket/bool racket/contract racket/class racket/match racket/generator)
+(require racket/list racket/bool racket/contract racket/class racket/match racket/generator racket/string)
 (require "utils.rkt" "search.rkt")
 
 (define CSP (class Problem
@@ -267,9 +267,20 @@ Set up to do recursive backtracking search. Allow the following options:
     >>> parse_neighbors('X: Y Z; Y: Z')
     {'Y': ['X', 'Z'], 'X': ['Y', 'Z'], 'Z': ['X', 'Y']}
 |#
-  (define nh (hash))
-  
+  (define nh (make-hash))
+  (for ([v (in-list vars)]) (hash-set! nh v null))
+  (define specs (for/list ([spec (in-list (string-split neighbors ";"))]) (string-split spec ":")))
+  (for ([pair (in-list specs)])
+    (match-define (list A Aneighbors) pair)
+    (set! A (string-trim A))
+    (hash-ref! nh A null)
+    (for ([B (in-list (string-split Aneighbors))])
+      (hash-update! nh A (λ(v) (append v (list B))) null)
+      (hash-update! nh B (λ(v) (append v (list A))) null)))
   nh)
+
+(module+ test
+  (parse_neighbors "X: Y Z; Y: Z")) 
 
 
 ;; ______________________________________________________________________________
