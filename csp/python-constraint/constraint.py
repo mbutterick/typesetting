@@ -480,7 +480,9 @@ class BacktrackingSolver(Solver):
                 # No unassigned variables. We've got a solution. Go back
                 # to last variable, if there's one.
                 print "solution time"
+                print "solution assignments", assignments
                 yield assignments.copy()
+                print "queue", queue
                 if not queue:
                     return
                 variable, values, pushdomains = queue.pop()
@@ -488,8 +490,8 @@ class BacktrackingSolver(Solver):
                     for domain in pushdomains:
                         domain.popState()
 
-            print "variable", variable
-            print "assignments", assignments
+            print "variable-preloop-2", variable
+            print "assignments-preloop-2", assignments
             while True:
                 print "starting while loop 2"
                 # We have a variable. Do we have any values left?
@@ -509,15 +511,7 @@ class BacktrackingSolver(Solver):
                         return
 
                 # Got a value. Check it.
-                print "values1", values
-                print "equality",  values is domains["a"]
-                print "(domains[a1])", domains["a"]
-                popped = values.pop()
-                print "popped", popped
-                print "values", values
-                assignments[variable] = popped
-                print "(domains[a2])", domains["a"]
-                print "values2", values
+                assignments[variable] = values.pop()
 
                 if pushdomains:
                     for domain in pushdomains:
@@ -529,6 +523,7 @@ class BacktrackingSolver(Solver):
                         # Value is not good.
                         break
                 else:
+                    print "now breaking loop 2"
                     break
 
                 if pushdomains:
@@ -537,6 +532,7 @@ class BacktrackingSolver(Solver):
 
             # Push state before looking for next variable.
             queue.append((variable, values, pushdomains))
+            print "new queue", queue
 
         raise RuntimeError, "Can't happen"
 

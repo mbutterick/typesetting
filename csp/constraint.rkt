@@ -138,7 +138,7 @@
   
   (define problem (new Problem)) ;; test from line 125
   (send problem addVariable "a" '(1))
-  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1)) 
+  ;  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1)) 
   
   (displayln (format "The solution to ~a is ~a" 
                      problem 
@@ -233,35 +233,41 @@
                             (list (* -1 (length (hash-ref vconstraints variable)))
                                   (length (get-field _list (hash-ref domains variable)))
                                   variable)) list-comparator)) 
+          (report lst)
           (let/ec break-for-loop
-            (if (not (null? (report lst))) ; ? good translation of for–else?
-                (for ([item (in-list lst)])
-                  (when (not ((last item) . in? . assignments))
-                    ; Found unassigned variable
-                    (set! variable (last item))
-                    (let ([unassigned-variable variable]) (report unassigned-variable))
-                    (set! values (send (hash-ref domains variable) copy))
-                    (set! pushdomains 
-                          (if forwardcheck
-                              (for/list ([x (in-hash-keys domains)] 
-                                         #:when (and (not (x . in? . assignments)) 
-                                                     (not (x . equal? . variable))))
-                                (hash-ref domains x))
-                              null))   
-                    (break-for-loop)))
-                (begin
-                  ;; No unassigned variables. We've got a solution. Go back
-                  ;; to last variable, if there's one.
-                  (displayln "solution time")
-                  (generator ()
-                             (yield (hash-copy assignments))
-                             (when (not queue) (break-loop1))
-                             (match-define (list variable values pushdomains) (py-pop! queue))
-                             (when (not (null? pushdomains))
-                               (for ([domain (in-list pushdomains)])
-                                 (send domain popState)))))))          
-          (report variable)
-          (report assignments)
+            (for ([item (in-list lst)])
+              (when (not ((last item) . in? . assignments))
+                ; Found unassigned variable
+                (set! variable (last item))
+                (let ([unassigned-variable variable]) (report unassigned-variable))
+                (set! values (send (hash-ref domains variable) copy))
+                (set! pushdomains 
+                      (if forwardcheck
+                          (for/list ([x (in-hash-keys domains)] 
+                                     #:when (and (not (x . in? . assignments)) 
+                                                 (not (x . equal? . variable))))
+                            (hash-ref domains x))
+                          null))   
+                (break-for-loop)))
+            ;; if it makes it through the loop without breaking, then there are
+            ;; No unassigned variables. We've got a solution. Go back
+            ;; to last variable, if there's one.
+            (displayln "solution time")
+            (report assignments solution-assignments)
+            (yield (hash-copy assignments))
+            (report queue)
+            (when (null? queue) (begin
+                                  (set! want-to-return #t) 
+                                  (return-k)))
+            (define variable-values-pushdomains (py-pop! queue))
+            (set! variable (first variable-values-pushdomains))
+            (set-field! _list values (second variable-values-pushdomains))
+            (set! pushdomains (third variable-values-pushdomains))
+            (when (not (null? pushdomains))
+              (for ([domain (in-list pushdomains)])
+                (send domain popState))))          
+          (report variable variable-preloop-2)
+          (report assignments assignments-preloop-2)
           
           (let/ec break-loop2
             (let loop2 ()
@@ -288,21 +294,15 @@
                         (begin
                           (set! want-to-return #t) 
                           (return-k))))))
-              ;; Got a value. Check it.
-              (let ([values1 values])(report values1))
-              ;;!!!!!!
-              (report (eq? values (hash-ref domains "a")))
-              (report (get-field _list (hash-ref domains "a")))
-              (let ([popped (send values domain-pop!)])
-                (report popped) (report values)
-                (hash-set! assignments variable popped))
-              (report (get-field _list (hash-ref domains "a")))
-              (let ([values2 values])(report values2))
               
+              ;; Got a value. Check it.
+              (report values)
+              (hash-set! assignments variable (send values domain-pop!))  
               
               (when (not (null? pushdomains))
                 (for ([domain (in-list pushdomains)])
                   (send domain pushState)))
+              
               ;; todo: ok replacement for for/else?
               (if (not (null? (hash-ref vconstraints variable))) 
                   (let/ec break-for-loop
@@ -311,14 +311,20 @@
                       (when (not (constraint variables domains assignments pushdomains))
                         ;; Value is not good.
                         (break-for-loop))))
-                  (break-loop2))
+                  (begin (displayln "now breaking loop 2") (break-loop2)))
+              
               (when (not (null? pushdomains))
                 (for ([domain (in-list pushdomains)])
                   (send domain popState)))
-              (loop2))
-            ;; Push state before looking for next variable.
-            (py-append! queue (list variable values pushdomains)))
+              
+              (loop2)))
+          
+          ;; Push state before looking for next variable.
+          (py-append! queue (list variable (get-field _list (send values copy)) pushdomains))
+          (report queue new-queue)
+          
           (loop1)))
+      
       (if want-to-return
           (void)
           (error 'getSolutionIter "Whoops, broken solver")))
