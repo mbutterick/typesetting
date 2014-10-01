@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class racket/contract racket/match)
+(require racket/class racket/contract racket/match racket/list racket/generator)
 (require sugar/container sugar/debug)
 
 (module+ test (require rackunit))
@@ -137,7 +137,8 @@
   (send problem addVariables '("a" "b") '(1 2 3))
   (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1 2 3))
   (check-equal? (get-field _list (hash-ref (get-field _variables problem) "b")) '(1 2 3))
-  (get-field _variables problem)
+  ;  (get-field _variables problem)
+  (displayln (format "The solution to ~a:" problem))
   (send problem getSolutions)
   )
 
@@ -183,11 +184,57 @@
   ;; Problem solver with backtracking capabilities
   (class Solver
     (super-new)
-    (init-field [forwardCheck #t])
+    (init-field [forwardcheck #t])
+    (field [_forwardcheck forwardcheck]) 
     
     (define/override (getSolutionIter domains constraints vconstraints)
-      ;; resume here
-      (void))
+      (define forwardcheck _forwardcheck)
+      (define assignments (make-hash))
+      (define queue null)
+      (define pushdomains null)
+      (define variable #f)
+      (let/ec done
+        ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
+        (define lst (sort (for/list ([variable (in-hash-keys domains)])
+                            (list (* -1 (length (hash-ref vconstraints variable)))
+                                  (length (get-field _list (hash-ref domains variable)))
+                                  variable)) < #:key car)) ;;todo: sort on multiple keys
+        (if (not (null? lst)) ; ? good translation of for–else?
+            (for ([item (in-list lst)])
+              (when (not ((last item) . in? . assignments))
+                ; Found unassigned variable
+                (define variable (last item))
+                (define values (hash-ref domains variable))
+                (set! pushdomains 
+                      (if forwardcheck
+                          (for/list ([x (in-hash-keys domains)] 
+                                     #:when (and (not (x . in? . assignments)) 
+                                                 (not (x . equal? . variable))))
+                            (hash-ref domains x))
+                          null))
+                (done)))
+            (begin
+              ;; No unassigned variables. We've got a solution. Go back
+              ;; to last variable, if there's one.
+              (generator ()
+                         (yield '(copy assignments)) ;;todo: fix copy
+                         (when (not queue) (done))
+                         (match-define (list variable values pushdomains) (take-right 1 queue))
+                         (set! queue (drop-right 1 queue))
+                         (when pushdomains
+                           (for ([domain (in-list pushdomains)])
+                             (send domain popState))))))
+        (let/ec done2
+          ;; We have a variable. Do we have any values left?
+          (when (null? values)
+            ;; No. Go back to last variable, if there's one.
+            (hash-remove! assignments variable)
+            ;; resume @ line 492
+            ))
+        )
+      (list 'tada) ; todo: remove this dummy value
+      )
+    
     
     (define/override (getSolution domains constraints vconstraints)
       ;; todo: repair this properly
