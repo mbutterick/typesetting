@@ -1,7 +1,7 @@
 #lang racket/base
 (require racket/class racket/contract racket/match racket/list racket/generator)
 (require sugar/container sugar/debug)
-
+(require "helpers.rkt")
 (module+ test (require rackunit))
 
 ;; Adapted from work by Gustavo Niemeyer
@@ -85,6 +85,13 @@
       ;; Add one or more variables to the problem
       (for-each (λ(var) (addVariable var domain)) variables))
     
+    (define/public (getSolution)
+      ;; Find and return a solution to the problem
+      (define-values (domains constraints vconstraints) (_getArgs))
+      (if (not domains)
+          null
+          (send _solver getSolution domains constraints vconstraints)))
+    
     (define/public (getSolutions)
       ;; Find and return all solutions to the problem
       (define-values (domains constraints vconstraints) (_getArgs))
@@ -129,17 +136,21 @@
   (check-equal? (get-field _constraints (new Problem)) null)
   (check-equal? (get-field _variables (new Problem)) (make-hash))
   
-  (define problem (new Problem))
-  (send problem addVariable "a" '(1 2))
-  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1 2)) 
+  (define problem (new Problem)) ;; test from line 125
+  (send problem addVariable "a" '(1))
+  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1)) 
+  
+  (displayln (format "The solution to ~a is ~a" 
+                     problem 
+                     (send problem getSolutions)))
+  
+  
   (send problem reset)
   (check-equal? (get-field _variables problem) (make-hash))
   (send problem addVariables '("a" "b") '(1 2 3))
   (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1 2 3))
   (check-equal? (get-field _list (hash-ref (get-field _variables problem) "b")) '(1 2 3))
-  ;  (get-field _variables problem)
-  (displayln (format "The solution to ~a:" problem))
-  (send problem getSolutions)
+  
   )
 
 
@@ -153,16 +164,24 @@
   ;; When list or tuples are used as domains, they are automatically
   ;; converted to an instance of that class.
   
-  (class object%
+  (class* object% (printable<%>)
     (super-new)
     (init-field set)
     (field [_list set][_hidden null][_states null])
     
+    (define (repr) (format "<Domain ~v>" _list))
+    (define/public (custom-print out quoting-depth) (print (repr) out))
+    (define/public (custom-display out) (displayln (repr) out))
+    (define/public (custom-write out) (write (repr) out))
+    
     (define/public (resetState)
       ;; Reset to the original domain state, including all possible values
-      (set! _list (append _list _hidden))
+      (py-extend! _list _hidden)
       (set! _hidden null)
       (set! _states null))
+    
+    (define/public (domain-pop!)
+      (py-pop! _list))
     
     ))
 
@@ -191,6 +210,7 @@
       (define forwardcheck _forwardcheck)
       (define assignments (make-hash))
       (define queue null)
+      (define values null)
       (define pushdomains null)
       (define variable #f)
       (let/ec done
@@ -198,50 +218,82 @@
         (define lst (sort (for/list ([variable (in-hash-keys domains)])
                             (list (* -1 (length (hash-ref vconstraints variable)))
                                   (length (get-field _list (hash-ref domains variable)))
-                                  variable)) < #:key car)) ;;todo: sort on multiple keys
-        (if (not (null? lst)) ; ? good translation of for–else?
-            (for ([item (in-list lst)])
-              (when (not ((last item) . in? . assignments))
-                ; Found unassigned variable
-                (define variable (last item))
-                (define values (hash-ref domains variable))
-                (set! pushdomains 
-                      (if forwardcheck
-                          (for/list ([x (in-hash-keys domains)] 
-                                     #:when (and (not (x . in? . assignments)) 
-                                                 (not (x . equal? . variable))))
-                            (hash-ref domains x))
-                          null))
-                (done)))
-            (begin
-              ;; No unassigned variables. We've got a solution. Go back
-              ;; to last variable, if there's one.
-              (generator ()
-                         (yield '(copy assignments)) ;;todo: fix copy
-                         (when (not queue) (done))
-                         (match-define (list variable values pushdomains) (take-right 1 queue))
-                         (set! queue (drop-right 1 queue))
-                         (when pushdomains
-                           (for ([domain (in-list pushdomains)])
-                             (send domain popState))))))
-        (let/ec done2
+                                  variable)) list-comparator)) 
+        (report lst)
+        (let/ec bonk
+          (if (not (null? lst)) ; ? good translation of for–else?
+              (for ([item (in-list lst)])
+                (when (not ((last item) . in? . assignments))
+                  ; Found unassigned variable
+                  (set! variable (last item))
+                  (set! values (hash-ref domains variable))
+                  (set! pushdomains 
+                        (if forwardcheck
+                            (for/list ([x (in-hash-keys domains)] 
+                                       #:when (and (not (x . in? . assignments)) 
+                                                   (not (x . equal? . variable))))
+                              (hash-ref domains x))
+                            null))   
+                  (bonk)))
+              (begin
+                ;; No unassigned variables. We've got a solution. Go back
+                ;; to last variable, if there's one.
+                (generator ()
+                           (yield (hash-copy assignments))
+                           (when (not queue) (done))
+                           (match-define (list variable values pushdomains) (py-pop! queue))
+                           (when (not (null? pushdomains))
+                             (for ([domain (in-list pushdomains)])
+                               (send domain popState)))))))
+        (report variable)
+        (report values)
+        (report assignments)
+        
+        (let/ec inner-done
           ;; We have a variable. Do we have any values left?
+          (report values)
           (when (null? values)
             ;; No. Go back to last variable, if there's one.
             (hash-remove! assignments variable)
-            ;; resume @ line 492
-            ))
-        )
-      (list 'tada) ; todo: remove this dummy value
-      )
+            (let loop ()
+              (if (not (null? queue))
+                  (let ()
+                    (define-values (variable values pushdomains) (py-pop! queue))
+                    (when pushdomains
+                      (for ([domain (in-list pushdomains)])
+                        (send domain popState)))
+                    (when values (inner-done))
+                    (hash-remove! assignments variable)
+                    (loop))
+                  (error 'todo "return from function"))))
+          ;; Got a value. Check it.
+          (hash-set! assignments variable (send values domain-pop!))
+          (when (not (null? pushdomains))
+            (for ([domain (in-list pushdomains)])
+              (send domain pushState)))
+          ;; todo: ok replacement for for/else?
+          (if (not (null? (hash-ref vconstraints variable))) 
+              (for ([cvpair (in-list (hash-ref vconstraints variable))])
+                (match-define (cons constraint variables) cvpair)
+                (when (not (constraint variables domains assignments pushdomains))
+                  ;; Value is not good.
+                  (inner-done)))
+              (inner-done))
+          (when (not (null? pushdomains))
+            (for ([domain (in-list pushdomains)])
+              (send domain popState)))
+          ;; Push state before looking for next variable.
+          (py-append! queue (list variable values pushdomains))))
+      (error 'getSolutionIter "Whoops, broken solver"))
+    
     
     
     (define/override (getSolution domains constraints vconstraints)
-      ;; todo: repair this properly
-      (car (getSolutions domains constraints vconstraints)))
+      ;; todo: fix this
+      (void))
     
     (define/override (getSolutions domains constraints vconstraints)
-      (getSolutionIter domains constraints vconstraints))
+      (for/list ([solution (in-generator (getSolutionIter domains constraints vconstraints))]) solution))
     
     ))
 

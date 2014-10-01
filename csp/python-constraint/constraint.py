@@ -461,6 +461,7 @@ class BacktrackingSolver(Solver):
             lst = [(-len(vconstraints[variable]),
                     len(domains[variable]), variable) for variable in domains]
             lst.sort()
+            print "lst", lst
             for item in lst:
                 if item[-1] not in assignments:
                     # Found unassigned variable
@@ -484,8 +485,12 @@ class BacktrackingSolver(Solver):
                     for domain in pushdomains:
                         domain.popState()
 
+            print "variable", variable
+            print "values", values
+            print "assignments", assignments
             while True:
                 # We have a variable. Do we have any values left?
+                print "values", values
                 if not values:
                     # No. Go back to last variable, if there's one.
                     del assignments[variable]
