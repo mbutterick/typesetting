@@ -183,8 +183,16 @@
     (define/public (domain-pop!)
       (py-pop! _list))
     
+    (define/public (copy)
+      (define copied-domain (new Domain [set _list]))
+      (set-field! _hidden copied-domain _hidden)
+      (set-field! _states copied-domain _states)
+      copied-domain)
+    
+    
     ))
 
+(define Domain? (is-a?/c Domain))
 
 ;; ----------------------------------------------------------------------
 ;; Solvers
@@ -213,78 +221,107 @@
       (define values null)
       (define pushdomains null)
       (define variable #f)
-      (let/ec done
-        ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
-        (define lst (sort (for/list ([variable (in-hash-keys domains)])
+      (define lst null)
+      (define want-to-return #f)
+      (define return-k #f)
+      (let/ec break-loop1
+        (set! return-k break-loop1)
+        (let loop1 ()
+          (displayln "starting while loop 1")
+          ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
+          (set! lst (sort (for/list ([variable (in-hash-keys domains)])
                             (list (* -1 (length (hash-ref vconstraints variable)))
                                   (length (get-field _list (hash-ref domains variable)))
                                   variable)) list-comparator)) 
-        (report lst)
-        (let/ec bonk
-          (if (not (null? lst)) ; ? good translation of for–else?
-              (for ([item (in-list lst)])
-                (when (not ((last item) . in? . assignments))
-                  ; Found unassigned variable
-                  (set! variable (last item))
-                  (set! values (hash-ref domains variable))
-                  (set! pushdomains 
-                        (if forwardcheck
-                            (for/list ([x (in-hash-keys domains)] 
-                                       #:when (and (not (x . in? . assignments)) 
-                                                   (not (x . equal? . variable))))
-                              (hash-ref domains x))
-                            null))   
-                  (bonk)))
-              (begin
-                ;; No unassigned variables. We've got a solution. Go back
-                ;; to last variable, if there's one.
-                (generator ()
-                           (yield (hash-copy assignments))
-                           (when (not queue) (done))
-                           (match-define (list variable values pushdomains) (py-pop! queue))
-                           (when (not (null? pushdomains))
-                             (for ([domain (in-list pushdomains)])
-                               (send domain popState)))))))
-        (report variable)
-        (report values)
-        (report assignments)
-        
-        (let/ec inner-done
-          ;; We have a variable. Do we have any values left?
-          (report values)
-          (when (null? values)
-            ;; No. Go back to last variable, if there's one.
-            (hash-remove! assignments variable)
-            (let loop ()
-              (if (not (null? queue))
-                  (let ()
-                    (define-values (variable values pushdomains) (py-pop! queue))
-                    (when pushdomains
-                      (for ([domain (in-list pushdomains)])
-                        (send domain popState)))
-                    (when values (inner-done))
-                    (hash-remove! assignments variable)
-                    (loop))
-                  (error 'todo "return from function"))))
-          ;; Got a value. Check it.
-          (hash-set! assignments variable (send values domain-pop!))
-          (when (not (null? pushdomains))
-            (for ([domain (in-list pushdomains)])
-              (send domain pushState)))
-          ;; todo: ok replacement for for/else?
-          (if (not (null? (hash-ref vconstraints variable))) 
-              (for ([cvpair (in-list (hash-ref vconstraints variable))])
-                (match-define (cons constraint variables) cvpair)
-                (when (not (constraint variables domains assignments pushdomains))
-                  ;; Value is not good.
-                  (inner-done)))
-              (inner-done))
-          (when (not (null? pushdomains))
-            (for ([domain (in-list pushdomains)])
-              (send domain popState)))
-          ;; Push state before looking for next variable.
-          (py-append! queue (list variable values pushdomains))))
-      (error 'getSolutionIter "Whoops, broken solver"))
+          (let/ec break-for-loop
+            (if (not (null? (report lst))) ; ? good translation of for–else?
+                (for ([item (in-list lst)])
+                  (when (not ((last item) . in? . assignments))
+                    ; Found unassigned variable
+                    (set! variable (last item))
+                    (let ([unassigned-variable variable]) (report unassigned-variable))
+                    (set! values (send (hash-ref domains variable) copy))
+                    (set! pushdomains 
+                          (if forwardcheck
+                              (for/list ([x (in-hash-keys domains)] 
+                                         #:when (and (not (x . in? . assignments)) 
+                                                     (not (x . equal? . variable))))
+                                (hash-ref domains x))
+                              null))   
+                    (break-for-loop)))
+                (begin
+                  ;; No unassigned variables. We've got a solution. Go back
+                  ;; to last variable, if there's one.
+                  (displayln "solution time")
+                  (generator ()
+                             (yield (hash-copy assignments))
+                             (when (not queue) (break-loop1))
+                             (match-define (list variable values pushdomains) (py-pop! queue))
+                             (when (not (null? pushdomains))
+                               (for ([domain (in-list pushdomains)])
+                                 (send domain popState)))))))          
+          (report variable)
+          (report assignments)
+          
+          (let/ec break-loop2
+            (let loop2 ()
+              (displayln "starting while loop 2")
+              ;; We have a variable. Do we have any values left?
+              (displayln (format "values tested ~a" values))
+              (when (null? (get-field _list values))
+                ;; No. Go back to last variable, if there's one.
+                (hash-remove! assignments variable)
+                (let/ec break-loop3
+                  (let loop3 ()
+                    (if (not (null? queue))
+                        (let ()
+                          (define variable-values-pushdomains (py-pop! queue))
+                          (set! variable (first variable-values-pushdomains))
+                          (set-field! _list values (second variable-values-pushdomains))
+                          (set! pushdomains (third variable-values-pushdomains))
+                          (when (not (null? pushdomains))
+                            (for ([domain (in-list pushdomains)])
+                              (send domain popState)))
+                          (when (not (null? (get-field _list values))) (break-loop3))
+                          (hash-remove! assignments variable)
+                          (loop3))
+                        (begin
+                          (set! want-to-return #t) 
+                          (return-k))))))
+              ;; Got a value. Check it.
+              (let ([values1 values])(report values1))
+              ;;!!!!!!
+              (report (eq? values (hash-ref domains "a")))
+              (report (get-field _list (hash-ref domains "a")))
+              (let ([popped (send values domain-pop!)])
+                (report popped) (report values)
+                (hash-set! assignments variable popped))
+              (report (get-field _list (hash-ref domains "a")))
+              (let ([values2 values])(report values2))
+              
+              
+              (when (not (null? pushdomains))
+                (for ([domain (in-list pushdomains)])
+                  (send domain pushState)))
+              ;; todo: ok replacement for for/else?
+              (if (not (null? (hash-ref vconstraints variable))) 
+                  (let/ec break-for-loop
+                    (for ([cvpair (in-list (hash-ref vconstraints variable))])
+                      (match-define (cons constraint variables) cvpair)
+                      (when (not (constraint variables domains assignments pushdomains))
+                        ;; Value is not good.
+                        (break-for-loop))))
+                  (break-loop2))
+              (when (not (null? pushdomains))
+                (for ([domain (in-list pushdomains)])
+                  (send domain popState)))
+              (loop2))
+            ;; Push state before looking for next variable.
+            (py-append! queue (list variable values pushdomains)))
+          (loop1)))
+      (if want-to-return
+          (void)
+          (error 'getSolutionIter "Whoops, broken solver")))
     
     
     

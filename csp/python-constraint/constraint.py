@@ -456,6 +456,7 @@ class BacktrackingSolver(Solver):
         queue = []
 
         while True:
+            print "starting while loop 1"
 
             # Mix the Degree and Minimum Remaing Values (MRV) heuristics
             lst = [(-len(vconstraints[variable]),
@@ -465,6 +466,7 @@ class BacktrackingSolver(Solver):
             for item in lst:
                 if item[-1] not in assignments:
                     # Found unassigned variable
+                    print "unassigned variable", variable
                     variable = item[-1]
                     values = domains[variable][:]
                     if forwardcheck:
@@ -477,6 +479,7 @@ class BacktrackingSolver(Solver):
             else:
                 # No unassigned variables. We've got a solution. Go back
                 # to last variable, if there's one.
+                print "solution time"
                 yield assignments.copy()
                 if not queue:
                     return
@@ -486,11 +489,11 @@ class BacktrackingSolver(Solver):
                         domain.popState()
 
             print "variable", variable
-            print "values", values
             print "assignments", assignments
             while True:
+                print "starting while loop 2"
                 # We have a variable. Do we have any values left?
-                print "values", values
+                print "values tested", values
                 if not values:
                     # No. Go back to last variable, if there's one.
                     del assignments[variable]
@@ -506,7 +509,15 @@ class BacktrackingSolver(Solver):
                         return
 
                 # Got a value. Check it.
-                assignments[variable] = values.pop()
+                print "values1", values
+                print "equality",  values is domains["a"]
+                print "(domains[a1])", domains["a"]
+                popped = values.pop()
+                print "popped", popped
+                print "values", values
+                assignments[variable] = popped
+                print "(domains[a2])", domains["a"]
+                print "values2", values
 
                 if pushdomains:
                     for domain in pushdomains:
