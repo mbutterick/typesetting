@@ -132,6 +132,8 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 
 
 ;; queens problem
+;; place queens on chessboard so they do not intersect
+
 (define qp (new Problem))
 (define cols (range 8))
 (define rows (range 8))
