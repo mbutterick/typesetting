@@ -466,8 +466,8 @@ class BacktrackingSolver(Solver):
             for item in lst:
                 if item[-1] not in assignments:
                     # Found unassigned variable
-                    print "unassigned variable", variable
                     variable = item[-1]
+                    print "unassigned variable", variable
                     values = domains[variable][:]
                     if forwardcheck:
                         pushdomains = [domains[x] for x in domains
@@ -516,10 +516,17 @@ class BacktrackingSolver(Solver):
                 if pushdomains:
                     for domain in pushdomains:
                         domain.pushState()
+                print "pushdomains1", pushdomains
+                print "domains1", domains
 
                 for constraint, variables in vconstraints[variable]:
-                    if not constraint(variables, domains, assignments,
-                                      pushdomains):
+                    the_result = constraint(variables, domains, assignments,
+                                      pushdomains)
+                    print "pushdomains2", pushdomains
+                    print "domains2", domains
+                    print "the_result", the_result
+                    raise KeyError("stop")
+                    if not the_result:
                         # Value is not good.
                         break
                 else:
@@ -892,9 +899,11 @@ class Constraint(object):
         @rtype: bool
         """#"""
         unassignedvariable = _unassigned
+        print "assignments", assignments
         for variable in variables:
             if variable not in assignments:
                 if unassignedvariable is _unassigned:
+                    print "boom"
                     unassignedvariable = variable
                 else:
                     break
@@ -903,6 +912,7 @@ class Constraint(object):
                 # Remove from the unassigned variable domain's all
                 # values which break our variable's constraints.
                 domain = domains[unassignedvariable]
+                print "domain-fc", domain
                 if domain:
                     for value in domain[:]:
                         assignments[unassignedvariable] = value
@@ -949,9 +959,19 @@ class FunctionConstraint(Constraint):
 
     def __call__(self, variables, domains, assignments, forwardcheck=False,
                  _unassigned=Unassigned):
+        print "in call"
+        print "assignments-before", assignments
         parms = [assignments.get(x, _unassigned) for x in variables]
+        print "assignments-after", assignments
         missing = parms.count(_unassigned)
+        print "dang"
         if missing:
+            print "missing", missing
+            print "self._assigned", self._assigned
+            print "parms", parms
+            print "self._func(*parms)", self._func(*parms)
+            print "forwardcheck", forwardcheck
+            print "assignments-to-fc", assignments
             return ((self._assigned or self._func(*parms)) and
                     (not forwardcheck or missing != 1 or
                      self.forwardCheck(variables, domains, assignments)))

@@ -46,13 +46,19 @@
            ;; todo: tighten `object?` contract
            [addVariable (any/c (or/c list? object?) . ->m . void?)]
            [getSolutions (->m list?)])
-  (class object%
+  (class* object% (printable<%>)
     (super-new)
     
     (init-field [solver #f])
     (field [_solver (or solver (new BacktrackingSolver))]
            [_constraints null]
            [_variables (make-hash)])
+    
+    
+    (define (repr) (format "<Problem ~v>" _variables))
+    (define/public (custom-print out quoting-depth) (print (repr) out))
+    (define/public (custom-display out) (displayln (repr) out))
+    (define/public (custom-write out) (write (repr) out))
     
     (define/public (reset)
       ;; Reset the current problem definition
@@ -84,6 +90,15 @@
     (define/public (addVariables variables domain)
       ;; Add one or more variables to the problem
       (for-each (λ(var) (addVariable var domain)) variables))
+    
+    (define/public (addConstraint constraint [variables null])
+      ;; Add a constraint to the problem
+      
+      (when (not (Constraint? constraint))
+        (if (procedure? constraint)
+            (set! constraint (new FunctionConstraint [func constraint]))
+            (error 'addConstraint "Constraints must be instances of class Constraint")))
+      (py-append! _constraints (cons constraint variables)))
     
     (define/public (getSolution)
       ;; Find and return a solution to the problem
@@ -137,28 +152,19 @@
   (check-equal? (get-field _variables (new Problem)) (make-hash))
   
   (define problem (new Problem)) ;; test from line 125
-  (send problem addVariable "ab" '(1 2))
-  (send problem addVariable "c" '(3))
-  ;  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1)) 
-  
-  (displayln (format "The solution to ~a is ~a" 
-                     problem 
-                     (send problem getSolutions)))
-  
+  (send problem addVariable "a" '(1))
+  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1)) 
   
   (send problem reset)
   (check-equal? (get-field _variables problem) (make-hash))
   (send problem addVariables '("a" "b") '(1 2 3))
   (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1 2 3))
-  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "b")) '(1 2 3))
-  
-  )
+  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "b")) '(1 2 3)))
 
 
 ;; ----------------------------------------------------------------------
 ;; Domains
 ;; ----------------------------------------------------------------------
-
 
 (define Domain
   ;; Class used to control possible values for variables
@@ -189,13 +195,23 @@
     
     (define/public (popState)
       ;; Restore domain state from the top of the stack
-
+      
       ;; Variables hidden since the last popped state are then available
       ;; again.
       (define diff (- (py-pop! _states) (length _list)))
       (when (not (= 0 diff))
         (py-extend! _list (take-right _hidden diff))
         (set! _hidden (take _hidden (- (length _hidden) diff)))))
+    
+    (define/public (hideValue value)
+      ;; Hide the given value from the domain
+      
+      ;; After that call the given value won't be seen as a possible value
+      ;; on that domain anymore. The hidden value will be restored when the
+      ;; previous saved state is popped.
+      (set! _list (remove value _list))
+      (py-append! _hidden value))
+    
     
     (define/public (domain-pop!)
       (py-pop! _list))
@@ -208,8 +224,129 @@
     
     
     ))
-
 (define Domain? (is-a?/c Domain))
+
+
+
+;; ----------------------------------------------------------------------
+;; Constraints
+;; ----------------------------------------------------------------------
+
+(define Constraint
+  (class object% 
+    (super-new)
+    
+    (define/public (call variables domains assignments [forwardcheck #f])
+      ;; Perform the constraint checking
+      
+      ;;  If the forwardcheck parameter is not false, besides telling if
+      ;;  the constraint is currently broken or not, the constraint
+      ;;  implementation may choose to hide values from the domains of
+      ;;  unassigned variables to prevent them from being used, and thus
+      ;;  prune the search space.
+      #t)
+    
+    (define/public (preProcess variables domains constraints vconstraints)
+      ;; Preprocess variable domains
+      ;;  This method is called before starting to look for solutions,
+      ;;  and is used to prune domains with specific constraint logic
+      ;;  when possible. For instance, any constraints with a single
+      ;;  variable may be applied on all possible values and removed,
+      ;;  since they may act on individual values even without further
+      ;;  knowledge about other assignments.
+      (when (= (length variables) 1)
+        (define variable (list-ref variables 0))
+        (define domain (hash-ref domains variable))
+        (for ([value (in-list domain)])
+          (when (not (call variables domains (make-hash (list (cons variable value)))))
+            (set! domain (remove value domain))))
+        (set! constraints (remove (cons this variables) constraints))
+        (hash-remove! vconstraints variable (cons this variables))))
+    
+    (define/public (forwardCheck variables domains assignments [_unassigned Unassigned])
+      ;; Helper method for generic forward checking
+      ;;  Currently, this method acts only when there's a single
+      ;;  unassigned variable.
+      (define return-result #t)
+      
+      (define unassignedvariable _unassigned)
+      (report assignments)
+      (let/ec break
+        (for ([variable (in-list (report variables))])
+          (when (not (variable . in? . assignments))
+            (if (equal? unassignedvariable _unassigned)
+                (begin (displayln "boom")
+                (set! unassignedvariable variable))
+                (break))))
+        (when (not (equal? unassignedvariable _unassigned))
+          ;; Remove from the unassigned variable domain's all
+          ;; values which break our variable's constraints.
+          (define domain (hash-ref domains unassignedvariable))
+          (report domain domain-fc)
+          (when (not (null? (get-field _list domain)))
+            (for ([value (in-list (get-field _list domain))])
+              (hash-set! assignments unassignedvariable value)
+              (when (not (send this call variables domains assignments))
+                (send domain hideValue value)))
+            (hash-remove! assignments unassignedvariable))
+          (when (null? (get-field _list domain))
+            (set! return-result #f)
+            (break))))
+      return-result)
+    ))
+
+(define Constraint? (is-a?/c Constraint))
+
+(define FunctionConstraint
+  (class Constraint 
+    (super-new)
+    (init-field func [assigned #t])
+    (field [_func func][_assigned assigned])
+    
+    (inherit forwardCheck)
+    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
+      (displayln "in call")
+      (report assignments assignments-before)
+      (define parms (for/list ([x (in-list variables)])
+                      (if (hash-has-key? assignments x) (hash-ref assignments x)  _unassigned)))
+      (report assignments assignments-after)
+      (define missing (length (filter (λ(v) (equal? v _unassigned)) parms)))
+      (displayln "dang")
+      (if (> missing 0)
+          (begin 
+            (report missing)
+            (report _assigned)
+            (report parms)
+            (report (apply _func parms))
+            (report forwardcheck)
+            (report assignments assignments-to-fc)
+            (and (or _assigned (apply _func parms))
+                 (or (not forwardcheck) (not (= missing 1))
+                     (forwardCheck variables domains assignments))))
+          (apply _func parms)))
+    
+    ))
+(define FunctionConstraint? (is-a?/c FunctionConstraint))
+
+
+;; ----------------------------------------------------------------------
+;; Variables
+;; ----------------------------------------------------------------------
+
+
+(define Variable
+  (class* object% (printable<%>) 
+    (super-new)
+    (define (repr) (format "<Variable ~a>" _name))
+    (define/public (custom-print out quoting-depth) (print (repr) out))
+    (define/public (custom-display out) (displayln (repr) out))
+    (define/public (custom-write out) (write (repr) out))
+    
+    (init-field name)
+    (field [_name name])))
+(define Variable? (is-a?/c Variable))
+
+(define Unassigned (new Variable [name "Unassigned"]))
 
 ;; ----------------------------------------------------------------------
 ;; Solvers
@@ -245,18 +382,21 @@
         (set! return-k break-loop1)
         (let loop1 ()
           (displayln "starting while loop 1")
+          
+          
           ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
           (set! lst (sort (for/list ([variable (in-hash-keys domains)])
                             (list (* -1 (length (hash-ref vconstraints variable)))
                                   (length (get-field _list (hash-ref domains variable)))
-                                  variable)) list-comparator)) 
+                                  variable)) list-comparator))
           (report lst)
           (let/ec break-for-loop
             (for ([item (in-list lst)])
               (when (not ((last item) . in? . assignments))
+                
                 ; Found unassigned variable
                 (set! variable (last item))
-                (let ([unassigned-variable variable]) (report unassigned-variable))
+                (report variable unassigned-variable)
                 (set! values (send (hash-ref domains variable) copy))
                 (set! pushdomains 
                       (if forwardcheck
@@ -266,13 +406,11 @@
                             (hash-ref domains x))
                           null))   
                 (break-for-loop)))
+            
             ;; if it makes it through the loop without breaking, then there are
             ;; No unassigned variables. We've got a solution. Go back
             ;; to last variable, if there's one.
-            (displayln "solution time")
-            (report assignments solution-assignments)
             (yield (hash-copy assignments))
-            (report queue)
             (when (null? queue) (begin
                                   (set! want-to-return #t) 
                                   (return-k)))
@@ -280,18 +418,20 @@
             (set! variable (first variable-values-pushdomains))
             (set-field! _list values (second variable-values-pushdomains))
             (set! pushdomains (third variable-values-pushdomains))
-            (when (not (null? pushdomains))
-              (for ([domain (in-list pushdomains)])
-                (send domain popState))))          
+            (for ([domain (in-list pushdomains)])
+              (send domain popState)))          
+          
           (report variable variable-preloop-2)
           (report assignments assignments-preloop-2)
           
           (let/ec break-loop2
             (let loop2 ()
               (displayln "starting while loop 2")
+              
               ;; We have a variable. Do we have any values left?
-              (displayln (format "values tested ~a" values))
+              (report values values-tested)
               (when (null? (get-field _list values))
+                
                 ;; No. Go back to last variable, if there's one.
                 (hash-remove! assignments variable)
                 (let/ec break-loop3
@@ -313,33 +453,33 @@
                           (return-k))))))
               
               ;; Got a value. Check it.
-              (report values)
               (hash-set! assignments variable (send values domain-pop!))  
               
-              (when (not (null? pushdomains))
-                (for ([domain (in-list pushdomains)])
-                  (send domain pushState)))
+              (for ([domain (in-list pushdomains)])
+                (send domain pushState))
+              (report pushdomains pushdomains1)
+              (report domains domains1)
               
-              ;; todo: ok replacement for for/else?
-              (if (not (null? (hash-ref vconstraints variable))) 
-                  (let/ec break-for-loop
-                    (for ([cvpair (in-list (hash-ref vconstraints variable))])
-                      (match-define (cons constraint variables) cvpair)
-                      (when (not (constraint variables domains assignments pushdomains))
-                        ;; Value is not good.
-                        (break-for-loop))))
-                  (begin (displayln "now breaking loop 2") (break-loop2)))
+              (let/ec break-for-loop
+                (for ([cvpair (in-list (hash-ref vconstraints variable))])
+                  (match-define (cons constraint variables) cvpair)
+                  (define the_result (send constraint call variables domains assignments pushdomains))
+                  (report pushdomains pushdomains2)
+                  (report domains domains2)
+                  (report the_result)
+                  (when (not the_result)
+                    ;; Value is not good.
+                    (break-for-loop)))
+                (begin (displayln "now breaking loop 2") (break-loop2)))
               
-              (when (not (null? pushdomains))
-                (for ([domain (in-list pushdomains)])
-                  (send domain popState)))
+              (for ([domain (in-list pushdomains)])
+                (send domain popState))
               
               (loop2)))
           
           ;; Push state before looking for next variable.
           (py-append! queue (list variable (get-field _list (send values copy)) pushdomains))
           (report queue new-queue)
-          
           (loop1)))
       
       (if want-to-return
@@ -347,18 +487,29 @@
           (error 'getSolutionIter "Whoops, broken solver")))
     
     
+    (define (call-solution-generator domains constraints vconstraints #:first-only [first-only #f])
+      (for/list ([solution (in-generator (getSolutionIter domains constraints vconstraints))] #:final first-only) 
+        solution))
     
-    (define/override (getSolution domains constraints vconstraints)
-      ;; todo: fix this
-      (void))
+    (define/override (getSolution . args)
+      (apply call-solution-generator #:first-only #t args))
     
-    (define/override (getSolutions domains constraints vconstraints)
-      (for/list ([solution (in-generator (getSolutionIter domains constraints vconstraints))]) solution))
+    (define/override (getSolutions . args)
+      (apply call-solution-generator args))
     
     ))
 
 
 (module+ main
-  (define p (new Problem))
-  (define d  (new Domain [set '(1 2)]))
+  (define problem (new Problem))
+  (send problem addVariables '("a" "b") '(1 2 3 4))
+  (define (func a b) 
+    (cond
+      [(and (real? b) (real? a)) (> b a)]
+      [(Variable? b) #t]
+      [else #f]))
+  (send problem addConstraint func '("a" "b"))
+  (displayln (format "The solution to ~a is ~a"
+                     problem 
+                     (send problem getSolutions)))
   )
