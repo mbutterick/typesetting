@@ -14,6 +14,7 @@
             (cond
               [(equal? x y) (list-comparator (cdr xs) (cdr ys))]
               [(and (real? x) (real? y)) (< x y)]
+              [(and (symbol? x) (symbol? y)) (apply string<? (map symbol->string (list x y)))] 
               [(and (string? x) (string? y)) (string<? x y)]
               [else (error 'list-comparator (format "Can’t compare ~v and ~v" x y))]))]))
 
@@ -22,7 +23,8 @@
   (check-false (list-comparator (range 2) (range 2)))
   (check-true (list-comparator (range 2) (range 4)))
   (check-false (list-comparator (range 4) (range 2)))
-  (check-true (list-comparator '(1 1 "a") '(1 1 "b"))))
+  (check-true (list-comparator '(1 1 "a") '(1 1 "b")))
+  (check-true (list-comparator '(1 1 a) '(1 1 b))))
 
 (define-syntax-rule (py-pop! xs)
   (let ([i (last xs)])
@@ -47,3 +49,9 @@
   (let ([xs '(1 2 3)])
     (py-extend! xs (range 2))
     (check-equal? xs '(1 2 3 0 1))))
+
+
+(define (word-value . xs)
+  (let ([xs (reverse xs)])
+    (for/sum ([i (in-range (length xs))])
+      (* (list-ref xs i) (expt 10 i)))))

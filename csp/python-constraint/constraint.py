@@ -191,6 +191,7 @@ class Problem(object):
                           the order may be important.
         @type  variables: set or sequence of variables
         """
+        print "self._constraints", self._constraints
         if not isinstance(constraint, Constraint):
             if callable(constraint):
                 constraint = FunctionConstraint(constraint)
@@ -198,6 +199,7 @@ class Problem(object):
                 raise ValueError, "Constraints must be instances of "\
                                   "subclasses of the Constraint class"
         self._constraints.append((constraint, variables))
+        print "self._constraints", self._constraints
 
     def getSolution(self):
         """
@@ -455,6 +457,7 @@ class BacktrackingSolver(Solver):
 
         queue = []
 
+
         while True:
             #print "starting while loop 1"
 
@@ -595,6 +598,7 @@ class RecursiveBacktrackingSolver(Solver):
     def recursiveBacktracking(self, solutions, domains, vconstraints,
                               assignments, single):
 
+
         # Mix the Degree and Minimum Remaing Values (MRV) heuristics
         lst = [(-len(vconstraints[variable]),
                 len(domains[variable]), variable) for variable in domains]
@@ -602,7 +606,7 @@ class RecursiveBacktrackingSolver(Solver):
         for item in lst:
             if item[-1] not in assignments:
                 # Found an unassigned variable. Let's go.
-                break
+                breakit
         else:
             # No unassigned variables. We've got a solution.
             solutions.append(assignments.copy())

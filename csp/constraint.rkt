@@ -31,7 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(provide (all-defined-out))
+(provide (all-defined-out) (all-from-out "helpers.rkt"))
 ;(provide Problem Variable Domain Unassigned Solver BacktrackingSolver RecursiveBacktrackingSolver MinConflictsSolver Constraint FunctionConstraint AllDifferentConstraint AllEqualConstraint MaxSumConstraint ExactSumConstraint MinSumConstraint InSetConstraint NotInSetConstraint SomeInSetConstraint SomeNotInSetConstraint)
 
 ;(define Problem/c (λ(x) (is-a x Problem)))
@@ -89,7 +89,11 @@
     
     (define/public (addVariables variables domain)
       ;; Add one or more variables to the problem
-      (for-each (λ(var) (addVariable var domain)) variables))
+      (define listified-variables
+        (cond 
+          [(string? variables) (map (λ(c) (format "~a" c)) (string->list variables))]
+          [else variables]))
+      (for-each (λ(var) (addVariable var domain)) listified-variables))
     
     (define/public (addConstraint constraint [variables null])
       ;; Add a constraint to the problem
@@ -98,7 +102,7 @@
         (if (procedure? constraint)
             (set! constraint (new FunctionConstraint [func constraint]))
             (error 'addConstraint "Constraints must be instances of class Constraint")))
-      (py-append! _constraints (cons constraint variables)))
+      (py-append! _constraints (list constraint variables)))
     
     (define/public (getSolution)
       ;; Find and return a solution to the problem
@@ -119,19 +123,19 @@
       (define allvariables (hash-keys domains))
       (define constraints null)
       (for ([constraint-variables-pair (in-list _constraints)])
-        (match-define (cons constraint variables) constraint-variables-pair)
-        (when (not variables)
+        (match-define (list constraint variables) constraint-variables-pair)
+        (when (null? variables)
           (set! variables allvariables))
-        (set! constraints (append constraints (list (cons constraint variables)))))
+        (set! constraints (append constraints (list (list constraint variables)))))
       (define vconstraints (make-hash))
       (for ([variable (in-hash-keys domains)])
         (hash-set! vconstraints variable null))
       (for ([constraint-variables-pair (in-list constraints)])
-        (match-define (cons constraint variables) constraint-variables-pair)
+        (match-define (list constraint variables) constraint-variables-pair)
         (for ([variable (in-list variables)])
-          (hash-update! vconstraints variable (λ(val) (append val (list (cons constraint variables)))))))
+          (hash-update! vconstraints variable (λ(val) (append val (list (list constraint variables)))))))
       (for ([constraint-variables-pair (in-list constraints)])
-        (match-define (cons constraint variables) constraint-variables-pair)
+        (match-define (list constraint variables) constraint-variables-pair)
         (send constraint preProcess variables domains constraints vconstraints))
       (define result #f)
       (let/ec done
@@ -257,11 +261,13 @@
       (when (= (length variables) 1)
         (define variable (list-ref variables 0))
         (define domain (hash-ref domains variable))
-        (for ([value (in-list domain)])
+        (for ([value (in-list (get-field _list domain))])
+          
           (when (not (call variables domains (make-hash (list (cons variable value)))))
-            (set! domain (remove value domain))))
-        (set! constraints (remove (cons this variables) constraints))
-        (hash-remove! vconstraints variable (cons this variables))))
+            (set-field! _list domain (remove value (get-field _list domain)))))
+        
+        (set! constraints (remove (list this variables) constraints))
+        (hash-update! vconstraints variable (λ(val) (remove (list this variables) val)))))
     
     (define/public (forwardCheck variables domains assignments [_unassigned Unassigned])
       ;; Helper method for generic forward checking
@@ -303,7 +309,7 @@
     (field [_func func][_assigned assigned])
     
     (inherit forwardCheck)
-    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])1
+    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
       ;(report assignments assignments-before)
       (define parms (for/list ([x (in-list variables)])
                       (if (hash-has-key? assignments x) (hash-ref assignments x)  _unassigned)))
@@ -325,6 +331,42 @@
     ))
 (define FunctionConstraint? (is-a?/c FunctionConstraint))
 
+(define AllDifferentConstraint
+  ;; Constraint enforcing that values of all given variables are different
+  
+  (class Constraint 
+    (super-new)
+    
+    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
+      (define seen (make-hash))
+      (define value #f)
+      (define domain #f)
+      (define return-value (void))
+      (let/ec return-k
+        (for ([variable (in-list variables)])
+          (set! value (if (hash-has-key? assignments variable) 
+                          (hash-ref assignments variable)  
+                          _unassigned))
+          (when (not (equal? value _unassigned))
+            (when (value . in? . seen)
+              (set! return-value #f)
+              (return-k))
+            (hash-set! seen value #t)))
+        (when forwardcheck
+          (for ([variable (in-list variables)])
+            (when (not (variable . in? . assignments))
+              (set! domain (hash-ref domains variable))
+              (for ([value (in-hash-keys seen)])
+                (when (value . in? . (get-field _list (hash-ref domains variable)))
+                  (send domain hideValue value)
+                  (when (null? (get-field _list (hash-ref domains variable)))
+                    (set! return-value #f)
+                    (return-k)))))))
+        (set! return-value #t)
+        (return-k))
+      return-value)))
+
+(define AllDifferentConstraint? (is-a?/c AllDifferentConstraint))
 
 ;; ----------------------------------------------------------------------
 ;; Variables
@@ -365,6 +407,9 @@
     (field [_forwardcheck forwardcheck]) 
     
     (define/override (getSolutionIter domains constraints vconstraints)
+      
+      
+      
       (define forwardcheck _forwardcheck)
       (define assignments (make-hash))
       (define queue null)
@@ -458,7 +503,7 @@
               
               (let/ec break-for-loop
                 (for ([cvpair (in-list (hash-ref vconstraints variable))])
-                  (match-define (cons constraint variables) cvpair)
+                  (match-define (list constraint variables) cvpair)
                   (define the_result (send constraint call variables domains assignments pushdomains))
                   ;(report pushdomains pushdomains2)
                   ;(report domains domains2)
@@ -489,7 +534,7 @@
         solution))
     
     (define/override (getSolution . args)
-      (apply call-solution-generator #:first-only #t args))
+      (car (apply call-solution-generator #:first-only #t args)))
     
     (define/override (getSolutions . args)
       (apply call-solution-generator args))
@@ -497,17 +542,6 @@
     ))
 
 
-(module+ main
-  (define problem (new Problem))
-  (send problem addVariables '("a" "b" "c") (range 1 10))
-;  (send problem addConstraint (λ(a b) (and (> a 0) (= b (* 211 a)))) '("a" "b"))
-  
-  (displayln (format "The solution to ~a is ~a"
-                     problem 
-                     (argmin (λ(h) 
-                               (let ([a (hash-ref h "a")]
-                                     [b (hash-ref h "b")]
-                                     [c (hash-ref h "c")])
-                                 (/ (+ (* 100 a) (* 10 b) c) (+ a b c)))) 
-                             (send problem getSolutions)))))
-  
+
+
+
