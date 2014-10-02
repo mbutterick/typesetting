@@ -2,9 +2,6 @@
 (require "main.rkt")
 (require rackunit)
 
-(define-simple-check (check-hash-items h1 h2)
-  (for/and ([(k1 v1) (in-hash h1)])
-    (equal? (hash-ref h2 k1) v1)))
 
 ;; ABC problem:
 ;; what is the minimum value of

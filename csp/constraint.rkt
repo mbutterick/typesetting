@@ -2,6 +2,7 @@
 (require racket/class sugar/container "helper.rkt" "variable.rkt")
 (provide (all-defined-out))
 
+
 (define Constraint
   (class object% 
     (super-new)
@@ -133,3 +134,41 @@
       return-value)))
 
 (define AllDifferentConstraint? (is-a?/c AllDifferentConstraint))
+
+
+(define AllEqualConstraint
+  ;; Constraint enforcing that values of all given variables are different
+  
+  (class Constraint 
+    (super-new)
+    
+    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
+      (define singlevalue _unassigned)
+      (define value #f)
+      (define domain #f)
+      (define return-value (void))
+      (let/ec return-k
+        (for ([variable (in-list variables)])
+          (set! value (if (hash-has-key? assignments variable) 
+                          (hash-ref assignments variable)  
+                          _unassigned))
+          (cond
+            [(equal? singlevalue _unassigned) (set! singlevalue value)]
+            [(and (not (equal? value _unassigned)) (not (equal? value singlevalue)))
+             (set! return-value #f)
+             (return-k)]))
+        (when (and forwardcheck (not (equal? singlevalue _unassigned)))
+          (for ([variable (in-list variables)])
+            (when (not (variable . in? . assignments))
+              (set! domain (hash-ref domains variable))
+              (when (not (singlevalue . in? . (get-field _list domain)))
+                (set! return-value #f)
+                (return-k))
+              (for ([value (in-list (get-field _list domain))])
+                (when (not (equal? value singlevalue))
+                  (send domain hideValue value))))))
+        (set! return-value #t)
+        (return-k))
+      return-value)))
+
+(define AllEqualConstraint? (is-a?/c AllEqualConstraint))

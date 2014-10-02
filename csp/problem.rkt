@@ -6,11 +6,10 @@
   ;; Class used to define a problem and retrieve solutions
   
   (class/c [reset (->m void?)]
-           ;; todo: tighten `object?` contracts
            [setSolver (Solver? . ->m . void?)] 
            [getSolver (->m Solver?)]
            ;; todo: tighten `object?` contract
-           [addVariable (any/c (or/c list? object?) . ->m . void?)]
+           [addVariable (any/c (or/c list? Domain?) . ->m . void?)]
            [getSolutions (->m list?)])
   (class* object% (printable<%>)
     (super-new)
@@ -45,8 +44,7 @@
         (error 'addVariable (format "Tried to insert duplicated variable ~a" variable)))
       (cond 
         [(list? domain) (set! domain (new Domain [set domain]))]
-        ;; todo: test for `instance-of-Domain?` ; how to copy domain?
-        [(object? domain) (set! domain '(copy.copy domain))]
+        [(Domain? domain) (set! domain (send domain copy))]
         [else (error 'addVariable "Domains must be instances of subclasses of Domain")])
       (when (not (object? domain)) (error 'fudge))
       (when (not domain) ; todo: check this test

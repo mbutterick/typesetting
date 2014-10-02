@@ -1,8 +1,11 @@
 #lang racket/base
 (require racket/list)
 (provide (all-defined-out))
+(require rackunit)
 
-(module+ test (require rackunit))
+(define-simple-check (check-hash-items h1 h2)
+  (for/and ([(k1 v1) (in-hash h1)])
+    (equal? (hash-ref h2 k1) v1)))
 
 (define (list-comparator xs ys)
   ;; For use in sort. Compares two lists element by element.
