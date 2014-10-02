@@ -376,7 +376,7 @@ class Solver(object):
                              constraints affecting the given variables.
         @type  vconstraints: dict
         """
-        raise NotImplementedError, \
+        NotImplementedError, \
               "%s is an abstract class" % self.__class__.__name__
 
     def getSolutions(self, domains, constraints, vconstraints):
@@ -456,18 +456,18 @@ class BacktrackingSolver(Solver):
         queue = []
 
         while True:
-            print "starting while loop 1"
+            #print "starting while loop 1"
 
             # Mix the Degree and Minimum Remaing Values (MRV) heuristics
             lst = [(-len(vconstraints[variable]),
                     len(domains[variable]), variable) for variable in domains]
             lst.sort()
-            print "lst", lst
+            #print "lst", lst
             for item in lst:
                 if item[-1] not in assignments:
                     # Found unassigned variable
                     variable = item[-1]
-                    print "unassigned variable", variable
+                    #print "unassigned variable", variable
                     values = domains[variable][:]
                     if forwardcheck:
                         pushdomains = [domains[x] for x in domains
@@ -479,10 +479,10 @@ class BacktrackingSolver(Solver):
             else:
                 # No unassigned variables. We've got a solution. Go back
                 # to last variable, if there's one.
-                print "solution time"
-                print "solution assignments", assignments
+                #print "solution time"
+                #print "solution assignments", assignments
                 yield assignments.copy()
-                print "queue", queue
+                #print "queue", queue
                 if not queue:
                     return
                 variable, values, pushdomains = queue.pop()
@@ -490,12 +490,12 @@ class BacktrackingSolver(Solver):
                     for domain in pushdomains:
                         domain.popState()
 
-            print "variable-preloop-2", variable
-            print "assignments-preloop-2", assignments
+            #print "variable-preloop-2", variable
+            #print "assignments-preloop-2", assignments
             while True:
-                print "starting while loop 2"
+                #print "starting while loop 2"
                 # We have a variable. Do we have any values left?
-                print "values tested", values
+                #print "values tested", values
                 if not values:
                     # No. Go back to last variable, if there's one.
                     del assignments[variable]
@@ -516,21 +516,20 @@ class BacktrackingSolver(Solver):
                 if pushdomains:
                     for domain in pushdomains:
                         domain.pushState()
-                print "pushdomains1", pushdomains
-                print "domains1", domains
+                #print "pushdomains1", pushdomains
+                #print "domains1", domains
 
                 for constraint, variables in vconstraints[variable]:
                     the_result = constraint(variables, domains, assignments,
                                       pushdomains)
-                    print "pushdomains2", pushdomains
-                    print "domains2", domains
-                    print "the_result", the_result
-                    raise KeyError("stop")
+                    #print "pushdomains2", pushdomains
+                    #print "domains2", domains
+                    #print "the_result", the_result
                     if not the_result:
                         # Value is not good.
                         break
                 else:
-                    print "now breaking loop 2"
+                    #print "now breaking loop 2"
                     break
 
                 if pushdomains:
@@ -539,7 +538,7 @@ class BacktrackingSolver(Solver):
 
             # Push state before looking for next variable.
             queue.append((variable, values, pushdomains))
-            print "new queue", queue
+            #print "new queue", queue
 
         raise RuntimeError, "Can't happen"
 
@@ -899,11 +898,11 @@ class Constraint(object):
         @rtype: bool
         """#"""
         unassignedvariable = _unassigned
-        print "assignments", assignments
+        #print "assignments", assignments
         for variable in variables:
             if variable not in assignments:
                 if unassignedvariable is _unassigned:
-                    print "boom"
+                    #print "boom"
                     unassignedvariable = variable
                 else:
                     break
@@ -912,7 +911,7 @@ class Constraint(object):
                 # Remove from the unassigned variable domain's all
                 # values which break our variable's constraints.
                 domain = domains[unassignedvariable]
-                print "domain-fc", domain
+                #print "domain-fc", domain
                 if domain:
                     for value in domain[:]:
                         assignments[unassignedvariable] = value
@@ -959,19 +958,19 @@ class FunctionConstraint(Constraint):
 
     def __call__(self, variables, domains, assignments, forwardcheck=False,
                  _unassigned=Unassigned):
-        print "in call"
-        print "assignments-before", assignments
+        #print "in call"
+        #print "assignments-before", assignments
         parms = [assignments.get(x, _unassigned) for x in variables]
-        print "assignments-after", assignments
+        #print "assignments-after", assignments
         missing = parms.count(_unassigned)
-        print "dang"
+        #print "dang"
         if missing:
-            print "missing", missing
-            print "self._assigned", self._assigned
-            print "parms", parms
-            print "self._func(*parms)", self._func(*parms)
-            print "forwardcheck", forwardcheck
-            print "assignments-to-fc", assignments
+            #print "missing", missing
+            #print "self._assigned", self._assigned
+            #print "parms", parms
+            #print "self._func(*parms)", self._func(*parms)
+            #print "forwardcheck", forwardcheck
+            #print "assignments-to-fc", assignments
             return ((self._assigned or self._func(*parms)) and
                     (not forwardcheck or missing != 1 or
                      self.forwardCheck(variables, domains, assignments)))

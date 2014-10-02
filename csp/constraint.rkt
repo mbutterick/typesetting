@@ -55,7 +55,7 @@
            [_variables (make-hash)])
     
     
-    (define (repr) (format "<Problem ~v>" _variables))
+    (define (repr) (format "<Problem ~a>" (hash-keys _variables)))
     (define/public (custom-print out quoting-depth) (print (repr) out))
     (define/public (custom-display out) (displayln (repr) out))
     (define/public (custom-write out) (write (repr) out))
@@ -270,19 +270,18 @@
       (define return-result #t)
       
       (define unassignedvariable _unassigned)
-      (report assignments)
+      ;(report assignments)
       (let/ec break
-        (for ([variable (in-list (report variables))])
+        (for ([variable (in-list variables)])
           (when (not (variable . in? . assignments))
             (if (equal? unassignedvariable _unassigned)
-                (begin (displayln "boom")
-                (set! unassignedvariable variable))
+                (set! unassignedvariable variable)
                 (break))))
         (when (not (equal? unassignedvariable _unassigned))
           ;; Remove from the unassigned variable domain's all
           ;; values which break our variable's constraints.
           (define domain (hash-ref domains unassignedvariable))
-          (report domain domain-fc)
+          ;(report domain domain-fc)
           (when (not (null? (get-field _list domain)))
             (for ([value (in-list (get-field _list domain))])
               (hash-set! assignments unassignedvariable value)
@@ -304,22 +303,20 @@
     (field [_func func][_assigned assigned])
     
     (inherit forwardCheck)
-    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
-      (displayln "in call")
-      (report assignments assignments-before)
+    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])1
+      ;(report assignments assignments-before)
       (define parms (for/list ([x (in-list variables)])
                       (if (hash-has-key? assignments x) (hash-ref assignments x)  _unassigned)))
-      (report assignments assignments-after)
+      ;(report assignments assignments-after)
       (define missing (length (filter (λ(v) (equal? v _unassigned)) parms)))
-      (displayln "dang")
       (if (> missing 0)
           (begin 
-            (report missing)
-            (report _assigned)
-            (report parms)
-            (report (apply _func parms))
-            (report forwardcheck)
-            (report assignments assignments-to-fc)
+            ;(report missing)
+            ;(report _assigned)
+            ;(report parms)
+            ;(report (apply _func parms))
+            ;(report forwardcheck)
+            ;(report assignments assignments-to-fc)
             (and (or _assigned (apply _func parms))
                  (or (not forwardcheck) (not (= missing 1))
                      (forwardCheck variables domains assignments))))
@@ -332,7 +329,6 @@
 ;; ----------------------------------------------------------------------
 ;; Variables
 ;; ----------------------------------------------------------------------
-
 
 (define Variable
   (class* object% (printable<%>) 
@@ -381,7 +377,7 @@
       (let/ec break-loop1
         (set! return-k break-loop1)
         (let loop1 ()
-          (displayln "starting while loop 1")
+          ;(displayln "starting while loop 1")
           
           
           ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
@@ -389,14 +385,14 @@
                             (list (* -1 (length (hash-ref vconstraints variable)))
                                   (length (get-field _list (hash-ref domains variable)))
                                   variable)) list-comparator))
-          (report lst)
+          ;(report lst)
           (let/ec break-for-loop
             (for ([item (in-list lst)])
               (when (not ((last item) . in? . assignments))
                 
                 ; Found unassigned variable
                 (set! variable (last item))
-                (report variable unassigned-variable)
+                ;(report variable unassigned-variable)
                 (set! values (send (hash-ref domains variable) copy))
                 (set! pushdomains 
                       (if forwardcheck
@@ -421,15 +417,15 @@
             (for ([domain (in-list pushdomains)])
               (send domain popState)))          
           
-          (report variable variable-preloop-2)
-          (report assignments assignments-preloop-2)
+          ;(report variable variable-preloop-2)
+          ;(report assignments assignments-preloop-2)
           
           (let/ec break-loop2
             (let loop2 ()
-              (displayln "starting while loop 2")
+              ;(displayln "starting while loop 2")
               
               ;; We have a variable. Do we have any values left?
-              (report values values-tested)
+              ;(report values values-tested)
               (when (null? (get-field _list values))
                 
                 ;; No. Go back to last variable, if there's one.
@@ -457,20 +453,21 @@
               
               (for ([domain (in-list pushdomains)])
                 (send domain pushState))
-              (report pushdomains pushdomains1)
-              (report domains domains1)
+              ;(report pushdomains pushdomains1)
+              ;(report domains domains1)
               
               (let/ec break-for-loop
                 (for ([cvpair (in-list (hash-ref vconstraints variable))])
                   (match-define (cons constraint variables) cvpair)
                   (define the_result (send constraint call variables domains assignments pushdomains))
-                  (report pushdomains pushdomains2)
-                  (report domains domains2)
-                  (report the_result)
+                  ;(report pushdomains pushdomains2)
+                  ;(report domains domains2)
+                  ;(report the_result)
                   (when (not the_result)
                     ;; Value is not good.
                     (break-for-loop)))
-                (begin (displayln "now breaking loop 2") (break-loop2)))
+                (begin ;(displayln "now breaking loop 2") 
+                  (break-loop2)))
               
               (for ([domain (in-list pushdomains)])
                 (send domain popState))
@@ -479,7 +476,7 @@
           
           ;; Push state before looking for next variable.
           (py-append! queue (list variable (get-field _list (send values copy)) pushdomains))
-          (report queue new-queue)
+          ;(report queue new-queue)
           (loop1)))
       
       (if want-to-return
@@ -502,14 +499,15 @@
 
 (module+ main
   (define problem (new Problem))
-  (send problem addVariables '("a" "b") '(1 2 3 4))
-  (define (func a b) 
-    (cond
-      [(and (real? b) (real? a)) (> b a)]
-      [(Variable? b) #t]
-      [else #f]))
-  (send problem addConstraint func '("a" "b"))
+  (send problem addVariables '("a" "b" "c") (range 1 10))
+;  (send problem addConstraint (λ(a b) (and (> a 0) (= b (* 211 a)))) '("a" "b"))
+  
   (displayln (format "The solution to ~a is ~a"
                      problem 
-                     (send problem getSolutions)))
-  )
+                     (argmin (λ(h) 
+                               (let ([a (hash-ref h "a")]
+                                     [b (hash-ref h "b")]
+                                     [c (hash-ref h "c")])
+                                 (/ (+ (* 100 a) (* 10 b) c) (+ a b c)))) 
+                             (send problem getSolutions)))))
+  

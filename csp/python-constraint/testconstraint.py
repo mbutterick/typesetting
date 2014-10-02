@@ -8,8 +8,8 @@ from constraint import *
 #print p.getSolutions()
 
 problem = Problem()
-problem.addVariables(["a", "b"], [1, 2])
+problem.addVariables(["a", "b"], range(500))
 def func(a, b):
-    return b > a
+    return a > 0 and b == 211 * a
 problem.addConstraint(func, ["a", "b"])
-problem.getSolution()
+print problem.getSolutions()

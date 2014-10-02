@@ -13,7 +13,7 @@ from constraint import *
 def main():
     problem = Problem()
     problem.addVariables("abc", range(1,10))
-    problem.getSolutions()
+    print min(problem.getSolutions())
     minvalue = 999/(9*3)
     minsolution = {}
     for solution in problem.getSolutions():
