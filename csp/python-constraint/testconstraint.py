@@ -3,5 +3,6 @@
 from constraint import *
 
 p = Problem()
-p.addVariable("a", [1])
+p.addVariable("ab", [1, 2])
+p.addVariable("c", [3])
 print p.getSolutions()

@@ -137,7 +137,8 @@
   (check-equal? (get-field _variables (new Problem)) (make-hash))
   
   (define problem (new Problem)) ;; test from line 125
-  (send problem addVariable "a" '(1))
+  (send problem addVariable "ab" '(1 2))
+  (send problem addVariable "c" '(3))
   ;  (check-equal? (get-field _list (hash-ref (get-field _variables problem) "a")) '(1)) 
   
   (displayln (format "The solution to ~a is ~a" 
@@ -179,6 +180,22 @@
       (py-extend! _list _hidden)
       (set! _hidden null)
       (set! _states null))
+    
+    (define/public (pushState)
+      ;; Save current domain state
+      ;; Variables hidden after that call are restored when that state
+      ;;  is popped from the stack.
+      (py-append! _states (length _list)))
+    
+    (define/public (popState)
+      ;; Restore domain state from the top of the stack
+
+      ;; Variables hidden since the last popped state are then available
+      ;; again.
+      (define diff (- (py-pop! _states) (length _list)))
+      (when (not (= 0 diff))
+        (py-extend! _list (take-right _hidden diff))
+        (set! _hidden (take _hidden (- (length _hidden) diff)))))
     
     (define/public (domain-pop!)
       (py-pop! _list))
