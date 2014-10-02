@@ -1,5 +1,5 @@
 #lang racket
-(require "constraint.rkt")
+(require "main.rkt")
 (require rackunit)
 
 (define-simple-check (check-hash-items h1 h2)
