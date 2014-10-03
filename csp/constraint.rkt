@@ -40,16 +40,15 @@
       ;;  Helper method for generic forward checking
       ;;  Currently, this method acts only when there's a single
       ;;  unassigned variable.
-      (define return-result #t)
-      
-      (define unassignedvariable _unassigned)
-      ;(report assignments)
+      (define return-result (void))      
       (let/ec break
-        (for ([variable (in-list variables)])
-          (when (not (variable . in? . assignments))
-            (if (equal? unassignedvariable _unassigned)
-                (set! unassignedvariable variable)
-                (break))))
+        (set! return-result #t)
+        (define unassignedvariable _unassigned)
+        (for ([variable (in-list variables)] 
+              #:when (not (hash-has-key? assignments variable)))
+          (if (equal? unassignedvariable _unassigned)
+              (set! unassignedvariable variable)
+              (break)))
         (when (not (equal? unassignedvariable _unassigned))
           ;; Remove from the unassigned variable domain's all
           ;; values which break our variable's constraints.
