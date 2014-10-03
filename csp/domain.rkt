@@ -2,7 +2,7 @@
 (require racket/class racket/list "helper.rkt")
 (provide (all-defined-out))
 
-(define Domain
+(define domain%
   ;; Class used to control possible values for variables
   ;; When list or tuples are used as domains, they are automatically
   ;; converted to an instance of that class.
@@ -53,12 +53,12 @@
       (py-pop! _list))
     
     (define/public (copy)
-      (define copied-domain (new Domain [set _list]))
+      (define copied-domain (new domain% [set _list]))
       (set-field! _hidden copied-domain _hidden)
       (set-field! _states copied-domain _states)
       copied-domain)
     
     
     ))
-(define Domain? (is-a?/c Domain))
+(define domain%? (is-a?/c domain%))
 

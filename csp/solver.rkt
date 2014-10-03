@@ -2,26 +2,24 @@
 (require racket/class sugar/container racket/list racket/generator racket/match "helper.rkt")
 (provide (all-defined-out))
 
-(define Solver
+(define solver%
   ;; Abstract base class for solvers
   (class object%
     (super-new)
-    (abstract getSolution)
-    (abstract getSolutions)
-    (abstract getSolutionIter)))
+    (abstract get-solution)
+    (abstract get-solutions)
+    (abstract get-solution-iter)))
 
-(define Solver? (is-a?/c Solver))
+(define solver%? (is-a?/c solver%))
 
-(define BacktrackingSolver
+(define backtracking-solver%
   ;; Problem solver with backtracking capabilities
-  (class Solver
+  (class solver%
     (super-new)
     (init-field [forwardcheck #t])
     (field [_forwardcheck forwardcheck]) 
     
-    (define/override (getSolutionIter domains constraints vconstraints)
-      
-      
+    (define/override (get-solution-iter domains constraints vconstraints)
       
       (define forwardcheck _forwardcheck)
       (define assignments (make-hash))
@@ -139,17 +137,17 @@
       
       (if want-to-return
           (void)
-          (error 'getSolutionIter "Whoops, broken solver")))
+          (error 'get-solution-iter "Whoops, broken solver")))
     
     
     (define (call-solution-generator domains constraints vconstraints #:first-only [first-only #f])
-      (for/list ([solution (in-generator (getSolutionIter domains constraints vconstraints))] #:final first-only) 
+      (for/list ([solution (in-generator (get-solution-iter domains constraints vconstraints))] #:final first-only) 
         solution))
     
-    (define/override (getSolution . args)
+    (define/override (get-solution . args)
       (car (apply call-solution-generator #:first-only #t args)))
     
-    (define/override (getSolutions . args)
-      (apply call-solution-generator args))
-    
-    ))
+    (define/override (get-solutions . args)
+      (apply call-solution-generator args))))
+
+(define backtracking-solver%? (is-a?/c backtracking-solver%))

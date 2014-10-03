@@ -1,26 +1,33 @@
 #lang racket/base
-(require racket/class sugar/container racket/contract racket/match "domain.rkt" "helper.rkt" "constraint.rkt" "solver.rkt")
+(require racket/class sugar/container sugar/debug racket/contract racket/match)
+(require "domain.rkt" "helper.rkt" "constraint.rkt" "solver.rkt")
 (provide (all-defined-out))
 
-(define/contract Problem
+(define/contract problem%
   ;; Class used to define a problem and retrieve solutions
   
   (class/c [reset (->m void?)]
-           [setSolver (Solver? . ->m . void?)] 
-           [getSolver (->m Solver?)]
+           [set-solver (solver%? . ->m . void?)] 
+           [get-solver (->m solver%?)]
            ;; todo: tighten `object?` contract
-           [addVariable (any/c (or/c list? Domain?) . ->m . void?)]
-           [getSolutions (->m list?)])
+           [add-variable (any/c (or/c list? domain%?) . ->m . void?)]
+           [add-variables ((listof any/c) (or/c list? domain%?) . ->m . void?)]
+           [add-constraint (((or/c constraint%? procedure?)) ((listof any/c)) . ->*m . void?)]
+           [get-solution (->m any/c)]
+           [get-solutions (->m list?)]
+           [_get-args (->m (values (listof domain%?) (listof constraint%?) (listof hash?)))])
+  
   (class* object% (printable<%>)
     (super-new)
     
     (init-field [solver #f])
-    (field [_solver (or solver (new BacktrackingSolver))]
-           [_constraints null]
-           [_variables (make-hash)])
+    (field [_solver (or solver (new backtracking-solver%))]
+           [_constraints #f]
+           [_variables #f])
     
+    (reset)
     
-    (define (repr) (format "<Problem ~a>" (hash-keys _variables)))
+    (define (repr) (format "<problem% ~a>" (hash-keys _variables)))
     (define/public (custom-print out quoting-depth) (print (repr) out))
     (define/public (custom-display out) (displayln (repr) out))
     (define/public (custom-write out) (write (repr) out))
@@ -28,61 +35,64 @@
     (define/public (reset)
       ;; Reset the current problem definition
       (set! _constraints null)
-      (hash-clear! _variables))
+      (set! _variables (make-hash)))
     
-    (define/public (setSolver solver)
+    (define/public (set-solver solver)
       ;; Change the problem solver currently in use
       (set! _solver solver))
     
-    (define/public (getSolver)
+    (define/public (get-solver)
       ;; Obtain the problem solver currently in use
       _solver)
     
-    (define/public (addVariable variable domain)
+    (define/public (add-variable variable domain-or-values)
       ;; Add a variable to the problem
-      (when (variable . in? . _variables)
-        (error 'addVariable (format "Tried to insert duplicated variable ~a" variable)))
-      (cond 
-        [(list? domain) (set! domain (new Domain [set domain]))]
-        [(Domain? domain) (set! domain (send domain copy))]
-        [else (error 'addVariable "Domains must be instances of subclasses of Domain")])
-      (when (not (object? domain)) (error 'fudge))
-      (when (not domain) ; todo: check this test
-        (error 'addVariable "Domain is empty"))
+      ;; Contract insures input is Domain object or list of values.
+      (when (hash-has-key? _variables variable)
+        (error 'add-variable (format "Tried to insert duplicated variable ~a" variable)))      
+      (define domain (if (domain%? domain-or-values)
+                         (send domain-or-values copy)
+                         (new domain% [set domain-or-values])))
+      (when (not (object? domain)) (error 'add-variable "not a Domain object"))
+      (when (null? (get-field _list domain)) (error 'add-variable "domain value is null"))
       (hash-set! _variables variable domain))
     
-    (define/public (addVariables variables domain)
+    (define/public (add-variables variables domain)
       ;; Add one or more variables to the problem
       (define listified-variables
         (cond 
           [(string? variables) (map (λ(c) (format "~a" c)) (string->list variables))]
           [else variables]))
-      (for-each (λ(var) (addVariable var domain)) listified-variables))
+      (for-each (λ(var) (add-variable var domain)) listified-variables))
     
-    (define/public (addConstraint constraint [variables null])
+    (define/public (add-constraint constraint [variables null])
       ;; Add a constraint to the problem
       
-      (when (not (Constraint? constraint))
+      (when (not (constraint%? constraint))
         (if (procedure? constraint)
-            (set! constraint (new FunctionConstraint [func constraint]))
-            (error 'addConstraint "Constraints must be instances of class Constraint")))
+            (set! constraint (new function-constraint% [func constraint]))
+            (error 'add-constraint "Constraints must be instances of class Constraint")))
       (py-append! _constraints (list constraint variables)))
     
-    (define/public (getSolution)
+    (define/public (get-solution)
       ;; Find and return a solution to the problem
-      (define-values (domains constraints vconstraints) (_getArgs))
+      (define-values (domains constraints vconstraints) (_get-args))
       (if (not domains)
           null
-          (send _solver getSolution domains constraints vconstraints)))
+          (send _solver get-solution domains constraints vconstraints)))
     
-    (define/public (getSolutions)
+    (define/public (get-solutions)
       ;; Find and return all solutions to the problem
-      (define-values (domains constraints vconstraints) (_getArgs))
+      (define-values (domains constraints vconstraints) (_get-args))
       (if (not domains)
           null
-          (send _solver getSolutions domains constraints vconstraints)))
+          (send _solver get-solutions domains constraints vconstraints)))
     
-    (define/public (_getArgs)
+    (define/public (get-solution-iter)
+      ; Return an iterator to the solutions of the problem
+      (void))
+    
+    (define/public (_get-args)
       (define domains (hash-copy _variables))
       (define allvariables (hash-keys domains))
       (define constraints null)

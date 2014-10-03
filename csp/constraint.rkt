@@ -3,7 +3,7 @@
 (provide (all-defined-out))
 
 
-(define Constraint
+(define constraint%
   (class object% 
     (super-new)
     
@@ -67,10 +67,10 @@
       return-result)
     ))
 
-(define Constraint? (is-a?/c Constraint))
+(define constraint%? (is-a?/c constraint%))
 
-(define FunctionConstraint
-  (class Constraint 
+(define function-constraint%
+  (class constraint% 
     (super-new)
     (init-field func [assigned #t])
     (field [_func func][_assigned assigned])
@@ -96,12 +96,12 @@
           (apply _func parms)))
     
     ))
-(define FunctionConstraint? (is-a?/c FunctionConstraint))
+(define function-constraint%? (is-a?/c function-constraint%))
 
-(define AllDifferentConstraint
+(define all-different-constraint%
   ;; Constraint enforcing that values of all given variables are different
   
-  (class Constraint 
+  (class constraint% 
     (super-new)
     
     (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
@@ -133,13 +133,13 @@
         (return-k))
       return-value)))
 
-(define AllDifferentConstraint? (is-a?/c AllDifferentConstraint))
+(define all-different-constraint%? (is-a?/c all-different-constraint%))
 
 
-(define AllEqualConstraint
+(define all-equal-constraint%
   ;; Constraint enforcing that values of all given variables are different
   
-  (class Constraint 
+  (class constraint% 
     (super-new)
     
     (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
@@ -171,4 +171,4 @@
         (return-k))
       return-value)))
 
-(define AllEqualConstraint? (is-a?/c AllEqualConstraint))
+(define all-equal-constraint%? (is-a?/c all-equal-constraint%))
