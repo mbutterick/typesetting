@@ -5,7 +5,7 @@
 ;; Problem: fields
 (check-equal? (get-field _solver (new problem% [solver 'solver-in])) 'solver-in)
 (check-equal? (get-field _constraints (new problem%)) null)
-(check-equal? (get-field _variables (new problem%)) (make-hash))
+(check-equal? (get-field _variable-domains (new problem%)) (make-hash))
 
 (define problem null)
 

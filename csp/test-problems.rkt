@@ -131,15 +131,15 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 ;; queens problem
 ;; place queens on chessboard so they do not intersect
 
-(define qp (new problem%))
+(define queens-problem (new problem%))
 (define cols (range 8))
 (define rows (range 8))
-(send qp add-variables cols rows)
+(send queens-problem add-variables cols rows)
 (for* ([col1 (in-list cols)] [col2 (in-list cols)] #:when (< col1 col2))
-  (send qp add-constraint (λ(row1 row2 [col1 col1][col2 col2])
+  (send queens-problem add-constraint (λ(row1 row2 [col1 col1][col2 col2])
                            (and 
                             ;; test if two cells are on a diagonal
                             (not (= (abs (- row1 row2)) (abs (- col1 col2))))
                             ;; test if two cells are in same row
                             (not (= row1 row2)))) (list col1 col2))) 
-(check-equal? (length (send qp get-solutions)) 92)
+(check-equal? (length (send queens-problem get-solutions)) 92)

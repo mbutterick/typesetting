@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class sugar/container sugar/debug racket/contract racket/match)
+(require racket/class sugar/container sugar/debug racket/contract racket/match racket/generator)
 (require "domain.rkt" "helper.rkt" "constraint.rkt" "solver.rkt")
 (provide (all-defined-out))
 
@@ -23,11 +23,12 @@
     (init-field [solver #f])
     (field [_solver (or solver (new backtracking-solver%))]
            [_constraints #f]
-           [_variables #f])
+           [_variable-domains #f])
     
-    (reset)
+    (reset) ; use method rather than manually set up fields
     
-    (define (repr) (format "<problem% ~a>" (hash-keys _variables)))
+    ;; implement object printing
+    (define (repr) (format "<problem% ~a>" (hash-keys _variable-domains)))
     (define/public (custom-print out quoting-depth) (print (repr) out))
     (define/public (custom-display out) (displayln (repr) out))
     (define/public (custom-write out) (write (repr) out))
@@ -35,27 +36,27 @@
     (define/public (reset)
       ;; Reset the current problem definition
       (set! _constraints null)
-      (set! _variables (make-hash)))
+      (set! _variable-domains (make-hash)))
     
     (define/public (set-solver solver)
-      ;; Change the problem solver currently in use
+      ;; Set the problem solver currently in use
       (set! _solver solver))
     
     (define/public (get-solver)
-      ;; Obtain the problem solver currently in use
+      ;; Get the problem solver currently in use
       _solver)
     
     (define/public (add-variable variable domain-or-values)
       ;; Add a variable to the problem
       ;; Contract insures input is Domain object or list of values.
-      (when (hash-has-key? _variables variable)
+      (when (hash-has-key? _variable-domains variable)
         (error 'add-variable (format "Tried to insert duplicated variable ~a" variable)))      
       (define domain (if (domain%? domain-or-values)
                          (send domain-or-values copy)
                          (new domain% [set domain-or-values])))
-      (when (not (object? domain)) (error 'add-variable "not a Domain object"))
-      (when (null? (get-field _list domain)) (error 'add-variable "domain value is null"))
-      (hash-set! _variables variable domain))
+      (when (null? (get-field _list domain)) 
+        (error 'add-variable "domain value is null"))
+      (hash-set! _variable-domains variable domain))
     
     (define/public (add-variables variables domain)
       ;; Add one or more variables to the problem
@@ -65,60 +66,64 @@
           [else variables]))
       (for-each (λ(var) (add-variable var domain)) listified-variables))
     
-    (define/public (add-constraint constraint [variables null])
+    (define/public (add-constraint constraint-or-proc [variables null])
       ;; Add a constraint to the problem
-      
-      (when (not (constraint%? constraint))
-        (if (procedure? constraint)
-            (set! constraint (new function-constraint% [func constraint]))
-            (error 'add-constraint "Constraints must be instances of class Constraint")))
+      ;; contract guarantees input is procedure or constraint% object
+      (define constraint (if (procedure? constraint-or-proc)
+                             (new function-constraint% [func constraint-or-proc])
+                             constraint-or-proc))
       (py-append! _constraints (list constraint variables)))
+    
+    (define-syntax-rule (solution-macro solution-proc null-proc)
+      (begin
+        (define-values (domains constraints vconstraints) (_get-args))
+        (if (null? domains)
+            (if null-proc (null-proc null) null)
+            (send _solver solution-proc domains constraints vconstraints))))
     
     (define/public (get-solution)
       ;; Find and return a solution to the problem
-      (define-values (domains constraints vconstraints) (_get-args))
-      (if (not domains)
-          null
-          (send _solver get-solution domains constraints vconstraints)))
+      (solution-macro get-solution #f))
     
     (define/public (get-solutions)
       ;; Find and return all solutions to the problem
-      (define-values (domains constraints vconstraints) (_get-args))
-      (if (not domains)
-          null
-          (send _solver get-solutions domains constraints vconstraints)))
+      (solution-macro get-solutions #f))
     
     (define/public (get-solution-iter)
       ; Return an iterator to the solutions of the problem
-      (void))
+      (solution-macro get-solution-iter yield))
     
     (define/public (_get-args)
-      (define domains (hash-copy _variables))
-      (define allvariables (hash-keys domains))
-      (define constraints null)
-      (for ([constraint-variables-pair (in-list _constraints)])
-        (match-define (list constraint variables) constraint-variables-pair)
-        (when (null? variables)
-          (set! variables allvariables))
-        (set! constraints (append constraints (list (list constraint variables)))))
-      (define vconstraints (make-hash))
-      (for ([variable (in-hash-keys domains)])
-        (hash-set! vconstraints variable null))
+      (define variable-domains (hash-copy _variable-domains))
+      (define all-variables (hash-keys variable-domains))
+      
+      ;; set up constraints
+      (define constraints
+        (for/list ([constraint-variables-pair (in-list _constraints)])
+          (match-define (list constraint variables) constraint-variables-pair)
+          (list constraint (if (null? variables) all-variables variables))))
+      
+      ;; set up vconstraints
+      (define vconstraints 
+        (hash-copy ; converts for/hash to mutable hash
+         (for/hash ([variable (in-hash-keys variable-domains)])
+           (values variable null))))
+      
       (for ([constraint-variables-pair (in-list constraints)])
         (match-define (list constraint variables) constraint-variables-pair)
         (for ([variable (in-list variables)])
           (hash-update! vconstraints variable (λ(val) (append val (list (list constraint variables)))))))
       (for ([constraint-variables-pair (in-list constraints)])
         (match-define (list constraint variables) constraint-variables-pair)
-        (send constraint preProcess variables domains constraints vconstraints))
+        (send constraint preProcess variables variable-domains constraints vconstraints))
       (define result #f)
       (let/ec done
-        (for ([domain (in-list (hash-values domains))])
+        (for ([domain (in-list (hash-values variable-domains))])
           (send domain resetState)
           (when (not domain)
             (set! result (list null null null))
             (done)))
-        (set! result (list domains constraints vconstraints)))
+        (set! result (list variable-domains constraints vconstraints)))
       (apply values result))
     
     
