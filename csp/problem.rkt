@@ -9,7 +9,6 @@
   (class/c [reset (->m void?)]
            [set-solver (solver%? . ->m . void?)] 
            [get-solver (->m solver%?)]
-           ;; todo: tighten `object?` contract
            [add-variable (any/c (or/c list? domain%?) . ->m . void?)]
            [add-variables ((listof any/c) (or/c list? domain%?) . ->m . void?)]
            [add-constraint (((or/c constraint%? procedure?)) ((listof any/c)) . ->*m . void?)]
@@ -32,22 +31,22 @@
     (define/public (custom-display out) (displayln (repr) out))
     (define/public (custom-write out) (write (repr) out))
     
+    ;; Reset the current problem definition
     (define/public (reset)
-      ;; Reset the current problem definition
       (set! _constraints null)
       (set! _variable-domains (make-hash)))
     
+    ;; Set the problem solver currently in use
     (define/public (set-solver solver)
-      ;; Set the problem solver currently in use
       (set! _solver solver))
     
+    ;; Get the problem solver currently in use
     (define/public (get-solver)
-      ;; Get the problem solver currently in use
       _solver)
     
+    ;; Add a variable to the problem
+    ;; Contract insures input is Domain object or list of values.
     (define/public (add-variable variable domain-or-values)
-      ;; Add a variable to the problem
-      ;; Contract insures input is Domain object or list of values.
       (when (hash-has-key? _variable-domains variable)
         (error 'add-variable (format "Tried to insert duplicated variable ~a" variable)))      
       (define domain (if (domain%? domain-or-values)
@@ -57,8 +56,8 @@
         (error 'add-variable "domain value is null"))
       (hash-set! _variable-domains variable domain))
     
+    ;; Add one or more variables to the problem
     (define/public (add-variables variables domain)
-      ;; Add one or more variables to the problem
       (define in-thing (cond 
                          [(string? variables) in-string]
                          [(list? variables) in-list]
@@ -66,9 +65,9 @@
       (for ([var (in-thing variables)])
         (add-variable var domain)))
     
+    ;; Add a constraint to the problem
+    ;; contract guarantees input is procedure or constraint% object
     (define/public (add-constraint constraint-or-proc [variables null])
-      ;; Add a constraint to the problem
-      ;; contract guarantees input is procedure or constraint% object
       (define constraint (if (procedure? constraint-or-proc)
                              (new function-constraint% [func constraint-or-proc])
                              constraint-or-proc))
@@ -81,19 +80,19 @@
             (if null-proc (null-proc null) null)
             (send _solver solution-proc domains constraints vconstraints))))
     
+    ;; Find and return a solution to the problem
     (define/public (get-solution)
-      ;; Find and return a solution to the problem
       (solution-macro get-solution #f))
     
+    ;; Find and return all solutions to the problem
     (define/public (get-solutions)
-      ;; Find and return all solutions to the problem
       (solution-macro get-solutions #f))
     
+    ;; Return an iterator to the solutions of the problem
     (define/public (get-solution-iter)
-      ; Return an iterator to the solutions of the problem
       (solution-macro get-solution-iter yield))
     
-    (define (get-args)
+    (define/private (get-args)
       (define variable-domains (hash-copy _variable-domains))
       
       (define constraints
