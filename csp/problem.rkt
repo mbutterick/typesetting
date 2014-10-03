@@ -52,7 +52,7 @@
       (define domain (if (domain%? domain-or-values)
                          (send domain-or-values copy)
                          (new domain% [set domain-or-values])))
-      (when (null? (get-field _list domain)) 
+      (when (send domain values-empty?) 
         (error 'add-variable "domain value is null"))
       (hash-set! _variable-domains variable domain))
     
@@ -114,6 +114,6 @@
       
       (if (for/or ([domain (in-hash-values variable-domains)])
             (send domain reset-state)
-            (null? (get-field _list domain)))
+            (send domain values-empty?))
           (values null null null)
           (values variable-domains constraints vconstraints)))))

@@ -48,6 +48,11 @@
       (set! _list (remove value _list))
       (py-append! _hidden value))
     
+    (define/public (get-values)
+      _list)
+    
+    (define/public (values-empty?)
+      (null? _list))
     
     (define/public (domain-pop!)
       (py-pop! _list))

@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class sugar/container "helper.rkt" "variable.rkt")
+(require racket/class sugar/container sugar/debug racket/list "helper.rkt" "variable.rkt")
 (provide (all-defined-out))
 
 (define constraint%
@@ -29,41 +29,32 @@
         (define variable (car variables))
         (define domain (hash-ref domains variable))
         (set-field! _list domain
-                    (for/fold ([domain-values (get-field _list domain)]) 
-                      ([value (in-list (get-field _list domain))] 
+                    (for/fold ([domain-values (send domain get-values)]) 
+                      ([value (in-list (send domain get-values))] 
                        #:when (not (call variables domains (make-hash (list (cons variable value))))))
                       (remove value domain-values)))        
         (set! constraints (remove (list this variables) constraints))
         (hash-update! vconstraints variable (λ(val) (remove (list this variables) val)))))
     
+    ;;  Helper method for generic forward checking
+    ;;  Currently, this method acts only when there's a single
+    ;;  unassigned variable.
     (define/public (forward-check variables domains assignments [_unassigned Unassigned])
-      ;;  Helper method for generic forward checking
-      ;;  Currently, this method acts only when there's a single
-      ;;  unassigned variable.
-      (define return-result (void))      
-      (let/ec break
-        (set! return-result #t)
-        (define unassignedvariable _unassigned)
-        (for ([variable (in-list variables)] 
-              #:when (not (hash-has-key? assignments variable)))
-          (if (equal? unassignedvariable _unassigned)
-              (set! unassignedvariable variable)
-              (break)))
-        (when (not (equal? unassignedvariable _unassigned))
-          
-          ;; Remove from the unassigned variable's domain all
-          ;; values which break our variable's constraints.
-          (define domain (hash-ref domains unassignedvariable))
-          (when (not (null? (get-field _list domain)))
-            (for ([value (in-list (get-field _list domain))])
-              (hash-set! assignments unassignedvariable value)
-              (when (not (send this call variables domains assignments))
-                (send domain hide-value value)))
-            (hash-remove! assignments unassignedvariable))
-          (when (null? (get-field _list domain))
-            (set! return-result #f)
-            (break))))
-      return-result)
+      (define unassigned-variables 
+        (filter-not (λ(v) (hash-has-key? assignments v)) variables))
+      (cond
+        ;; Remove from the unassigned variable's domain 
+        ;; all values that break our variable's constraints.
+        [(= (length unassigned-variables) 1)
+         (define unassigned-variable (car unassigned-variables))
+         (define domain (hash-ref domains unassigned-variable))
+         (for ([value (in-list (send domain get-values))])
+           (hash-set! assignments unassigned-variable value)
+           (when (not (call variables domains assignments))
+             (send domain hide-value value)))
+         (hash-remove! assignments unassigned-variable)
+         (not (send domain values-empty?))]
+        [else #t]))
     ))
 
 (define constraint%? (is-a?/c constraint%))
@@ -160,10 +151,10 @@
           (for ([variable (in-list variables)])
             (when (not (variable . in? . assignments))
               (set! domain (hash-ref domains variable))
-              (when (not (singlevalue . in? . (get-field _list domain)))
+              (when (not (singlevalue . in? . (send domain get-values)))
                 (set! return-value #f)
                 (return-k))
-              (for ([value (in-list (get-field _list domain))])
+              (for ([value (in-list (send domain get-values))])
                 (when (not (equal? value singlevalue))
                   (send domain hide-value value))))))
         (set! return-value #t)
