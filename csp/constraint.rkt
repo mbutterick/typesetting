@@ -2,12 +2,11 @@
 (require racket/class sugar/container "helper.rkt" "variable.rkt")
 (provide (all-defined-out))
 
-
 (define constraint%
   (class object% 
     (super-new)
     
-    (define/public (call variables domains assignments [forwardcheck #f])
+    (define/public (call variables domains assignments [forward-check? #f])
       ;; Perform the constraint checking
       
       ;;  If the forwardcheck parameter is not false, besides telling if
@@ -18,7 +17,8 @@
       #t)
     
     (define/public (preprocess variables domains constraints vconstraints)
-      ;; Preprocess variable domains
+      ;;  todo: functionalize this
+      ;;  Preprocess variable domains
       ;;  This method is called before starting to look for solutions,
       ;;  and is used to prune domains with specific constraint logic
       ;;  when possible. For instance, any constraints with a single
@@ -26,18 +26,18 @@
       ;;  since they may act on individual values even without further
       ;;  knowledge about other assignments.
       (when (= (length variables) 1)
-        (define variable (list-ref variables 0))
+        (define variable (car variables))
         (define domain (hash-ref domains variable))
-        (for ([value (in-list (get-field _list domain))])
-          
-          (when (not (call variables domains (make-hash (list (cons variable value)))))
-            (set-field! _list domain (remove value (get-field _list domain)))))
-        
+        (set-field! _list domain
+                    (for/fold ([domain-values (get-field _list domain)]) 
+                      ([value (in-list (get-field _list domain))] 
+                       #:when (not (call variables domains (make-hash (list (cons variable value))))))
+                      (remove value domain-values)))        
         (set! constraints (remove (list this variables) constraints))
         (hash-update! vconstraints variable (λ(val) (remove (list this variables) val)))))
     
-    (define/public (forwardCheck variables domains assignments [_unassigned Unassigned])
-      ;; Helper method for generic forward checking
+    (define/public (forward-check variables domains assignments [_unassigned Unassigned])
+      ;;  Helper method for generic forward checking
       ;;  Currently, this method acts only when there's a single
       ;;  unassigned variable.
       (define return-result #t)
@@ -75,8 +75,8 @@
     (init-field func [assigned #t])
     (field [_func func][_assigned assigned])
     
-    (inherit forwardCheck)
-    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
+    (inherit forward-check)
+    (define/override (call variables domains assignments [forward-check? #f] [_unassigned Unassigned])
       ;(report assignments assignments-before)
       (define parms (for/list ([x (in-list variables)])
                       (if (hash-has-key? assignments x) (hash-ref assignments x)  _unassigned)))
@@ -91,8 +91,8 @@
             ;(report forwardcheck)
             ;(report assignments assignments-to-fc)
             (and (or _assigned (apply _func parms))
-                 (or (not forwardcheck) (not (= missing 1))
-                     (forwardCheck variables domains assignments))))
+                 (or (not forward-check?) (not (= missing 1))
+                     (forward-check variables domains assignments))))
           (apply _func parms)))
     
     ))
@@ -104,7 +104,7 @@
   (class constraint% 
     (super-new)
     
-    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
+    (define/override (call variables domains assignments [forward-check? #f] [_unassigned Unassigned])
       (define seen (make-hash))
       (define value #f)
       (define domain #f)
@@ -119,7 +119,7 @@
               (set! return-value #f)
               (return-k))
             (hash-set! seen value #t)))
-        (when forwardcheck
+        (when forward-check?
           (for ([variable (in-list variables)])
             (when (not (variable . in? . assignments))
               (set! domain (hash-ref domains variable))
@@ -142,7 +142,7 @@
   (class constraint% 
     (super-new)
     
-    (define/override (call variables domains assignments [forwardcheck #f] [_unassigned Unassigned])
+    (define/override (call variables domains assignments [forward-check? #f] [_unassigned Unassigned])
       (define singlevalue _unassigned)
       (define value #f)
       (define domain #f)
@@ -157,7 +157,7 @@
             [(and (not (equal? value _unassigned)) (not (equal? value singlevalue)))
              (set! return-value #f)
              (return-k)]))
-        (when (and forwardcheck (not (equal? singlevalue _unassigned)))
+        (when (and forward-check? (not (equal? singlevalue _unassigned)))
           (for ([variable (in-list variables)])
             (when (not (variable . in? . assignments))
               (set! domain (hash-ref domains variable))
