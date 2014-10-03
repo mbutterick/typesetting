@@ -54,6 +54,9 @@
     (define/public (values-empty?)
       (null? _list))
     
+    (define/public (contains-value? value)
+      (member value _list))
+    
     (define/public (domain-pop!)
       (py-pop! _list))
     
