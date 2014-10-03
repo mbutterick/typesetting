@@ -14,8 +14,7 @@
            [add-variables ((listof any/c) (or/c list? domain%?) . ->m . void?)]
            [add-constraint (((or/c constraint%? procedure?)) ((listof any/c)) . ->*m . void?)]
            [get-solution (->m any/c)]
-           [get-solutions (->m list?)]
-           [_get-args (->m (values (listof domain%?) (listof constraint%?) (listof hash?)))])
+           [get-solutions (->m list?)])
   
   (class* object% (printable<%>)
     (super-new)
@@ -60,11 +59,12 @@
     
     (define/public (add-variables variables domain)
       ;; Add one or more variables to the problem
-      (define listified-variables
-        (cond 
-          [(string? variables) (map (λ(c) (format "~a" c)) (string->list variables))]
-          [else variables]))
-      (for-each (λ(var) (add-variable var domain)) listified-variables))
+      (define in-thing (cond 
+                         [(string? variables) in-string]
+                         [(list? variables) in-list]
+                         [else (error 'add-variables (format "Don’t know what to do with ~a" variables))]))
+      (for ([var (in-thing variables)])
+        (add-variable var domain)))
     
     (define/public (add-constraint constraint-or-proc [variables null])
       ;; Add a constraint to the problem
@@ -76,7 +76,7 @@
     
     (define-syntax-rule (solution-macro solution-proc null-proc)
       (begin
-        (define-values (domains constraints vconstraints) (_get-args))
+        (define-values (domains constraints vconstraints) (get-args))
         (if (null? domains)
             (if null-proc (null-proc null) null)
             (send _solver solution-proc domains constraints vconstraints))))
@@ -93,38 +93,28 @@
       ; Return an iterator to the solutions of the problem
       (solution-macro get-solution-iter yield))
     
-    (define/public (_get-args)
+    (define (get-args)
       (define variable-domains (hash-copy _variable-domains))
-      (define all-variables (hash-keys variable-domains))
       
-      ;; set up constraints
       (define constraints
-        (for/list ([(constraint variables) (in-parallel (map first _constraints) (map second _constraints))])
-          (list constraint (if (null? variables) all-variables variables))))
+        (let ([all-variables (hash-keys variable-domains)])
+          (for/list ([(constraint variables) (in-parallel (map first _constraints) (map second _constraints))])
+            (list constraint (if (null? variables) all-variables variables)))))
       
-      ;; set up vconstraints
       (define vconstraints 
         (hash-copy ; converts for/hash to mutable hash
          (for/hash ([variable (in-hash-keys variable-domains)])
            (values variable null))))
       
-      (for ([(constraint variables) (in-parallel (map first constraints) (map second constraints))])
-        (for ([variable (in-list variables)])
-          (hash-update! vconstraints variable (λ(val) (cons (list constraint variables) val)))))
-      ;;(hash-update! vconstraints variable (λ(val) (append val (list (list constraint variables)))))))
+      (for* ([(constraint variables) (in-parallel (map first constraints) (map second constraints))]
+             [variable (in-list variables)])
+        (hash-update! vconstraints variable (λ(val) (cons (list constraint variables) val))))
       
       (for ([(constraint variables) (in-parallel (map first constraints) (map second constraints))])
         (send constraint preprocess variables variable-domains constraints vconstraints))
       
-      (define result (void))
-      (let/ec break
-        (for/last ([domain (in-hash-values variable-domains)])
-          (send domain reset-state)
-          (when (null? (get-field _list domain))
-            (set! result (list null null null))
-            (break)))
-        (set! result (list variable-domains constraints vconstraints)))
-      (apply values result))
-    
-    
-    ))
+      (if (for/or ([domain (in-hash-values variable-domains)])
+            (send domain reset-state)
+            (null? (get-field _list domain)))
+          (values null null null)
+          (values variable-domains constraints vconstraints)))))
