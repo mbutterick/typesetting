@@ -17,7 +17,7 @@
       ;;  prune the search space.
       #t)
     
-    (define/public (preProcess variables domains constraints vconstraints)
+    (define/public (preprocess variables domains constraints vconstraints)
       ;; Preprocess variable domains
       ;;  This method is called before starting to look for solutions,
       ;;  and is used to prune domains with specific constraint logic

@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class sugar/container sugar/debug racket/contract racket/match racket/generator)
+(require racket/class sugar/container sugar/debug racket/contract racket/match racket/generator racket/list)
 (require "domain.rkt" "helper.rkt" "constraint.rkt" "solver.rkt")
 (provide (all-defined-out))
 
@@ -99,8 +99,7 @@
       
       ;; set up constraints
       (define constraints
-        (for/list ([constraint-variables-pair (in-list _constraints)])
-          (match-define (list constraint variables) constraint-variables-pair)
+        (for/list ([(constraint variables) (in-parallel (map first _constraints) (map second _constraints))])
           (list constraint (if (null? variables) all-variables variables))))
       
       ;; set up vconstraints
@@ -109,13 +108,13 @@
          (for/hash ([variable (in-hash-keys variable-domains)])
            (values variable null))))
       
-      (for ([constraint-variables-pair (in-list constraints)])
-        (match-define (list constraint variables) constraint-variables-pair)
+      (for ([(constraint variables) (in-parallel (map first constraints) (map second constraints))])
         (for ([variable (in-list variables)])
           (hash-update! vconstraints variable (λ(val) (append val (list (list constraint variables)))))))
-      (for ([constraint-variables-pair (in-list constraints)])
-        (match-define (list constraint variables) constraint-variables-pair)
-        (send constraint preProcess variables variable-domains constraints vconstraints))
+
+      (for ([(constraint variables) (in-parallel (map first constraints) (map second constraints))])
+        (send constraint preprocess variables variable-domains constraints vconstraints))
+
       (define result #f)
       (let/ec done
         (for ([domain (in-list (hash-values variable-domains))])
