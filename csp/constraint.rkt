@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class sugar/container sugar/debug racket/list "helper.rkt" "variable.rkt")
+(require racket/class sugar/container sugar/list sugar/debug racket/list "helper.rkt" "variable.rkt")
 (provide (all-defined-out))
 
 (define constraint%
@@ -86,31 +86,19 @@
     (super-new)
     
     (define/override (call variables domains assignments [forward-check? #f] [_unassigned Unassigned])
-      (define seen (make-hash))
-      (define return-value (void))
-      
-      (let/ec return-k
-        (define values (map (λ(v) (hash-ref assignments v _unassigned)) variables))
-        (for ([value (in-list values)]
-              #:when (not (equal? value _unassigned)))
-          (when (hash-has-key? (report seen) value)
-            (set! return-value #f)
-            (return-k))
-          (hash-set! seen value #t))
-        
-        (when forward-check?
-          (for ([variable (in-list variables)])
-            (when (not (hash-has-key? assignments variable))
-              (let ([domain (hash-ref domains variable)])
-                (for ([value (in-hash-keys seen)]
-                      #:when (member value (send domain get-values)))
-                  (send domain hide-value value)
-                  (when (send domain values-empty?)
-                    (set! return-value #f)
-                    (return-k)))))))
-        (set! return-value #t)
-        (return-k))
-      return-value)))
+      (define-values (assigned-vars unassigned-vars) 
+        (partition (λ(var) (hash-has-key? assignments var)) variables))      
+      (define assigned-values (map (λ(var) (hash-ref assignments var)) assigned-vars))
+      (cond
+        [(not (members-unique? assigned-values)) #f] ; constraint failed because they're not all different
+        [(and forward-check?
+              (for*/or ([unassigned-var-domain (in-list (map (λ(uv) (hash-ref domains uv)) unassigned-vars))]
+                        [assigned-value (in-list assigned-values)]
+                        #:when (send unassigned-var-domain contains-value? assigned-value))
+                (send unassigned-var-domain hide-value assigned-value)
+                (send unassigned-var-domain values-empty?))) #f] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
+        [else #t]))))
+
 
 (define all-different-constraint%? (is-a?/c all-different-constraint%))
 
