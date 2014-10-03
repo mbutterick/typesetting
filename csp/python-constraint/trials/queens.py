@@ -7,7 +7,7 @@ import sys
 
 def main(show=False):
     problem = Problem()
-    size = 12
+    size = 8
     cols = range(size)
     rows = range(size)
     problem.addVariables(cols, rows)
