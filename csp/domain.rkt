@@ -17,19 +17,19 @@
     (define/public (custom-display out) (displayln (repr) out))
     (define/public (custom-write out) (write (repr) out))
     
-    (define/public (resetState)
+    (define/public (reset-state)
       ;; Reset to the original domain state, including all possible values
       (py-extend! _list _hidden)
       (set! _hidden null)
       (set! _states null))
     
-    (define/public (pushState)
+    (define/public (push-state)
       ;; Save current domain state
       ;; Variables hidden after that call are restored when that state
       ;;  is popped from the stack.
       (py-append! _states (length _list)))
     
-    (define/public (popState)
+    (define/public (pop-state)
       ;; Restore domain state from the top of the stack
       
       ;; Variables hidden since the last popped state are then available
@@ -39,7 +39,7 @@
         (py-extend! _list (take-right _hidden diff))
         (set! _hidden (take _hidden (- (length _hidden) diff)))))
     
-    (define/public (hideValue value)
+    (define/public (hide-value value)
       ;; Hide the given value from the domain
       
       ;; After that call the given value won't be seen as a possible value

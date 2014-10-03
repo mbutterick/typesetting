@@ -110,18 +110,19 @@
       
       (for ([(constraint variables) (in-parallel (map first constraints) (map second constraints))])
         (for ([variable (in-list variables)])
-          (hash-update! vconstraints variable (λ(val) (append val (list (list constraint variables)))))))
-
+          (hash-update! vconstraints variable (λ(val) (cons (list constraint variables) val)))))
+      ;;(hash-update! vconstraints variable (λ(val) (append val (list (list constraint variables)))))))
+      
       (for ([(constraint variables) (in-parallel (map first constraints) (map second constraints))])
         (send constraint preprocess variables variable-domains constraints vconstraints))
-
-      (define result #f)
-      (let/ec done
-        (for ([domain (in-list (hash-values variable-domains))])
-          (send domain resetState)
-          (when (not domain)
+      
+      (define result (void))
+      (let/ec break
+        (for/last ([domain (in-hash-values variable-domains)])
+          (send domain reset-state)
+          (when (null? (get-field _list domain))
             (set! result (list null null null))
-            (done)))
+            (break)))
         (set! result (list variable-domains constraints vconstraints)))
       (apply values result))
     

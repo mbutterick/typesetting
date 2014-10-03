@@ -71,7 +71,7 @@
             (set-field! _list values (second variable-values-pushdomains))
             (set! pushdomains (third variable-values-pushdomains))
             (for ([domain (in-list pushdomains)])
-              (send domain popState)))          
+              (send domain pop-state)))          
           
           ;(report variable variable-preloop-2)
           ;(report assignments assignments-preloop-2)
@@ -96,7 +96,7 @@
                           (set! pushdomains (third variable-values-pushdomains))
                           (when (not (null? pushdomains))
                             (for ([domain (in-list pushdomains)])
-                              (send domain popState)))
+                              (send domain pop-state)))
                           (when (not (null? (get-field _list values))) (break-loop3))
                           (hash-remove! assignments variable)
                           (loop3))
@@ -108,7 +108,7 @@
               (hash-set! assignments variable (send values domain-pop!))  
               
               (for ([domain (in-list pushdomains)])
-                (send domain pushState))
+                (send domain push-state))
               ;(report pushdomains pushdomains1)
               ;(report domains domains1)
               
@@ -126,7 +126,7 @@
                   (break-loop2)))
               
               (for ([domain (in-list pushdomains)])
-                (send domain popState))
+                (send domain pop-state))
               
               (loop2)))
           
