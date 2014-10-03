@@ -50,10 +50,10 @@
               (set! unassignedvariable variable)
               (break)))
         (when (not (equal? unassignedvariable _unassigned))
-          ;; Remove from the unassigned variable domain's all
+          
+          ;; Remove from the unassigned variable's domain all
           ;; values which break our variable's constraints.
           (define domain (hash-ref domains unassignedvariable))
-          ;(report domain domain-fc)
           (when (not (null? (get-field _list domain)))
             (for ([value (in-list (get-field _list domain))])
               (hash-set! assignments unassignedvariable value)
