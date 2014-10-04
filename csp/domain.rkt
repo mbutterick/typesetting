@@ -2,12 +2,18 @@
 (require racket/class racket/list "helper.rkt")
 (provide (all-defined-out))
 
-(define domain%
-  ;; Class used to control possible values for variables
-  ;; When list or tuples are used as domains, they are automatically
-  ;; converted to an instance of that class.
-  
-  (class* object% (printable<%>)
+(define proc<%>
+  (interface* ()
+              ([prop:procedure
+                (λ(this)
+                  (send this get-values))])
+              get-values))
+
+;; Class used to control possible values for variables
+;; When list or tuples are used as domains, they are automatically
+;; converted to an instance of that class.
+(define domain%  
+  (class* object% (printable<%> proc<%>)
     (super-new)
     (init-field set)
     (field [_list set][_hidden null][_states null])
@@ -51,12 +57,6 @@
     (define/public (get-values)
       _list)
     
-    (define/public (values-empty?)
-      (null? _list))
-    
-    (define/public (contains-value? value)
-      (member value _list))
-    
     (define/public (domain-pop!)
       (py-pop! _list))
     
@@ -64,9 +64,7 @@
       (define copied-domain (new domain% [set _list]))
       (set-field! _hidden copied-domain _hidden)
       (set-field! _states copied-domain _states)
-      copied-domain)
-    
-    
-    ))
+      copied-domain)))
+
 (define domain%? (is-a?/c domain%))
 

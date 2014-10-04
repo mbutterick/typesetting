@@ -3,9 +3,8 @@
 (require "domain.rkt" "helper.rkt" "constraint.rkt" "solver.rkt")
 (provide (all-defined-out))
 
-(define/contract problem%
-  ;; Class used to define a problem and retrieve solutions
-  
+;; Class used to define a problem and retrieve solutions
+(define/contract problem%  
   (class/c [reset (->m void?)]
            [set-solver (solver%? . ->m . void?)] 
            [get-solver (->m solver%?)]
@@ -52,7 +51,7 @@
       (define domain (if (domain%? domain-or-values)
                          (send domain-or-values copy)
                          (new domain% [set domain-or-values])))
-      (when (send domain values-empty?) 
+      (when (null? (domain)) 
         (error 'add-variable "domain value is null"))
       (hash-set! _variable-domains variable domain))
     
@@ -114,6 +113,6 @@
       
       (if (for/or ([domain (in-hash-values variable-domains)])
             (send domain reset-state)
-            (send domain values-empty?))
+            (null? (domain)))
           (values null null null)
           (values variable-domains constraints vconstraints)))))

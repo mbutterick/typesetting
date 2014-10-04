@@ -29,8 +29,8 @@
         (define variable (car variables))
         (define domain (hash-ref domains variable))
         (set-field! _list domain
-                    (for/fold ([domain-values (send domain get-values)]) 
-                      ([value (in-list (send domain get-values))] 
+                    (for/fold ([domain-values (domain)]) 
+                      ([value (in-list (domain))] 
                        #:when (not (call variables domains (make-hash (list (cons variable value))))))
                       (remove value domain-values)))        
         (set! constraints (remove (list this variables) constraints))
@@ -48,12 +48,12 @@
         [(= (length unassigned-variables) 1)
          (define unassigned-variable (car unassigned-variables))
          (define unassigned-variable-domain (hash-ref domains unassigned-variable))
-         (for ([value (in-list (send unassigned-variable-domain get-values))])
+         (for ([value (in-list (unassigned-variable-domain))])
            (hash-set! assignments unassigned-variable value)
            (when (not (call variables domains assignments))
              (send unassigned-variable-domain hide-value value)))
          (hash-remove! assignments unassigned-variable)
-         (not (send unassigned-variable-domain values-empty?))] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
+         (not (null? unassigned-variable-domain))] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
         [else #t]))
     ))
 
@@ -94,9 +94,9 @@
         [(and forward-check?
               (for*/or ([unassigned-var-domain (in-list (map (λ(uv) (hash-ref domains uv)) unassigned-vars))]
                         [assigned-value (in-list assigned-values)]
-                        #:when (send unassigned-var-domain contains-value? assigned-value))
+                        #:when (member assigned-value (unassigned-var-domain)))
                 (send unassigned-var-domain hide-value assigned-value)
-                (send unassigned-var-domain values-empty?))) #f] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
+                (null? unassigned-var-domain))) #f] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
         [else #t]))))
 
 (define all-different-constraint%? (is-a?/c all-different-constraint%))
@@ -125,10 +125,10 @@
           (for ([variable (in-list variables)])
             (when (not (variable . in? . assignments))
               (set! domain (hash-ref domains variable))
-              (when (not (singlevalue . in? . (send domain get-values)))
+              (when (not (singlevalue . in? . (domain)))
                 (set! return-value #f)
                 (return-k))
-              (for ([value (in-list (send domain get-values))])
+              (for ([value (in-list (domain))])
                 (when (not (equal? value singlevalue))
                   (send domain hide-value value))))))
         (set! return-value #t)
