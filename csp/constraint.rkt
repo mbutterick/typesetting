@@ -47,13 +47,13 @@
         ;; all values that break our variable's constraints.
         [(= (length unassigned-variables) 1)
          (define unassigned-variable (car unassigned-variables))
-         (define domain (hash-ref domains unassigned-variable))
-         (for ([value (in-list (send domain get-values))])
+         (define unassigned-variable-domain (hash-ref domains unassigned-variable))
+         (for ([value (in-list (send unassigned-variable-domain get-values))])
            (hash-set! assignments unassigned-variable value)
            (when (not (call variables domains assignments))
-             (send domain hide-value value)))
+             (send unassigned-variable-domain hide-value value)))
          (hash-remove! assignments unassigned-variable)
-         (not (send domain values-empty?))]
+         (not (send unassigned-variable-domain values-empty?))] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
         [else #t]))
     ))
 
@@ -62,8 +62,10 @@
 (define function-constraint%
   (class constraint% 
     (super-new)
+    
     (init-field func [assigned #t])
-    (field [_func func][_assigned assigned])
+    
+    (field [_func func][_assigned assigned])    
     
     (inherit forward-check)
     
@@ -74,14 +76,12 @@
           (and (or _assigned (apply _func parms))
                (or (not forward-check?) (not (= missing 1))
                    (forward-check variables domains assignments)))
-          (apply _func parms)))
-    
-    ))
+          (apply _func parms)))))
+
 (define function-constraint%? (is-a?/c function-constraint%))
 
+;; Constraint enforcing that values of all given variables are different
 (define all-different-constraint%
-  ;; Constraint enforcing that values of all given variables are different
-  
   (class constraint% 
     (super-new)
     
@@ -99,13 +99,10 @@
                 (send unassigned-var-domain values-empty?))) #f] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
         [else #t]))))
 
-
 (define all-different-constraint%? (is-a?/c all-different-constraint%))
 
-
+;; Constraint enforcing that values of all given variables are different
 (define all-equal-constraint%
-  ;; Constraint enforcing that values of all given variables are different
-  
   (class constraint% 
     (super-new)
     
