@@ -1,7 +1,14 @@
 #lang racket/base
-(require racket/list)
+(require racket/class racket/list (for-syntax racket/base racket/syntax))
 (provide (all-defined-out))
 (require rackunit)
+
+(define-syntax-rule (make-proc<%> proc-name)
+  (interface* ()
+              ([prop:procedure
+                (λ(this . args)
+                  (send/apply this proc-name args))])
+              proc-name))
 
 (define-simple-check (check-hash-items h1 h2)
   (for/and ([(k1 v1) (in-hash h1)])

@@ -2,18 +2,11 @@
 (require racket/class racket/list "helper.rkt")
 (provide (all-defined-out))
 
-(define proc<%>
-  (interface* ()
-              ([prop:procedure
-                (λ(this)
-                  (send this get-values))])
-              get-values))
-
 ;; Class used to control possible values for variables
 ;; When list or tuples are used as domains, they are automatically
 ;; converted to an instance of that class.
 (define domain%  
-  (class* object% (printable<%> proc<%>)
+  (class* object% (printable<%> (make-proc<%> get-values))
     (super-new)
     (init-field set)
     (field [_list set][_hidden null][_states null])
