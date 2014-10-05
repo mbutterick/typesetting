@@ -12,6 +12,12 @@
 
 (define solver%? (is-a?/c solver%))
 
+(struct vvp (variable values pushdomains))
+(define-syntax-rule (pop-vvp! vvps)
+  (let ([vvp (car vvps)])
+    (set! vvps (cdr vvps))
+    vvp))
+
 (define backtracking-solver%
   ;; Problem solver with backtracking capabilities
   (class solver%
@@ -38,9 +44,9 @@
           
           ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
           (set! work-list (sort (for/list ([variable (in-hash-keys domains)])
-                            (list (* -1 (length (hash-ref vconstraints variable)))
-                                  (length ((hash-ref domains variable)))
-                                  variable)) list-comparator))
+                                  (list (* -1 (length (hash-ref vconstraints variable)))
+                                        (length ((hash-ref domains variable)))
+                                        variable)) list-comparator))
           ;(report lst)
           (let/ec break-for-loop
             (for ([last-item (in-list (map last work-list))]
@@ -65,10 +71,10 @@
             (when (null? queue) (begin
                                   (set! want-to-return #t) 
                                   (return-k)))
-            (define variable-values-pushdomains (py-pop! queue))
-            (set! variable (first variable-values-pushdomains))
-            (set! values (second variable-values-pushdomains))
-            (set! pushdomains (third variable-values-pushdomains))
+            (define vvp (pop-vvp! queue))
+            (set! variable (vvp-variable vvp))
+            (set! values (vvp-values vvp))
+            (set! pushdomains (vvp-pushdomains vvp))
             (for-each-send pop-state pushdomains))          
           
           ;(report variable variable-preloop-2)
@@ -88,10 +94,10 @@
                   (let loop3 ()
                     (if (not (null? queue))
                         (let ()
-                          (define variable-values-pushdomains (py-pop! queue))
-                          (set! variable (first variable-values-pushdomains))
-                          (set! values (second variable-values-pushdomains))
-                          (set! pushdomains (third variable-values-pushdomains))
+                          (define vvp (pop-vvp! queue))
+                          (set! variable (vvp-variable vvp))
+                          (set! values (vvp-values vvp))
+                          (set! pushdomains (vvp-pushdomains vvp))
                           (for-each-send pop-state pushdomains)
                           (when (not (null? values)) (break-loop3))
                           (hash-remove! assignments variable)
@@ -125,7 +131,7 @@
               (loop2)))
           
           ;; Push state before looking for next variable.
-          (py-append! queue (list variable values pushdomains))
+          (set! queue (cons (vvp variable values pushdomains) queue))
           ;(report queue new-queue)
           (loop1)))
       
