@@ -69,7 +69,7 @@
             (set! variable (first variable-values-pushdomains))
             (set! values (second variable-values-pushdomains))
             (set! pushdomains (third variable-values-pushdomains))
-            (for-each (λ(pd) (send pd pop-state)) pushdomains))          
+            (for-each-send pop-state pushdomains))          
           
           ;(report variable variable-preloop-2)
           ;(report assignments assignments-preloop-2)
@@ -92,7 +92,7 @@
                           (set! variable (first variable-values-pushdomains))
                           (set! values (second variable-values-pushdomains))
                           (set! pushdomains (third variable-values-pushdomains))
-                          (for-each (λ(pd) (send pd pop-state)) pushdomains)
+                          (for-each-send pop-state pushdomains)
                           (when (not (null? values)) (break-loop3))
                           (hash-remove! assignments variable)
                           (loop3))
@@ -103,8 +103,7 @@
               ;; Got a value. Check it.
               (hash-set! assignments variable (py-pop! values))  
               
-              (for ([domain (in-list pushdomains)])
-                (send domain push-state))
+              (for-each-send push-state pushdomains)
               ;(report pushdomains pushdomains1)
               ;(report domains domains1)
               
@@ -121,8 +120,7 @@
                 (begin ;(displayln "now breaking loop 2") 
                   (break-loop2)))
               
-              (for ([domain (in-list pushdomains)])
-                (send domain pop-state))
+              (for-each-send pop-state pushdomains)
               
               (loop2)))
           

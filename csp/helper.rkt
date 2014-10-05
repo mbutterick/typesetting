@@ -3,6 +3,9 @@
 (provide (all-defined-out))
 (require rackunit)
 
+(define-syntax-rule (for-each-send proc objects)
+  (for-each (λ(o) (send o proc)) objects))
+
 (define-syntax-rule (make-proc<%> proc-name)
   (interface* ()
               ([prop:procedure
