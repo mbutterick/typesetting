@@ -27,7 +27,7 @@
       (define values null)
       (define pushdomains null)
       (define variable #f)
-      (define lst null)
+      (define work-list null)
       (define want-to-return #f)
       (define return-k #f)
       (let/ec break-loop1
@@ -37,30 +37,29 @@
           
           
           ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
-          (set! lst (sort (for/list ([variable (in-hash-keys domains)])
+          (set! work-list (sort (for/list ([variable (in-hash-keys domains)])
                             (list (* -1 (length (hash-ref vconstraints variable)))
                                   (length ((hash-ref domains variable)))
                                   variable)) list-comparator))
           ;(report lst)
           (let/ec break-for-loop
-            (for ([item (in-list lst)])
-              (when (not ((last item) . in? . assignments))
-                
-                ; Found unassigned variable
-                (set! variable (last item))
-                ;(report variable unassigned-variable)
-                (set! values ((hash-ref domains variable)))
-                (set! pushdomains 
-                      (if forwardcheck
-                          (for/list ([x (in-hash-keys domains)] 
-                                     #:when (and (not (x . in? . assignments)) 
-                                                 (not (x . equal? . variable))))
-                            (hash-ref domains x))
-                          null))   
-                (break-for-loop)))
+            (for ([last-item (in-list (map last work-list))]
+                  #:when (not (hash-has-key? assignments last-item)))
+              ; Found unassigned variable
+              (set! variable last-item)
+              ;(report variable unassigned-variable)
+              (set! values ((hash-ref domains variable)))
+              (set! pushdomains 
+                    (if forwardcheck
+                        (for/list ([x (in-hash-keys domains)] 
+                                   #:when (and (not (hash-has-key? assignments x)) 
+                                               (not (equal? variable x))))
+                          (hash-ref domains x))
+                        null))   
+              (break-for-loop))
             
             ;; if it makes it through the loop without breaking, then there are
-            ;; No unassigned variables. We've got a solution. Go back
+            ;; no unassigned variables. We've got a solution. Go back
             ;; to last variable, if there's one.
             (yield (hash-copy assignments))
             (when (null? queue) (begin
@@ -70,8 +69,7 @@
             (set! variable (first variable-values-pushdomains))
             (set! values (second variable-values-pushdomains))
             (set! pushdomains (third variable-values-pushdomains))
-            (for ([domain (in-list pushdomains)])
-              (send domain pop-state)))          
+            (for-each (λ(pd) (send pd pop-state)) pushdomains))          
           
           ;(report variable variable-preloop-2)
           ;(report assignments assignments-preloop-2)
@@ -94,9 +92,7 @@
                           (set! variable (first variable-values-pushdomains))
                           (set! values (second variable-values-pushdomains))
                           (set! pushdomains (third variable-values-pushdomains))
-                          (when (not (null? pushdomains))
-                            (for ([domain (in-list pushdomains)])
-                              (send domain pop-state)))
+                          (for-each (λ(pd) (send pd pop-state)) pushdomains)
                           (when (not (null? values)) (break-loop3))
                           (hash-remove! assignments variable)
                           (loop3))
