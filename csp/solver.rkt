@@ -74,30 +74,26 @@
               [else
                (set! want-to-return #t) (return-k)]))          
           
-          (let/ec break-loop2
-            (let loop2 ()
-              ;; We have a variable. Do we have any values left?
-              (when (null? values)                
-                ;; No. Go back to last variable, if there's one, else exit.
-                (for/or ([i (in-naturals)])
-                  (hash-remove! assignments variable)
-                  (when (null? queue) (set! want-to-return #t) (return-k))
-                  (set!-values (variable values pushdomains) (pop-vvp-values! queue))
-                  (for-each-send pop-state pushdomains)
-                  (not (null? values))))              
-              
-              ;; Got a value. Check it.
-              (hash-set! assignments variable (car-pop! values))
-              (for-each-send push-state pushdomains)
-              (let/ec break-for-loop
-                (if (for/or ([cvpair (in-list (hash-ref vconstraints variable))])
-                      (match-define (list constraint variables) cvpair)
-                      (not (send constraint call variables domains assignments pushdomains)))
-                    (break-for-loop)
-                    (break-loop2)))
-              
-              (for-each-send pop-state pushdomains)
-              (loop2)))
+          (let constraint-checking-loop ()
+            ;; We have a variable. Do we have any values left?
+            (when (null? values)                
+              ;; No. Go back to last variable, if there is one, otherwise solver is done.
+              (for/or ([i (in-naturals)])
+                (hash-remove! assignments variable)
+                (when (null? queue) (set! want-to-return #t) (return-k))
+                (set!-values (variable values pushdomains) (pop-vvp-values! queue))
+                (for-each-send pop-state pushdomains)
+                (not (null? values))))              
+            
+            ;; Got a value. Check it.
+            (hash-set! assignments variable (car-pop! values))
+            (for-each-send push-state pushdomains)
+            (when (for/or ([cvpair (in-list (hash-ref vconstraints variable))])
+                    (match-define (list constraint variables) cvpair)
+                    (not (send constraint is-true? variables domains assignments pushdomains)))
+              ;; constraint failed, so try again
+              (for-each-send pop-state pushdomains) 
+              (constraint-checking-loop)))
           
           ;; Push state before looking for next variable.
           (set! queue (cons (vvp variable values pushdomains) queue))
