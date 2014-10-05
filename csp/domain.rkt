@@ -11,7 +11,7 @@
     (init-field set)
     (field [_list set][_hidden null][_states null])
     
-    (define (repr) (format "<Domain ~v>" _list))
+    (define (repr) (format "<domain% ~v>" _list))
     (define/public (custom-print out quoting-depth) (print (repr) out))
     (define/public (custom-display out) (displayln (repr) out))
     (define/public (custom-write out) (write (repr) out))
