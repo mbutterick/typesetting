@@ -28,20 +28,20 @@
     (field [_forwardcheck forwardcheck]) 
     
     (define/override (get-solution-iter domains constraints vconstraints)
+      (define work-list (sort (for/list ([variable (in-hash-keys domains)])
+                                (list (* -1 (length (hash-ref vconstraints variable)))
+                                      (length ((hash-ref domains variable)))
+                                      variable)) list-comparator))
+      ;; state-retention variables
       (define assignments (make-hash))
       (define queue null)
       (define variable #f)
       (define values null)
       (define pushdomains null)
-      (define work-list #f)
-      (let/ec return-k
+      
+      (let/ec exit-k
         (let main-loop ()
-          ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
-          (set! work-list (sort (for/list ([variable (in-hash-keys domains)])
-                                  (list (* -1 (length (hash-ref vconstraints variable)))
-                                        (length ((hash-ref domains variable)))
-                                        variable)) list-comparator))
-          
+          ;; mix the degree and minimum-remaining-values (MRV) heuristics
           (define found-unassigned-variable?
             (for/first ([last-item (in-list (map last work-list))]
                         #:when (not (hash-has-key? assignments last-item)))
@@ -64,18 +64,16 @@
               [(not (null? queue))
                (set!-values (variable values pushdomains) (pop-vvp-values! queue))
                (for-each-send pop-state pushdomains)]
-              [else (return-k)]))          
+              [else (exit-k)]))          
           
-          (let constraint-checking-loop ()
-            ;; We have a variable. Do we have any values left?
-            (when (null? values)                
-              ;; No. Go back to last variable, if there is one, otherwise solver is done.
+          (let value-checking-loop () ; we have a variable. Do we have any values left?
+            (when (null? values) ; no, so try going back to last variable and getting some values
               (for/or ([i (in-naturals)])
+                (when (null? queue) (exit-k)) ; no variables left, so solver is done
                 (hash-remove! assignments variable)
-                (when (null? queue) (return-k))
                 (set!-values (variable values pushdomains) (pop-vvp-values! queue))
                 (for-each-send pop-state pushdomains)
-                (not (null? values))))              
+                (not (null? values))))        
             
             ;; Got a value. Check it.
             (hash-set! assignments variable (car-pop! values))
@@ -85,14 +83,12 @@
                     (not (send constraint broken? variables domains assignments pushdomains)))
               ;; constraint failed, so try again
               (for-each-send pop-state pushdomains) 
-              (constraint-checking-loop)))
+              (value-checking-loop)))
           
           ;; Push state before looking for next variable.
           (set! queue (cons (vvp variable values pushdomains) queue))
           (main-loop))
-        
-        (error 'get-solution-iter "Should never get here"))
-      
+        (error 'get-solution-iter "Should never get here"))      
       (void))
     
     
