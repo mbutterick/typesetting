@@ -1,5 +1,6 @@
 #lang racket/base
-(require racket/class sugar/container sugar/debug racket/list racket/generator racket/match "helper.rkt")
+(require racket/class sugar/container sugar/debug racket/list 
+         racket/bool racket/generator racket/match "helper.rkt")
 (provide (all-defined-out))
 
 (define solver%
@@ -33,62 +34,61 @@
                                       (length ((hash-ref domains variable)))
                                       variable)) list-comparator))
       ;; state-retention variables
-      (define assignments (make-hash))
-      (define queue null)
+      (define possible-solution (make-hash))
+      (define variable-queue null)
       (define variable #f)
       (define values null)
       (define pushdomains null)
       
+      (define (get-next-unassigned-variable)
+        (for/first ([last-item (in-list (map last work-list))]
+                    #:when (not (hash-has-key? possible-solution last-item)))
+          (set! variable last-item)
+          (set! values ((hash-ref domains variable)))
+          (set! pushdomains 
+                (if _forwardcheck
+                    (for/list ([(var domain) (in-hash domains)] 
+                               #:when (nor (hash-has-key? possible-solution var) 
+                                           (equal? variable var)))
+                      domain)
+                    null))   
+          variable))
+      
+      (define (return-to-previous-variable)
+        (set!-values (variable values pushdomains) (pop-vvp-values! variable-queue))
+        (for-each-send pop-state pushdomains))
+      
       (let/ec exit-k
+        ;; mix the degree and minimum-remaining-values (MRV) heuristics
         (let main-loop ()
-          ;; mix the degree and minimum-remaining-values (MRV) heuristics
-          (define found-unassigned-variable?
-            (for/first ([last-item (in-list (map last work-list))]
-                        #:when (not (hash-has-key? assignments last-item)))
-              (set! variable last-item)
-              (set! values ((hash-ref domains variable)))
-              (set! pushdomains 
-                    (if _forwardcheck
-                        (for/list ([x (in-hash-keys domains)] 
-                                   #:when (and (not (hash-has-key? assignments x)) 
-                                               (not (equal? variable x))))
-                          (hash-ref domains x))
-                        null))   
-              variable))
-          
-          ;; if there are no unassigned variables, we've got a solution. 
-          (when (not found-unassigned-variable?)
-            (yield (hash-copy assignments))
-            (cond
-              ;; Return to previous variable in queue if possible, otherwise all done
-              [(not (null? queue))
-               (set!-values (variable values pushdomains) (pop-vvp-values! queue))
-               (for-each-send pop-state pushdomains)]
-              [else (exit-k)]))          
+          (when (not (get-next-unassigned-variable))
+            (yield (hash-copy possible-solution)) ; if there are no unassigned variables, solution is done. 
+            (if (null? variable-queue) ; if queue isn't empty, return to previous variable, otherwise all done.
+                (exit-k)
+                (return-to-previous-variable)))
           
           (let value-checking-loop () ; we have a variable. Do we have any values left?
             (when (null? values) ; no, so try going back to last variable and getting some values
               (for/or ([i (in-naturals)])
-                (when (null? queue) (exit-k)) ; no variables left, so solver is done
-                (hash-remove! assignments variable)
-                (set!-values (variable values pushdomains) (pop-vvp-values! queue))
-                (for-each-send pop-state pushdomains)
+                (when (null? variable-queue) (exit-k)) ; no variables left, so solver is done
+                (hash-remove! possible-solution variable)
+                (return-to-previous-variable)
                 (not (null? values))))        
             
             ;; Got a value. Check it.
-            (hash-set! assignments variable (car-pop! values))
+            (hash-set! possible-solution variable (car-pop! values))
             (for-each-send push-state pushdomains)
             (when (for/or ([cvpair (in-list (hash-ref vconstraints variable))])
                     (match-define (list constraint variables) cvpair)
-                    (not (send constraint broken? variables domains assignments pushdomains)))
+                    (not (send constraint broken? variables domains possible-solution pushdomains)))
               ;; constraint failed, so try again
               (for-each-send pop-state pushdomains) 
               (value-checking-loop)))
           
           ;; Push state before looking for next variable.
-          (set! queue (cons (vvp variable values pushdomains) queue))
+          (set! variable-queue (cons (vvp variable values pushdomains) variable-queue))
           (main-loop))
-        (error 'get-solution-iter "Should never get here"))      
+        (error 'get-solution-iter "impossible to reach this"))      
       (void))
     
     
