@@ -54,7 +54,7 @@
                     null))   
           variable))
       
-      (define (return-to-previous-variable)
+      (define (set!-previous-variable)
         (set!-values (variable values pushdomains) (pop-vvp-values! variable-queue))
         (for-each-send pop-state pushdomains))
       
@@ -65,14 +65,14 @@
             (yield (hash-copy possible-solution)) ; if there are no unassigned variables, solution is done. 
             (if (null? variable-queue) ; if queue isn't empty, return to previous variable, otherwise all done.
                 (exit-k)
-                (return-to-previous-variable)))
+                (set!-previous-variable)))
           
           (let value-checking-loop () ; we have a variable. Do we have any values left?
             (when (null? values) ; no, so try going back to last variable and getting some values
               (for/or ([i (in-naturals)])
                 (when (null? variable-queue) (exit-k)) ; no variables left, so solver is done
                 (hash-remove! possible-solution variable)
-                (return-to-previous-variable)
+                (set!-previous-variable)
                 (not (null? values))))        
             
             ;; Got a value. Check it.
