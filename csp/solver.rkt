@@ -13,10 +13,10 @@
 (define solver%? (is-a?/c solver%))
 
 (struct vvp (variable values pushdomains))
-(define-syntax-rule (pop-vvp! vvps)
+(define-syntax-rule (pop-vvp-values! vvps)
   (let ([vvp (car vvps)])
     (set! vvps (cdr vvps))
-    vvp))
+    (values (vvp-variable vvp) (vvp-values vvp) (vvp-pushdomains vvp))))
 
 (define backtracking-solver%
   ;; Problem solver with backtracking capabilities
@@ -39,9 +39,6 @@
       (let/ec break-loop1
         (set! return-k break-loop1)
         (let loop1 ()
-          ;(displayln "starting while loop 1")
-          
-          
           ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
           (set! work-list (sort (for/list ([variable (in-hash-keys domains)])
                                   (list (* -1 (length (hash-ref vconstraints variable)))
@@ -53,7 +50,6 @@
                   #:when (not (hash-has-key? assignments last-item)))
               ; Found unassigned variable
               (set! variable last-item)
-              ;(report variable unassigned-variable)
               (set! values ((hash-ref domains variable)))
               (set! pushdomains 
                     (if forwardcheck
@@ -71,33 +67,20 @@
             (when (null? queue) (begin
                                   (set! want-to-return #t) 
                                   (return-k)))
-            (define vvp (pop-vvp! queue))
-            (set! variable (vvp-variable vvp))
-            (set! values (vvp-values vvp))
-            (set! pushdomains (vvp-pushdomains vvp))
+            (set!-values (variable values pushdomains) (pop-vvp-values! queue))
             (for-each-send pop-state pushdomains))          
-          
-          ;(report variable variable-preloop-2)
-          ;(report assignments assignments-preloop-2)
           
           (let/ec break-loop2
             (let loop2 ()
-              ;(displayln "starting while loop 2")
-              
               ;; We have a variable. Do we have any values left?
-              ;(report values values-tested)
-              (when (null? values)
-                
+              (when (null? values)                
                 ;; No. Go back to last variable, if there's one.
                 (hash-remove! assignments variable)
                 (let/ec break-loop3
                   (let loop3 ()
                     (if (not (null? queue))
                         (let ()
-                          (define vvp (pop-vvp! queue))
-                          (set! variable (vvp-variable vvp))
-                          (set! values (vvp-values vvp))
-                          (set! pushdomains (vvp-pushdomains vvp))
+                          (set!-values (variable values pushdomains) (pop-vvp-values! queue))
                           (for-each-send pop-state pushdomains)
                           (when (not (null? values)) (break-loop3))
                           (hash-remove! assignments variable)
@@ -108,31 +91,20 @@
               
               ;; Got a value. Check it.
               (hash-set! assignments variable (py-pop! values))  
-              
               (for-each-send push-state pushdomains)
-              ;(report pushdomains pushdomains1)
-              ;(report domains domains1)
-              
               (let/ec break-for-loop
                 (for ([cvpair (in-list (hash-ref vconstraints variable))])
                   (match-define (list constraint variables) cvpair)
                   (define the_result (send constraint call variables domains assignments pushdomains))
-                  ;(report pushdomains pushdomains2)
-                  ;(report domains domains2)
-                  ;(report the_result)
-                  (when (not the_result)
-                    ;; Value is not good.
+                  (when (not the_result) ; Value is not good.
                     (break-for-loop)))
-                (begin ;(displayln "now breaking loop 2") 
-                  (break-loop2)))
+                (break-loop2))
               
               (for-each-send pop-state pushdomains)
-              
               (loop2)))
           
           ;; Push state before looking for next variable.
           (set! queue (cons (vvp variable values pushdomains) queue))
-          ;(report queue new-queue)
           (loop1)))
       
       (if want-to-return
