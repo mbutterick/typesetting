@@ -49,7 +49,7 @@
                 ; Found unassigned variable
                 (set! variable (last item))
                 ;(report variable unassigned-variable)
-                (set! values (send (hash-ref domains variable) copy))
+                (set! values ((hash-ref domains variable)))
                 (set! pushdomains 
                       (if forwardcheck
                           (for/list ([x (in-hash-keys domains)] 
@@ -68,7 +68,7 @@
                                   (return-k)))
             (define variable-values-pushdomains (py-pop! queue))
             (set! variable (first variable-values-pushdomains))
-            (set-field! _list values (second variable-values-pushdomains))
+            (set! values (second variable-values-pushdomains))
             (set! pushdomains (third variable-values-pushdomains))
             (for ([domain (in-list pushdomains)])
               (send domain pop-state)))          
@@ -82,7 +82,7 @@
               
               ;; We have a variable. Do we have any values left?
               ;(report values values-tested)
-              (when (null? (get-field _list values))
+              (when (null? values)
                 
                 ;; No. Go back to last variable, if there's one.
                 (hash-remove! assignments variable)
@@ -92,12 +92,12 @@
                         (let ()
                           (define variable-values-pushdomains (py-pop! queue))
                           (set! variable (first variable-values-pushdomains))
-                          (set-field! _list values (second variable-values-pushdomains))
+                          (set! values (second variable-values-pushdomains))
                           (set! pushdomains (third variable-values-pushdomains))
                           (when (not (null? pushdomains))
                             (for ([domain (in-list pushdomains)])
                               (send domain pop-state)))
-                          (when (not (null? (get-field _list values))) (break-loop3))
+                          (when (not (null? values)) (break-loop3))
                           (hash-remove! assignments variable)
                           (loop3))
                         (begin
@@ -105,7 +105,7 @@
                           (return-k))))))
               
               ;; Got a value. Check it.
-              (hash-set! assignments variable (send values domain-pop!))  
+              (hash-set! assignments variable (py-pop! values))  
               
               (for ([domain (in-list pushdomains)])
                 (send domain push-state))
@@ -131,7 +131,7 @@
               (loop2)))
           
           ;; Push state before looking for next variable.
-          (py-append! queue (list variable (get-field _list (send values copy)) pushdomains))
+          (py-append! queue (list variable values pushdomains))
           ;(report queue new-queue)
           (loop1)))
       
