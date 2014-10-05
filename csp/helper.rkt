@@ -39,6 +39,11 @@
   (check-true (list-comparator '(1 1 "a") '(1 1 "b")))
   (check-true (list-comparator '(1 1 a) '(1 1 b))))
 
+(define-syntax-rule (car-pop! xs)
+  (let ([i (car xs)])
+      (set! xs (cdr xs))
+      i))
+
 (define-syntax-rule (py-pop! xs)
   (let ([i (last xs)])
       (set! xs (drop-right xs 1))

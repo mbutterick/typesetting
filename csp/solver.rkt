@@ -14,9 +14,11 @@
 
 (struct vvp (variable values pushdomains))
 (define-syntax-rule (pop-vvp-values! vvps)
-  (let ([vvp (car vvps)])
-    (set! vvps (cdr vvps))
-    (values (vvp-variable vvp) (vvp-values vvp) (vvp-pushdomains vvp))))
+  (if (null? vvps)
+      (error 'pop-vvp-values! (format "~a is null" vvps))
+      (let ([vvp (car vvps)])
+        (set! vvps (cdr vvps))
+        (values (vvp-variable vvp) (vvp-values vvp) (vvp-pushdomains vvp)))))
 
 (define backtracking-solver%
   ;; Problem solver with backtracking capabilities
@@ -61,14 +63,16 @@
               (break-for-loop))
             
             ;; if it makes it through the loop without breaking, then there are
-            ;; no unassigned variables. We've got a solution. Go back
-            ;; to last variable, if there's one.
+            ;; no unassigned variables. We've got a solution. 
             (yield (hash-copy assignments))
-            (when (null? queue) (begin
-                                  (set! want-to-return #t) 
-                                  (return-k)))
-            (set!-values (variable values pushdomains) (pop-vvp-values! queue))
-            (for-each-send pop-state pushdomains))          
+            
+            ;; Return to previous variable in queue if possible, otherwise all done
+            (cond
+              [(not (null? queue))
+               (set!-values (variable values pushdomains) (pop-vvp-values! queue))
+               (for-each-send pop-state pushdomains)]
+              [else
+               (set! want-to-return #t) (return-k)]))          
           
           (let/ec break-loop2
             (let loop2 ()
@@ -76,21 +80,33 @@
               (when (null? values)                
                 ;; No. Go back to last variable, if there's one.
                 (hash-remove! assignments variable)
+                
+               (if #f
+                (for/or ([i (in-naturals)])
+                  (when (null? queue) (set! want-to-return #t) (return-k))
+                  (set!-values (variable values pushdomains) (pop-vvp-values! queue))
+                  (for-each-send pop-state pushdomains)
+                  (if (not (null? values))
+                      #t
+                      (hash-remove! assignments variable)))
+                
                 (let/ec break-loop3
-                  (let loop3 ()
-                    (if (not (null? queue))
-                        (let ()
-                          (set!-values (variable values pushdomains) (pop-vvp-values! queue))
-                          (for-each-send pop-state pushdomains)
-                          (when (not (null? values)) (break-loop3))
-                          (hash-remove! assignments variable)
-                          (loop3))
-                        (begin
-                          (set! want-to-return #t) 
-                          (return-k))))))
+                  (let loop ()
+                    (when (null? queue)
+                      (set! want-to-return #t) 
+                      (return-k))
+                    (set!-values (variable values pushdomains) (pop-vvp-values! queue))
+                    (for-each-send pop-state pushdomains)
+                    (when (not (null? values)) (break-loop3))
+                    (hash-remove! assignments variable)
+                    (loop)))
+                )
+                )
+              
+              
               
               ;; Got a value. Check it.
-              (hash-set! assignments variable (py-pop! values))  
+              (hash-set! assignments variable (car-pop! values))
               (for-each-send push-state pushdomains)
               (let/ec break-for-loop
                 (for ([cvpair (in-list (hash-ref vconstraints variable))])
