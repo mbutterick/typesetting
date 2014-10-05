@@ -1,5 +1,5 @@
 #lang racket
-(require "main.rkt")
+(require "main.rkt" "test-classes.rkt")
 (require rackunit)
 
 
@@ -143,3 +143,6 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
                             ;; test if two cells are in same row
                             (not (= row1 row2)))) (list col1 col2))) 
 (check-equal? (length (send queens-problem get-solutions)) 92)
+
+(module+ main
+  (displayln "Tests passed"))
