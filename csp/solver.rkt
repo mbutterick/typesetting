@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class sugar/container racket/list racket/generator racket/match "helper.rkt")
+(require racket/class sugar/container sugar/debug racket/list racket/generator racket/match "helper.rkt")
 (provide (all-defined-out))
 
 (define solver%
@@ -46,11 +46,10 @@
                                   (list (* -1 (length (hash-ref vconstraints variable)))
                                         (length ((hash-ref domains variable)))
                                         variable)) list-comparator))
-          ;(report lst)
-          (let/ec break-for-loop
-            (for ([last-item (in-list (map last work-list))]
-                  #:when (not (hash-has-key? assignments last-item)))
-              ; Found unassigned variable
+          
+          (define found-unassigned-variable?
+            (for/first ([last-item (in-list (map last work-list))]
+                        #:when (not (hash-has-key? assignments last-item)))
               (set! variable last-item)
               (set! values ((hash-ref domains variable)))
               (set! pushdomains 
@@ -60,14 +59,13 @@
                                                (not (equal? variable x))))
                           (hash-ref domains x))
                         null))   
-              (break-for-loop))
-            
-            ;; if it makes it through the loop without breaking, then there are
-            ;; no unassigned variables. We've got a solution. 
+              variable))
+          
+          ;; if there are no unassigned variables, we've got a solution. 
+          (when (not found-unassigned-variable?)
             (yield (hash-copy assignments))
-            
-            ;; Return to previous variable in queue if possible, otherwise all done
             (cond
+              ;; Return to previous variable in queue if possible, otherwise all done
               [(not (null? queue))
                (set!-values (variable values pushdomains) (pop-vvp-values! queue))
                (for-each-send pop-state pushdomains)]
