@@ -39,7 +39,7 @@
           ;; Mix the Degree and Minimum Remaing Values (MRV) heuristics
           (set! lst (sort (for/list ([variable (in-hash-keys domains)])
                             (list (* -1 (length (hash-ref vconstraints variable)))
-                                  (length (get-field _list (hash-ref domains variable)))
+                                  (length ((hash-ref domains variable)))
                                   variable)) list-comparator))
           ;(report lst)
           (let/ec break-for-loop
