@@ -107,32 +107,23 @@
     (super-new)
     
     (define/override (is-true? variables domains assignments [forward-check? #f] [_unassigned Unassigned])
-      (define singlevalue _unassigned)
-      (define value #f)
-      (define domain #f)
-      (define return-value (void))
-      (let/ec return-k
-        (for ([variable (in-list variables)])
-          (set! value (if (hash-has-key? assignments variable) 
-                          (hash-ref assignments variable)  
-                          _unassigned))
-          (cond
-            [(equal? singlevalue _unassigned) (set! singlevalue value)]
-            [(nor (equal? value _unassigned) (equal? value singlevalue))
-             (set! return-value #f)
-             (return-k)]))
-        (when (and forward-check? (not (equal? singlevalue _unassigned)))
-          (for ([variable (in-list variables)])
-            (unless (variable . in? . assignments)
-              (set! domain (hash-ref domains variable))
-              (unless (singlevalue . in? . (domain))
-                (set! return-value #f)
-                (return-k))
-              (for ([value (in-list (domain))])
-                (unless (equal? value singlevalue)
-                  (send domain hide-value value))))))
-        (set! return-value #t)
-        (return-k))
-      return-value)))
+      (define-values (assigned-vars unassigned-vars) 
+        (partition (λ(var) (hash-has-key? assignments var)) variables))      
+      (define assigned-values (map (λ(var) (hash-ref assignments var)) assigned-vars))
+      (define single-value (if (not (empty? assigned-values)) 
+                               (car assigned-values)
+                               _unassigned))
+      (cond
+        [(not (andmap (λ(v) (equal? single-value v)) assigned-values)) #f] ; constraint broken: not all values the same
+        [(and forward-check? (not (equal? single-value _unassigned))) 
+         (for/and ([unassigned-var-domain (in-list (map (λ(uv) (hash-ref domains uv)) unassigned-vars))])
+           ;; if single-value is not a member of each domain, constraint will be broken later, so bail out
+           (and (member single-value (unassigned-var-domain))
+                (for ([value (in-list (unassigned-var-domain))]
+                      #:unless (equal? value single-value))
+                  (send unassigned-var-domain hide-value value))))] ; otherwise hide nonconforming values
+        [else #t]))))
+
 
 (define all-equal-constraint%? (is-a?/c all-equal-constraint%))
+
