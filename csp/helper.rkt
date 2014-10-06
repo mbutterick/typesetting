@@ -7,7 +7,7 @@
   (for ([i (in-naturals)])
     expr ...))
 
-(define-syntax-rule (forever/or expr ...)
+(define-syntax-rule (forever/until expr ...)
   (for/or ([i (in-naturals)])
     expr ...))
 

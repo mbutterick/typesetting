@@ -15,7 +15,7 @@
 
 (struct vvp (variable values pushdomains))
 (define-syntax-rule (pop-vvp-values! vvps)
-  (if (null? vvps)
+  (if (empty? vvps)
       (error 'pop-vvp-values! (format "~a is null" vvps))
       (let ([vvp (car vvps)])
         (set! vvps (cdr vvps))
@@ -29,11 +29,11 @@
     (field [_forwardcheck forwardcheck]) 
     
     (define/override (get-solution-iter domains constraints vconstraints)
-      (define sorted-variables 
-        (map third (sort (map (λ(var)
-                                (list (- (length (hash-ref vconstraints var))) ; first two elements used for sorting 
-                                      (length ((hash-ref domains var)))
-                                      var)) (hash-keys domains)) list-comparator)))
+      (define sorted-variables (sort (hash-keys domains) list-comparator
+                                      #:key (λ(var)
+                                              (list (- (length (hash-ref vconstraints var)))
+                                                    (length ((hash-ref domains var)))
+                                                    var))))
       ;; state-retention variables
       (define possible-solution (make-hash))
       (define variable-queue null)
@@ -64,17 +64,17 @@
         (forever
          (unless (get-next-unassigned-variable)
            (yield (hash-copy possible-solution)) ; if there are no unassigned variables, solution is complete.
-           (if (null? variable-queue) ; then, if queue is empty ...
+           (if (empty? variable-queue)
                (exit-k) ; all done, no other solutions possible.
-               (set!-previous-variable))) ; or queue is not empty, so return to previous variable
+               (set!-previous-variable))) ; otherwise return to previous variable
          
          (let value-checking-loop () ; we have a variable. Do we have any values left?
-           (when (null? values) ; no, so try going back to last variable and getting some values
-             (forever/or
-              (when (null? variable-queue) (exit-k)) ; no variables left, so solver is done
+           (when (empty? values) ; no, so try going back to last variable and getting some values
+             (forever/until
+              (when (empty? variable-queue) (exit-k)) ; no variables left, so solver is done
               (hash-remove! possible-solution variable)
               (set!-previous-variable)
-              (not (null? values))))        
+              (not (empty? values))))        
            
            ;; Got a value. Check it.
            (hash-set! possible-solution variable (car-pop! values))

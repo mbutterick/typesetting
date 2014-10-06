@@ -53,7 +53,7 @@
            (unless (is-true? variables domains assignments)
              (send unassigned-variable-domain hide-value value)))
          (hash-remove! assignments unassigned-variable)
-         (not (null? unassigned-variable-domain))] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
+         (not (empty? unassigned-variable-domain))] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
         [else #t]))
     ))
 
@@ -96,7 +96,7 @@
                         [assigned-value (in-list assigned-values)]
                         #:when (member assigned-value (unassigned-var-domain)))
                 (send unassigned-var-domain hide-value assigned-value)
-                (null? unassigned-var-domain))) #f] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
+                (empty? unassigned-var-domain))) #f] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
         [else #t]))))
 
 (define all-different-constraint%? (is-a?/c all-different-constraint%))
