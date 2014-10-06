@@ -31,7 +31,7 @@
         (set-field! _list domain
                     (for/fold ([domain-values (domain)]) 
                       ([value (in-list (domain))] 
-                       #:when (not (broken? variables domains (make-hash (list (cons variable value))))))
+                       #:unless (broken? variables domains (make-hash (list (cons variable value)))))
                       (remove value domain-values)))        
         (set! constraints (remove (list this variables) constraints))
         (hash-update! vconstraints variable (λ(val) (remove (list this variables) val)))))

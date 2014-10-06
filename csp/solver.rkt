@@ -29,10 +29,11 @@
     (field [_forwardcheck forwardcheck]) 
     
     (define/override (get-solution-iter domains constraints vconstraints)
-      (define work-list (sort (for/list ([variable (in-hash-keys domains)])
-                                (list (* -1 (length (hash-ref vconstraints variable)))
-                                      (length ((hash-ref domains variable)))
-                                      variable)) list-comparator))
+      (define sorted-variables 
+        (map last (sort (for/list ([(variable domain) (in-hash domains)])
+                          (list (- (length (hash-ref vconstraints variable))) ; first two elements used for sorting 
+                                (length (domain))
+                                variable)) list-comparator)))
       ;; state-retention variables
       (define possible-solution (make-hash))
       (define variable-queue null)
@@ -41,14 +42,14 @@
       (define pushdomains null)
       
       (define (get-next-unassigned-variable)
-        (for/first ([last-item (in-list (map last work-list))]
-                    #:when (not (hash-has-key? possible-solution last-item)))
-          (set! variable last-item)
+        (for/first ([sorted-variable (in-list sorted-variables)]
+                    #:unless (hash-has-key? possible-solution sorted-variable))
+          (set! variable sorted-variable)
           (set! values ((hash-ref domains variable)))
           (set! pushdomains 
                 (if _forwardcheck
                     (for/list ([(var domain) (in-hash domains)] 
-                               #:when (nor (hash-has-key? possible-solution var) 
+                               #:unless (and (hash-has-key? possible-solution var) 
                                            (equal? variable var)))
                       domain)
                     null))   
