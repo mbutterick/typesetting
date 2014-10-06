@@ -49,8 +49,8 @@
           (set! pushdomains 
                 (if _forwardcheck
                     (for/list ([(var domain) (in-hash domains)] 
-                               #:unless (and (hash-has-key? possible-solution var) 
-                                           (equal? variable var)))
+                               #:unless (and (equal? variable var)
+                                             (hash-has-key? possible-solution var)))
                       domain)
                     null))   
           variable))
@@ -62,7 +62,7 @@
       (let/ec exit-k
         ;; mix the degree and minimum-remaining-values (MRV) heuristics
         (let main-loop ()
-          (when (not (get-next-unassigned-variable))
+          (unless (get-next-unassigned-variable)
             (yield (hash-copy possible-solution)) ; if there are no unassigned variables, solution is done. 
             (if (null? variable-queue) ; if queue isn't empty, return to previous variable, otherwise all done.
                 (exit-k)
