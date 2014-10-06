@@ -3,6 +3,14 @@
 (provide (all-defined-out))
 (require rackunit)
 
+(define-syntax-rule (forever expr ...)
+  (for ([i (in-naturals)])
+    expr ...))
+
+(define-syntax-rule (forever/or expr ...)
+  (for/or ([i (in-naturals)])
+    expr ...))
+
 (define-syntax-rule (for-each-send proc objects)
   (for-each (λ(o) (send o proc)) objects))
 

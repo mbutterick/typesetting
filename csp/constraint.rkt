@@ -1,12 +1,12 @@
 #lang racket/base
-(require racket/class sugar/container sugar/list sugar/debug racket/list "helper.rkt" "variable.rkt")
+(require racket/class racket/bool sugar/container sugar/list sugar/debug racket/list "helper.rkt" "variable.rkt")
 (provide (all-defined-out))
 
 (define constraint%
   (class object% 
     (super-new)
     
-    (define/public (broken? variables domains assignments [forward-check? #f])
+    (define/public (is-true? variables domains assignments [forward-check? #f])
       ;; Perform the constraint checking
       
       ;;  If the forwardcheck parameter is not false, besides telling if
@@ -31,7 +31,7 @@
         (set-field! _list domain
                     (for/fold ([domain-values (domain)]) 
                       ([value (in-list (domain))] 
-                       #:unless (broken? variables domains (make-hash (list (cons variable value)))))
+                       #:unless (is-true? variables domains (make-hash (list (cons variable value)))))
                       (remove value domain-values)))        
         (set! constraints (remove (list this variables) constraints))
         (hash-update! vconstraints variable (λ(val) (remove (list this variables) val)))))
@@ -50,7 +50,7 @@
          (define unassigned-variable-domain (hash-ref domains unassigned-variable))
          (for ([value (in-list (unassigned-variable-domain))])
            (hash-set! assignments unassigned-variable value)
-           (when (not (broken? variables domains assignments))
+           (unless (is-true? variables domains assignments)
              (send unassigned-variable-domain hide-value value)))
          (hash-remove! assignments unassigned-variable)
          (not (null? unassigned-variable-domain))] ; if domain had no remaining values, the constraint will be impossible to meet, so return #f
@@ -69,7 +69,7 @@
     
     (inherit forward-check)
     
-    (define/override (broken? variables domains assignments [forward-check? #f] [_unassigned Unassigned])
+    (define/override (is-true? variables domains assignments [forward-check? #f] [_unassigned Unassigned])
       (define parms (map (λ(v) (hash-ref assignments v _unassigned)) variables))
       (define missing (length (filter (λ(p) (equal? p _unassigned)) parms)))
       (if (> missing 0)
@@ -85,7 +85,7 @@
   (class constraint% 
     (super-new)
     
-    (define/override (broken? variables domains assignments [forward-check? #f] [_unassigned Unassigned])
+    (define/override (is-true? variables domains assignments [forward-check? #f] [_unassigned Unassigned])
       (define-values (assigned-vars unassigned-vars) 
         (partition (λ(var) (hash-has-key? assignments var)) variables))      
       (define assigned-values (map (λ(var) (hash-ref assignments var)) assigned-vars))
@@ -106,7 +106,7 @@
   (class constraint% 
     (super-new)
     
-    (define/override (broken? variables domains assignments [forward-check? #f] [_unassigned Unassigned])
+    (define/override (is-true? variables domains assignments [forward-check? #f] [_unassigned Unassigned])
       (define singlevalue _unassigned)
       (define value #f)
       (define domain #f)
@@ -118,7 +118,7 @@
                           _unassigned))
           (cond
             [(equal? singlevalue _unassigned) (set! singlevalue value)]
-            [(and (not (equal? value _unassigned)) (not (equal? value singlevalue)))
+            [(nor (equal? value _unassigned) (equal? value singlevalue))
              (set! return-value #f)
              (return-k)]))
         (when (and forward-check? (not (equal? singlevalue _unassigned)))

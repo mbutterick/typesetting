@@ -30,10 +30,10 @@
     
     (define/override (get-solution-iter domains constraints vconstraints)
       (define sorted-variables 
-        (map last (sort (for/list ([(variable domain) (in-hash domains)])
-                          (list (- (length (hash-ref vconstraints variable))) ; first two elements used for sorting 
-                                (length (domain))
-                                variable)) list-comparator)))
+        (map third (sort (map (λ(var)
+                                (list (- (length (hash-ref vconstraints var))) ; first two elements used for sorting 
+                                      (length ((hash-ref domains var)))
+                                      var)) (hash-keys domains)) list-comparator)))
       ;; state-retention variables
       (define possible-solution (make-hash))
       (define variable-queue null)
@@ -61,34 +61,34 @@
       
       (let/ec exit-k
         ;; mix the degree and minimum-remaining-values (MRV) heuristics
-        (let main-loop ()
-          (unless (get-next-unassigned-variable)
-            (yield (hash-copy possible-solution)) ; if there are no unassigned variables, solution is done. 
-            (if (null? variable-queue) ; if queue isn't empty, return to previous variable, otherwise all done.
-                (exit-k)
-                (set!-previous-variable)))
-          
-          (let value-checking-loop () ; we have a variable. Do we have any values left?
-            (when (null? values) ; no, so try going back to last variable and getting some values
-              (for/or ([i (in-naturals)])
-                (when (null? variable-queue) (exit-k)) ; no variables left, so solver is done
-                (hash-remove! possible-solution variable)
-                (set!-previous-variable)
-                (not (null? values))))        
-            
-            ;; Got a value. Check it.
-            (hash-set! possible-solution variable (car-pop! values))
-            (for-each-send push-state pushdomains)
-            (when (for/or ([cvpair (in-list (hash-ref vconstraints variable))])
-                    (match-define (list constraint variables) cvpair)
-                    (not (send constraint broken? variables domains possible-solution pushdomains)))
-              ;; constraint failed, so try again
-              (for-each-send pop-state pushdomains) 
-              (value-checking-loop)))
-          
-          ;; Push state before looking for next variable.
-          (set! variable-queue (cons (vvp variable values pushdomains) variable-queue))
-          (main-loop))
+        (forever
+         (unless (get-next-unassigned-variable)
+           (yield (hash-copy possible-solution)) ; if there are no unassigned variables, solution is complete.
+           (if (null? variable-queue) ; then, if queue is empty ...
+               (exit-k) ; all done, no other solutions possible.
+               (set!-previous-variable))) ; or queue is not empty, so return to previous variable
+         
+         (let value-checking-loop () ; we have a variable. Do we have any values left?
+           (when (null? values) ; no, so try going back to last variable and getting some values
+             (forever/or
+              (when (null? variable-queue) (exit-k)) ; no variables left, so solver is done
+              (hash-remove! possible-solution variable)
+              (set!-previous-variable)
+              (not (null? values))))        
+           
+           ;; Got a value. Check it.
+           (hash-set! possible-solution variable (car-pop! values))
+           (for-each-send push-state pushdomains)
+           (unless (for/and ([constraint+variables (in-list (hash-ref vconstraints variable))])
+                     (let ([constraint (car constraint+variables)]
+                           [variables (cadr constraint+variables)])
+                       (send constraint is-true? variables domains possible-solution pushdomains)))
+             ;; constraint failed, so try again
+             (for-each-send pop-state pushdomains) 
+             (value-checking-loop)))
+         
+         ;; Push state before looking for next variable.
+         (set! variable-queue (cons (vvp variable values pushdomains) variable-queue)))
         (error 'get-solution-iter "impossible to reach this"))      
       (void))
     
