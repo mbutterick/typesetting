@@ -21,6 +21,20 @@
         (set! vvps (cdr vvps))
         (values (vvp-variable vvp) (vvp-values vvp) (vvp-pushdomains vvp)))))
 
+#|
+(define (recursive-backtracking assignment csp)
+  (if (complete? assignment) 
+      assignment
+    (let ([var (select-unassigned-variable csp-variables, assignment, csp)])
+      (for/or ([value (in-list (order-domain-values var assignment csp))])
+        if ((value . consistent-with? . assignment csp-constraints))
+        (add-to assignment var value)
+        (define result (recursive-backtracking assignment csp))
+        (when result
+          (and result (remove-from assignment var value)))
+        #f))))
+|#
+
 (define backtracking-solver%
   ;; Problem solver with backtracking capabilities
   (class solver%
