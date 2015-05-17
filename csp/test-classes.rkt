@@ -45,11 +45,11 @@
 ;; FunctionConstraint, two ways: implicit and explicit
 (send problem reset)
 (send problem add-variables '(a b) '(1 2))
-(send problem add-constraint >) ; implicit
+(send problem add-constraint <) ; implicit
 (check-hash-items (send problem get-solution) #hash((a . 1) (b . 2)))
 (send problem reset)
 (send problem add-variables '(a b) '(1 2))
-(send problem add-constraint (new function-constraint% [func >])) ; explicit
+(send problem add-constraint (new function-constraint% [func <])) ; explicit
 (check-hash-items (send problem get-solution) #hash((a . 1) (b . 2)))
 
 ;; AllDifferentConstraint
