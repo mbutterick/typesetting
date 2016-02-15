@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class racket/bool sugar/container sugar/list sugar/debug racket/list "helper.rkt" "variable.rkt")
+(require racket/class racket/bool sugar/unstable/container sugar/list sugar/debug racket/list "helper.rkt" "variable.rkt")
 (provide (all-defined-out))
 
 (define constraint%

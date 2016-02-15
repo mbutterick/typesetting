@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class sugar/container sugar/debug racket/contract racket/match racket/generator racket/list)
+(require racket/class sugar/unstable/container sugar/debug racket/contract racket/match racket/generator racket/list)
 (require "domain.rkt" "helper.rkt" "constraint.rkt" "solver.rkt")
 (provide (all-defined-out))
 
