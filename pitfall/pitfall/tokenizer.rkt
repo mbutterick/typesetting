@@ -1,40 +1,44 @@
-#lang br
+#lang at-exp br
 (require brag/support)
 (provide make-tokenizer)
 
 (define-lex-abbrev digit (char-set "0123456789"))
 (define-lex-abbrev hex-digit (:or digit (char-set "ABCDEF")))
 (define-lex-abbrev digits (:+ digit))
-(define-lex-abbrev sign (:? (:or "+" "-")))
-(define-lex-abbrev blackspace (:~ whitespace))
-(define-lex-abbrev ascii-char (char-set ascii))
+(define-lex-abbrev optional-sign (:? (:or "+" "-")))
+(define-lex-abbrev pdf-whitespace (char-set "\u0000\t\n\f\r "))
+(define-lex-abbrev pdf-delimiter (char-set "()<>[]{}/%"))
+#;(define-lex-abbrev pdf-reg)
+(define-lex-abbrev blackspace (:~ pdf-whitespace))
+(define-lex-abbrev not-right-paren (:~ ")"))
+(define-lex-abbrev substring (:seq "(" (:* not-right-paren) ")"))
 
 (define-lex-abbrev nonreg-char (:seq "#" hex-digit hex-digit))
 
-(define (make-tokenizer src port)
+(define (make-tokenizer port [src #f])
   (port-count-lines! port)
   (lexer-file-path src)
-  (define lex-once
+  (define lex-one-token
     (lexer-srcloc
      [(eof) eof]
-     [(:or whitespace
-       (from/stop-before "%" "\n"))
-      (token 'IGNORE lexeme #:skip? #t)]
+     [(:seq digits (:+ pdf-whitespace) digits (:+ pdf-whitespace) "R")
+      (begin (println (string-split lexeme))
+      (token 'INDIRECT-OBJECT-REF-TOK (string-split lexeme)))]
+     [(:or pdf-whitespace
+           (from/stop-before "%" #\newline)) (token 'IGNORE lexeme #:skip? #t)]
      [(:or "true" "false") (token 'BOOLEAN (equal? lexeme "true"))]
-     [(:seq sign digits) (token 'INT (string->number lexeme))]
-     [(:seq sign (:or (:seq digits "." (:? digits))
-                      (:seq "." digits)))
+     [(:seq optional-sign digits) (token 'INT (string->number lexeme))]
+     [(:seq optional-sign (:or (:seq digits "." (:? digits))
+                               (:seq "." digits)))
       (token 'REAL (string->number lexeme))]
-     [(:seq "/" (:+ (:or nonreg-char alphabetic "_" numeric)))
-      (token 'NAME lexeme)]
-      ["null" (token 'NULL 'null)]
-      [(from/to "(" ")") (token 'PAREN-TOK lexeme)]
-      [(:seq hex-digit hex-digit) (token 'HEX-DIGIT-PAIR (string->number lexeme 16))]
-      ["<" (token 'LEFT-ANGLE)]
-      [">" (token 'RIGHT-ANGLE)]
-      ["<<" (token 'DOUBLE-LEFT-ANGLE)]
-      [">>" (token 'DOUBLE-RIGHT-ANGLE)]
-      ["[" (token 'LEFT-BRACKET)]
-      ["]" (token 'RIGHT-BRACKET)]
-      [any-char (token 'CHAR lexeme)]))
-(λ () (lex-once port)))
+     [(from/stop-before "/" (:or pdf-delimiter pdf-whitespace)) (token 'NAME lexeme)]
+     ["null" (token 'NULL 'null)]
+     [(:seq "(" (:* (:or not-right-paren substring)) ")") (token 'STRING-TOK lexeme)]
+     [(:seq hex-digit hex-digit) (token 'HEX-DIGIT-PAIR (string->number lexeme 16))]
+     [(:or "<" ">" "<<" ">>" "[" "]" "obj" "endobj") (token lexeme lexeme)]
+     [(from/to "stream" "endstream") (token 'STREAM-DATA (string-trim (trim-ends "stream" lexeme "endstream")))]
+     [any-char (token 'CHAR lexeme)]))
+  (λ () (lex-one-token port)))
+
+(module+ test
+  (apply-tokenizer-maker make-tokenizer @string-append{(s(t)r) << /A (B) >>}))

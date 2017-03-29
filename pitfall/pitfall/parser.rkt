@@ -1,10 +1,14 @@
 #lang brag
 
 pf-program : pf-thing*
-@pf-thing : NULL | CHAR | BOOLEAN | INT | REAL | pf-name | pf-string | pf-array | pf-dict
+@pf-thing : pf-null | CHAR | BOOLEAN | INT | REAL | pf-name | pf-string | pf-array | pf-dict | pf-stream | pf-indirect-object | pf-indirect-object-ref
+@pf-null : NULL
 pf-name : NAME
-pf-string : PAREN-TOK | /LEFT-ANGLE HEX-DIGIT-PAIR+ /RIGHT-ANGLE
-pf-array : /LEFT-BRACKET pf-thing* /RIGHT-BRACKET
-pf-dict : /DOUBLE-LEFT-ANGLE (pf-dict-key pf-dict-value)* /DOUBLE-RIGHT-ANGLE
+pf-string : STRING-TOK | /"<" HEX-DIGIT-PAIR+ /">"
+pf-array : /"[" pf-thing* /"]"
+pf-dict : /"<<" (pf-dict-key pf-dict-value)* /">>"
 @pf-dict-key : pf-thing
 @pf-dict-value : pf-thing
+pf-stream : pf-dict STREAM-DATA
+pf-indirect-object : INT INT /"obj" pf-thing /"endobj"
+pf-indirect-object-ref : INDIRECT-OBJECT-REF-TOK
