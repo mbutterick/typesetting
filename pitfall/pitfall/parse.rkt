@@ -1,5 +1,5 @@
 #lang at-exp br/quicklang
-(require "parser.rkt" "tokenizer.rkt" gregor racket/bytes)
+(require "parser.rkt" "tokenizer.rkt" "struct.rkt" gregor racket/bytes)
 (provide (matching-identifiers-out #rx"pf-" (all-defined-out)))
 
 (module+ test (require rackunit))
@@ -12,14 +12,15 @@
    #`(module pitfall-parse-mod pitfall/parse
        #,parse-tree)))
 
-(define-macro (my-mb PARSE-TREE)
-  #'(#%module-begin PARSE-TREE))
-(provide (rename-out [my-mb #%module-begin]))
+(define-macro (my-mb ARG ...)
+  #'(#%module-begin ARG ...))
+(provide (rename-out [my-mb #%module-begin])
+         require)
 
 (provide null)
 
-(define-macro (pf-program ARG ...)
-  #'(list ARG ...))
+(define-macro (pf-program COS-OBJECT ...)
+  #'(begin COS-OBJECT ...))
 
 (define (pf-name str)
   (let* ([str (string-trim str "/" #:right? #f)]
@@ -52,7 +53,7 @@
 
 (module+ test
   (check-equal? @pf-string{(Testing)} "Testing")
-   (check-equal? (pf-string @string-append{(Test\
+  (check-equal? (pf-string @string-append{(Test\
  ing)}) "Testing")
   (check-equal? @pf-string{(Test\)ing)} "Test)ing")
   (check-equal? @pf-string{(Test\ning)} "Test\ning")
@@ -66,22 +67,33 @@
 (define (pf-array . xs) xs)
 
 (define (pf-dict . args)
-  (apply hash args))
+  (apply hasheq args))
 
-(struct $stream (dict data) #:transparent)
+
 (define (pf-stream dict str)
   (define data (string->bytes/utf-8 str))
   (when (not (equal? (hash-ref dict 'Length) (bytes-length data)))
-    (raise-argument-error 'pf-stream (format "~a bytes of data" (hash-ref dict 'Length)) (format "~a = ~a" (bytes-length data) data)))
+    (raise-argument-error 'pf-stream
+                          (format "~a bytes of data" (hash-ref dict 'Length))
+                          (format "~a = ~v" (bytes-length data) data)))
   ($stream dict data))
 
-(define indirect-objects (make-hash))
-(provide indirect-objects)
+(define-macro (pf-indirect-object OBJ-NUM GEN-NUM THING)
+  (with-syntax ([IO-ID (prefix-id "io" #'OBJ-NUM)])
+    #'(begin
+        (define (IO-ID #:name [name #f])
+          (if name
+              (string-join (map ~a '(OBJ-NUM GEN-NUM R)) " ")
+              THING))
+        (provide IO-ID)
+        IO-ID)))
 
-(define (pf-indirect-object obj-num generation-num thing)
-  (hash-set! indirect-objects (vector obj-num generation-num) thing))
+(define-macro (pf-indirect-object-ref (OBJ-NUM GEN-NUM "R"))
+  (with-syntax ([IO-ID (prefix-id "io" #'OBJ-NUM)])
+    #'(string-join '(OBJ-NUM GEN-NUM "R") " ")))
 
-(define-macro (pf-indirect-object-ref (OBJ-NUM GENERATION-NUM "R"))
-  #'(hash-ref (report indirect-objects) (vector (string->number OBJ-NUM)
-                                       (string->number GENERATION-NUM))))
-  
+(define-macro (pf-version NUM)
+  (with-pattern ([VERSION-ID (prefix-id "" #'version #:context #'NUM)])
+                #'(begin
+                    (define VERSION-ID NUM)
+                    (provide version))))

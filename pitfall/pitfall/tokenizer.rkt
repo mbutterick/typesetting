@@ -21,9 +21,10 @@
   (define lex-one-token
     (lexer-srcloc
      [(eof) eof]
+     [(:seq "%%EOF" any-string) eof]
      [(:seq digits (:+ pdf-whitespace) digits (:+ pdf-whitespace) "R")
-      (begin (println (string-split lexeme))
-      (token 'INDIRECT-OBJECT-REF-TOK (string-split lexeme)))]
+      (token 'INDIRECT-OBJECT-REF-TOK (string-split lexeme))]
+     [(:seq "%PDF-" digits "." digits) (token 'PDF-VERSION (string->number (trim-ends "%PDF-" lexeme "")))]
      [(:or pdf-whitespace
            (from/stop-before "%" #\newline)) (token 'IGNORE lexeme #:skip? #t)]
      [(:or "true" "false") (token 'BOOLEAN (equal? lexeme "true"))]
@@ -35,8 +36,8 @@
      ["null" (token 'NULL 'null)]
      [(:seq "(" (:* (:or not-right-paren substring)) ")") (token 'STRING-TOK lexeme)]
      [(:seq hex-digit hex-digit) (token 'HEX-DIGIT-PAIR (string->number lexeme 16))]
-     [(:or "<" ">" "<<" ">>" "[" "]" "obj" "endobj") (token lexeme lexeme)]
-     [(from/to "stream" "endstream") (token 'STREAM-DATA (string-trim (trim-ends "stream" lexeme "endstream")))]
+     [(:or "<" ">" "[" "]" "obj" "endobj") (token lexeme lexeme)]
+     [(from/to "stream" "endstream") (token 'STREAM-DATA (string-trim (trim-ends "stream" lexeme "endstream") "\n"))]
      [any-char (token 'CHAR lexeme)]))
   (λ () (lex-one-token port)))
 
