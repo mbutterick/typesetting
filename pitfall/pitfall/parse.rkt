@@ -7,7 +7,8 @@
 (module+ reader (provide read-syntax))
 
 (define (read-syntax src port)
-  (define parse-tree (parse (make-tokenizer port src)))
+  ;; use latin-1 reencoding to make one char = one byte
+  (define parse-tree (parse (make-tokenizer (open-input-string (bytes->string/latin-1 (port->bytes port))) src)))
   (strip-bindings
    #`(module pitfall-parse-mod pitfall/parse
        #,parse-tree)))
@@ -84,6 +85,6 @@
 (define-macro (pf-indirect-object-ref (OBJ GEN _))
   #'(co-io-ref OBJ GEN))
 
-(define (pf-version num) (co-version num))
+(define (pf-header num) (co-header num))
 
 (define (pf-comment text) (co-comment text))

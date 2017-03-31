@@ -12,8 +12,8 @@
 (define-lex-abbrev blackspace (:~ pdf-whitespace))
 (define-lex-abbrev not-right-paren (:~ ")"))
 (define-lex-abbrev substring (:seq "(" (:* not-right-paren) ")"))
-
 (define-lex-abbrev nonreg-char (:seq "#" hex-digit hex-digit))
+(define-lex-abbrev pdf-eol (:or #\return #\newline (:: #\return #\newline)))
 
 (define (make-tokenizer port [src #f])
   (port-count-lines! port)
@@ -24,7 +24,8 @@
      [(:seq "%%EOF" any-string) eof]
      [(:seq digits (:+ pdf-whitespace) digits (:+ pdf-whitespace) "R")
       (token 'INDIRECT-OBJECT-REF-TOK (map string->number (string-split lexeme)))]
-     [(:seq "%PDF-" digits "." digits) (token 'PDF-VERSION (string->number (trim-ends "%PDF-" lexeme "")))]
+     [(:seq "%PDF-" digits "." digits
+            (:? (:: pdf-eol "%" (:>= 4 (:~ (union #\return #\newline)))))) (token 'PDF-HEADER lexeme)]
      [pdf-whitespace (token 'IGNORE lexeme #:skip? #t)]
      [(from/stop-before "%" #\newline) (token 'COMMENT lexeme)]
      [(:or "true" "false") (token 'BOOLEAN (equal? lexeme "true"))]

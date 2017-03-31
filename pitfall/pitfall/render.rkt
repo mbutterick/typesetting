@@ -21,6 +21,7 @@
     (cond
       [(co-version? x)
        @string-append{%%PDF-@(number->string (co-version-num x))}]
+      [(co-header? x) (co-header-string x)]
       [(co-array? x)
        @string-append{[ @(string-join (map loop (co-array-items x)) " ") ]}]
       [(co-io? x)

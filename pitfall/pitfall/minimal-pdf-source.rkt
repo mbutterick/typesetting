@@ -1,7 +1,6 @@
 #lang s-exp pitfall/render
 
-(co-version 1.1)
-(co-comment "%¥±ë")
+(co-header "%PDF-1.1\n%Â¥Â±Ã«")
 (co-io
  1
  0
