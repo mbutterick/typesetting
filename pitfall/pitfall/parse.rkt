@@ -7,8 +7,8 @@
 (module+ reader (provide read-syntax))
 
 (define (read-syntax src port)
-  ;; use latin-1 reencoding to make one char = one byte
-  (define parse-tree (parse (make-tokenizer (open-input-string (bytes->string/latin-1 (port->bytes port))) src)))
+  ;; use latin-1 reencoding to make one char = one byte (note `latin1` respelling is correct)
+  (define parse-tree (parse (make-tokenizer (reencode-input-port port "latin1") src)))
   (strip-bindings
    #`(module pitfall-parse-mod pitfall/parse
        #,parse-tree)))
