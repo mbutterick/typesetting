@@ -88,3 +88,11 @@
 (define (pf-header num) (co-header num))
 
 (define (pf-comment text) (co-comment text))
+
+(define (pf-trailer dict)
+  (let ([h (co-dict-dict dict)])
+    (unless (and (hash-has-key? h 'Size) (hash-has-key? h 'Root))
+      (raise-argument-error 'pf-trailer
+                            "Size and Root keys are required for trailer"
+                            (hash-keys h))))
+  (co-trailer dict))

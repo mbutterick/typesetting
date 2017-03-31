@@ -9,3 +9,4 @@
 (struct co-io (idx rev thing) #:transparent)
 (struct co-io-ref (idx rev) #:transparent)
 (struct co-comment (text) #:transparent)
+(struct co-trailer (dict) #:transparent)

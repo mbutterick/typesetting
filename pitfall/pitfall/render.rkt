@@ -44,7 +44,11 @@
         stream
         @(loop (co-stream-data x))
         endstream}]
-      [(co-comment? x) (co-comment-text x)]
+      #;[(co-comment? x) (co-comment-text x)]
+      [(co-trailer? x) @string-append{
+        trailer
+        @(loop (co-trailer-dict x))
+        }]
       [(symbol? x) @string-append{/@(symbol->string x)}]
       [(number? x) @number->string{@x}]
       [(string? x) (bytes->string/utf-8 (string->bytes/latin-1 x))]

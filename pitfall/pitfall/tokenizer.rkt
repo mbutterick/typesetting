@@ -27,7 +27,7 @@
      [(:seq "%PDF-" digits "." digits
             (:? (:: pdf-eol "%" (:>= 4 (:~ (union #\return #\newline)))))) (token 'PDF-HEADER lexeme)]
      [pdf-whitespace (token 'IGNORE lexeme #:skip? #t)]
-     [(from/stop-before "%" #\newline) (token 'COMMENT lexeme)]
+     [(from/stop-before "%" #\newline) (token 'COMMENT lexeme #:skip? #t)]
      [(:or "true" "false") (token 'BOOLEAN (equal? lexeme "true"))]
      [(:seq optional-sign digits) (token 'INT (string->number lexeme))]
      [(:seq optional-sign (:or (:seq digits "." (:? digits))
@@ -37,7 +37,7 @@
      ["null" (token 'NULL 'null)]
      [(:seq "(" (:* (:or not-right-paren substring)) ")") (token 'STRING-TOK lexeme)]
      [(:seq hex-digit hex-digit) (token 'HEX-DIGIT-PAIR (string->number lexeme 16))]
-     [(:or "<" ">" "[" "]" "obj" "endobj") (token lexeme lexeme)]
+     [(:or "<" ">" "[" "]" "obj" "endobj" "trailer") (token lexeme lexeme)]
      [(from/to "stream" "endstream") (token 'STREAM-DATA (string-trim (trim-ends "stream" lexeme "endstream") "\n"))]
      [any-char (token 'CHAR lexeme)]))
   (λ () (lex-one-token port)))
