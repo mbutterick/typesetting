@@ -23,10 +23,10 @@
      [(eof) eof]
      [(:seq "%%EOF" any-string) eof]
      [(:seq digits (:+ pdf-whitespace) digits (:+ pdf-whitespace) "R")
-      (token 'INDIRECT-OBJECT-REF-TOK (string-split lexeme))]
+      (token 'INDIRECT-OBJECT-REF-TOK (map string->number (string-split lexeme)))]
      [(:seq "%PDF-" digits "." digits) (token 'PDF-VERSION (string->number (trim-ends "%PDF-" lexeme "")))]
-     [(:or pdf-whitespace
-           (from/stop-before "%" #\newline)) (token 'IGNORE lexeme #:skip? #t)]
+     [pdf-whitespace (token 'IGNORE lexeme #:skip? #t)]
+     [(from/stop-before "%" #\newline) (token 'COMMENT lexeme)]
      [(:or "true" "false") (token 'BOOLEAN (equal? lexeme "true"))]
      [(:seq optional-sign digits) (token 'INT (string->number lexeme))]
      [(:seq optional-sign (:or (:seq digits "." (:? digits))

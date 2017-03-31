@@ -5,5 +5,6 @@
 (struct co-array (items) #:transparent)
 (struct co-stream (dict data) #:transparent)
 (struct co-version (num) #:transparent)
-(struct co-io (obj gen thing) #:transparent)
-(struct co-io-ref (obj gen) #:transparent)
+(struct co-io (idx rev thing) #:transparent)
+(struct co-io-ref (idx rev) #:transparent)
+(struct co-comment (text) #:transparent)

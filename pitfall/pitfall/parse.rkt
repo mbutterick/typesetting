@@ -85,3 +85,5 @@
   #'(co-io-ref OBJ GEN))
 
 (define (pf-version num) (co-version num))
+
+(define (pf-comment text) (co-comment text))
