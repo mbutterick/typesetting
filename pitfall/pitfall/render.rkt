@@ -21,7 +21,7 @@
     (cond
       [(co-version? x)
        @string-append{%%PDF-@(number->string (co-version-num x))}]
-      [(co-header? x) (co-header-string x)]
+      [(co-header? x) (loop (co-header-string x))]
       [(co-array? x)
        @string-append{[ @(string-join (map loop (co-array-items x)) " ") ]}]
       [(co-io? x)
@@ -47,5 +47,5 @@
       [(co-comment? x) (co-comment-text x)]
       [(symbol? x) @string-append{/@(symbol->string x)}]
       [(number? x) @number->string{@x}]
-      [(string? x) x]
+      [(string? x) (bytes->string/utf-8 (string->bytes/latin-1 x))]
       [else (format "~a" x)])))
