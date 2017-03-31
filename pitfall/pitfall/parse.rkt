@@ -75,7 +75,7 @@
   (define data (string->bytes/utf-8 str))
   (when (not (equal? (hash-ref (co-dict-dict dict) 'Length) (bytes-length data)))
     (raise-argument-error 'pf-stream
-                          (format "~a bytes of data" (hash-ref dict 'Length))
+                          (format "~a bytes of data" (hash-ref (co-dict-dict dict) 'Length))
                           (format "~a = ~v" (bytes-length data) data)))
   (co-stream dict data))
 
