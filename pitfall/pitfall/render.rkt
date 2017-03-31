@@ -1,6 +1,14 @@
 #lang racket/base
-(require racket/string pitfall/struct)
-(provide (all-defined-out))
+(require (for-syntax racket/base)
+         racket/string pitfall/struct br/define)
+(provide (all-defined-out)
+         (all-from-out pitfall/struct)
+         (except-out (all-from-out racket/base) #%module-begin))
+
+(define-macro (mb . ARGS)
+  #'(#%module-begin
+     (cosexpr->string (list . ARGS))))
+(provide (rename-out [mb #%module-begin]))
 
 (define (cosexpr->string x)
   (define str
@@ -13,10 +21,10 @@
                     "\n<< "
                     (string-join
                      (for/list ([(k v) (in-hash x)])
-                               (string-join (list (loop k) (loop v)) " ")) " ")
+                       (string-join (list (loop k) (loop v)) " ")) " ")
                     " >> ")]
         [(symbol? x) (format "/~a" x)]
         [(number? x) (number->string x)]
-        [($stream? x) (string-append (loop ($stream-dict x)) (string-join (list "\nstream" (format "~a" ($stream-data x)) "endstream") "\n"))]
+        [(co-stream? x) (string-append (loop (co-stream-dict x)) (string-join (list "\nstream" (format "~a" (co-stream-data x)) "endstream") "\n"))]
         [else x])))
   (string-join (list "%%PDF1.1" str "%%EOF") "\n"))

@@ -64,36 +64,24 @@
   #;(check-true (andmap byte? @pf-string{<1C2D3F>}))
   #;(check-true (andmap byte? @pf-string{<1C 2D 3F>})))
 
-(define (pf-array . xs) xs)
+(define (pf-array . xs) (co-array xs))
 
 (define (pf-dict . args)
-  (apply hasheq args))
+  (co-dict (apply hasheq args)))
 
 
 (define (pf-stream dict str)
   (define data (string->bytes/utf-8 str))
-  (when (not (equal? (hash-ref dict 'Length) (bytes-length data)))
+  (when (not (equal? (hash-ref (co-dict-dict dict) 'Length) (bytes-length data)))
     (raise-argument-error 'pf-stream
                           (format "~a bytes of data" (hash-ref dict 'Length))
                           (format "~a = ~v" (bytes-length data) data)))
-  ($stream dict data))
+  (co-stream dict data))
 
-(define-macro (pf-indirect-object OBJ-NUM GEN-NUM THING)
-  (with-syntax ([IO-ID (prefix-id "io" #'OBJ-NUM)])
-    #'(begin
-        (define (IO-ID #:name [name #f])
-          (if name
-              (string-join (map ~a '(OBJ-NUM GEN-NUM R)) " ")
-              THING))
-        (provide IO-ID)
-        IO-ID)))
+(define (pf-indirect-object obj gen thing)
+  (co-io obj gen thing))
 
-(define-macro (pf-indirect-object-ref (OBJ-NUM GEN-NUM "R"))
-  (with-syntax ([IO-ID (prefix-id "io" #'OBJ-NUM)])
-    #'(string-join '(OBJ-NUM GEN-NUM "R") " ")))
+(define-macro (pf-indirect-object-ref (OBJ GEN _))
+  #'(co-io-ref OBJ GEN))
 
-(define-macro (pf-version NUM)
-  (with-pattern ([VERSION-ID (prefix-id "" #'version #:context #'NUM)])
-                #'(begin
-                    (define VERSION-ID NUM)
-                    (provide version))))
+(define (pf-version num) (co-version num))
