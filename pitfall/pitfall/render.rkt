@@ -35,9 +35,19 @@
            (cons (cons (co-io-idx cosexpr) offset) io-locs)
            io-locs))))
   (define trailer-str (car bstrs))
-  (define other-strs (cdr bstrs))
-  (define result (apply bytes-append `(,@(reverse other-strs) ,(make-xref-table locs) ,trailer-str #"\n%%EOF")))
+  (define other-bstrs (cdr bstrs))
+  (define last-offset (for/sum ([bstr (in-list other-bstrs)])
+                        (bytes-length bstr)))
+  (define result (apply bytes-append `(,@(reverse other-bstrs)
+                                       ,(make-xref-table locs)
+                                       ,trailer-str
+                                       #"\nstartxref\n"
+                                       ,(string->bytes/latin-1 (number->string last-offset))
+                                       #"\n%%EOF")))
   (display result)
+  (let ([op (open-output-file (expand-user-path "~/Desktop/foo.pdf") #:exists 'replace)])
+    (write-bytes result op)
+    (close-output-port op))
   result)
   
 (define (cosexpr->bytes x)
