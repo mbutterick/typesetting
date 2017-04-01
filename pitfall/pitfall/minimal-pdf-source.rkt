@@ -46,3 +46,4 @@
  (co-stream
   (co-dict '#hasheq((Length . 55)))
   #"  BT\n    /F1 18 Tf\n    0 0 Td\n    (Hello World) Tj\n  ET"))
+(co-trailer (co-dict (hasheq 'Size 5 'Root (co-io-ref 1 0))))

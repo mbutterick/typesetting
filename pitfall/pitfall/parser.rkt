@@ -1,6 +1,6 @@
 #lang brag
 
-pf-program : pf-header pf-body  pf-trailer
+pf-program : pf-header pf-body pf-trailer
 pf-header : PDF-HEADER
 @pf-body : pf-object*
 @pf-object : pf-null | CHAR | BOOLEAN | INT | REAL | pf-name | pf-string | pf-array | pf-dict | pf-stream | pf-indirect-object | pf-indirect-object-ref | pf-comment
