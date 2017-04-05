@@ -34,7 +34,7 @@
        (if (co-io? cosexpr)
            (cons (cons (co-io-idx cosexpr) offset) io-locs)
            io-locs))))
-  (define header-str (cosexpr->bytes (co-header "%PDF-1.1\n%Â¥Â±Ã«")))
+  (define header-str (cosexpr->bytes (co-header "%PDF-1.3\n%Â¥Â±Ã«")))
   (define trailer-str (cosexpr->bytes
                        (co-trailer (co-dict (hasheq 'Size (length bstrs) 'Root (co-io-ref 1 0))))))
   (define last-offset (for/sum ([bstr (in-list bstrs)])
@@ -107,12 +107,14 @@
 (define (co-page #:parent parent
                  #:mediabox pts
                  #:resources [rsrcs (co-dict (hasheq))]
-                 #:contents contents)
+                 #:contents contents
+                 #:annots [annots (co-array null)])
   (co-dict (hasheq 'Type 'Page
                    'Parent parent
                    'MediaBox (co-array pts)
                    'Resources rsrcs
-                   'Contents contents)))
+                   'Contents contents
+                   'Annots annots)))
 
 (define (make-co-dict . xs)
   (co-dict (apply hasheq xs)))
