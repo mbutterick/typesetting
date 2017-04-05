@@ -17,7 +17,7 @@
  @(let ([sep " 00000 n\n"])
     (string-join
      (for/list ([loc (in-list (cdr (sort locs < #:key car)))])
-       (~r #:min-width 10 #:pad-string "0" (cdr loc))) sep #:after-last sep))
+               (~r #:min-width 10 #:pad-string "0" (cdr loc))) sep #:after-last sep))
  }))
 
 
@@ -34,11 +34,13 @@
        (if (co-io? cosexpr)
            (cons (cons (co-io-idx cosexpr) offset) io-locs)
            io-locs))))
-  (define trailer-str (car bstrs))
-  (define other-bstrs (cdr bstrs))
-  (define last-offset (for/sum ([bstr (in-list other-bstrs)])
-                        (bytes-length bstr)))
-  (define result (apply bytes-append `(,@(reverse other-bstrs)
+  (define header-str (cosexpr->bytes (co-header "%PDF-1.1\n%Â¥Â±Ã«")))
+  (define trailer-str (cosexpr->bytes
+                       (co-trailer (co-dict (hasheq 'Size (length bstrs) 'Root (co-io-ref 1 0))))))
+  (define last-offset (for/sum ([bstr (in-list bstrs)])
+                               (bytes-length bstr)))
+  (define result (apply bytes-append `(,header-str
+                                       ,@(reverse bstrs)
                                        ,(make-xref-table locs)
                                        ,trailer-str
                                        #"\nstartxref\n"
@@ -72,7 +74,7 @@
           <<
           @(string-join
             (for/list ([(k v) (in-hash (co-dict-dict x))])
-              @string-append{@(loop k) @(loop v)}) "\n")
+                      @string-append{@(loop k) @(loop v)}) "\n")
           >>}]
         [(co-io-ref? x)
          @string-append{@(loop (co-io-ref-idx x)) @(loop (co-io-ref-rev x)) R}]
@@ -92,3 +94,28 @@
         [(number? x) @number->string{@x}]
         [(string? x) x]
         [else (format "~a" x)]))) #"\n"))
+
+
+(define (co-catalog #:pages io-ref)
+  (co-dict (hasheq 'Type 'Catalog 'Pages io-ref)))
+
+(define (co-pages #:kids kidslist #:count count)
+  (co-dict (hasheq 'Type 'Pages
+                   'Kids (co-array kidslist)
+                   'Count count)))
+
+(define (co-page #:parent parent
+                 #:mediabox pts
+                 #:resources [rsrcs (co-dict (hasheq))]
+                 #:contents contents)
+  (co-dict (hasheq 'Type 'Page
+                   'Parent parent
+                   'MediaBox (co-array pts)
+                   'Resources rsrcs
+                   'Contents contents)))
+
+(define (make-co-dict . xs)
+  (co-dict (apply hasheq xs)))
+
+(define (make-co-stream bstr)
+  (co-stream  (make-co-dict 'Length (bytes-length bstr)) bstr))
