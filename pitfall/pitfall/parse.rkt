@@ -50,17 +50,17 @@
                                                                            [("f") "\f"]
                                                                            [else sub])))]
             [str (regexp-replace* @pregexp{\\(\d{2,3})} str (λ (m sub) (string (integer->char (string->number sub 8)))))])
-       str)]))
+       (co-string str))]))
 
 (module+ test
-  (check-equal? @pf-string{(Testing)} "Testing")
+  (check-equal? @pf-string{(Testing)} (co-string "Testing"))
   (check-equal? (pf-string @string-append{(Test\
- ing)}) "Testing")
-  (check-equal? @pf-string{(Test\)ing)} "Test)ing")
-  (check-equal? @pf-string{(Test\ning)} "Test\ning")
-  (check-equal? @pf-string{(Test\\ing)} "Test\\ing")
-  (check-equal? @pf-string{(A\53B)} "A+B")
-  (check-equal? @pf-string{(A\053B)} "A+B")
+ ing)}) (co-string "Testing"))
+  (check-equal? @pf-string{(Test\)ing)} (co-string "Test)ing"))
+  (check-equal? @pf-string{(Test\ning)} (co-string "Test\ning"))
+  (check-equal? @pf-string{(Test\\ing)} (co-string "Test\\ing"))
+  (check-equal? @pf-string{(A\53B)} (co-string "A+B"))
+  (check-equal? @pf-string{(A\053B)} (co-string "A+B"))
   #;(check-equal? @pf-string{(D:19990209153925-08\'00\')})
   #;(check-true (andmap byte? @pf-string{<1C2D3F>}))
   #;(check-true (andmap byte? @pf-string{<1C 2D 3F>})))

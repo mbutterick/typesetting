@@ -34,7 +34,7 @@
        (if (co-io? cosexpr)
            (cons (cons (co-io-idx cosexpr) offset) io-locs)
            io-locs))))
-  (define header-str (cosexpr->bytes (co-header "%PDF-1.3\n%Â¥Â±Ã«")))
+  (define header-str (cosexpr->bytes (co-header "%PDF-1.4\n%Â¥Â±Ã«")))
   (define trailer-str (cosexpr->bytes
                        (co-trailer (co-dict (hasheq 'Size (length bstrs) 'Root (co-io-ref 1 0))))))
   (define last-offset (for/sum ([bstr (in-list bstrs)])
@@ -78,6 +78,7 @@
           >>}]
         [(co-io-ref? x)
          @string-append{@(loop (co-io-ref-idx x)) @(loop (co-io-ref-rev x)) R}]
+        [(co-string? x) (format "(~a)" (co-string-string x))]
         [(co-stream? x)
          @string-append{
           @(loop (co-stream-dict x))
@@ -121,3 +122,5 @@
 
 (define (make-co-stream bstr)
   (co-stream  (make-co-dict 'Length (bytes-length bstr)) bstr))
+
+(cosexpr->bytes (make-co-dict 'Hello (co-string "World")))
