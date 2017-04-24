@@ -1,8 +1,9 @@
 #lang at-exp racket/base
 (require (for-syntax racket/base)
-         racket/string pitfall/struct br/define racket/bytes sugar/debug racket/format)
+         racket/string pitfall/struct br/define racket/bytes sugar/debug racket/format racket/file)
 (provide (all-defined-out)
          (all-from-out pitfall/struct)
+         file->bytes
          (except-out (all-from-out racket/base) #%module-begin))
 
 (define-macro (mb . ARGS)
@@ -17,7 +18,7 @@
  @(let ([sep " 00000 n\n"])
     (string-join
      (for/list ([loc (in-list (cdr (sort locs < #:key car)))])
-               (~r #:min-width 10 #:pad-string "0" (cdr loc))) sep #:after-last sep))
+       (~r #:min-width 10 #:pad-string "0" (cdr loc))) sep #:after-last sep))
  }))
 
 
@@ -34,11 +35,11 @@
        (if (co-io? cosexpr)
            (cons (cons (co-io-idx cosexpr) offset) io-locs)
            io-locs))))
-  (define header-str (cosexpr->bytes (co-header "%PDF-1.3\n%Â¥Â±Ã«")))
+  (define header-str (cosexpr->bytes (co-header "%PDF-1.6\n%Â¥Â±Ã«")))
   (define trailer-str (cosexpr->bytes
                        (co-trailer (co-dict (hasheq 'Size (length bstrs) 'Root (co-io-ref 1 0))))))
   (define last-offset (for/sum ([bstr (in-list bstrs)])
-                               (bytes-length bstr)))
+                        (bytes-length bstr)))
   (define result (apply bytes-append `(,header-str
                                        ,@(reverse bstrs)
                                        ,(make-xref-table locs)
@@ -46,11 +47,11 @@
                                        #"\nstartxref\n"
                                        ,(string->bytes/latin-1 (number->string last-offset))
                                        #"\n%%EOF")))
-  (display result)
+  #;(display result)
   (let ([op (open-output-file (expand-user-path "~/Desktop/foo.pdf") #:exists 'replace)])
     (write-bytes result op)
     (close-output-port op))
-  result)
+  #;result)
   
 (define (cosexpr->bytes x)
   (bytes-append
@@ -74,7 +75,7 @@
           <<
           @(string-join
             (for/list ([(k v) (in-hash (co-dict-dict x))])
-                      @string-append{@(loop k) @(loop v)}) "\n")
+              @string-append{@(loop k) @(loop v)}) "\n")
           >>}]
         [(co-io-ref? x)
          @string-append{@(loop (co-io-ref-idx x)) @(loop (co-io-ref-rev x)) R}]
@@ -120,7 +121,10 @@
 (define (make-co-dict . xs)
   (co-dict (apply hasheq xs)))
 
-(define (make-co-stream bstr)
-  (co-stream  (make-co-dict 'Length (bytes-length bstr)) bstr))
+(define (make-co-stream bstr . kvs)
+  (co-stream  (apply make-co-dict 'Length (bytes-length bstr) kvs) (bytes->string/latin-1 bstr)))
 
-(cosexpr->bytes (make-co-dict 'Hello (co-string "World")))
+(define (make-font-co-stream font-path)
+  (make-co-stream (file->bytes font-path) 'Subtype 'OpenType))
+
+#;(cosexpr->bytes (make-co-dict 'Hello (co-string "World")))
