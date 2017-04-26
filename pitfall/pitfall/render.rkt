@@ -20,8 +20,10 @@
        (~r #:min-width 10 #:pad-string "0" (cdr loc))) sep #:after-last sep))
  }))
 
-
 (define (render-args . args)
+  (render-list args))
+
+(define (render-list args)
   (define-values (bstrs offset locs)
     (for/fold ([cobstrs null]
                [offset 0]
