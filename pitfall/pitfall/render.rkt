@@ -1,10 +1,9 @@
-#lang at-exp racket/base
-(require (for-syntax racket/base)
-         racket/string pitfall/struct br/define racket/bytes sugar/debug racket/format racket/file)
+#lang at-exp br
+(require racket/string pitfall/struct pitfall/measure br/define racket/bytes sugar/debug racket/format racket/file)
 (provide (all-defined-out)
-         (all-from-out pitfall/struct)
+         (all-from-out pitfall/struct pitfall/measure)
          file->bytes
-         (except-out (all-from-out racket/base) #%module-begin))
+         (except-out (all-from-out br) #%module-begin))
 
 (define-macro (mb . ARGS)
   #'(#%module-begin (render-args . ARGS)))

@@ -28,16 +28,10 @@
        (make-co-stream
         #"
 BT
-/F1 24 Tf
-1 0 0 1 100 100 Tm
-1 0 0 RG
-[2] 0 d
-0.75 g
-2 Tr
+/F1 48 Tf
+
 (Hello) Tj
-2 0 0 2 160 100 Tm
-0 0 0 RG
-0 g
+
 (World) Tj
 ET
 "))
@@ -49,9 +43,15 @@ ET
         'Type 'Font
         'Subtype 'Type1
         'Name 'F1
-        'FontDescriptor (co-io-ref 9 0)))
-
-
+        'BaseFont 'FiraSansOTMedium
+        'FontDescriptor (co-io-ref 9 0)
+        'FirstChar 0
+        'LastChar 1150
+        'Widths (co-array (for/list ([i (in-range (add1 1150))])
+                                    (define m (measure-char-idx "fira.otf" i))
+                                    (displayln m)
+                                    m))
+        'Encoding 'MacRomanEncoding))
 
 (co-io 7 0
        (make-co-dict 'Type 'Annot
@@ -70,7 +70,7 @@ ET
         'Type 'FontDescriptor
         'FontName 'FiraSansOTLight
         'FontFile3 (co-io-ref 10 0)
-        'Flags 262178
+        'Flags 4
         'FontBBox (co-array '(-177 -269 1123 866))
         'MissingWidth 255
         'StemV 105
@@ -78,7 +78,7 @@ ET
         'CapHeight 660
         'XHeight 394
         'Ascent 720
-        'Descent '270
+        'Descent -270
         'Leading 83
         'MaxWidth 1212
         'AvgWidth 478
