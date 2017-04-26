@@ -11,3 +11,6 @@
 (struct co-io-ref (idx rev) #:transparent)
 (struct co-comment (text) #:transparent)
 (struct co-trailer (dict) #:transparent)
+
+(struct co-hash (hash) #:transparent)
+(struct co-encoding-datum (datum) #:transparent)

@@ -17,11 +17,14 @@
  @(let ([sep " 00000 n\n"])
     (string-join
      (for/list ([loc (in-list (cdr (sort locs < #:key car)))])
-       (~r #:min-width 10 #:pad-string "0" (cdr loc))) sep #:after-last sep))
+               (~r #:min-width 10 #:pad-string "0" (cdr loc))) sep #:after-last sep))
  }))
 
 (define (render-args . args)
   (render-list args))
+
+(define (render thing)
+  (render-list (list thing)))
 
 (define (render-list args)
   (define-values (bstrs offset locs)
@@ -40,7 +43,7 @@
   (define trailer-str (cosexpr->bytes
                        (co-trailer (co-dict (hasheq 'Size (length bstrs) 'Root (co-io-ref 1 0))))))
   (define last-offset (for/sum ([bstr (in-list bstrs)])
-                        (bytes-length bstr)))
+                               (bytes-length bstr)))
   (define result (apply bytes-append `(,header-str
                                        ,@(reverse bstrs)
                                        ,(make-xref-table locs)
@@ -76,7 +79,7 @@
           <<
           @(string-join
             (for/list ([(k v) (in-hash (co-dict-dict x))])
-              @string-append{@(loop k) @(loop v)}) "\n")
+                      @string-append{@(loop k) @(loop v)}) "\n")
           >>}]
         [(co-io-ref? x)
          @string-append{@(loop (co-io-ref-idx x)) @(loop (co-io-ref-rev x)) R}]
@@ -93,6 +96,11 @@
           trailer
           @(loop (co-trailer-dict x))
           }]
+        [(co-hash? x)
+         (string-join
+          (map loop (for/list ([(k v) (in-hash (co-hash-hash x))])
+                              (co-io k 0 v))) "")]
+        [(co-encoding-datum? x) (symbol->string (co-encoding-datum-datum x))]
         [(symbol? x) @string-append{/@(symbol->string x)}]
         [(number? x) @number->string{@x}]
         [(string? x) x]
@@ -119,6 +127,12 @@
                    'Contents contents
                    'Annots annots)))
 
+(define (make-co-hash)
+  (co-hash (make-hash)))
+
+(define (+co-hash cosh idx thing)
+  (hash-set! (co-hash-hash cosh) idx thing))
+
 (define (make-co-dict . xs)
   (co-dict (apply hasheq xs)))
 
@@ -127,5 +141,12 @@
 
 (define (make-font-co-stream font-path)
   (make-co-stream (file->bytes font-path) 'Subtype 'OpenType))
+
+(define (make-co-io-ref [idx 0] [rev 0])
+  (co-io-ref idx rev))
+
+(define (make-encoding-list xs)
+  (co-array (for/list ([x (in-list xs)])
+                      (co-encoding-datum x))))
 
 #;(cosexpr->bytes (make-co-dict 'Hello (co-string "World")))
