@@ -30,12 +30,16 @@
 
 
 
+(define (pdf-char-encode c)
+  (format "\\~a" (number->string (char->integer c) 8)))
 
 (define (typeset-text str size font-path)
   (string->bytes/latin-1
-    (string-append*
-     (for/list ([c (in-string str)])
-       (format "(~a) Tj ~a 0 Td" c (/ (* size (measure-char font-path c)) 1000.0))))))
+   (string-append*
+    (for/list ([c (in-string str)])
+      (format "(~a) Tj ~a 0 Td"
+              (pdf-char-encode c)
+              (/ (* size (measure-char font-path c)) 1000.0))))))
 
 
 
@@ -68,8 +72,7 @@
 (+co-hash cosh 25
           (make-co-dict
            'Type 'Encoding
-           'Differences
-           (co-array (flatten glyph-list))))
+           'Differences (co-array (flatten glyph-list))))
 
 (+co-hash cosh 8 (make-font-co-stream charter-font-path))
 
@@ -133,7 +136,7 @@
           (make-co-stream
            (bytes-append
             #"BT /F1 36 Tf 50 50 Td"
-            (typeset-text "Héllo Wørld 4-1" 36 charter-font-path)
+            (typeset-text "Hel’o Wørld 4-1" 36 charter-font-path)
             #"/F2 36 Tf -250 50 Td"
             (typeset-text "Ençhîládà 10" 36 miso-font-path)
             #"/F3 36 Tf -150 50 Td"
