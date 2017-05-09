@@ -1,0 +1,421 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'unlink',
+1 verbose cli   'pdfkit' ]
+2 info using npm@3.10.10
+3 info using node@v6.10.3
+4 silly loadCurrentTree Starting
+5 silly install loadCurrentTree
+6 silly install readLocalPackageData
+7 silly install normalizeTree
+8 silly loadCurrentTree Finishing
+9 silly loadIdealTree Starting
+10 silly install loadIdealTree
+11 silly cloneCurrentTree Starting
+12 silly install cloneCurrentTreeToIdealTree
+13 silly cloneCurrentTree Finishing
+14 silly loadShrinkwrap Starting
+15 silly install loadShrinkwrap
+16 silly loadShrinkwrap Finishing
+17 silly loadAllDepsIntoIdealTree Starting
+18 silly uninstall loadAllDepsIntoIdealtree
+19 silly loadAllDepsIntoIdealTree Finishing
+20 silly loadIdealTree Finishing
+21 silly currentTree pdfkit@0.8.0
+21 silly currentTree ├── abbrev@1.1.0
+21 silly currentTree ├── acorn@4.0.11
+21 silly currentTree ├── amdefine@1.0.1
+21 silly currentTree ├── assert@1.1.2
+21 silly currentTree ├─┬ ast-transform@0.0.0
+21 silly currentTree │ ├── escodegen@1.2.0
+21 silly currentTree │ └── esprima@1.0.4
+21 silly currentTree ├── ast-types@0.7.8
+21 silly currentTree ├── astw@2.2.0
+21 silly currentTree ├── async@0.2.10
+21 silly currentTree ├── babel-runtime@6.23.0
+21 silly currentTree ├── base64-js@1.2.0
+21 silly currentTree ├── Base64@0.2.1
+21 silly currentTree ├── blob-stream@0.1.3
+21 silly currentTree ├── blob@0.0.4
+21 silly currentTree ├── brace@0.2.1
+21 silly currentTree ├─┬ brfs@1.0.2
+21 silly currentTree │ └── through@2.2.7
+21 silly currentTree ├── brotli@1.3.2
+21 silly currentTree ├─┬ browser-pack@2.0.1
+21 silly currentTree │ └─┬ JSONStream@0.6.4
+21 silly currentTree │   └── through@2.2.7
+21 silly currentTree ├─┬ browser-resolve@1.11.2
+21 silly currentTree │ └── resolve@1.1.7
+21 silly currentTree ├── browserify-optional@1.0.0
+21 silly currentTree ├── browserify-zlib@0.1.4
+21 silly currentTree ├─┬ browserify@3.46.1
+21 silly currentTree │ ├── browser-resolve@1.2.4
+21 silly currentTree │ └── deep-equal@0.1.2
+21 silly currentTree ├─┬ buffer@2.1.13
+21 silly currentTree │ └── base64-js@0.0.8
+21 silly currentTree ├── builtins@0.0.7
+21 silly currentTree ├── callsite@1.0.0
+21 silly currentTree ├── camelcase@1.2.1
+21 silly currentTree ├── character-parser@1.2.0
+21 silly currentTree ├── clone@1.0.2
+21 silly currentTree ├── codemirror@3.20.0
+21 silly currentTree ├── coffee-script@1.12.5
+21 silly currentTree ├─┬ coffeeify@0.6.0
+21 silly currentTree │ └── coffee-script@1.7.1
+21 silly currentTree ├── combine-source-map@0.3.0
+21 silly currentTree ├── commander@2.1.0
+21 silly currentTree ├── commondir@0.0.1
+21 silly currentTree ├── concat-stream@1.4.10
+21 silly currentTree ├── console-browserify@1.0.3
+21 silly currentTree ├── constantinople@1.0.2
+21 silly currentTree ├── constants-browserify@0.0.1
+21 silly currentTree ├── convert-source-map@0.3.5
+21 silly currentTree ├── core-js@2.4.1
+21 silly currentTree ├── core-util-is@1.0.2
+21 silly currentTree ├── crypto-browserify@1.0.9
+21 silly currentTree ├── css-parse@1.0.4
+21 silly currentTree ├── css-stringify@1.0.5
+21 silly currentTree ├── css@1.0.8
+21 silly currentTree ├── decamelize@1.2.0
+21 silly currentTree ├── deep-equal@1.0.1
+21 silly currentTree ├── defined@0.0.0
+21 silly currentTree ├─┬ deps-sort@0.1.2
+21 silly currentTree │ └─┬ JSONStream@0.6.4
+21 silly currentTree │   └── through@2.2.7
+21 silly currentTree ├─┬ derequire@0.8.0
+21 silly currentTree │ └── esprima-fb@3001.1.0-dev-harmony-fb
+21 silly currentTree ├─┬ detective@3.1.0
+21 silly currentTree │ ├── escodegen@1.1.0
+21 silly currentTree │ └── esprima-fb@3001.1.0-dev-harmony-fb
+21 silly currentTree ├── dfa@1.0.0
+21 silly currentTree ├── domain-browser@1.1.7
+21 silly currentTree ├── duplexer@0.1.1
+21 silly currentTree ├── duplexer2@0.0.2
+21 silly currentTree ├─┬ escodegen@0.0.17
+21 silly currentTree │ └── estraverse@0.0.4
+21 silly currentTree ├── escope@0.0.16
+21 silly currentTree ├── esprima@1.0.4
+21 silly currentTree ├─┬ esrefactor@0.1.0
+21 silly currentTree │ └── estraverse@0.0.4
+21 silly currentTree ├── estraverse@1.5.1
+21 silly currentTree ├── esutils@1.0.0
+21 silly currentTree ├── events@1.0.2
+21 silly currentTree ├─┬ exorcist@0.1.6
+21 silly currentTree │ └── minimist@0.0.5
+21 silly currentTree ├── falafel@0.1.6
+21 silly currentTree ├── fontkit@1.6.0
+21 silly currentTree ├── glob@3.2.11
+21 silly currentTree ├── http-browserify@1.3.2
+21 silly currentTree ├── https-browserify@0.0.1
+21 silly currentTree ├── iconv-lite@0.4.17
+21 silly currentTree ├── ieee754@1.1.8
+21 silly currentTree ├── indexof@0.0.1
+21 silly currentTree ├── inherits@2.0.3
+21 silly currentTree ├─┬ inline-source-map@0.3.1
+21 silly currentTree │ └── source-map@0.3.0
+21 silly currentTree ├─┬ insert-module-globals@6.0.0
+21 silly currentTree │ └── process@0.6.0
+21 silly currentTree ├── is-promise@1.0.1
+21 silly currentTree ├── isarray@0.0.1
+21 silly currentTree ├── jade@1.1.5
+21 silly currentTree ├── jsonparse@0.0.5
+21 silly currentTree ├── JSONStream@0.7.4
+21 silly currentTree ├── lexical-scope@1.1.1
+21 silly currentTree ├─┬ linebreak@0.1.2
+21 silly currentTree │ └── unicode-trie@0.1.2
+21 silly currentTree ├── lru-cache@2.7.3
+21 silly currentTree ├── markdown@0.5.0
+21 silly currentTree ├── minimatch@0.3.0
+21 silly currentTree ├── minimist@0.0.10
+21 silly currentTree ├── mkdirp@0.3.5
+21 silly currentTree ├─┬ module-deps@2.0.6
+21 silly currentTree │ ├── browser-resolve@1.2.4
+21 silly currentTree │ ├── parents@0.0.2
+21 silly currentTree │ └── stream-combiner@0.1.0
+21 silly currentTree ├── monocle@1.1.51
+21 silly currentTree ├── nopt@2.1.2
+21 silly currentTree ├── object-keys@0.4.0
+21 silly currentTree ├── optimist@0.3.7
+21 silly currentTree ├── os-browserify@0.1.2
+21 silly currentTree ├── pako@0.2.9
+21 silly currentTree ├── parents@0.0.3
+21 silly currentTree ├── path-browserify@0.0.0
+21 silly currentTree ├── path-platform@0.0.1
+21 silly currentTree ├── png-js@0.1.1
+21 silly currentTree ├── process@0.7.0
+21 silly currentTree ├── promise@2.0.0
+21 silly currentTree ├── punycode@1.2.4
+21 silly currentTree ├── querystring-es3@0.2.0
+21 silly currentTree ├── querystring@0.2.0
+21 silly currentTree ├─┬ readable-stream@1.1.14
+21 silly currentTree │ └── string_decoder@0.10.31
+21 silly currentTree ├── readdirp@0.2.5
+21 silly currentTree ├── regenerator-runtime@0.10.5
+21 silly currentTree ├── resolve@0.6.3
+21 silly currentTree ├── restructure@0.5.4
+21 silly currentTree ├─┬ rfile@1.0.0
+21 silly currentTree │ └── resolve@0.3.1
+21 silly currentTree ├─┬ ruglify@1.0.0
+21 silly currentTree │ └── uglify-js@2.2.5
+21 silly currentTree ├── shallow-copy@0.0.1
+21 silly currentTree ├── shell-quote@0.0.1
+21 silly currentTree ├── sigmund@1.0.1
+21 silly currentTree ├── source-map@0.1.43
+21 silly currentTree ├─┬ stream-browserify@0.1.3
+21 silly currentTree │ └── process@0.5.2
+21 silly currentTree ├── stream-combiner@0.0.4
+21 silly currentTree ├── string_decoder@0.0.1
+21 silly currentTree ├── subarg@0.0.1
+21 silly currentTree ├─┬ syntax-error@1.1.6
+21 silly currentTree │ └── acorn@2.7.0
+21 silly currentTree ├── through@2.3.8
+21 silly currentTree ├─┬ through2@0.4.2
+21 silly currentTree │ ├── readable-stream@1.0.34
+21 silly currentTree │ ├── string_decoder@0.10.31
+21 silly currentTree │ └── xtend@2.1.2
+21 silly currentTree ├─┬ timers-browserify@1.0.3
+21 silly currentTree │ └── process@0.5.2
+21 silly currentTree ├── tiny-inflate@1.0.2
+21 silly currentTree ├─┬ transformers@2.1.0
+21 silly currentTree │ └── uglify-js@2.2.5
+21 silly currentTree ├── tty-browserify@0.0.0
+21 silly currentTree ├── typedarray@0.0.6
+21 silly currentTree ├─┬ uglify-js@2.4.24
+21 silly currentTree │ └── source-map@0.1.34
+21 silly currentTree ├── uglify-to-browserify@1.0.2
+21 silly currentTree ├── umd@2.0.0
+21 silly currentTree ├── unicode-properties@1.1.0
+21 silly currentTree ├── unicode-trie@0.3.1
+21 silly currentTree ├─┬ url@0.10.3
+21 silly currentTree │ └── punycode@1.3.2
+21 silly currentTree ├─┬ util@0.10.3
+21 silly currentTree │ └── inherits@2.0.1
+21 silly currentTree ├── vm-browserify@0.0.4
+21 silly currentTree ├── w3c-blob@0.0.1
+21 silly currentTree ├── window-size@0.1.0
+21 silly currentTree ├─┬ with@2.0.0
+21 silly currentTree │ └── uglify-js@2.4.0
+21 silly currentTree ├── wordwrap@0.0.3
+21 silly currentTree ├── xtend@3.0.0
+21 silly currentTree └─┬ yargs@3.5.4
+21 silly currentTree   └── wordwrap@0.0.2
+22 silly idealTree pdfkit@0.8.0
+22 silly idealTree ├── abbrev@1.1.0
+22 silly idealTree ├── acorn@4.0.11
+22 silly idealTree ├── amdefine@1.0.1
+22 silly idealTree ├── assert@1.1.2
+22 silly idealTree ├─┬ ast-transform@0.0.0
+22 silly idealTree │ ├── escodegen@1.2.0
+22 silly idealTree │ └── esprima@1.0.4
+22 silly idealTree ├── ast-types@0.7.8
+22 silly idealTree ├── astw@2.2.0
+22 silly idealTree ├── async@0.2.10
+22 silly idealTree ├── babel-runtime@6.23.0
+22 silly idealTree ├── base64-js@1.2.0
+22 silly idealTree ├── Base64@0.2.1
+22 silly idealTree ├── blob-stream@0.1.3
+22 silly idealTree ├── blob@0.0.4
+22 silly idealTree ├── brace@0.2.1
+22 silly idealTree ├─┬ brfs@1.0.2
+22 silly idealTree │ └── through@2.2.7
+22 silly idealTree ├── brotli@1.3.2
+22 silly idealTree ├─┬ browser-pack@2.0.1
+22 silly idealTree │ └─┬ JSONStream@0.6.4
+22 silly idealTree │   └── through@2.2.7
+22 silly idealTree ├─┬ browser-resolve@1.11.2
+22 silly idealTree │ └── resolve@1.1.7
+22 silly idealTree ├── browserify-optional@1.0.0
+22 silly idealTree ├── browserify-zlib@0.1.4
+22 silly idealTree ├─┬ browserify@3.46.1
+22 silly idealTree │ ├── browser-resolve@1.2.4
+22 silly idealTree │ └── deep-equal@0.1.2
+22 silly idealTree ├─┬ buffer@2.1.13
+22 silly idealTree │ └── base64-js@0.0.8
+22 silly idealTree ├── builtins@0.0.7
+22 silly idealTree ├── callsite@1.0.0
+22 silly idealTree ├── camelcase@1.2.1
+22 silly idealTree ├── character-parser@1.2.0
+22 silly idealTree ├── clone@1.0.2
+22 silly idealTree ├── codemirror@3.20.0
+22 silly idealTree ├── coffee-script@1.12.5
+22 silly idealTree ├─┬ coffeeify@0.6.0
+22 silly idealTree │ └── coffee-script@1.7.1
+22 silly idealTree ├── combine-source-map@0.3.0
+22 silly idealTree ├── commander@2.1.0
+22 silly idealTree ├── commondir@0.0.1
+22 silly idealTree ├── concat-stream@1.4.10
+22 silly idealTree ├── console-browserify@1.0.3
+22 silly idealTree ├── constantinople@1.0.2
+22 silly idealTree ├── constants-browserify@0.0.1
+22 silly idealTree ├── convert-source-map@0.3.5
+22 silly idealTree ├── core-js@2.4.1
+22 silly idealTree ├── core-util-is@1.0.2
+22 silly idealTree ├── crypto-browserify@1.0.9
+22 silly idealTree ├── css-parse@1.0.4
+22 silly idealTree ├── css-stringify@1.0.5
+22 silly idealTree ├── css@1.0.8
+22 silly idealTree ├── decamelize@1.2.0
+22 silly idealTree ├── deep-equal@1.0.1
+22 silly idealTree ├── defined@0.0.0
+22 silly idealTree ├─┬ deps-sort@0.1.2
+22 silly idealTree │ └─┬ JSONStream@0.6.4
+22 silly idealTree │   └── through@2.2.7
+22 silly idealTree ├─┬ derequire@0.8.0
+22 silly idealTree │ └── esprima-fb@3001.1.0-dev-harmony-fb
+22 silly idealTree ├─┬ detective@3.1.0
+22 silly idealTree │ ├── escodegen@1.1.0
+22 silly idealTree │ └── esprima-fb@3001.1.0-dev-harmony-fb
+22 silly idealTree ├── dfa@1.0.0
+22 silly idealTree ├── domain-browser@1.1.7
+22 silly idealTree ├── duplexer@0.1.1
+22 silly idealTree ├── duplexer2@0.0.2
+22 silly idealTree ├─┬ escodegen@0.0.17
+22 silly idealTree │ └── estraverse@0.0.4
+22 silly idealTree ├── escope@0.0.16
+22 silly idealTree ├── esprima@1.0.4
+22 silly idealTree ├─┬ esrefactor@0.1.0
+22 silly idealTree │ └── estraverse@0.0.4
+22 silly idealTree ├── estraverse@1.5.1
+22 silly idealTree ├── esutils@1.0.0
+22 silly idealTree ├── events@1.0.2
+22 silly idealTree ├─┬ exorcist@0.1.6
+22 silly idealTree │ └── minimist@0.0.5
+22 silly idealTree ├── falafel@0.1.6
+22 silly idealTree ├── fontkit@1.6.0
+22 silly idealTree ├── glob@3.2.11
+22 silly idealTree ├── http-browserify@1.3.2
+22 silly idealTree ├── https-browserify@0.0.1
+22 silly idealTree ├── iconv-lite@0.4.17
+22 silly idealTree ├── ieee754@1.1.8
+22 silly idealTree ├── indexof@0.0.1
+22 silly idealTree ├── inherits@2.0.3
+22 silly idealTree ├─┬ inline-source-map@0.3.1
+22 silly idealTree │ └── source-map@0.3.0
+22 silly idealTree ├─┬ insert-module-globals@6.0.0
+22 silly idealTree │ └── process@0.6.0
+22 silly idealTree ├── is-promise@1.0.1
+22 silly idealTree ├── isarray@0.0.1
+22 silly idealTree ├── jade@1.1.5
+22 silly idealTree ├── jsonparse@0.0.5
+22 silly idealTree ├── JSONStream@0.7.4
+22 silly idealTree ├── lexical-scope@1.1.1
+22 silly idealTree ├─┬ linebreak@0.1.2
+22 silly idealTree │ └── unicode-trie@0.1.2
+22 silly idealTree ├── lru-cache@2.7.3
+22 silly idealTree ├── markdown@0.5.0
+22 silly idealTree ├── minimatch@0.3.0
+22 silly idealTree ├── minimist@0.0.10
+22 silly idealTree ├── mkdirp@0.3.5
+22 silly idealTree ├─┬ module-deps@2.0.6
+22 silly idealTree │ ├── browser-resolve@1.2.4
+22 silly idealTree │ ├── parents@0.0.2
+22 silly idealTree │ └── stream-combiner@0.1.0
+22 silly idealTree ├── monocle@1.1.51
+22 silly idealTree ├── nopt@2.1.2
+22 silly idealTree ├── object-keys@0.4.0
+22 silly idealTree ├── optimist@0.3.7
+22 silly idealTree ├── os-browserify@0.1.2
+22 silly idealTree ├── pako@0.2.9
+22 silly idealTree ├── parents@0.0.3
+22 silly idealTree ├── path-browserify@0.0.0
+22 silly idealTree ├── path-platform@0.0.1
+22 silly idealTree ├── png-js@0.1.1
+22 silly idealTree ├── process@0.7.0
+22 silly idealTree ├── promise@2.0.0
+22 silly idealTree ├── punycode@1.2.4
+22 silly idealTree ├── querystring-es3@0.2.0
+22 silly idealTree ├── querystring@0.2.0
+22 silly idealTree ├─┬ readable-stream@1.1.14
+22 silly idealTree │ └── string_decoder@0.10.31
+22 silly idealTree ├── readdirp@0.2.5
+22 silly idealTree ├── regenerator-runtime@0.10.5
+22 silly idealTree ├── resolve@0.6.3
+22 silly idealTree ├── restructure@0.5.4
+22 silly idealTree ├─┬ rfile@1.0.0
+22 silly idealTree │ └── resolve@0.3.1
+22 silly idealTree ├─┬ ruglify@1.0.0
+22 silly idealTree │ └── uglify-js@2.2.5
+22 silly idealTree ├── shallow-copy@0.0.1
+22 silly idealTree ├── shell-quote@0.0.1
+22 silly idealTree ├── sigmund@1.0.1
+22 silly idealTree ├── source-map@0.1.43
+22 silly idealTree ├─┬ stream-browserify@0.1.3
+22 silly idealTree │ └── process@0.5.2
+22 silly idealTree ├── stream-combiner@0.0.4
+22 silly idealTree ├── string_decoder@0.0.1
+22 silly idealTree ├── subarg@0.0.1
+22 silly idealTree ├─┬ syntax-error@1.1.6
+22 silly idealTree │ └── acorn@2.7.0
+22 silly idealTree ├── through@2.3.8
+22 silly idealTree ├─┬ through2@0.4.2
+22 silly idealTree │ ├── readable-stream@1.0.34
+22 silly idealTree │ ├── string_decoder@0.10.31
+22 silly idealTree │ └── xtend@2.1.2
+22 silly idealTree ├─┬ timers-browserify@1.0.3
+22 silly idealTree │ └── process@0.5.2
+22 silly idealTree ├── tiny-inflate@1.0.2
+22 silly idealTree ├─┬ transformers@2.1.0
+22 silly idealTree │ └── uglify-js@2.2.5
+22 silly idealTree ├── tty-browserify@0.0.0
+22 silly idealTree ├── typedarray@0.0.6
+22 silly idealTree ├─┬ uglify-js@2.4.24
+22 silly idealTree │ └── source-map@0.1.34
+22 silly idealTree ├── uglify-to-browserify@1.0.2
+22 silly idealTree ├── umd@2.0.0
+22 silly idealTree ├── unicode-properties@1.1.0
+22 silly idealTree ├── unicode-trie@0.3.1
+22 silly idealTree ├─┬ url@0.10.3
+22 silly idealTree │ └── punycode@1.3.2
+22 silly idealTree ├─┬ util@0.10.3
+22 silly idealTree │ └── inherits@2.0.1
+22 silly idealTree ├── vm-browserify@0.0.4
+22 silly idealTree ├── w3c-blob@0.0.1
+22 silly idealTree ├── window-size@0.1.0
+22 silly idealTree ├─┬ with@2.0.0
+22 silly idealTree │ └── uglify-js@2.4.0
+22 silly idealTree ├── wordwrap@0.0.3
+22 silly idealTree ├── xtend@3.0.0
+22 silly idealTree └─┬ yargs@3.5.4
+22 silly idealTree   └── wordwrap@0.0.2
+23 silly generateActionsToTake Starting
+24 silly install generateActionsToTake
+25 silly generateActionsToTake Finishing
+26 silly diffTrees action count 0
+27 silly decomposeActions action count 0
+28 silly runTopLevelLifecycles Starting
+29 silly executeActions Starting
+30 silly install executeActions
+31 silly doSerial global-install 0
+32 silly doParallel fetch 0
+33 verbose correctMkdir /Users/MB/.npm/_locks correctMkdir not in flight; initializing
+34 verbose lock using /Users/MB/.npm/_locks/staging-73efde40ed96aa4a.lock for /Users/MB/git/pitfall/pdfkit/node_modules/.staging
+35 verbose unlock done using /Users/MB/.npm/_locks/staging-73efde40ed96aa4a.lock for /Users/MB/git/pitfall/pdfkit/node_modules/.staging
+36 silly rollbackFailedOptional Starting
+37 silly rollbackFailedOptional Finishing
+38 silly runTopLevelLifecycles Finishing
+39 silly install printInstalled
+40 warn pdfkit@0.8.0 No license field.
+41 verbose If you need help, you may report this error at:
+41 verbose     <https://github.com/npm/npm/issues>
+42 verbose stack Error: EACCES: permission denied, mkdir '/Users/MB/git/pitfall/pdfkit/node_modules/.staging'
+42 verbose stack     at Error (native)
+43 verbose cwd /Users/MB/git/pitfall/pdfkit/lib
+44 error Darwin 16.5.0
+45 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "unlink" "pdfkit"
+46 error node v6.10.3
+47 error npm  v3.10.10
+48 error path /Users/MB/git/pitfall/pdfkit/node_modules/.staging
+49 error code EACCES
+50 error errno -13
+51 error syscall mkdir
+52 error Error: EACCES: permission denied, mkdir '/Users/MB/git/pitfall/pdfkit/node_modules/.staging'
+52 error     at Error (native)
+52 error  { Error: EACCES: permission denied, mkdir '/Users/MB/git/pitfall/pdfkit/node_modules/.staging'
+52 error     at Error (native)
+52 error   errno: -13,
+52 error   code: 'EACCES',
+52 error   syscall: 'mkdir',
+52 error   path: '/Users/MB/git/pitfall/pdfkit/node_modules/.staging' }
+53 error Please try running this command again as root/Administrator.
+54 verbose exit [ -13, true ]
