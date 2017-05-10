@@ -2,7 +2,7 @@
 
 (require pitfall/kit/document)
 
-(define doc (make-object PDFDocument "outrkt0.pdf"))
+(define doc (new PDFDocument [options (hasheq 'out "testrkt0.pdf")]))
 (send doc end)
 
 #|

@@ -1,17 +1,17 @@
 PDFDocument = require 'pdfkit'
-tiger = require './tiger'
+tiger = require './assets/tiger'
 fs = require 'fs'
 
 # Create a new PDFDocument
 doc = new PDFDocument
-doc.pipe fs.createWriteStream('out.pdf')
+doc.pipe fs.createWriteStream('test.pdf')
 
 # Set some meta data
 doc.info['Title'] = 'Test Document'
 doc.info['Author'] = 'Devon Govett'
 
 # Register a font name for use later
-doc.registerFont('Charter', 'charter.ttf')
+doc.registerFont('Charter', 'assets/charter.ttf')
 
 # Set the font, draw some text, and embed an image
 doc.font('Charter')
@@ -19,8 +19,8 @@ doc.font('Charter')
    .text('Some text with an embedded font!', 100, 100)
    .fontSize(18)
    .text('PNG and JPEG images:')
-   .image('test.png', 100, 160, width: 412)
-   .image('test.jpeg', 190, 400, height: 300)
+   .image('assets/test.png', 100, 160, width: 412)
+   .image('assets/test.jpeg', 190, 400, height: 300)
 
 # Add another page
 doc.addPage()
