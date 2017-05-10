@@ -15,7 +15,9 @@
 
     (define escaped-chars '(#\newline #\return #\tab #\backspace #\page #\( #\) #\\))
     (define escaped-char-strings '("\\n" "\\r" "\\t" "\\b" "\\f" "\\(" "\\)" "\\\\"))
-    
+
+    ;; note: unlike nodejs, escapableRe does not have `g` option built in
+    ;; so use it with regexp-replace* not regexp-replace
     (field [escapableRe
             (regexp (format "[~a]" (regexp-quote (list->string escaped-chars))))])
 
