@@ -2,6 +2,9 @@
 (require racket/draw)
 (provide PDFDocument)
 
+(require "reference.rkt")
+;(require "page.rkt")
+
 (define PDFDocument
   (class pdf-dc%
     (init-field [options (hasheq)])
@@ -20,21 +23,21 @@
     ;; Whether streams should be compressed
     (field [compress (hash-ref options 'compress #t)])
     
-    (define _pageBuffer null)
-    (define _pageBufferStart 0)
+    (field [_pageBuffer null])
+    (field [_pageBufferStart 0])
 
     ;; The PDF object store
-    (define _offsets null)
-    (define _waiting 0)
-    (define _ended #f)
-    (define _offset 0)
+    (field [_offsets null])
+    (field [_waiting 0])
+    (field [_ended #f])
+    (field [_offset 0])
 
-    (define _root (ref
+    (field [_root (ref
                    (hasheq 'Type 'Catalog'
                            'Pages (ref
                                    (hasheq 'Type 'Pages'
                                            'Count 0
-                                           'Kids empty)))))
+                                           'Kids empty))))])
 
     ;; The current page
     (field [page #f])
@@ -59,7 +62,7 @@
 
     ;; Write the header
     ;; PDF version
-    (_write (format "%PDF-#{~a}" version))
+    (_write (format "%PDF-~a" version))
 
     (_write (format "%~a~a~a~a" #xFF #xFF #xFF #xFF))
 
@@ -83,7 +86,7 @@
 
     (field [x 0])
     (field [y 0])
-    (define _ctm null)
+    (field [_ctm null])
     (define/public (addPage [options options])
       ;; end the current page if needed
       (unless (hash-ref options 'bufferPages #f)
@@ -114,9 +117,13 @@
     (define/public (flushPages)
       42) ; temp
     
-    (define/public (ref . xs)
-      42) ; temp
-
+    (define/public (ref data)
+      (define ref (make-object PDFReference this (add1 (length _offsets)) data))
+      (push! _offsets #f) ; placeholder for this object's offset once it is finalized
+      (set! _waiting (add1 _waiting))
+      ref
+      42)
+                                          
     (define/public (_write . xs)
       42) ; temp
 

@@ -7,7 +7,11 @@ class PDFObject
   pad = (str, length) ->
     (Array(length + 1).join('0') + str).slice(-length)
 
+  @pad = pad
+
   escapableRe = /[\n\r\t\b\f\(\)\\]/g
+  @escapableRe = escapableRe
+
   escapable =
     '\n': '\\n'
     '\r': '\\r'
@@ -17,6 +21,8 @@ class PDFObject
     '\\': '\\\\'
     '(': '\\('
     ')': '\\)'
+
+  @escapable = escapable
 
   # Convert little endian UTF-16 to big endian
   swapBytes = (buff) ->
@@ -30,6 +36,8 @@ class PDFObject
         buff[i+1] = a
 
     return buff
+
+  @swapBytes = swapBytes
 
   @convert: (object) ->
     # String literals are converted to the PDF name type
