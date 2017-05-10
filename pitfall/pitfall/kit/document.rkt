@@ -18,10 +18,10 @@
                [output (open-output-file output-file #:exists 'replace)])
     
     ;; PDF version
-    (define version 1.3)
+    (field [version 1.3])
     
     ;; Whether streams should be compressed
-    (define compress (hash-ref options 'compress #t))
+    (field [compress (hash-ref options 'compress #t)])
     
     (define _pageBuffer null)
     (define _pageBufferStart 0)
@@ -40,7 +40,7 @@
                                            'Kids empty)))))
 
     ;; The current page
-    (define page #f)
+    (field [page #f])
 
     ;; todo
     ;; Initialize mixins
@@ -51,10 +51,10 @@
     #;(initImages)
 
     ;; Initialize the metadata
-    (define info (hasheq
+    (field [info (hasheq
                   'Producer 'PitfallKit'
                   'Creator 'PitfallKit'
-                  'CreationDate (seconds->date (current-seconds))))
+                  'CreationDate (seconds->date (current-seconds)))])
 
     (when (hash-ref options 'info #f)
       (for ([(key val) (in-hash (hash-ref options 'info))])
@@ -84,8 +84,8 @@
     ;mixin require './mixins/images'
     ;mixin require './mixins/annotations'
 
-    (define x #f)
-    (define y #f)
+    (field [x 0])
+    (field [y 0])
     (define _ctm null)
     (define/public (addPage [options options])
       ;; end the current page if needed
