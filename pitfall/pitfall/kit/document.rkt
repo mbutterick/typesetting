@@ -4,18 +4,15 @@
 
 (define PDFDocument
   (class pdf-dc%
-    (init [opts (hasheq)])
-
-    (define options opts)
-    (define output-file (hash-ref options 'out "outrkt.pdf"))
-    
-    (super-new [interactive #f]	 
-               [parent #f]	 
-               [use-paper-bbox #f]	 
-               [as-eps #f]	 
-               [width #f]	 
-               [height #f]	 
-               [output (open-output-file output-file #:exists 'replace)])
+    (init-field [options (hasheq)])
+    (let ([output-file (hash-ref options 'out "outrkt.pdf")])
+      (super-new [interactive #f]	 
+                 [parent #f]	 
+                 [use-paper-bbox #f]	 
+                 [as-eps #f]	 
+                 [width #f]	 
+                 [height #f]	 
+                 [output (open-output-file output-file #:exists 'replace)]))
     
     ;; PDF version
     (field [version 1.3])
