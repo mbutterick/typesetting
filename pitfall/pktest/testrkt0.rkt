@@ -2,7 +2,8 @@
 
 (require pitfall/kit/document)
 
-(define doc (new PDFDocument [options (hasheq 'out "testrkt0.pdf")]))
+(define doc (new PDFDocument))
+(send doc pipe (open-output-file "testrkt0.pdf" #:exists 'replace))
 (send doc end)
 
 #|

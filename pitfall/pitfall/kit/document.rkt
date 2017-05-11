@@ -6,16 +6,14 @@
 ;(require "page.rkt")
 
 (define PDFDocument
-  (class pdf-dc%
+  (class object% ; actually is an instance of readable.Stream, which is an input port
     (init-field [options (hasheq)])
     (let ([output-file (hash-ref options 'out "outrkt.pdf")])
-      (super-new [interactive #f]	 
-                 [parent #f]	 
-                 [use-paper-bbox #f]	 
-                 [as-eps #f]	 
-                 [width #f]	 
-                 [height #f]	 
-                 [output (open-output-file output-file #:exists 'replace)]))
+      (super-new))
+
+    ; list of byte chunks to push onto
+    ; simulates interface of stream.readable
+    (field [byte-strings empty]) 
     
     ;; PDF version
     (field [version 1.3])
@@ -58,13 +56,15 @@
 
     (when (hash-ref options 'info #f)
       (for ([(key val) (in-hash (hash-ref options 'info))])
-           (hash-set! info key val)))
+        (hash-set! info key val)))
 
     ;; Write the header
     ;; PDF version
     (_write (format "%PDF-~a" version))
 
-    (_write (format "%~a~a~a~a" #xFF #xFF #xFF #xFF))
+    ;; 4 binary chars, as recommended by the spec
+    (let ([c (integer->char #xFF)])
+      (_write (string-append "%" (string c c c c))))
 
     ;; Add the first page
     #;(unless (not (hash-ref options 'autoFirstPage #t))
@@ -123,20 +123,33 @@
       (set! _waiting (add1 _waiting))
       ref
       42)
-                                          
-    (define/public (_write . xs)
-      42) ; temp
 
-    (define (end-doc) 'done) ; tempo
-    (override end-doc)
+    (define/public (push chunk)
+      (set! byte-strings (cons chunk byte-strings)))
+                                          
+    (define/public (_write data)
+      (let ([data (if (not (bytes? data))
+                      ; `string->bytes/latin-1` is equivalent to plain binary encoding
+                      (string->bytes/latin-1 (string-append data "\n"))
+                      data)])
+        (push data)
+        (report byte-strings)
+        (set! _offset (+ _offset (bytes-length data)))))
+
+    (define/public (pipe op)
+      (copy-port (open-input-bytes (apply bytes-append (reverse byte-strings))) op)
+      (close-output-port op))
 
     (define _info #f)
     (define/public (end)
       (flushPages)
-      (end-doc)))) ; temp
+      'done))) ; temp
 
 
-(define doc (make-object PDFDocument (hasheq 'out "testrkt0.pdf")))
+(define doc (new PDFDocument))
+
 (module+ test
   (require rackunit)
+  (send doc _write "foobar")
+  (send doc pipe (open-output-file "testrkt0.pdf" #:exists 'replace))
   (check-equal? (send doc end) 'done))

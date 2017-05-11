@@ -1,14 +1,15 @@
 #lang at-exp br
-(require "struct.rkt" "reference.rkt" srfi/19)
+(require racket/class racket/string racket/list srfi/19)
+(require "struct.rkt" "reference.rkt")
 
 (define PDFObject
   (class object%
     (super-new)
 
     (define (string-slice str length)
-      (if (negative? length)
-          (string-slice str (+ (string-length str) length))
-          (substring str length)))
+      (substring str (if (negative? length)
+                         (+ (string-length str) length)
+                         length)))
 
     (define/public (pad str length)
       (define newstr (string-append (string-join (make-list (add1 length) "") "0") str))
@@ -26,7 +27,8 @@
                                  [v (in-list escaped-char-strings)])
                         (values (string k) v))])
 
-    ; Convert little endian UTF-16 to big endian
+    ;; Convert little endian UTF-16 to big endian
+    ;; endianness of `bytes-open-converter` is relative to platform, so little endian on all x86
     (define (utf8->utf16 bytes)
       (let-values ([(bs bslen bsresult)
                     (bytes-convert (bytes-open-converter "platform-UTF-8" "platform-UTF-16") bytes)])
@@ -35,12 +37,12 @@
     (define/public (swapBytes buff)
       (define bufflen (bytes-length buff))
       (when (odd? bufflen)
-        (raise-argument-error 'swapBytes "even number of bytes" (bytes-length buff)))
-      (define newbuff (make-bytes bufflen))
-      (for ([bidx (in-range 0 bufflen 2)])
+        (raise-argument-error 'swapBytes "even number of bytes" bufflen))
+      (for/fold ([newbuff (make-bytes bufflen)])
+                ([bidx (in-range bufflen)] #:when (even? bidx))
         (bytes-set! newbuff bidx (bytes-ref buff (add1 bidx)))
-        (bytes-set! newbuff (add1 bidx) (bytes-ref buff bidx)))
-      newbuff)
+        (bytes-set! newbuff (add1 bidx) (bytes-ref buff bidx))
+        newbuff))
 
     (define/public (number n)
       (unless (< -1e21 n 1e21)
@@ -56,29 +58,28 @@
           ;; String objects are converted to PDF strings (UTF-16)
           [(String? x)
            ;; Escape characters as required by the spec
-           (define string (regexp-replace* escapableRe (String-string x)
-                                           (λ (c) (hash-ref escapable c))))
-           ;; Detect if this is a unicode string
-           (define isUnicode (for/or ([c (in-string string)])
-                               (char>? c (integer->char #x7f))))
+           (define string (regexp-replace* escapableRe (String-string x) (λ (c) (hash-ref escapable c))))
+           ;; Detect if this is a unicode string (= contains non-ascii chars)
+           (define contains-non-ascii? (for/or ([c (in-string string)])
+                                         (char>? c (integer->char 127))))
            ;; If so, encode it as big endian UTF-16
-           (string-append "(" (if isUnicode
-                                  (bytes->string/latin-1 (swapBytes (utf8->utf16 (string->bytes/utf-8 (string-append "\ufeff" string)))))
-                                  string) ")")]
-          ;; Buffers are converted to PDF hex strings
-          [(bytes? x) (string-append "<" (string-append*
-                                               (for/list ([b (in-bytes x)])
-                                                 (number->string b 16))) ">")]
+           (format "(~a)" (if contains-non-ascii?
+                              (bytes->string/latin-1 (swapBytes (utf8->utf16 (string->bytes/utf-8 (string-append "\ufeff" string)))))
+                              string))]
+          ;; Buffers (= byte strings) are converted to PDF hex strings
+          [(bytes? x) (format "<~a>" (string-append*
+                                      (for/list ([b (in-bytes x)])
+                                        (number->string b 16))))]
           [(is-a? x PDFReference) (send x toString)]
-          [(date? x) (string-append "(D:" (date->string x "~Y~m~d~H~M~S") "Z)")]
-          [(list? x) (string-append "[" (string-join (map loop x) " ") "]")]
+          [(date? x) (format "(D:~aZ)" (date->string x "~Y~m~d~H~M~S"))]
+          [(list? x) (format "[~a]" (string-join (map loop x) " "))]
           [(hash? x) (string-join (append (list "<<")
-                                               (for/list ([(k v) (in-hash x)])
-                                                 (format "~a ~a" (loop k) (loop v)))
-                                               (list ">>"))
-                                       (string #\newline))]
-          [(number? x) (~a (number x))]
-          [else (~a x)])))))
+                                          (for/list ([(k v) (in-hash x)])
+                                            (format "~a ~a" (loop k) (loop v)))
+                                          (list ">>"))
+                                  (string #\newline))]
+          [(number? x) (format "~a" (number x))]
+          [else (format "~a" x)])))))
 
 
 (module+ test
