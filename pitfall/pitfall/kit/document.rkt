@@ -1,5 +1,6 @@
-#lang br
-(require racket/draw)
+#lang racket/base
+(require racket/class racket/draw br/list racket/list racket/format racket/port)
+(require sugar/debug)
 (provide PDFDocument)
 
 (require "reference.rkt" "struct.rkt" "object.rkt")
@@ -50,8 +51,8 @@
 
     ;; Initialize the metadata
     (field [info (hasheq
-                  'Producer 'PitfallKit'
-                  'Creator 'PitfallKit'
+                  'Producer "PitfallKit"
+                  'Creator "PitfallKit"
                   'CreationDate (seconds->date (current-seconds)))])
 
     (when (hash-ref options 'info #f)
@@ -165,7 +166,7 @@
       (send _root end)
       (send (hash-ref (get-field data _root) 'Pages) end)
 
-      (if (or (zero? _waiting) #t) ; debug
+      (if (or (zero? _waiting) 'debug)
           (_finalize)
           (set! _ended #t))
 
@@ -179,7 +180,7 @@
       (_write "0000000000 65535 f ")
       (for ([offset (in-list _offsets)])
         (_write (string-append
-                 (~r (or offset 42) #;debug #:min-width 10 #:pad-string "0")
+                 (~r (or offset (random 17)) #;debug #:min-width 10 #:pad-string "0")
                  " 00000 n ")))
       ;; trailer
       (_write "trailer")
