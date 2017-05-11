@@ -8,7 +8,8 @@
     (super-new)
     (field [gen 0])
     (field [deflate #f])
-    (field [compress (and (get-field compress document) (not (hash-ref data 'Filter #f)))])
+    (field [compress (and (with-handlers ([exn:fail:contract? (λ (exn) #f)])
+                            (get-field compress document)) (not (hash-ref data 'Filter #f)))])
     (field [uncompressedLength 0])
     (field [chunks empty])
 
@@ -38,5 +39,8 @@
       (set! offset (get-field _offset document))
       (send document _write (format "~a ~a obj" id gen))
       )
+
+    (define/public (toString)
+      (format "~a ~a R" id gen)) 
 
     ))

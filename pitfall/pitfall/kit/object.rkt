@@ -1,5 +1,5 @@
 #lang at-exp br
-(require "struct.rkt")
+(require "struct.rkt" "reference.rkt" srfi/19)
 
 (define PDFObject
   (class object%
@@ -42,29 +42,43 @@
         (bytes-set! newbuff (add1 bidx) (bytes-ref buff bidx)))
       newbuff)
 
+    (define/public (number n)
+      (unless (< -1e21 n 1e21)
+        (raise-argument-error 'number "valid number" n))
+      (define result (/ (round (* n 1e6)) 1e6))
+      (if (integer? result) (inexact->exact result) result))
+
     (define/public (convert object)
-      (cond
-        ;; String literals are converted to the PDF name type
-        [(string? object) (string-append "/" object)]
-        ;; String objects are converted to PDF strings (UTF-16)
-        [(String? object)
-         ;; Escape characters as required by the spec
-         (define string
-           (regexp-replace* escapableRe (String-string object)
-                            (λ (c) (hash-ref escapable c))))
-         ;; Detect if this is a unicode string
-         (define isUnicode
-           (for/or ([c (in-string string)])
-             (char>? c (integer->char #x7f))))
-         ;; If so, encode it as big endian UTF-16
-         (string-append "(" (if isUnicode
-                                (bytes->string/latin-1 (swapBytes (utf8->utf16 (string->bytes/utf-8 (string-append "\ufeff" string)))))
-                                string) ")")]
-        ;; Buffers are converted to PDF hex strings
-        [(bytes? object) (string-append "<" (string-append*
-                                             (for/list ([b (in-bytes object)])
-                                               (number->string b 16))) ">")]
-        [else 42]))))
+      (let loop ([x object])
+        (cond
+          ;; String literals are converted to the PDF name type
+          [(string? x) (string-append "/" x)]
+          ;; String objects are converted to PDF strings (UTF-16)
+          [(String? x)
+           ;; Escape characters as required by the spec
+           (define string (regexp-replace* escapableRe (String-string x)
+                                           (λ (c) (hash-ref escapable c))))
+           ;; Detect if this is a unicode string
+           (define isUnicode (for/or ([c (in-string string)])
+                               (char>? c (integer->char #x7f))))
+           ;; If so, encode it as big endian UTF-16
+           (string-append "(" (if isUnicode
+                                  (bytes->string/latin-1 (swapBytes (utf8->utf16 (string->bytes/utf-8 (string-append "\ufeff" string)))))
+                                  string) ")")]
+          ;; Buffers are converted to PDF hex strings
+          [(bytes? x) (string-append "<" (string-append*
+                                               (for/list ([b (in-bytes x)])
+                                                 (number->string b 16))) ">")]
+          [(is-a? x PDFReference) (send x toString)]
+          [(date? x) (string-append "(D:" (date->string x "~Y~m~d~H~M~S") "Z)")]
+          [(list? x) (string-append "[" (string-join (map loop x) " ") "]")]
+          [(hash? x) (string-join (append (list "<<")
+                                               (for/list ([(k v) (in-hash x)])
+                                                 (format "~a ~a" (loop k) (loop v)))
+                                               (list ">>"))
+                                       (string #\newline))]
+          [(number? x) (~a (number x))]
+          [else (~a x)])))))
 
 
 (module+ test
@@ -87,7 +101,12 @@
   (check-equal? (send o convert (String "foobar")) "(foobar)")
   (check-equal? (send o convert (String "öéÿ")) "(þÿ\u0000ö\u0000é\u0000ÿ)")
   (check-equal? (send o convert (String "fôobár")) "(þÿ\u0000f\u0000ô\u0000o\u0000b\u0000á\u0000r)")
-  (check-equal? (send o convert #"foobar") "<666f6f626172>"))
+  (check-equal? (send o convert #"foobar") "<666f6f626172>")
+  (check-equal? (send o convert (make-object PDFReference "foobar" 42)) "42 0 R")
+  (check-equal? (send o convert (seconds->date (quotient 1494483337320 1000) #f)) "(D:20170511061537Z)")
+  (check-equal? (send o convert (list "foobar" (String "öéÿ") #"foobar")) "[/foobar (þÿ\u0000ö\u0000é\u0000ÿ) <666f6f626172>]")
+  (check-equal? (send o convert (hash "foo" 42 "bar" "fly")) "<<\n/foo 42\n/bar /fly\n>>")
+  (check-equal? (send o convert 1234.56789) "1234.56789"))
 
 
 
