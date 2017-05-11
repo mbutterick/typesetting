@@ -2,7 +2,7 @@
 (require racket/draw)
 (provide PDFDocument)
 
-(require "reference.rkt")
+(require "reference.rkt" "struct.rkt" "object.rkt")
 ;(require "page.rkt")
 
 (define PDFDocument
@@ -31,9 +31,9 @@
     (field [_offset 0])
 
     (field [_root (ref
-                   (hasheq 'Type 'Catalog'
+                   (hasheq 'Type "Catalog"
                            'Pages (ref
-                                   (hasheq 'Type 'Pages'
+                                   (hasheq 'Type "Pages"
                                            'Count 0
                                            'Kids empty))))])
 
@@ -122,37 +122,89 @@
       (set! _pageBufferStart (+ _pageBufferStart (length pages)))
       (for ([page (in-list pages)])
         (send page end)))
-    
-    (define/public (ref data)
+
+    ;; every js function argument is 'undefined' by default
+    ;; so even a function defined without default values
+    ;; can be called without arguments
+    (define/public (ref [data (make-hasheq)])
       (define ref (make-object PDFReference this (add1 (length _offsets)) data))
       (push! _offsets #f) ; placeholder for this object's offset once it is finalized
       (set! _waiting (add1 _waiting))
       ref)
+
+    (define/public (push chunk)
+      (push! byte-strings chunk))
                                           
     (define/public (_write data)
       (let ([data (if (not (bytes? data))
                       ; `string->bytes/latin-1` is equivalent to plain binary encoding
                       (string->bytes/latin-1 (string-append data "\n"))
                       data)])
-        (push! byte-strings data)
+        (push data)
         (report byte-strings)
         (set! _offset (+ _offset (bytes-length data)))))
 
-    (define/public (pipe op)
-      (copy-port (open-input-bytes (apply bytes-append (reverse byte-strings))) op)
-      (close-output-port op))
+    (field [op #f])
+    (define/public (pipe port)
+      (set! op port))
 
     (define _info #f)
     (define/public (end)
       (flushPages)
       (set! _info (ref))
-      'done))) ; temp
+      (for ([(key val) (in-hash info)])
+        ;; upgrade string literal to String struct
+        (hash-set! (get-field data _info) key
+                   (if (string? val) (String val) val)))
+      (send _info end)
+
+      ;; todo: fonts
+      ;; for name, font of @_fontFamilies
+      ;; font.finalize()
+
+      (send _root end)
+      (send (hash-ref (get-field data _root) 'Pages) end)
+
+      (if (or (zero? _waiting) #t) ; debug
+          (_finalize)
+          (set! _ended #t))
+
+      'done)
+
+    (define/public (_finalize [fn #f])
+      ;; generate xref
+      (define xRefOffset _offset)
+      (_write "xref")
+      (_write (format "0 ~a" (add1 (length _offsets))))
+      (_write "0000000000 65535 f ")
+      (for ([offset (in-list _offsets)])
+        (_write (string-append
+                 (~r (or offset 42) #;debug #:min-width 10 #:pad-string "0")
+                 " 00000 n ")))
+      ;; trailer
+      (_write "trailer")
+      ;; todo: make `PDFObject:convert` a static method
+      (_write (send (make-object PDFObject) convert
+                    (hasheq 'Size (add1 (length _offsets))
+                            'Root _root
+                            'Info _info)))
+
+      (_write "startxref")
+      (_write (number->string xRefOffset))
+      (_write "%%EOF")
+
+      ;; end the stream
+      ;; in node you (push null) which signals to the stream
+      ;; to copy to its output port
+      (copy-port (open-input-bytes
+                  (apply bytes-append (reverse byte-strings)))
+                 op)
+      (close-output-port op))))
 
 
 (define doc (new PDFDocument))
 
 (module+ test
   (require rackunit)
-  (send doc _write "foobar")
   (send doc pipe (open-output-file "testrkt0.pdf" #:exists 'replace))
   (check-equal? (send doc end) 'done))

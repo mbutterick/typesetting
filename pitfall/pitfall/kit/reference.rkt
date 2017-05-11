@@ -4,7 +4,7 @@
 
 (define PDFReference
   (class object%
-    (init-field document id [data (hasheq)])
+    (init-field document id [data (make-hasheq)])
     (super-new)
     (field [gen 0])
     (field [deflate #f])
@@ -28,7 +28,7 @@
               (hash-update! data 'Length (λ (len) (+ len (string-length chunk))))])
       (callback))
 
-    (define/public (end chunk)
+    (define/public (end [chunk #f])
       ; (super) ; todo
       (if deflate
           (void) ; todo (deflate-end)

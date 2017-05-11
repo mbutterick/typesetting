@@ -1,6 +1,7 @@
 #lang at-exp br
 (require racket/class racket/string racket/list srfi/19)
 (require "struct.rkt" "reference.rkt")
+(provide PDFObject)
 
 (define PDFObject
   (class object%
@@ -55,7 +56,9 @@
         (cond
           ;; String literals are converted to the PDF name type
           [(string? x) (string-append "/" x)]
-          ;; String objects are converted to PDF strings (UTF-16)
+          ;; symbols are used for convenience - convert to string
+          [(symbol? x) (loop (symbol->string x))]
+          ;; String objects (structs) are converted to PDF strings (UTF-16)
           [(String? x)
            ;; Escape characters as required by the spec
            (define string (regexp-replace* escapableRe (String-string x) (λ (c) (hash-ref escapable c))))
