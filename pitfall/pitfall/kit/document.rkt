@@ -115,24 +115,26 @@
       this)
     
     (define/public (flushPages)
-      42) ; temp
+      ;; this local variable exists so we're future-proof against
+      ;; reentrant calls to flushPages.
+      (define pages _pageBuffer)
+      (set! _pageBuffer empty)
+      (set! _pageBufferStart (+ _pageBufferStart (length pages)))
+      (for ([page (in-list pages)])
+        (send page end)))
     
     (define/public (ref data)
       (define ref (make-object PDFReference this (add1 (length _offsets)) data))
       (push! _offsets #f) ; placeholder for this object's offset once it is finalized
       (set! _waiting (add1 _waiting))
-      ref
-      42)
-
-    (define/public (push chunk)
-      (set! byte-strings (cons chunk byte-strings)))
+      ref)
                                           
     (define/public (_write data)
       (let ([data (if (not (bytes? data))
                       ; `string->bytes/latin-1` is equivalent to plain binary encoding
                       (string->bytes/latin-1 (string-append data "\n"))
                       data)])
-        (push data)
+        (push! byte-strings data)
         (report byte-strings)
         (set! _offset (+ _offset (bytes-length data)))))
 
@@ -143,6 +145,7 @@
     (define _info #f)
     (define/public (end)
       (flushPages)
+      (set! _info (ref))
       'done))) ; temp
 
 
