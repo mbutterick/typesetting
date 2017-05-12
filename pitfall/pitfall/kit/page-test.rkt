@@ -1,13 +1,15 @@
-#lang br
-
-(require rackunit "document.rkt" "page.rkt")
+#lang racket/base
+(require racket/class rackunit "document.rkt" "page.rkt" "reference.rkt" "helper.rkt")
 (define p (make-object PDFPage (make-object PDFDocument)))
-(get-field size p)
-(get-field layout p)
-(get-field margins p)
-(get-field height p)
-(get-field width p)
-(get-field resources p)
-(get-field data (get-field resources p))
-(send p fonts)
-(get-field data (get-field dictionary p))
+(check-equal? (· p size) "letter")
+(check-equal? (· p layout) "portrait")
+(check-equal? (· p margins) '#hasheq((right . 72) (bottom . 72) (left . 72) (top . 72)))
+(check-equal? (· p height) 792.0)
+(check-equal? (· p width) 612.0)
+(check-equal? (· p resources data ProcSet) '("PDF" "Text" "ImageB" "ImageC" "ImageI"))
+
+(check-equal? (· p dictionary data Type) "Page")
+(check-equal? (· p dictionary data MediaBox)  '(0 0 612.0 792.0))
+(check-true (is-a? (· p dictionary data Contents) PDFReference))
+(check-true (is-a? (· p dictionary data Resources) PDFReference))
+(check-true (is-a? (· p dictionary data Parent) PDFReference))

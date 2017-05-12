@@ -1,46 +1,50 @@
 #lang br
-
+(require "helper.rkt")
 (provide PDFReference)
 
 (define PDFReference
   (class object%
-    (init-field document id [data (make-hasheq)])
+    (init-field [(@document document)] [(@id id)] [(@data data) (mhasheq)])
     (super-new)
-    (field [gen 0])
-    (field [deflate #f])
-    (field [compress (and (with-handlers ([exn:fail:contract? (λ (exn) #f)])
-                            (get-field compress document)) (not (hash-ref data 'Filter #f)))])
-    (field [uncompressedLength 0])
-    (field [chunks empty])
+    (field [(@gen gen) 0])
+    (field [(@deflate deflate) #f])
+    (field [(@compress compress) (and (with-handlers ([exn:fail:contract? (λ (exn) #f)])
+                                        (get-field compress @document)) (not (hash-ref @data 'Filter #f)))])
+    (field [(@uncompressedLength uncompressedLength) 0])
+    (field [(@chunks chunks) empty])
 
-    (define/public (initDeflate)
+    (public [@initDeflate initDeflate])
+    (define (@initDeflate)
       ;; todo
       (void))
 
-    (define/public (_write chunk encoding callback)
-      ;; assume chunk is a string
-      (set! uncompressedLength (+ uncompressedLength (string-length chunk)))
-      (hash-ref! data 'Length 0)
+    (define/public (_write chunk-in encoding callback)
+      (define chunk (if (isBuffer? chunk-in)
+                        chunk-in
+                        (newBuffer (string-append chunk "\n"))))
+      (+= @uncompressedLength (buffer-length chunk))
+      (hash-ref! @data 'Length 0)
       (cond
-        [compress (when (not deflate) (initDeflate))
-                  (deflate chunk)]
-        [else (push! chunks chunk)
-              (hash-update! data 'Length (λ (len) (+ len (string-length chunk))))])
+        [@compress (when (not @deflate) (@initDeflate))
+                   (send @deflate write chunk)]
+        [else (push! @chunks chunk)
+              (hash-update! @data 'Length (λ (len) (+ len (buffer-length chunk))))])
       (callback))
 
     (define/public (end [chunk #f])
       ; (super) ; todo
-      (if deflate
+      (if @deflate
           (void) ; todo (deflate-end)
-          (finalize)))
+          (@finalize)))
 
     (field [offset #f])
-    (define/public (finalize)
-      (set! offset (get-field _offset document))
-      (send document _write (format "~a ~a obj" id gen))
+    (public [@finalize finalize])
+    (define (@finalize)
+      (set! offset (· @document _offset))
+      (send @document _write (format "~a ~a obj" @id @gen))
       )
 
     (define/public (toString)
-      (format "~a ~a R" id gen)) 
+      (format "~a ~a R" @id @gen)) 
 
     ))

@@ -1,65 +1,65 @@
 #lang racket/base
-(require racket/class)
+(require racket/class "helper.rkt")
 (provide PDFPage)
 
 
 (define PDFPage
   (class object%
     (super-new)
-    (init-field document
-                [options (make-hasheq)])
-    (field [size (hash-ref options 'size "letter")])
-    (field [layout (hash-ref options 'layout "portrait")])
+    (init-field [(@document document)] [(@options options) (mhash)])
+    (field [(@size size) (hash-ref @options 'size "letter")])
+    (field [(@layout layout) (hash-ref @options 'layout "portrait")])
 
     ;; process margins
-    (field [margins
-            (let ([margin-value (hash-ref options 'margin #f)])
+    (field [(@margins margins)
+            (let ([margin-value (hash-ref @options 'margin #f)])
               (if (number? margin-value)
-                  (hasheq 'top margin-value
-                          'left margin-value
-                          'bottom margin-value
-                          'right margin-value)
+                  (mhash 'top margin-value
+                         'left margin-value
+                         'bottom margin-value
+                         'right margin-value)
                   ;; default to 1 inch margins
-                  (hash-ref options 'margins DEFAULT_MARGINS)))])
+                  (hash-ref @options 'margins DEFAULT_MARGINS)))])
 
     ;; calculate page dimensions
-    (define dimensions (if (list? size)
-                           size
-                           (hash-ref SIZES (string-upcase size))))
-    (field [width (list-ref dimensions (if (equal? layout "portrait") 0 1))])
-    (field [height (list-ref dimensions (if (equal? layout "portrait") 1 0))])
+    (define dimensions (if (list? @size)
+                           @size
+                           (hash-ref SIZES (string-upcase @size))))
+    (field [(@width width) (list-ref dimensions (if (equal? @layout "portrait") 0 1))])
+    (field [(@height height) (list-ref dimensions (if (equal? @layout "portrait") 1 0))])
 
-    (field [content (send document ref)])
+    (field [(@content content) (· @document ref)])
 
     ;; Initialize the Font, XObject, and ExtGState dictionaries
-    (field [resources (send document ref (make-hash (list (cons 'ProcSet '("PDF" "Text" "ImageB" "ImageC" "ImageI")))))])
+    (field [(@resources resources) (send @document ref (mhash 'ProcSet '("PDF" "Text" "ImageB" "ImageC" "ImageI")))])
 
     ;; Lazily create these dictionaries
     (define/public (fonts)
-      (hash-ref! (get-field data resources) 'Font (make-hash)))
+      (hash-ref! (· @resources data) 'Font (make-hash)))
 
     (define/public (xobjects)
-      (hash-ref! (get-field data resources) 'XObject (make-hash)))
+      (hash-ref! (· @resources data) 'XObject (make-hash)))
 
     (define/public (ext_gstates)
-      (hash-ref! (get-field data resources) 'ExtGState (make-hash)))
+      (hash-ref! (· @resources data) 'ExtGState (make-hash)))
 
     (define/public (patterns)
-      (hash-ref! (get-field data resources) 'Pattern (make-hash)))
+      (hash-ref! (· @resources data) 'Pattern (make-hash)))
 
     (define/public (annotations)
-      (hash-ref! (get-field data resources) 'Annots null))
+      (hash-ref! (· @resources data) 'Annots null))
           
     ;; The page dictionary
-    (field [dictionary
-            (send document ref
-                             (make-hash (list
-                                         (cons 'Type "Page")
-                                         (cons 'Parent (hash-ref (get-field data (get-field _root document)) 'Pages))
-                                         (cons 'MediaBox (list 0 0 width height))
-                                         (cons 'Contents content)
-                                         (cons 'Resources resources))))])
+    (field [(@dictionary dictionary)
+            (send @document ref
+                  (mhash 'Type "Page"
+                         'Parent (· @document _root data Pages)
+                         'MediaBox (list 0 0 @width @height)
+                         'Contents @content
+                         'Resources @resources))])
 
+    (define/public (end)
+      'nothing) ;; temp
     
     
     ))
