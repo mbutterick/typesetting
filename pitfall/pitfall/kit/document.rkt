@@ -3,8 +3,7 @@
 (require sugar/debug)
 (provide PDFDocument)
 
-(require "reference.rkt" "struct.rkt" "object.rkt")
-;(require "page.rkt")
+(require "reference.rkt" "struct.rkt" "object.rkt" "page.rkt")
 
 (define PDFDocument
   (class object% ; actually is an instance of readable.Stream, which is an input port
@@ -59,6 +58,8 @@
       (for ([(key val) (in-hash (hash-ref options 'info))])
         (hash-set! info key val)))
 
+    (report info)
+
     ;; Write the header
     ;; PDF version
     (_write (format "%PDF-~a" version))
@@ -68,8 +69,8 @@
       (_write (string-append "%" (string c c c c))))
 
     ;; Add the first page
-    #;(unless (not (hash-ref options 'autoFirstPage #t))
-        (addPage)) ; todo
+    (unless (not (hash-ref options 'autoFirstPage #t))
+      (addPage))
 
     ;; todo
     ;;mixin = (methods) =>
@@ -88,15 +89,15 @@
     (field [x 0])
     (field [y 0])
     (field [_ctm null])
-    (define/public (addPage [options options])
+    (define/public (addPage [my-options options])
       ;; end the current page if needed
       (unless (hash-ref options 'bufferPages #f)
         (flushPages))
 
       ;; create a page object
-      (define page 42) ; todo new PDFPage(this, options)
+      (define page (make-object PDFPage this my-options))
       (push! _pageBuffer page)
-
+      #|
       ;; add the page to the object store
       (define pages (make-hasheq)) ; todo @_root.data.Pages.data
       (hash-update! pages 'Kids (λ (val) (cons 42 val)) null) ; todo @page.dictionary
@@ -113,7 +114,9 @@
 
       ;; @emit('pageAdded') ;; todo
 
-      this)
+      this
+|#
+      )
     
     (define/public (flushPages)
       ;; this local variable exists so we're future-proof against
@@ -197,6 +200,7 @@
       ;; end the stream
       ;; in node you (push null) which signals to the stream
       ;; to copy to its output port
+      ;; here we'll do it manually
       (copy-port (open-input-bytes
                   (apply bytes-append (reverse byte-strings)))
                  op)
