@@ -110,9 +110,9 @@
       ;; flip PDF coordinate system so that the origin is in
       ;; the top left rather than the bottom left
       (set! @_ctm '(1 0 0 1 0 0))
-      #;(@transform 1 0 0 -1 0 (· @page height))
+      #;(@transform 1 0 0 -1 0 (· @page height)) ; comes from vector mixin
 
-      #;(@emit "pageAdded")
+      #;(@emit "pageAdded") ; from eventemitter interface
       this
       )
 
