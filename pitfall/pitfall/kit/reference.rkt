@@ -4,12 +4,12 @@
 
 (define PDFReference
   (class object%
-    (init-field [(@document document)] [(@id id)] [(@data data) (mhasheq)])
     (super-new)
+    (init-field [(@document document)] [(@id id)] [(@data data) (mhash)])
     (field [(@gen gen) 0])
     (field [(@deflate deflate) #f])
-    (field [(@compress compress) (and (with-handlers ([exn:fail:contract? (λ (exn) #f)])
-                                        (get-field compress @document)) (not (hash-ref @data 'Filter #f)))])
+    (field [(@compress compress) (and (· @document compress)
+                                      (not (hash-ref @data 'Filter #f)))])
     (field [(@uncompressedLength uncompressedLength) 0])
     (field [(@chunks chunks) empty])
 

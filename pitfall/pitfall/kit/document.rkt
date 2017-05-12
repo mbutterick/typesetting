@@ -7,7 +7,7 @@
 
 (define PDFDocument
   (class object% ; actually is an instance of readable.Stream, which is an input port
-    (init-field [(@options options) (mhasheq)])
+    (init-field [(@options options) (mhash)])
     (let ([output-file (hash-ref @options 'out "outrkt.pdf")])
       (super-new))
 
@@ -31,9 +31,9 @@
     (field [(@_offset _offset) 0])
 
     (field [(@_root _root) (@ref
-                            (mhasheq 'Type "Catalog"
+                            (mhash 'Type "Catalog"
                                      'Pages (@ref
-                                             (mhasheq 'Type "Pages"
+                                             (mhash 'Type "Pages"
                                                       'Count 0
                                                       'Kids empty))))])
 
@@ -54,7 +54,7 @@
     #;(@initImages)
 
     ;; Initialize the metadata
-    (field [(@info info) (mhasheq
+    (field [(@info info) (mhash
                           'Producer "PitfallKit"
                           'Creator "PitfallKit"
                           'CreationDate (seconds->date (current-seconds)))])
@@ -189,7 +189,7 @@
       (@_write "trailer")
       ;; todo: make `PDFObject:convert` a static method
       (@_write (send (make-object PDFObject) convert
-                     (mhasheq 'Size (add1 (length @_offsets))
+                     (mhash 'Size (add1 (length @_offsets))
                               'Root @_root
                               'Info @_info)))
 
