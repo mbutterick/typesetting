@@ -1,14 +1,14 @@
 #lang sugar/debug racket/base
-(require racket/class racket/draw br/list racket/list racket/format racket/port)
+(require racket/class racket/draw racket/list racket/format racket/port)
 (require sugar/debug)
 (provide PDFDocument)
 
 (require "reference.rkt" "struct.rkt" "object.rkt" "page.rkt" "helper.rkt" "params.rkt")
-(require "vector.rkt")
+(require "vector.rkt" "color.rkt")
 
 (define PDFDocument
   ;; actually is an instance of readable.Stream, which is an input port
-  (class (vector-mixin object%)
+  (class (color-mixin (vector-mixin object%))
     (init-field [(@options options) (mhash)])
     (let ([output-file (hash-ref @options 'out "outrkt.pdf")])
       (super-new))
@@ -48,7 +48,7 @@
 
     ;; todo
     ;; Initialize mixins
-    #;(@initColor)
+    (· this initColor)
     (· this initVector)
     #;(@initFonts)
     #;(@initText)
@@ -102,7 +102,7 @@
 
       ;; create a page object
       (set! @page (make-object PDFPage this options))
-      (push-end! @_pageBuffer @page)
+      (push! @_pageBuffer @page)
       ;; add the page to the object store
       (define pages (· @_root data Pages data))
       (hash-update! pages 'Kids (λ (val) (cons (· @page dictionary) val)) null)
@@ -235,4 +235,4 @@
   (with-output-to-file (string-append fn ".pdf")
     (λ () (display result-str)) #:exists 'replace)
   (check-equal? (file->bytes (string-append fn ".pdf")) (file->bytes (string-append fn " copy.pdf")))
-  #;(display (bytes->string/latin-1 result-str)))
+  (display (bytes->string/latin-1 result-str)))

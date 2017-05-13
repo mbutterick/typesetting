@@ -1,6 +1,6 @@
 #lang at-exp br
 (require racket/class racket/string racket/list srfi/19)
-(require "struct.rkt")
+(require "struct.rkt" "helper.rkt")
 (provide PDFObject)
 
 (define PDFObject
@@ -45,12 +45,8 @@
         (bytes-set! newbuff (add1 bidx) (bytes-ref buff bidx))
         newbuff))
 
-    (define/public (number n)
-      (unless (< -1e21 n 1e21)
-        (raise-argument-error 'number "valid number" n))
-      (define result (/ (round (* n 1e6)) 1e6))
-      (if (integer? result) (inexact->exact result) result))
-
+    ;; moved this to helper module
+    #;(define/public (number n) ···)
     
     (define/public (convert object)
       (let loop ([x object])

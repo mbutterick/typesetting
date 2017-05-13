@@ -1,6 +1,6 @@
 #lang racket/base
-(require (for-syntax racket/base) racket/class sugar/list racket/list)
-(provide (all-defined-out))
+(require (for-syntax racket/base) racket/class sugar/list racket/list (only-in br/list push! pop!))
+(provide (all-defined-out) push! pop!)
 
 (define-syntax (· stx)
   (syntax-case stx ()
@@ -56,10 +56,25 @@
 (define (newBuffer x) (string->bytes/latin-1 (format "~a" x)))
 (define buffer-length bytes-length)
 
+
 ;; js-style `push`, which appends to end of list
 (define-syntax-rule (push-end! id thing) (set! id (append id (list thing))))
 
 (module+ test
   (define xs '(1 2 3))
   (push-end! xs 4)
-  (check-equal? xs '(1 2 3 4))) 
+  (check-equal? xs '(1 2 3 4)))
+
+;; fancy number->string. bounds are checked, inexact integers are coerced.
+(define (number x)
+  (unless (< -1e21 x 1e21)
+    (raise-argument-error 'number "valid number" x))
+  (let ([x (/ (round (* x 1e6)) 1e6)])
+    (number->string (if (integer? x)
+                        (inexact->exact x)
+                        x))))
+
+(module+ test
+  (check-equal? (number 4.5) "4.5")
+  (check-equal? (number 4.0) "4")
+  (check-equal? (number 4) "4"))
