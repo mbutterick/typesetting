@@ -1,5 +1,5 @@
 #lang br
-(require "helper.rkt")
+(require "helper.rkt" "object.rkt" file/gzip)
 (provide PDFReference)
 
 (define PDFReference
@@ -16,16 +16,19 @@
 
     (public [@initDeflate initDeflate])
     (define (@initDeflate)
-      ;; todo
-      (void))
+      (hash-ref! @data 'Filter "FlateDecode")
+
+      (set! @deflate deflate)
+      (report 'initDeflate-unimplemented))
 
     (define/public (write data)
-      (report data))
+      (_write data #f void))
     
     (define/public (_write chunk-in encoding callback)
+      (report 'boom)
       (define chunk (if (isBuffer? chunk-in)
                         chunk-in
-                        (newBuffer (string-append chunk "\n"))))
+                        (newBuffer (string-append chunk-in "\n"))))
       (+= @uncompressedLength (buffer-length chunk))
       (hash-ref! @data 'Length 0)
       (cond
@@ -41,12 +44,24 @@
           (void) ; todo (deflate-end)
           (@finalize)))
 
-    (field [offset #f])
+    (field [(@offset offset) #f])
     (public [@finalize finalize])
     (define (@finalize)
-      (set! offset (· @document _offset))
+      (set! @offset (· @document _offset))
+      
       (send @document _write (format "~a ~a obj" @id @gen))
-      )
+      (send @document _write (send (new PDFObject) convert @data))
+
+      (when (positive? (length @chunks))
+          (send @document _write "stream")
+          (for ([chunk (in-list @chunks)])
+               (send @document _write chunk))
+
+        (set! @chunks null) ; free up memory
+        (send @document _write "\nendstream"))
+
+      (send @document _write "endobj")
+      (send @document _refEnd this))
 
     (define/public (toString)
       (format "~a ~a R" @id @gen)) 
