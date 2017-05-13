@@ -66,7 +66,7 @@
     (public [@write write])
     (define (@write chunk)
       (void)
-      #;(send @content write chunk)) ; resume here
+      (send @content write chunk)) ; resume here
 
     (public [@end end])
     (define (@end)

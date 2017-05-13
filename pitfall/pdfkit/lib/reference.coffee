@@ -11,7 +11,7 @@ class PDFReference extends stream.Writable
     super decodeStrings: no
     @gen = 0
     @deflate = null
-    @compress = @document.compress and not @data.Filter
+    @compress = no
     @uncompressedLength = 0
     @chunks = []
     
@@ -19,11 +19,15 @@ class PDFReference extends stream.Writable
     @data.Filter = 'FlateDecode'
     
     @deflate = zlib.createDeflate()
+
     @deflate.on 'data', (chunk) =>
+      console.log("got data event for ref " + @id + " from " + this.toString())
       @chunks.push chunk
       @data.Length += chunk.length
       
-    @deflate.on 'end', @finalize
+    @deflate.on 'end', () => 
+      console.log("got end event for ref " + @id + " from " + this.toString())
+      @finalize()
     
   _write: (chunk, encoding, callback) ->
     unless Buffer.isBuffer(chunk)
@@ -34,7 +38,9 @@ class PDFReference extends stream.Writable
     
     if @compress
       @initDeflate() if not @deflate
+      console.log("chunk = " + chunk)
       @deflate.write chunk
+      console.log("wrote chunk")
     else
       @chunks.push chunk
       @data.Length += chunk.length
