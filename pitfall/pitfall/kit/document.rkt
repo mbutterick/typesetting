@@ -4,9 +4,11 @@
 (provide PDFDocument)
 
 (require "reference.rkt" "struct.rkt" "object.rkt" "page.rkt" "helper.rkt")
+(require "mixins/vector.rkt")
 
 (define PDFDocument
-  (class object% ; actually is an instance of readable.Stream, which is an input port
+  ;; actually is an instance of readable.Stream, which is an input port
+  (class (vector-mixin object%)
     (init-field [(@options options) (mhash)])
     (let ([output-file (hash-ref @options 'out "outrkt.pdf")])
       (super-new))
@@ -32,10 +34,10 @@
 
     (field [(@_root _root) (@ref
                             (mhash 'Type "Catalog"
-                                     'Pages (@ref
-                                             (mhash 'Type "Pages"
-                                                      'Count 0
-                                                      'Kids empty))))])
+                                   'Pages (@ref
+                                           (mhash 'Type "Pages"
+                                                  'Count 0
+                                                  'Kids empty))))])
 
     ;; The current page
     (field [(@page page) #f])
@@ -43,12 +45,11 @@
     ;; other fields, hoisted from below (why is this necessary?)
     (field [(@x x) 0])
     (field [(@y y) 0])
-    (field [(@_ctm _ctm) null])
 
     ;; todo
     ;; Initialize mixins
     #;(@initColor)
-    #;(@initVector)
+    (· this initVector)
     #;(@initFonts)
     #;(@initText)
     #;(@initImages)
@@ -82,6 +83,7 @@
 
     ;; todo
     ;; Load mixins
+    ;; (in racket this is handled automatically in the class decl) 
     ;mixin require './mixins/color'
     ;mixin require './mixins/vector'
     ;mixin require './mixins/fonts'
@@ -97,7 +99,7 @@
         (@flushPages))
 
       ;; create a page object
-      (define @page (make-object PDFPage this options))
+      (set! @page (make-object PDFPage this options))
       (push! @_pageBuffer @page)
       ;; add the page to the object store
       (define pages (· @_root data Pages data))
@@ -109,8 +111,8 @@
       (set! @y (· @page margins top))
       ;; flip PDF coordinate system so that the origin is in
       ;; the top left rather than the bottom left
-      (set! @_ctm '(1 0 0 1 0 0))
-      #;(@transform 1 0 0 -1 0 (· @page height)) ; comes from vector mixin
+      (set-field! _ctm this '(1 0 0 1 0 0))
+      (send this transform 1 0 0 -1 0 (· @page height))
 
       #;(@emit "pageAdded") ; from eventemitter interface
       this
@@ -145,8 +147,12 @@
                       (newBuffer (string-append data "\n"))
                       data)])
         (@push data)
-        (report @byte-strings)
         (+= @_offset (buffer-length data))))
+
+    (public [@addContent addContent])
+    (define (@addContent data)
+      (send @page write data)
+      this)
 
     (field [op #f])
     (define/public (pipe port)
@@ -183,15 +189,15 @@
       (@_write "0000000000 65535 f ")
       (for ([offset (in-list @_offsets)])
            (@_write (string-append
-                     (~r (or offset (random 17)) #;debug #:min-width 10 #:pad-string "0")
+                     (~r (or offset #xdead) #;debug #:min-width 10 #:pad-string "0")
                      " 00000 n ")))
       ;; trailer
       (@_write "trailer")
       ;; todo: make `PDFObject:convert` a static method
       (@_write (send (make-object PDFObject) convert
                      (mhash 'Size (add1 (length @_offsets))
-                              'Root @_root
-                              'Info @_info)))
+                            'Root @_root
+                            'Info @_info)))
 
       (@_write "startxref")
       (@_write (number->string xRefOffset))
@@ -201,15 +207,15 @@
       ;; in node you (@push null) which signals to the stream
       ;; to copy to its output port
       ;; here we'll do it manually
-      (copy-port (open-input-bytes
-                  (apply bytes-append (reverse @byte-strings)))
-                 op)
+      (copy-port (open-input-bytes (apply bytes-append (reverse @byte-strings))) op)
       (close-output-port op))))
 
 
 (define doc (new PDFDocument))
 
 (module+ test
-  (require rackunit)
-  (send doc pipe (open-output-file "testrkt0.pdf" #:exists 'replace))
-  (check-equal? (send doc end) 'done))
+  (require rackunit racket/file)
+  (define ob (open-output-bytes))
+  (send doc pipe ob)
+  (check-equal? (send doc end) 'done)
+  (check-equal? (get-output-bytes ob) (file->bytes "demo.pdf")))

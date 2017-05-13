@@ -1,4 +1,5 @@
 #lang racket/base
+(require sugar/debug)
 (require racket/class "helper.rkt")
 (provide PDFPage)
 
@@ -58,8 +59,20 @@
                          'Contents @content
                          'Resources @resources))])
 
-    (define/public (end)
-      'nothing) ;; temp
+    (public [@maxY maxY])
+    (define (@maxY)
+      (- @height (· @margins bottom)))
+
+    (public [@write write])
+    (define (@write chunk)
+      (void)
+      #;(send @content write chunk)) ; resume here
+
+    (public [@end end])
+    (define (@end)
+      (send @dictionary end)
+      (send @resources end)
+      (send @content end))
     
     
     ))
