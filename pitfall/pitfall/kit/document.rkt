@@ -100,7 +100,7 @@
 
       ;; create a page object
       (set! @page (make-object PDFPage this options))
-      (push! @_pageBuffer @page)
+      (push-end @_pageBuffer @page)
       ;; add the page to the object store
       (define pages (· @_root data Pages data))
       (hash-update! pages 'Kids (λ (val) (cons (· @page dictionary) val)) null)
@@ -133,7 +133,7 @@
     (public [@ref ref])
     (define (@ref [data (make-hasheq)])
       (define ref (make-object PDFReference this (add1 (length @_offsets)) data))
-      (push! @_offsets #f) ; placeholder for this object's offset once it is finalized
+      (push-end @_offsets (* 1000 (add1 (length @_offsets)))) ; placeholder for this object's offset once it is finalized
       (++ @_waiting)
       ref)
 
@@ -155,10 +155,12 @@
       this)
 
     (define/public (_refEnd ref)
+      (report* @_offsets (· ref id) (· ref offset))
       (set! @_offsets (for/list ([(offset idx) (in-indexed @_offsets)])
-                                (if (= idx (sub1 (· ref id)))
+                                (if (= (sub1 (· ref id)) idx)
                                     (· ref offset)
                                     offset)))
+      (report* @_offsets)
       (-- @_waiting)
       (if (and (zero? @_waiting) @_ended)
           (@_finalize)

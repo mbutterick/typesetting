@@ -25,7 +25,6 @@
       (_write data #f void))
     
     (define/public (_write chunk-in encoding callback)
-      (report 'boom)
       (define chunk (if (isBuffer? chunk-in)
                         chunk-in
                         (newBuffer (string-append chunk-in "\n"))))

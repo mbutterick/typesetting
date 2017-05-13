@@ -55,3 +55,10 @@
 (define isBuffer? bytes?)
 (define (newBuffer x) (string->bytes/latin-1 (format "~a" x)))
 (define buffer-length bytes-length)
+
+(define-syntax-rule (push-end id thing) (set! id (append id (list thing))))
+
+(module+ test
+  (define xs '(1 2 3))
+  (push-end xs 4)
+  (check-equal? xs '(1 2 3 4))) 
