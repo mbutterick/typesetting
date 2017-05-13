@@ -56,9 +56,9 @@
 
     ;; Initialize the metadata
     (field [(@info info) (mhash
-                          'Producer "PDFKit"
-                          'Creator "PDFKit"
-                          'CreationDate (seconds->date (current-seconds)))])
+                          'Producer "PitfallKit"
+                          'Creator "PitfallKit"
+                          'CreationDate #;(seconds->date (current-seconds)) 0)]) ; debug val
 
     (when (hash-ref @options 'info #f)
       (for ([(key val) (in-hash (hash-ref @options 'info))])
@@ -133,7 +133,7 @@
     (public [@ref ref])
     (define (@ref [data (make-hasheq)])
       (define ref (make-object PDFReference this (add1 (length @_offsets)) data))
-      (push-end @_offsets (* 1000 (add1 (length @_offsets)))) ; placeholder for this object's offset once it is finalized
+      (push-end @_offsets #f) ; placeholder for this object's offset once it is finalized
       (++ @_waiting)
       ref)
 
@@ -155,12 +155,10 @@
       this)
 
     (define/public (_refEnd ref)
-      (report* @_offsets (· ref id) (· ref offset))
       (set! @_offsets (for/list ([(offset idx) (in-indexed @_offsets)])
-                                (if (= (sub1 (· ref id)) idx)
+                                (if (= (· ref id) (add1 idx))
                                     (· ref offset)
                                     offset)))
-      (report* @_offsets)
       (-- @_waiting)
       (if (and (zero? @_waiting) @_ended)
           (@_finalize)
@@ -201,7 +199,7 @@
       (@_write "0000000000 65535 f ")
       (for ([offset (in-list @_offsets)])
            (@_write (string-append
-                     (~r (or offset #xdead) #;debug #:min-width 10 #:pad-string "0")
+                     (~r offset #:min-width 10 #:pad-string "0")
                      " 00000 n ")))
       ;; trailer
       (@_write "trailer")
@@ -229,7 +227,7 @@
   (require rackunit racket/file)
   (define ob (open-output-bytes))
   (send doc pipe ob)
-  (send doc pipe (open-output-file "zzz.pdf" #:exists 'replace))
+  #;(send doc pipe (open-output-file "demo.pdf" #:exists 'replace))
   (check-equal? (send doc end) 'done)
   #;(display (get-output-bytes ob))
-  #;(check-equal? (get-output-bytes ob) (file->bytes "demo.pdf")))
+  (check-equal? (get-output-bytes ob) (file->bytes "demo.pdf")))
