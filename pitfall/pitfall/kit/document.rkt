@@ -1,10 +1,10 @@
-#lang racket/base
+#lang sugar/debug racket/base
 (require racket/class racket/draw br/list racket/list racket/format racket/port)
 (require sugar/debug)
 (provide PDFDocument)
 
-(require "reference.rkt" "struct.rkt" "object.rkt" "page.rkt" "helper.rkt")
-(require "mixins/vector.rkt")
+(require "reference.rkt" "struct.rkt" "object.rkt" "page.rkt" "helper.rkt" "params.rkt")
+(require "vector.rkt")
 
 (define PDFDocument
   ;; actually is an instance of readable.Stream, which is an input port
@@ -58,7 +58,9 @@
     (field [(@info info) (mhash
                           'Producer "PitfallKit"
                           'Creator "PitfallKit"
-                          'CreationDate #;(seconds->date (current-seconds)) 0)]) ; debug val
+                          'CreationDate (seconds->date (if (current-debug)
+                                                           0
+                                                           (current-seconds)) #f))])
 
     (when (hash-ref @options 'info #f)
       (for ([(key val) (in-hash (hash-ref @options 'info))])
@@ -100,7 +102,7 @@
 
       ;; create a page object
       (set! @page (make-object PDFPage this options))
-      (push-end @_pageBuffer @page)
+      (push-end! @_pageBuffer @page)
       ;; add the page to the object store
       (define pages (· @_root data Pages data))
       (hash-update! pages 'Kids (λ (val) (cons (· @page dictionary) val)) null)
@@ -131,9 +133,9 @@
     ;; so even a function defined without default values
     ;; can be called without arguments
     (public [@ref ref])
-    (define (@ref [data (make-hasheq)])
+    (define (@ref [data (mhash)])
       (define ref (make-object PDFReference this (add1 (length @_offsets)) data))
-      (push-end @_offsets #f) ; placeholder for this object's offset once it is finalized
+      (push-end! @_offsets #f) ; placeholder for this object's offset once it is finalized
       (++ @_waiting)
       ref)
 
@@ -184,7 +186,7 @@
       (· @_root end)
       (· @_root data Pages end)
 
-      (if (or (zero? @_waiting) 'debug)
+      (if (zero? @_waiting)
           (@_finalize)
           (set! @_ended #t))
 
@@ -227,7 +229,10 @@
   (require rackunit racket/file)
   (define ob (open-output-bytes))
   (send doc pipe ob)
-  #;(send doc pipe (open-output-file "demo.pdf" #:exists 'replace))
   (check-equal? (send doc end) 'done)
-  #;(display (get-output-bytes ob))
-  (check-equal? (get-output-bytes ob) (file->bytes "demo.pdf")))
+  (define result-str (get-output-bytes ob))
+  (define fn "out")
+  (with-output-to-file (string-append fn ".pdf")
+    (λ () (display result-str)) #:exists 'replace)
+  (check-equal? (file->bytes (string-append fn ".pdf")) (file->bytes (string-append fn " copy.pdf")))
+  #;(display (bytes->string/latin-1 result-str)))
