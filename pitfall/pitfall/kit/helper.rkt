@@ -16,7 +16,7 @@
   (syntax-case stx ()
     [(_ ref xs) #'(for/list ([x (in-list xs)]) (· x ref))]))
 
-(define-syntax-rule (+= id thing) (set! id (+ id thing))) 
+(define-syntax-rule (+= id thing) (begin (set! id (+ id thing)) id)) 
 (define-syntax-rule (++ id) (+= id 1))
 (define-syntax-rule (-- id) (+= id -1))
 (define-syntax-rule (-= id thing) (+= id (- thing)))
@@ -67,7 +67,7 @@
 
 ;; fancy number->string. bounds are checked, inexact integers are coerced.
 (define (number x)
-  (unless (< -1e21 x 1e21)
+  (unless (and (number? x) (< -1e21 x 1e21))
     (raise-argument-error 'number "valid number" x))
   (let ([x (/ (round (* x 1e6)) 1e6)])
     (number->string (if (integer? x)
@@ -93,3 +93,17 @@
                 (define/public (add x) (set! sum (+ sum x)) this)))
   (define sfo (new SFC))
   (check-equal? (get-field sum (send*/fold sfo [add 1] [add 2] [add 3])) 6))
+
+(define (bounded low x high)
+  (if (high . < . low)
+      (bounded high x low)
+      (max low (min high x))))
+
+(module+ test
+  (check-equal? (bounded 0 2 1) 1)
+  (check-equal? (bounded 1 2 0) 1)
+  (check-equal? (bounded 0 -2 1) 0)
+  (check-equal? (bounded 1 -2 0) 0)
+  (check-equal? (bounded 0 .5 1) 0.5)
+  (check-equal? (bounded 0 0 1) 0)
+  (check-equal? (bounded 0 1 1) 1))
