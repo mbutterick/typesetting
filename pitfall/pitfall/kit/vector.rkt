@@ -117,11 +117,9 @@
         [(list (? number? xFactor) (? hash? options)) (@scale xFactor xFactor options)]
         [(list (? number? xFactor) (? number? yFactor)) (@scale xFactor yFactor (mhash))]
         [(list (? number? xFactor) (? number? yFactor) (? hash? options))
-         (define x 0) (define y 0)
-         (when (hash-ref options 'origin #f)
-           (match-define (list x y) (hash-ref options 'origin))
-           (-= x (* x xFactor))
-           (-= y (* y yFactor)))
+         (match-define (list x y)
+           (match-let ([(list xo yo) (hash-ref options 'origin '(0 0))])
+             (list (* xo (- 1 xFactor)) (* yo (- 1 yFactor)))))
          (@transform xFactor 0 0 yFactor x y)]))
       
 
