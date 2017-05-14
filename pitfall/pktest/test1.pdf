@@ -25,7 +25,7 @@ endobj
 endobj
 3 0 obj
 <<
-/Length 421
+/Length 294
 >>
 stream
 1 0 0 -1 0 792 cm
@@ -47,19 +47,6 @@ h
 0.4 0 1 scn
 /Gs1 gs
 f
-0.6 0 0 0.6 0 0 cm
-1 0 0 1 470 -380 cm
-250 75 m
-323 301 l
-131 161 l
-369 161 l
-177 301 l
-h
-/DeviceRGB cs
-1 0 0 scn
-/Gs1 gs
-f*
-Q
 
 endstream
 endobj
@@ -67,7 +54,7 @@ endobj
 <<
 /Producer (PDFKit)
 /Creator (PDFKit)
-/CreationDate (D:20170513192922Z)
+/CreationDate (D:20170514013102Z)
 >>
 endobj
 2 0 obj
@@ -86,13 +73,13 @@ endobj
 xref
 0 8
 0000000000 65535 f 
-0000000871 00000 n 
-0000000822 00000 n 
+0000000744 00000 n 
+0000000695 00000 n 
 0000000258 00000 n 
 0000000163 00000 n 
 0000000059 00000 n 
 0000000015 00000 n 
-0000000730 00000 n 
+0000000603 00000 n 
 trailer
 <<
 /Size 8
@@ -100,5 +87,5 @@ trailer
 /Info 7 0 R
 >>
 startxref
-928
+801
 %%EOF

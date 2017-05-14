@@ -15,10 +15,4 @@ doc.save()
 doc.circle(280, 200, 50)
    .fill("#6600FF")
 
-doc.scale(0.6)
-   .translate(470, -380)
-   .path('M 250,75 L 323,301 131,161 369,161 177,301 z') # render an SVG path
-   .fill('red', 'even-odd') # fill using the even-odd winding rule
-   .restore()
-
 doc.end()

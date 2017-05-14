@@ -33,7 +33,7 @@
       (cond
         [@compress (when (not @deflate) (@initDeflate))
                    (send @deflate write chunk)]
-        [else (push! @chunks chunk)
+        [else (push-end! @chunks chunk)
               (hash-update! @data 'Length (λ (len) (+ len (buffer-length chunk))))])
       (callback))
 

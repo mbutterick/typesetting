@@ -102,7 +102,7 @@
 
       ;; create a page object
       (set! @page (make-object PDFPage this options))
-      (push! @_pageBuffer @page)
+      (push-end! @_pageBuffer @page)
       ;; add the page to the object store
       (define pages (· @_root data Pages data))
       (hash-update! pages 'Kids (λ (val) (cons (· @page dictionary) val)) null)

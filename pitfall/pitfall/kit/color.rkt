@@ -90,7 +90,7 @@
 
     (public [@_doOpacity doOpacity])
     (define (@_doOpacity fillOpacity strokeOpacity)
-      (error 'bonk))
+      (send this addContent "")) ; todo
 
     ))
 

@@ -78,3 +78,18 @@
   (check-equal? (number 4.5) "4.5")
   (check-equal? (number 4.0) "4")
   (check-equal? (number 4) "4"))
+
+
+(define-syntax (send*/fold stx)
+  (syntax-case stx ()
+    [(_ o) #'o]
+    [(_ o [m0 . args0] [m . args] ...)
+     #'(send*/fold (send o m0 . args0) [m . args] ...)]))
+
+(module+ test
+  (define SFC (class object%
+                (super-new)
+                (field [sum 0])
+                (define/public (add x) (set! sum (+ sum x)) this)))
+  (define sfo (new SFC))
+  (check-equal? (get-field sum (send*/fold sfo [add 1] [add 2] [add 3])) 6))
