@@ -116,3 +116,10 @@
 
 (define-syntax-rule (test-when cond expr)
   (if cond (raise-test-exn expr) expr))
+
+
+
+(define mixin-tester%
+  (class object%
+    (super-new)
+    (define/public (addContent val) val)))

@@ -14,7 +14,7 @@
                                          [circle (number? number? number? . ->m . object?)]
                                          [_windingRule (string? . ->m . string?)]
                                          [fill ((string?) ((or/c string? #f)) . ->*m . object?)]
-                                         [transform ((number? number? number? number? number? number?) (#:debug boolean?) . ->*m . (or/c object? string?))]
+                                         [transform (number? number? number? number? number? number? . ->m . object?)]
                                          [translate (number? number? . ->m . object?)]
                                          [scale (case->m
                                                  (number? . -> . object?)
@@ -29,11 +29,22 @@
 
 (define default-ctm-value '(1 0 0 1 0 0))
 
+(define (make-transform-string ctm)
+  (format "~a cm" (string-join (map number ctm) " ")))
 
-(define (vector-mixin %)
+(define (combine-transforms n-transform m-transform)
+  (match-define (list n11 n12 n21 n22 ndx ndy) n-transform)
+  (match-define (list m11 m12 m21 m22 mdx mdy) m-transform)
+  (list (+ (* n11 m11) (* n21 m12))
+        (+ (* n12 m11) (* n22 m12))
+        (+ (* n11 m21) (* n21 m22))
+        (+ (* n12 m21) (* n22 m22))
+        (+ (* n11 mdx) (* n21 mdy) ndx)
+        (+ (* n12 mdx) (* n22 mdy) ndy)))
+
+(define (vector-mixin [% mixin-tester%])
   (class %
     (super-new)
-    (init-field [(@test-mode test-mode) #f])
     (field [(@_ctm _ctm) default-ctm-value]
            [(@_ctmStack _ctmStack) null])
     
@@ -64,8 +75,7 @@
 
     (public [@bezierCurveTo bezierCurveTo])
     (define (@bezierCurveTo cp1x cp1y cp2x cp2y x y)
-      (send this addContent (format "~a c"
-                                    (string-join (map number (list cp1x cp1y cp2x cp2y x y)) " "))))
+      (send this addContent (format "~a c" (string-join (map number (list cp1x cp1y cp2x cp2y x y)) " "))))
 
 
     (public [@ellipse ellipse])
@@ -107,22 +117,12 @@
         (set! color #f))
       (when color (send this fillColor color)) ;; fillColor method is from color mixin
       (send this addContent (format "f~a" (@_windingRule rule))))
-
-
+      
     (public [@transform transform])
-    (define (@transform m11 m12 m21 m22 dx dy #:debug [debug #f])
+    (define (@transform . new-ctm)
       ;; keep track of the current transformation matrix
-      (match-define (list m0 m1 m2 m3 m4 m5) @_ctm)
-      (set! @_ctm (list (+ (* m0 m11) (* m2 m12))
-                        (+ (* m1 m11) (* m3 m12))
-                        (+ (* m0 m21) (* m2 m22))
-                        (+ (* m1 m21) (* m3 m22))
-                        (+ (* m0 dx) (* m2 dy) m4)
-                        (+ (* m1 dx) (* m3 dy) m5)))
-      (define values (string-join (map number (list m11 m12 m21 m22 dx dy)) " "))
-      (define result (format "~a cm" values))
-      (test-when @test-mode result)
-      (send this addContent result))
+      (set! @_ctm (combine-transforms @_ctm new-ctm))
+      (send this addContent (make-transform-string new-ctm)))
 
 
     (public [@translate translate])
@@ -144,12 +144,12 @@
     ))
 
 (module+ test
-  (require rackunit pitfall/test-helper)
-  (define v (make-object (vector-mixin object%) #t))
-  (check-equal? (· v _ctm) default-ctm-value)  
-  (check-exn-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
-  (check-equal? (· v _ctm) '(1 2 3 4 5 6))
-  (check-exn-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
-  (check-equal? (· v _ctm) '(7 10 15 22 28 40))
-  (check-exn-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
-  (check-equal? (· v _ctm) '(37 54 81 118 153 222)))
+  (require rackunit)
+  (define ctm default-ctm-value)
+  (define ctm2 '(1 2 3 4 5 6))
+  (set! ctm (combine-transforms ctm ctm2))
+  (check-equal? ctm '(1 2 3 4 5 6))
+  (set! ctm (combine-transforms ctm ctm2))
+  (check-equal? ctm '(7 10 15 22 28 40))
+  (set! ctm (combine-transforms ctm ctm2))
+  (check-equal? ctm '(37 54 81 118 153 222)))
