@@ -1,16 +1,6 @@
-#lang racket/base
-(provide (all-defined-out))
+#lang br
+(provide (struct-out String))
 
-(struct co-dict (dict) #:transparent)
-(struct co-array (items) #:transparent)
-(struct co-stream (dict data) #:transparent)
-(struct co-version (num) #:transparent)
-(struct co-header (string) #:transparent)
-(struct co-string (string) #:transparent)
-(struct co-io (idx rev thing) #:transparent)
-(struct co-io-ref (idx rev) #:transparent)
-(struct co-comment (text) #:transparent)
-(struct co-trailer (dict) #:transparent)
+;; use structs to sub for missing node types
 
-(struct co-hash (hash) #:transparent)
-(struct co-encoding-datum (datum) #:transparent)
+(struct String (string) #:transparent)

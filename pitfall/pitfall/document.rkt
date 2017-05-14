@@ -42,7 +42,8 @@
     ;; The current page
     (field [(@page page) #f])
 
-    ;; other fields, hoisted from below (why is this necessary?)
+    ;; other fields, moved up from below
+    ;; (why is this necessary? order seems to matter)
     (field [(@x x) 0])
     (field [(@y y) 0])
 
@@ -58,13 +59,13 @@
     (field [(@info info) (mhash
                           'Producer "PitfallKit"
                           'Creator "PitfallKit"
-                          'CreationDate (seconds->date (if (current-debug)
+                          'CreationDate (seconds->date (if (test-mode)
                                                            0
                                                            (current-seconds)) #f))])
 
     (when (hash-ref @options 'info #f)
       (for ([(key val) (in-hash (hash-ref @options 'info))])
-           (hash-set! @info key val)))
+        (hash-set! @info key val)))
 
     ;; Write the header
     ;; PDF version
@@ -158,9 +159,9 @@
 
     (define/public (_refEnd ref)
       (set! @_offsets (for/list ([(offset idx) (in-indexed @_offsets)])
-                                (if (= (· ref id) (add1 idx))
-                                    (· ref offset)
-                                    offset)))
+                        (if (= (· ref id) (add1 idx))
+                            (· ref offset)
+                            offset)))
       (-- @_waiting)
       (if (and (zero? @_waiting) @_ended)
           (@_finalize)
@@ -175,8 +176,8 @@
       (@flushPages)
       (set! @_info (@ref))
       (for ([(key val) (in-hash @info)])
-           ;; upgrade string literal to String struct
-           (hash-set! (· @_info data) key (if (string? val) (String val) val)))
+        ;; upgrade string literal to String struct
+        (hash-set! (· @_info data) key (if (string? val) (String val) val)))
       (· @_info end)
 
       ;; todo: fonts
@@ -190,7 +191,7 @@
           (@_finalize)
           (set! @_ended #t))
 
-      'done)
+      #t)
 
     (public (@_finalize _finalize))
     (define (@_finalize [fn #f])
@@ -200,9 +201,9 @@
       (@_write (format "0 ~a" (add1 (length @_offsets))))
       (@_write "0000000000 65535 f ")
       (for ([offset (in-list @_offsets)])
-           (@_write (string-append
-                     (~r offset #:min-width 10 #:pad-string "0")
-                     " 00000 n ")))
+        (@_write (string-append
+                  (~r offset #:min-width 10 #:pad-string "0")
+                  " 00000 n ")))
       ;; trailer
       (@_write "trailer")
       ;; todo: make `PDFObject:convert` a static method
@@ -223,16 +224,16 @@
       (close-output-port op))))
 
 
-(define doc (new PDFDocument))
 
-(module+ test
-  (require rackunit racket/file)
-  (define ob (open-output-bytes))
-  (send doc pipe ob)
-  (check-equal? (send doc end) 'done)
-  (define result-str (get-output-bytes ob))
-  (define fn "out")
-  (with-output-to-file (string-append fn ".pdf")
-    (λ () (display result-str)) #:exists 'replace)
-  (check-equal? (file->bytes (string-append fn ".pdf")) (file->bytes (string-append fn " copy.pdf")))
-  (display (bytes->string/latin-1 result-str)))
+#;(module+ test
+    (define doc (new PDFDocument))
+    (require rackunit racket/file)
+    (define ob (open-output-bytes))
+    (send doc pipe ob)
+    (check-true (send doc end))
+    (define result-str (get-output-bytes ob))
+    (define fn "out")
+    (with-output-to-file (string-append fn ".pdf")
+      (λ () (display result-str)) #:exists 'replace)
+    (check-equal? (file->bytes (string-append fn ".pdf")) (file->bytes (string-append fn " copy.pdf")))
+    (display (bytes->string/latin-1 result-str)))

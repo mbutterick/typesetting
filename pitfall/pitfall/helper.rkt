@@ -107,3 +107,12 @@
   (check-equal? (bounded 0 .5 1) 0.5)
   (check-equal? (bounded 0 0 1) 0)
   (check-equal? (bounded 0 1 1) 1))
+
+
+(struct exn:pitfall:test exn (data))
+
+(define (raise-test-exn val)
+  (raise (exn:pitfall:test "pitfall test exn" (current-continuation-marks) val)))
+
+(define-syntax-rule (test-when cond expr)
+  (if cond (raise-test-exn expr) expr))

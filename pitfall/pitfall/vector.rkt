@@ -1,17 +1,39 @@
 #lang racket/base
-(require racket/class racket/match racket/string racket/format)
-(provide vector-mixin)
-(require "helper.rkt")
+(require racket/class racket/match racket/string racket/format racket/contract)
+(require "helper.rkt" "params.rkt")
+(provide (contract-out
+          [vector-mixin (class? . -> .
+                                (class/c [initVector (->m void?)]
+                                         [save (->m object?)]
+                                         [restore (->m object?)]
+                                         [closePath (->m object?)]
+                                         [moveTo (number? number? . ->m . object?)]
+                                         [lineTo (number? number? . ->m . object?)]
+                                         [bezierCurveTo ( number? number? number? number? number? number? . ->m . object?)]
+                                         [ellipse ((number? number? number?) (number?) . ->*m . object?)]
+                                         [circle (number? number? number? . ->m . object?)]
+                                         [_windingRule (string? . ->m . string?)]
+                                         [fill ((string?) ((or/c string? #f)) . ->*m . object?)]
+                                         [transform ((number? number? number? number? number? number?) (#:debug boolean?) . ->*m . (or/c object? string?))]
+                                         [translate (number? number? . ->m . object?)]
+                                         [scale (case->m
+                                                 (number? . -> . object?)
+                                                 (number? hash? . -> . object?)
+                                                 (number? number? . -> . object?)
+                                                 (number? number? hash? . -> . object?))]))]))
+
 
 ;; This constant is used to approximate a symmetrical arc using a cubic
 ;; Bezier curve.
-(define KAPPA (* 4 (/ (- (sqrt 2) 1) 3.0)))
+(define kappa (* 4 (/ (- (sqrt 2) 1) 3.0)))
 
 (define default-ctm-value '(1 0 0 1 0 0))
+
 
 (define (vector-mixin %)
   (class %
     (super-new)
+    (init-field [(@test-mode test-mode) #f])
     (field [(@_ctm _ctm) default-ctm-value]
            [(@_ctmStack _ctmStack) null])
     
@@ -27,13 +49,13 @@
       (set! @_ctm (if (pair? @_ctmStack) (pop! @_ctmStack) default-ctm-value))
       (send this addContent "Q"))
 
+    (public [@closePath closePath])
     (define (@closePath)
       (send this addContent "h"))      
 
     (public [@moveTo moveTo])
     (define (@moveTo x y)
       (send this addContent (format "~a ~a m" x y)))
-
 
     (public [@lineTo lineTo])
     (define (@lineTo x y)
@@ -51,12 +73,12 @@
       ;; based on http://stackoverflow.com/questions/2172798/how-to-draw-an-oval-in-html5-canvas/2173084#2173084
       (-= x r1)
       (-= y r2)
-      (define ox (* r1 KAPPA))
-      (define oy (* r2 KAPPA))
-      (define xe (+ x (* r1 2)))
-      (define ye (+ y (* r2 2)))
-      (define xm (+ x r1))
-      (define ym (+ y r2))
+      (define ox (* r1 kappa)) ; control point offset horizontal
+      (define oy (* r2 kappa)) ; control point offset vertical
+      (define xe (+ x (* r1 2))) ; x-end
+      (define ye (+ y (* r2 2))) ; y-end
+      (define xm (+ x r1)) ; x-middle
+      (define ym (+ y r2)) ; y-middle
       (@moveTo x ym)
       (@bezierCurveTo x (- ym oy) (- xm ox) y xm y)
       (@bezierCurveTo (+ xm ox) y xe (- ym oy) xe ym)
@@ -77,9 +99,7 @@
 
     (public [@_windingRule _windingRule])
     (define (@_windingRule rule)
-      (if (and (string? rule) (regexp-match #rx"^even-?odd$" rule))
-          "*"
-          ""))
+      (if (and (string? rule) (regexp-match #rx"^even-?odd$" rule)) "*" ""))
 
     (define/public (fill color [rule #f])
       (when (regexp-match #rx"^(even-?odd)|(non-?zero)$" color)
@@ -101,9 +121,8 @@
                         (+ (* m1 dx) (* m3 dy) m5)))
       (define values (string-join (map number (list m11 m12 m21 m22 dx dy)) " "))
       (define result (format "~a cm" values))
-      (if debug
-          result
-          (send this addContent result)))
+      (test-when @test-mode result)
+      (send this addContent result))
 
 
     (public [@translate translate])
@@ -121,17 +140,16 @@
            (match-let ([(list xo yo) (hash-ref options 'origin '(0 0))])
              (list (* xo (- 1 xFactor)) (* yo (- 1 yFactor)))))
          (@transform xFactor 0 0 yFactor x y)]))
-      
-
+     
     ))
 
 (module+ test
-  (require rackunit)
-  (define v (new (vector-mixin object%)))
-  (check-equal? (· v _ctm) default-ctm-value)
-  (check-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
+  (require rackunit pitfall/test-helper)
+  (define v (make-object (vector-mixin object%) #t))
+  (check-equal? (· v _ctm) default-ctm-value)  
+  (check-exn-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
   (check-equal? (· v _ctm) '(1 2 3 4 5 6))
-  (check-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
+  (check-exn-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
   (check-equal? (· v _ctm) '(7 10 15 22 28 40))
-  (check-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
+  (check-exn-equal? (send v transform 1 2 3 4 5 6 #:debug #t) "1 2 3 4 5 6 cm")
   (check-equal? (· v _ctm) '(37 54 81 118 153 222)))
