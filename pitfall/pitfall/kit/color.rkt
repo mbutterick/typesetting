@@ -1,6 +1,7 @@
 #lang racket/base
-(require racket/class racket/string)
+(require racket/class racket/string racket/match)
 (provide color-mixin)
+(require sugar/debug)
 (require "helper.rkt")
 
 (define (color-mixin %)
@@ -46,22 +47,22 @@
 
     (public [@_setColor _setColor])
     (define (@_setColor color stroke)
-        (set! color (@_normalizeColor color))
-        (define op (if stroke "SCN" "scn"))
-        (cond
-          [(not color)]
-          #;[(is-a? color PDFGradient)
-             (@_setColorSpace "Pattern" stroke)
-             (send color apply op)
-             #t] ; todo
-          [else
-           (define space (if (= (length color) 4)
-                             "DeviceCMYK"
-                             "DeviceRGB"))
-           (@_setColorSpace space stroke)
-           (set! color (string-join (map number color) " "))
-           (send this addContent (format "~a ~a" color op))
-           #t]))
+      (set! color (@_normalizeColor color))
+      (define op (if stroke "SCN" "scn"))
+      (cond
+        [(not color)]
+        #;[(is-a? color PDFGradient)
+           (@_setColorSpace "Pattern" stroke)
+           (send color apply op)
+           #t] ; todo
+        [else
+         (define space (if (= (length color) 4)
+                           "DeviceCMYK"
+                           "DeviceRGB"))
+         (@_setColorSpace space stroke)
+         (set! color (string-join (map number color) " "))
+         (send this addContent (format "~a ~a" color op))
+         #t]))
 
     
     (public [@_setColorSpace _setColorSpace])
@@ -73,13 +74,13 @@
     (field ([@_fillColor _fillColor] #f))
     (public [@fillColor fillColor])
     (define (@fillColor color [opacity 1])
-        (define set (@_setColor color #f))
-        (when set (@fillOpacity opacity))
+      (when (@_setColor color #f)
+        (@fillOpacity opacity))
 
-        ;; save this for text wrapper, which needs to reset
-        ;; the fill color on new pages
-        (set! @_fillColor (list color opacity))
-        this)
+      ;; save this for text wrapper, which needs to reset
+      ;; the fill color on new pages
+      (set! @_fillColor (list color opacity))
+      this)
 
 
     (public [@fillOpacity fillOpacity])
@@ -90,7 +91,39 @@
 
     (public [@_doOpacity doOpacity])
     (define (@_doOpacity fillOpacity strokeOpacity)
-      (send this addContent "")) ; todo
+      (when (or fillOpacity strokeOpacity)
+        (when fillOpacity
+          (set! fillOpacity (max 0 (min 1 fillOpacity))))
+        (when strokeOpacity
+          (set! strokeOpacity (max 0 (min 1 strokeOpacity))))
+
+        (define key (format "~a_~a"
+                            (if fillOpacity (number fillOpacity) "")
+                            (if strokeOpacity (number strokeOpacity) "")))
+        
+        (define dictionary #f)
+        (define name #f)
+        (cond
+          [(hash-has-key? @_opacityRegistry key)
+           (match-define (list d n) (hash-ref @_opacityRegistry key))
+           (set! dictionary d)
+           (set! name n)]
+          [else
+           (set! dictionary (mhash 'Type "ExtGState"))
+           (when fillOpacity
+             (hash-set! dictionary 'ca fillOpacity))
+           (when strokeOpacity
+             (hash-set! dictionary 'CA strokeOpacity))
+
+           (set! dictionary (send this ref dictionary))
+           (· dictionary end)
+           (++ @_opacityCount)
+           (define id @_opacityCount)
+           (set! name (format "Gs~a" id))
+           (hash-set! @_opacityRegistry key (list dictionary name))])
+
+        (hash-set! (· this page ext_gstates) name dictionary)        
+        (send this addContent (format "/~a gs" name))))
 
     ))
 
