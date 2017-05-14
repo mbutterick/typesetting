@@ -42,7 +42,8 @@
 
     (public [@bezierCurveTo bezierCurveTo])
     (define (@bezierCurveTo cp1x cp1y cp2x cp2y x y)
-      (send this addContent (format "~a ~a ~a ~a ~a ~a c" cp1x cp1y cp2x cp2y x y)))
+      (send this addContent (format "~a c"
+                                    (string-join (map number (list cp1x cp1y cp2x cp2y x y)) " "))))
 
 
     (public [@ellipse ellipse])
@@ -115,7 +116,7 @@
         [(list (? number? xFactor)) (@scale xFactor (mhash))]
         [(list (? number? xFactor) (? hash? options)) (@scale xFactor xFactor options)]
         [(list (? number? xFactor) (? number? yFactor)) (@scale xFactor yFactor (mhash))]
-         [(list (? number? xFactor) (? number? yFactor) (? hash? options))
+        [(list (? number? xFactor) (? number? yFactor) (? hash? options))
          (define x 0) (define y 0)
          (when (hash-ref options 'origin #f)
            (match-define (list x y) (hash-ref options 'origin))
