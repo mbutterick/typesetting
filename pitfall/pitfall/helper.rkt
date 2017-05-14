@@ -1,5 +1,5 @@
 #lang racket/base
-(require (for-syntax racket/base) racket/class sugar/list racket/list (only-in br/list push! pop!))
+(require (for-syntax racket/base racket/syntax) racket/class sugar/list racket/list (only-in br/list push! pop!))
 (provide (all-defined-out) push! pop!)
 
 (define-syntax (· stx)
@@ -42,7 +42,7 @@
 
 (define (listify kvs)
   (for/list ([slice (in-list (slice-at kvs 2))])
-            (cons (first slice) (second slice))))
+    (cons (first slice) (second slice))))
 (define-syntax-rule (define-hashifier id hasher) (define (id . kvs) (hasher (listify kvs))))
 (define-hashifier mhash make-hash)
 (define-hashifier mhasheq make-hasheq)
@@ -59,6 +59,11 @@
 
 ;; js-style `push`, which appends to end of list
 (define-syntax-rule (push-end! id thing) (set! id (append id (list thing))))
+
+(define-syntax-rule (push-field! field o expr) (set-field! field o (cons expr (get-field field o))))
+(define-syntax-rule (pop-field! field o) (let ([xs (get-field field o)])
+                                           (set-field! field o (cdr xs))
+                                           (car xs)))
 
 (module+ test
   (define xs '(1 2 3))
@@ -117,9 +122,17 @@
 (define-syntax-rule (test-when cond expr)
   (if cond (raise-test-exn expr) expr))
 
-
-
 (define mixin-tester%
   (class object%
     (super-new)
     (define/public (addContent val) val)))
+
+(define-syntax (as-method stx)
+  (syntax-case stx ()
+    [(_ id) (with-syntax ([private-id (generate-temporary #'id)])
+              #'(begin
+                  (public [private-id id])
+                  (define (private-id . args) (apply id this args))))]))
+
+(define-syntax-rule (as-methods id ...)
+  (begin (as-method id) ...))

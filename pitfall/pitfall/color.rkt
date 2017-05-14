@@ -1,8 +1,5 @@
-#lang racket/base
-(require racket/class racket/string racket/match)
+#lang pitfall/racket
 (provide color-mixin)
-(require sugar/debug)
-(require "helper.rkt")
 
 (define (color-mixin %)
   (class %

@@ -1,6 +1,5 @@
-#lang at-exp br
-(require racket/class racket/string racket/list srfi/19)
-(require "struct.rkt" "helper.rkt")
+#lang pitfall/racket
+(require srfi/19)
 (provide PDFObject)
 
 (define PDFObject

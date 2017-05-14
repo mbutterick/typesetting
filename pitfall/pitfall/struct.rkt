@@ -1,4 +1,4 @@
-#lang br
+#lang racket/base
 (provide (struct-out String))
 
 ;; use structs to sub for missing node types

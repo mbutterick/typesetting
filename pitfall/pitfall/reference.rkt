@@ -1,5 +1,5 @@
-#lang br
-(require "helper.rkt" "object.rkt" file/gzip)
+#lang pitfall/racket
+(require "object.rkt")
 (provide PDFReference)
 
 (define PDFReference

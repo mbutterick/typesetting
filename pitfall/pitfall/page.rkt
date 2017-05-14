@@ -1,8 +1,5 @@
-#lang racket/base
-(require sugar/debug)
-(require racket/class "helper.rkt")
+#lang pitfall/racket
 (provide PDFPage)
-
 
 (define PDFPage
   (class object%

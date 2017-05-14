@@ -1,6 +1,4 @@
-#lang sugar/debug racket/base
-(require racket/class racket/draw racket/list racket/format racket/port)
-(require sugar/debug)
+#lang pitfall/racket
 (provide PDFDocument)
 
 (require "reference.rkt" "struct.rkt" "object.rkt" "page.rkt" "helper.rkt" "params.rkt")
