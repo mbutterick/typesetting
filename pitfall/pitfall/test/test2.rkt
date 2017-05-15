@@ -40,17 +40,17 @@
      [stroke]
      [restore])
 
-   #|
-
    ;; filled circle
    (send* doc
      [save]
      [translate 400 0]
      [circle 100 50 50]
      [lineWidth 3]
-     [fillOpacity 0 [8]]
+     [fillOpacity 0.8]
      [fillAndStroke "red" "#900"]
      [restore])
+
+      #|
 
    (send* doc [translate 0 200])
 

@@ -12,8 +12,9 @@
      save
      restore
      closePath
-     lineTo
+     dash
      moveTo
+     lineTo
      bezierCurveTo
      quadraticCurveTo
      ellipse
@@ -54,6 +55,23 @@
 (define/contract (closePath this)
   (->m object?)
   (send this addContent "h"))
+
+
+(define/contract (dash this length [options (mhash)])
+  (((or/c number? (listof number?) #f)) (hash?) . ->*m . object?)
+  (cond
+    [length
+     (cond
+       [(list? length)
+        (send this addContent
+              (format "[~a] ~a d"
+                      (string-join (map number length) " ")
+                      (hash-ref options 'phase 0)))]
+       [else
+        (define space (hash-ref options 'space length))
+        (define phase (hash-ref options 'phase 0))
+        (send this addContent (format "[~a ~a] ~a d" (number length) (number space) (number phase)))])] 
+    [else this]))
 
 
 (define/contract (moveTo this x y)
@@ -104,12 +122,13 @@
 
 (define/contract (polygon this . points)
   (() () #:rest (listof (list/c number? number?)) . ->*m . object?)
-  (when (pair? points)
-    (match-define (cons first-pt other-pts) points)
-    (apply moveTo this first-pt)
-    (for ([pt (in-list other-pts)])
-      (apply lineTo this pt))
-    (closePath this)))
+  (cond
+    [(pair? points)
+     (apply moveTo this (car points))
+     (for ([pt (in-list (cdr points))])
+       (apply lineTo this pt))
+     (closePath this)]
+    [else this]))
 
 
 (define/contract (path this path-data)
