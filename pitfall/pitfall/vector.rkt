@@ -14,28 +14,32 @@
      lineTo
      moveTo
      bezierCurveTo
+     quadraticCurveTo
      ellipse
      circle
+     path
      _windingRule
      fill
+     stroke
      transform
      translate
-     scale)
-    (define/public (path pth) this) ;; SVGPath.apply this, path ; todo
-    ))
+     scale)))
 
 
 (define default-ctm-value '(1 0 0 1 0 0))
+
 
 (define/contract (initVector this)
   (->m void?)
   (set-field! _ctm this default-ctm-value)
   (set-field! _ctmStack this null))
 
+
 (define/contract (save this)
   (->m object?)
   (push-field! _ctmStack this (· this _ctm))
   (send this addContent "q"))
+
 
 (define/contract (restore this)
   (->m object?)
@@ -44,21 +48,31 @@
                             default-ctm-value))
   (send this addContent "Q"))
 
+
 (define/contract (closePath this)
   (->m object?)
   (send this addContent "h"))
+
 
 (define/contract (moveTo this x y)
   (number? number? . ->m . object?)
   (send this addContent (format "~a ~a m" x y)))
 
+
 (define/contract (lineTo this x y)
   (number? number? . ->m . object?)
   (send this addContent (format "~a ~a l" x y)))
 
+
 (define/contract (bezierCurveTo this cp1x cp1y cp2x cp2y x y)
   (number? number? number? number? number? number? . ->m . object?)
   (send this addContent (format "~a c" (string-join (map number (list cp1x cp1y cp2x cp2y x y)) " "))))
+
+
+(define/contract (quadraticCurveTo this cpx cpy x y)
+  (number? number? number? number . ->m . object?)
+  (send this addContent (format "~a v" (string-join (map number (list cpx cpy x y)) " "))))
+  
 
 (define/contract (ellipse this x y r1 [r2 r1])
   ((number? number? number?) (number?) . ->*m . object?)
@@ -80,13 +94,22 @@
   (bezierCurveTo this (- xm ox) ye x (+ ym oy) x ym)
   (closePath this))
 
+
 (define/contract (circle this x y radius)
   (number? number? number? . ->m . object?)
   (ellipse this x y radius))
 
+
+(define/contract (path this path-data)
+  (string? . ->m . object?)
+  ;(parse-svg-path this path-data)
+  this)
+
+
 (define/contract (_windingRule rule)
   ((or/c string? #f) . -> . string?)
   (if (and (string? rule) (regexp-match #rx"^even-?odd$" rule)) "*" ""))
+
 
 (define/contract (fill this color [rule #f])
   ((color-string?) ((or/c string? #f)) . ->*m . object?)
@@ -96,10 +119,18 @@
   (when color (send this fillColor color)) ;; fillColor method is from color mixin
   (send this addContent (format "f~a" (_windingRule rule))))
 
+
+(define/contract (stroke this [color #f])
+  (() ((or/c color-string? #f)) . ->*m . object?)
+  (when color (send this strokeColor color))
+  (send this addContent "S"))
+
+
 (define tm/c (list/c number? number? number? number? number? number?))
 (define/contract (make-transform-string ctm)
   (tm/c . -> . string?)
   (format "~a cm" (string-join (map number ctm) " ")))
+
 
 (define/contract (combine-transforms m-transform n-transform)
   (tm/c tm/c . -> . tm/c)
@@ -112,15 +143,18 @@
         (+ (* n11 mdx) (* n21 mdy) ndx)
         (+ (* n12 mdx) (* n22 mdy) ndy)))
 
+
 (define/contract (transform this m11 m12 m21 m22 mdx mdy)
   (number? number? number? number? number? number? . ->m . object?)
   (define new-ctm (list m11 m12 m21 m22 mdx mdy))
   (set-field! _ctm this (combine-transforms (· this _ctm) new-ctm))
   (send this addContent (make-transform-string new-ctm)))
 
+
 (define/contract (translate this x y)
   (number? number? . ->m . object?)
-  (transform this (list 1 0 0 1 x y)))
+  (transform this 1 0 0 1 x y))
+
 
 (define/contract scale
   (case->m
