@@ -8,8 +8,7 @@
     (init-field document id [data (mhash)])
     (field [gen 0]
            [deflate #f]
-           ;; #f is debug value below
-           [compress (and #f
+           [compress (and (compression-enabled)
                           (· document compress)
                           (not (hash-ref data 'Filter #f)))]
            [uncompressedLength 0]
@@ -58,7 +57,7 @@
   (set-field! offset this (· this document _offset))
       
   (send (· this document) _write (format "~a ~a obj" (· this id) (· this gen)))
-  (send (· this document) _write (send (new PDFObject) convert (· this data)))
+  (send (· this document) _write (convert (· this data)))
 
   (when (positive? (length (· this chunks)))
     (send (· this document) _write "stream")

@@ -1,8 +1,7 @@
 #lang pitfall/racket
 (provide PDFDocument)
 
-(require "reference.rkt" "struct.rkt" "object.rkt" "page.rkt" "helper.rkt" "params.rkt")
-(require "vector.rkt" "color.rkt")
+(require "reference.rkt" "object.rkt" "page.rkt" "vector.rkt" "color.rkt")
 
 (define PDFDocument
   ;; actually is an instance of readable.Stream, which is an input port
@@ -205,7 +204,7 @@
       ;; trailer
       (@_write "trailer")
       ;; todo: make `PDFObject:convert` a static method
-      (@_write (send (make-object PDFObject) convert
+      (@_write (convert
                      (mhash 'Size (add1 (length @_offsets))
                             'Root @_root
                             'Info @_info)))

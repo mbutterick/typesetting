@@ -4,10 +4,11 @@
 (define-syntax-rule (r+p id ...) (begin (require id ...) (provide (all-from-out id ...))))
 
 (r+p "helper.rkt"
-     "params.rkt"
+     "param.rkt"
      "struct.rkt"
      sugar/debug
      racket/class
+     racket/file
      racket/match
      racket/string
      racket/format
@@ -17,7 +18,7 @@
      racket/function)
 
 (module reader syntax/module-reader
-  #:language "racket.rkt"
+  #:language 'pitfall/racket
   #:read read
   #:read-syntax read-syntax
   (require (prefix-in @- scribble/reader)))

@@ -1,5 +1,5 @@
-#lang racket
-(require pitfall/document pitfall/params rackunit)
+#lang pitfall/racket
+(require pitfall/document rackunit)
 
 (test-mode #t)
 (check-true

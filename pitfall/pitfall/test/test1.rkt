@@ -1,6 +1,6 @@
-#lang racket
+#lang pitfall/racket
 
-(require pitfall/document pitfall/helper pitfall/params rackunit)
+(require pitfall/document rackunit)
 
 (require racket/runtime-path)
 (define-runtime-path this "test1rkt.pdf")
