@@ -133,10 +133,20 @@
 (define-syntax-rule (test-when cond expr)
   (if cond (raise-test-exn expr) expr))
 
+(define string%
+  (class* object% (writable<%>)
+    (super-new)
+    (init-field [data #f])
+    (define (get-string)
+      (with-handlers ([exn:fail:object? (λ (exn) data)])
+        (send this toString)))
+    (define/public (custom-write port) (write (get-string) port))
+    (define/public (custom-display port) (display (get-string) port))))
+
 (define mixin-tester%
   (class object%
     (super-new)
-    (define/public (addContent val) val)))
+    (define/public (addContent val) (make-object string% val))))
 
 (define-syntax (as-method stx)
   (syntax-case stx ()
