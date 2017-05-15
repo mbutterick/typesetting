@@ -14,10 +14,6 @@ doc.moveTo(0, 20)
 
 doc.translate(0, 200)
 
-doc.path('M 0,20 L 100,160 Q 130,200 150,120 C 190,-40 200,200 300,150 L 400,90').stroke()
-
-doc.translate(0, 200)
-
 doc.polygon [100, 0], [50, 100], [150, 100]
 doc.stroke()
 

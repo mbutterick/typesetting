@@ -12,12 +12,15 @@
      save
      restore
      closePath
+     lineCap
+     lineJoin
      lineWidth
      dash
      moveTo
      lineTo
      bezierCurveTo
      quadraticCurveTo
+     rect
      ellipse
      circle
      polygon
@@ -58,10 +61,27 @@
   (->m object?)
   (send this addContent "h"))
 
+(define/contract (lineCap this [c #f])
+  ((or/c 'butt 'round 'square #f) . ->m . object?)
+  (define cap-styles (hasheq 'butt 0 'round 1 'square 2))
+  (send this addContent
+        (format "~a J" (if (symbol? c)
+                           (hash-ref cap-styles c)
+                           ""))))
+
+
+(define/contract (lineJoin this [j #f])
+  ((or/c 'miter 'round 'bevel #f) . ->m . object?)
+  (define cap-styles (hasheq 'miter 0 'round 1 'bevel 2))
+  (send this addContent
+        (format "~a j" (if (symbol? j)
+                           (hash-ref cap-styles j)
+                           ""))))
+
 
 (define/contract (lineWidth this w)
   (number? . ->m . object?)
-  (send this addContent (format "#~a" (number w))))
+  (send this addContent (format "~a w" (number w))))
 
 
 (define/contract (dash this length [options (mhash)])
@@ -100,6 +120,11 @@
   (number? number? number? number . ->m . object?)
   (send this addContent (format "~a v" (string-join (map number (list cpx cpy x y)) " "))))
   
+
+(define/contract (rect this x y w h)
+  (number? number? number? number? . ->m . object?)
+  (send this addContent (format "~a re" (string-join (map number (list x y w h)) " "))))
+
 
 (define/contract (ellipse this x y r1 [r2 r1])
   ((number? number? number?) (number?) . ->*m . object?)

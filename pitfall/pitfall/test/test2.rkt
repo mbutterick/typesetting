@@ -16,16 +16,6 @@
 
    (send* doc [translate 0 200])
 
-#|
-   ;; curved path as svg path
-   (send* doc
-     [path "M 0,20 L 100,160 Q 130,200 150,120 C 190,-40 200,200 300,150 L 400,90"]
-     [stroke])
-|#
-
-   (send* doc
-     [translate 0 200])
-
    ;; triangle
    (send* doc
      [polygon '(100 0) '(50 100) '(150 100)]
@@ -49,8 +39,6 @@
      [fillOpacity 0.8]
      [fillAndStroke "red" "#900"]
      [restore])
-
-      #|
 
    (send* doc [translate 0 200])
 
@@ -83,8 +71,7 @@
      [lineJoin 'bevel]
      [rect 250 100 50 50]
      [stroke])
-   |#
 
    (send doc end)))
 
-;(check-copy-equal? this)
+(check-copy-equal? this)
