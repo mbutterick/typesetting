@@ -24,7 +24,7 @@
      ellipse
      circle
      polygon
-     path
+     ;path
      _windingRule
      fill
      stroke
