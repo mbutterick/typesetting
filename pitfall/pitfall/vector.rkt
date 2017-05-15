@@ -1,4 +1,5 @@
 #lang pitfall/racket
+(require "path.rkt")
 (provide vector-mixin default-ctm-value)
 
 (define (vector-mixin [% mixin-tester%])
@@ -17,6 +18,7 @@
      quadraticCurveTo
      ellipse
      circle
+     polygon
      path
      _windingRule
      fill
@@ -100,9 +102,19 @@
   (ellipse this x y radius))
 
 
+(define/contract (polygon this . points)
+  (() () #:rest (listof (list/c number? number?)) . ->*m . object?)
+  (when (pair? points)
+    (match-define (cons first-pt other-pts) points)
+    (apply moveTo this first-pt)
+    (for ([pt (in-list other-pts)])
+      (apply lineTo this pt))
+    (closePath this)))
+
+
 (define/contract (path this path-data)
   (string? . ->m . object?)
-  ;(parse-svg-path this path-data)
+  (parse-svg-path this path-data)
   this)
 
 

@@ -16,20 +16,19 @@
 
    (send* doc [translate 0 200])
 
-
+#|
    ;; curved path as svg path
    (send* doc
-     [path "M 020 L 100160 Q 130200 150120 C 190-40 200200 300150 L 40090"]
+     [path "M 0,20 L 100,160 Q 130,200 150,120 C 190,-40 200,200 300,150 L 400,90"]
      [stroke])
-
+|#
 
    (send* doc
      [translate 0 200])
-   #|
 
    ;; triangle
    (send* doc
-     [polygon [100 0] [50 100] [150 100]]
+     [polygon '(100 0) '(50 100) '(150 100)]
      [stroke])
 
    ;; dashed circle
@@ -40,6 +39,8 @@
      [dash 5 (hash 'space 10)]
      [stroke]
      [restore])
+
+   #|
 
    ;; filled circle
    (send* doc
