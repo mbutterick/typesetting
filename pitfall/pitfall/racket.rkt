@@ -1,5 +1,5 @@
 #lang racket/base
-(provide (all-from-out racket/base))
+(provide (all-from-out racket/base) r+p)
 
 (define-syntax-rule (r+p id ...) (begin (require id ...) (provide (all-from-out id ...))))
 

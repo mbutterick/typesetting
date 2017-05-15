@@ -1,14 +1,10 @@
-#lang pitfall/racket
-(require pitfall/document rackunit)
+#lang pitfall/pdftest
+(define-runtime-path this "test0rkt.pdf")
 
-(test-mode #t)
 (check-true
  (let ()
    (define doc (new PDFDocument))
-   (send doc pipe (open-output-file "test0rkt.pdf" #:exists 'replace))
+   (send doc pipe (open-output-file this #:exists 'replace))
    (send doc end)))
 
-(require racket/runtime-path)
-(define-runtime-path this "test0rkt.pdf")
-(define-runtime-path control "test0rkt copy.pdf")
-(check-equal? (file->bytes this) (file->bytes control))
+(check-copy-equal? this)
