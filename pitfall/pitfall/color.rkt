@@ -66,9 +66,9 @@
          (send color apply op)
          #t] ; todo
       [else
-       (define color-space (cond
-                             [(= (length color) 4) "DeviceCMYK"]
-                             [(= (length color) 3) "DeviceRGB"]
+       (define color-space (case (length color)
+                             [(4) "DeviceCMYK"]
+                             [(3) "DeviceRGB"]
                              [else (raise-argument-error '_setColor "color of length 3 or 4" color)]))
        (_setColorSpace this color-space stroke)
        (send this addContent (format "~a ~a" (string-join (map number color) " ") op))
