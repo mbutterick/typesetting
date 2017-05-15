@@ -89,7 +89,7 @@
   (if (and (string? rule) (regexp-match #rx"^even-?odd$" rule)) "*" ""))
 
 (define/contract (fill this color [rule #f])
-  ((string?) ((or/c string? #f)) . ->*m . object?)
+  ((color-string?) ((or/c string? #f)) . ->*m . object?)
   (when (regexp-match #rx"^(even-?odd)|(non-?zero)$" color)
     (set! rule color)
     (set! color #f))

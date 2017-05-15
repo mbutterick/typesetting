@@ -13,10 +13,11 @@
      racket/format
      racket/contract
      racket/list
-     racket/port)
+     racket/port
+     racket/function)
 
 (module reader syntax/module-reader
   #:language "racket.rkt"
-  #:read @-read
-  #:read-syntax @-read-syntax
+  #:read read
+  #:read-syntax read-syntax
   (require (prefix-in @- scribble/reader)))

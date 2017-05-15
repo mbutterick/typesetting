@@ -9,19 +9,18 @@
 ;; Create a new PDFDocument
 (test-mode #t)
 (check-true
- (let ()
-   (define doc (new PDFDocument))
+ (let ([doc (new PDFDocument)])
    (send doc pipe (open-output-file this #:exists 'replace))
-
    ;; Draw a triangle and a circle
-   (send*/fold doc [save]
-               [moveTo 100 150]
-               [lineTo 100 250]
-               [lineTo 200 250]
-               [fill "#FF3300"])
-
-   (send*/fold doc [circle 280 200 50] [fill "#6600FF"])
-
+   (send* doc
+     [save]
+     [moveTo 100 150]
+     [lineTo 100 250]
+     [lineTo 200 250]
+     [fill "#FF3300"])
+   (send* doc
+     [circle 280 200 50]
+     [fill "#6600FF"])
    (send doc end)))
 
 (check-equal? (file->bytes this) (file->bytes control))

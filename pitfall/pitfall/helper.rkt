@@ -1,5 +1,5 @@
 #lang racket/base
-(require (for-syntax racket/base racket/syntax) racket/class sugar/list racket/list (only-in br/list push! pop!))
+(require (for-syntax racket/base racket/syntax) racket/class sugar/list racket/list (only-in br/list push! pop!) racket/string)
 (provide (all-defined-out) push! pop!)
 
 (define-syntax (· stx)
@@ -61,9 +61,20 @@
 (define-syntax-rule (push-end! id thing) (set! id (append id (list thing))))
 
 (define-syntax-rule (push-field! field o expr) (set-field! field o (cons expr (get-field field o))))
+
+(define-syntax-rule (push-end-field! field o expr)
+  (set-field! field o (append (get-field field o) (list expr))))
+
 (define-syntax-rule (pop-field! field o) (let ([xs (get-field field o)])
                                            (set-field! field o (cdr xs))
                                            (car xs)))
+(define-syntax (increment-field! stx)
+  (syntax-case stx ()
+    [(_ field o)  #'(increment-field! field o 1)]
+    [(_ field o expr)
+     #'(begin (set-field! field o (+ (get-field field o) expr)) (get-field field o))]))
+
+
 
 (module+ test
   (define xs '(1 2 3))
@@ -136,3 +147,6 @@
 
 (define-syntax-rule (as-methods id ...)
   (begin (as-method id) ...))
+
+(define (color-string? x)
+  (and (string? x) (or (= (string-length x) 4) (= (string-length x) 7)) (string-prefix? x "#")))

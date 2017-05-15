@@ -5,64 +5,72 @@
 (define PDFReference
   (class object%
     (super-new)
-    (init-field [(@document document)] [(@id id)] [(@data data) (mhash)])
-    (field [(@gen gen) 0])
-    (field [(@deflate deflate) #f])
-    (field [(@compress compress) #f #;debug
-                                 #;(and (· @document compress)
-                                        (not (hash-ref @data 'Filter #f)))])
-    (field [(@uncompressedLength uncompressedLength) 0])
-    (field [(@chunks chunks) empty])
+    (init-field document id [data (mhash)])
+    (field [gen 0]
+           [deflate #f]
+           ;; #f is debug value below
+           [compress (and #f
+                          (· document compress)
+                          (not (hash-ref data 'Filter #f)))]
+           [uncompressedLength 0]
+           [chunks empty]
+           [offset #f])
 
-    (public [@initDeflate initDeflate])
-    (define (@initDeflate)
-      (hash-ref! @data 'Filter "FlateDecode")
+    (as-methods
+     initDeflate
+     write
+     _write
+     end
+     finalize
+     toString)))
 
-      (set! @deflate deflate)
-      (report 'initDeflate-unimplemented))
+(define/contract (initDeflate this)
+  (->m void?)
+  (hash-ref! (· this data) 'Filter "FlateDecode"))
 
-    (define/public (write data)
-      (_write data #f void))
-    
-    (define/public (_write chunk-in encoding callback)
-      (define chunk (if (isBuffer? chunk-in)
-                        chunk-in
-                        (newBuffer (string-append chunk-in "\n"))))
-      (+= @uncompressedLength (buffer-length chunk))
-      (hash-ref! @data 'Length 0)
-      (cond
-        [@compress (when (not @deflate) (@initDeflate))
-                   (send @deflate write chunk)]
-        [else (push-end! @chunks chunk)
-              (hash-update! @data 'Length (λ (len) (+ len (buffer-length chunk))))])
-      (callback))
+(define/contract (write this data)
+  (any/c . ->m . void?)
+  (send this _write data #f void))
 
-    (define/public (end [chunk #f])
-      ; (super) ; todo
-      (if @deflate
-          (void) ; todo (deflate-end)
-          (@finalize)))
+(define/contract (_write this chunk-in encoding callback)
+  (any/c (or/c string? #f) procedure? . ->m . any/c)
+  (define chunk (if (isBuffer? chunk-in)
+                    chunk-in
+                    (newBuffer (string-append chunk-in "\n"))))
+  (increment-field! uncompressedLength this (buffer-length chunk))
+  (hash-ref! (· this data) 'Length 0)
+  (cond
+    #;[(· this compress) (when (not (· this deflate)) (initDeflate))
+                         (send deflater write chunk)] ; todo: implement compression
+    [else (push-end-field! chunks this chunk)
+          (hash-update! (· this data) 'Length (λ (len) (+ len (buffer-length chunk))))])
+  (callback))
 
-    (field [(@offset offset) #f])
-    (public [@finalize finalize])
-    (define (@finalize)
-      (set! @offset (· @document _offset))
+(define/contract (end this [chunk #f])
+  (() ((or/c any/c #f)) . ->*m . void?)
+  ; (super) ; todo
+  (if (· this deflate)
+      (void) ; todo (deflate-end)
+      (send this finalize)))
+
+(define/contract (finalize this)
+  (->m void?)
+  (set-field! offset this (· this document _offset))
       
-      (send @document _write (format "~a ~a obj" @id @gen))
-      (send @document _write (send (new PDFObject) convert @data))
+  (send (· this document) _write (format "~a ~a obj" (· this id) (· this gen)))
+  (send (· this document) _write (send (new PDFObject) convert (· this data)))
 
-      (when (positive? (length @chunks))
-          (send @document _write "stream")
-          (for ([chunk (in-list @chunks)])
-               (send @document _write chunk))
+  (when (positive? (length (· this chunks)))
+    (send (· this document) _write "stream")
+    (for ([chunk (in-list (· this chunks))])
+      (send (· this document) _write chunk))
 
-        (set! @chunks null) ; free up memory
-        (send @document _write "\nendstream"))
+    (set-field! chunks this null) ; free up memory
+    (send (· this document) _write "\nendstream"))
 
-      (send @document _write "endobj")
-      (send @document _refEnd this))
+  (send (· this document) _write "endobj")
+  (send (· this document) _refEnd this))
 
-    (define/public (toString)
-      (format "~a ~a R" @id @gen)) 
-
-    ))
+(define/contract (toString this)
+  (->m string?)
+  (format "~a ~a R" (· this id) (· this gen)))
