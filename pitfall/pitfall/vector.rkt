@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(provide vector-mixin)
+(provide vector-mixin default-ctm-value)
 
 (define (vector-mixin [% mixin-tester%])
   (class %

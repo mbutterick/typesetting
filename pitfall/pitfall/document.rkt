@@ -1,236 +1,206 @@
 #lang pitfall/racket
+(require "reference.rkt" "object.rkt" "page.rkt" "vector.rkt" "color.rkt")
 (provide PDFDocument)
 
-(require "reference.rkt" "object.rkt" "page.rkt" "vector.rkt" "color.rkt")
+(define mixed% (color-mixin (vector-mixin object%)))
 
 (define PDFDocument
-  ;; actually is an instance of readable.Stream, which is an input port
-  (class (color-mixin (vector-mixin object%))
-    (init-field [(@options options) (mhash)])
-    (let ([output-file (hash-ref @options 'out "outrkt.pdf")])
-      (super-new))
+  (class mixed% ; actually is an instance of readable.Stream, which is an input port
+    (init-field [options (mhash)])
+    (super-new)
 
-    ; list of byte chunks to push onto
-    ; simulates interface of stream.readable
-    (field [(@byte-strings byte-strings) empty]) 
-    
-    ;; PDF version
-    (field [(@version version) 1.3])
-    
-    ;; Whether streams should be compressed
-    (field [(@compress compress) (hash-ref @options 'compress #t)])
-    
-    (field [(@_pageBuffer _pageBuffer) null])
-    (field [(@_pageBufferStart _pageBufferStart) 0])
+    (field [byte-strings empty] ; list of byte chunks to push onto; simulates interface of stream.readable
+           [version 1.3] ; PDF version
+           [compress (hash-ref options 'compress #t)] ; Whether streams should be compressed
+           [_pageBuffer null]
+           [_pageBufferStart 0]
+           [_offsets null] ; The PDF object store
+           [_waiting 0]
+           [_ended #f]
+           [_offset 0]
+           [_root (ref this
+                       (mhash 'Type "Catalog"
+                              'Pages (ref this
+                                          (mhash 'Type "Pages"
+                                                 'Count 0
+                                                 'Kids empty))))] ; top object
+           [page #f] ; The current page
+           [x 0]
+           [y 0]
+           [info (mhash
+                  'Producer "PitfallKit"
+                  'Creator "PitfallKit"
+                  'CreationDate (seconds->date (if (test-mode)
+                                                   0
+                                                   (current-seconds)) #f))]  ; Initialize the metadata
+           [op #f] ; for `pipe`
+           [_info #f]) ; for `end`
 
-    ;; The PDF object store
-    (field [(@_offsets _offsets) null])
-    (field [(@_waiting _waiting) 0])
-    (field [(@_ended _ended) #f])
-    (field [(@_offset _offset) 0])
-
-    (field [(@_root _root) (@ref
-                            (mhash 'Type "Catalog"
-                                   'Pages (@ref
-                                           (mhash 'Type "Pages"
-                                                  'Count 0
-                                                  'Kids empty))))])
-
-    ;; The current page
-    (field [(@page page) #f])
-
-    ;; other fields, moved up from below
-    ;; (why is this necessary? order seems to matter)
-    (field [(@x x) 0])
-    (field [(@y y) 0])
-
-    ;; todo
     ;; Initialize mixins
     (· this initColor)
     (· this initVector)
-    #;(@initFonts)
-    #;(@initText)
-    #;(@initImages)
+    #;(· this initFonts) ; todo
+    #;(· this initText) ; todo
+    #;(· this initImages) ; todo
 
-    ;; Initialize the metadata
-    (field [(@info info) (mhash
-                          'Producer "PitfallKit"
-                          'Creator "PitfallKit"
-                          'CreationDate (seconds->date (if (test-mode)
-                                                           0
-                                                           (current-seconds)) #f))])
+    (as-methods
+     addPage
+     flushPages
+     ref
+     push
+     _write
+     addContent
+     _refEnd
+     pipe
+     end
+     _finalize)
 
-    (when (hash-ref @options 'info #f)
-      (for ([(key val) (in-hash (hash-ref @options 'info))])
-        (hash-set! @info key val)))
+    (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) ; if no 'info key, nothing will be copied from (hash)
+      (hash-set! info key val))
 
     ;; Write the header
-    ;; PDF version
-    (@_write (format "%PDF-~a" @version))
-
-    ;; 4 binary chars, as recommended by the spec
+    (_write this (format "%PDF-~a" version)) ;  PDF version
     (let ([c (integer->char #xFF)])
-      (@_write (string-append "%" (string c c c c))))
+      (_write this (string-append "%" (string c c c c)))) ; 4 binary chars, as recommended by the spec
 
     ;; Add the first page
-    (unless (not (hash-ref @options 'autoFirstPage #t))
-      (@addPage))
-
-    ;; todo
-    ;;mixin = (methods) =>
-    ;;for name, method of methods
-    ;;this::[name] = method
-
-    ;; todo
-    ;; Load mixins
-    ;; (in racket this is handled automatically in the class decl) 
-    ;mixin require './mixins/color'
-    ;mixin require './mixins/vector'
-    ;mixin require './mixins/fonts'
-    ;mixin require './mixins/text'
-    ;mixin require './mixins/images'
-    ;mixin require './mixins/annotations'
+    (unless (not (hash-ref options 'autoFirstPage #t))
+      (addPage this))))
 
     
-    (public [@addPage addPage])
-    (define (@addPage [options @options])
-      ;; end the current page if needed
-      (unless (hash-ref @options 'bufferPages #f)
-        (@flushPages))
+(define/contract (addPage this [options-arg (· this options)])
+  (() (hash?) . ->*m . object?)
+  ;; end the current page if needed
+  (unless (hash-ref (· this options) 'bufferPages #f)
+    (send this flushPages))
 
-      ;; create a page object
-      (set! @page (make-object PDFPage this options))
-      (push-end! @_pageBuffer @page)
-      ;; add the page to the object store
-      (define pages (· @_root data Pages data))
-      (hash-update! pages 'Kids (λ (val) (cons (· @page dictionary) val)) null)
-      (hash-update! pages 'Count add1)
+  ;; create a page object
+  (set-field! page this (make-object PDFPage this options-arg))
+  (push-end-field! _pageBuffer this (· this page))
+  ;; add the page to the object store
+  (define pages (· this _root data Pages data))
+  (hash-update! pages 'Kids (curry cons (· this page dictionary)) null)
+  (hash-update! pages 'Count add1)
 
-      ;; reset x and y coordinates
-      (set! @x (· @page margins left))
-      (set! @y (· @page margins top))
-      ;; flip PDF coordinate system so that the origin is in
-      ;; the top left rather than the bottom left
-      (set-field! _ctm this '(1 0 0 1 0 0))
-      (send this transform 1 0 0 -1 0 (· @page height))
+  ;; reset x and y coordinates
+  (set-field! x this (· this page margins left))
+  (set-field! y this (· this page margins top))
+  ;; flip PDF coordinate system so that the origin is in
+  ;; the top left rather than the bottom left
+  (set-field! _ctm this default-ctm-value)
+  (send this transform 1 0 0 -1 0 (· this page height))
 
-      #;(@emit "pageAdded") ; from eventemitter interface
-      this
-      )
+  #;(@emit "pageAdded") ; from eventemitter interface
+  this)
 
-    (public [@flushPages flushPages])
-    (define (@flushPages)
-      ;; this local variable exists so we're future-proof against
-      ;; reentrant calls to flushPages.
-      (define pages @_pageBuffer)
-      (set! @_pageBuffer empty)
-      (+= @_pageBufferStart (length pages))
-      (·map end pages))
 
-    ;; every js function argument is 'undefined' by default
-    ;; so even a function defined without default values
-    ;; can be called without arguments
-    (public [@ref ref])
-    (define (@ref [data (mhash)])
-      (define ref (make-object PDFReference this (add1 (length @_offsets)) data))
-      (push-end! @_offsets #f) ; placeholder for this object's offset once it is finalized
-      (++ @_waiting)
-      ref)
+(define/contract (flushPages this)
+  (->m list?)
+  ;; this local variable exists so we're future-proof against
+  ;; reentrant calls to flushPages.
+  (define pages (· this _pageBuffer))
+  (set-field! _pageBuffer this empty)
+  (increment-field! _pageBufferStart this (length pages))
+  (·map end pages))
 
-    (public [@push push])
-    (define (@push chunk)
-      (push! @byte-strings chunk))
 
-    (public [@_write _write])
-    (define (@_write data)
-      (let ([data (if (not (isBuffer? data))
-                      (newBuffer (string-append data "\n"))
-                      data)])
-        (@push data)
-        (+= @_offset (buffer-length data))))
+;; every js function argument is 'undefined' by default
+;; so even a function defined without default values
+;; can be called without arguments
+(define/contract (ref this [data (mhash)])
+  (() (hash?) . ->*m . (is-a?/c PDFReference))
+  (define newref (make-object PDFReference this (add1 (length (· this _offsets))) data))
+  (push-end-field! _offsets this #f) ; placeholder for this object's offset once it is finalized
+  (increment-field! _waiting this)
+  newref)
 
-    (public [@addContent addContent])
-    (define (@addContent data)
-      (send @page write data)
-      this)
 
-    (define/public (_refEnd ref)
-      (set! @_offsets (for/list ([(offset idx) (in-indexed @_offsets)])
-                        (if (= (· ref id) (add1 idx))
-                            (· ref offset)
-                            offset)))
-      (-- @_waiting)
-      (if (and (zero? @_waiting) @_ended)
-          (@_finalize)
-          (set! @_ended #f)))
+(define/contract (push this chunk)
+  (any/c . ->m . void?)
+  (push-field! byte-strings this chunk))
 
-    (field [op #f])
-    (define/public (pipe port)
-      (set! op port))
 
-    (field [(@_info _info) #f])
-    (define/public (end)
-      (@flushPages)
-      (set! @_info (@ref))
-      (for ([(key val) (in-hash @info)])
-        ;; upgrade string literal to String struct
-        (hash-set! (· @_info data) key (if (string? val) (String val) val)))
-      (· @_info end)
+(define/contract (_write this data)
+  (any/c . ->m . void?)
+  (let ([data (if (not (isBuffer? data))
+                  (newBuffer (string-append data "\n"))
+                  data)])
+    (push this data)
+    (void (increment-field! _offset this (buffer-length data)))))
 
-      ;; todo: fonts
-      ;; for name, font of @_fontFamilies
-      ;; font.finalize()
 
-      (· @_root end)
-      (· @_root data Pages end)
+(define/contract (addContent this data)
+  (any/c . ->m . object?)
+  (send (· this page) write data)
+  this)
 
-      (if (zero? @_waiting)
-          (@_finalize)
-          (set! @_ended #t))
 
-      #t)
+(define/contract (_refEnd this ref)
+  ((is-a?/c PDFReference) . ->m . void?)
+  (set-field! _offsets this (for/list ([(offset idx) (in-indexed (· this _offsets))])
+                              (if (= (· ref id) (add1 idx))
+                                  (· ref offset)
+                                  offset)))
+  (increment-field! _waiting this -1)
+  (if (and (zero? (· this _waiting)) (· this _ended))
+      (· this _finalize)
+      (set-field! _ended this #f)))
 
-    (public (@_finalize _finalize))
-    (define (@_finalize [fn #f])
-      ;; generate xref
-      (define xRefOffset @_offset)
-      (@_write "xref")
-      (@_write (format "0 ~a" (add1 (length @_offsets))))
-      (@_write "0000000000 65535 f ")
-      (for ([offset (in-list @_offsets)])
-        (@_write (string-append
+
+(define/contract (pipe this port)
+  (port? . ->m . void?)
+  (set-field! op this port))
+
+
+(define/contract (end this)
+  (->m boolean?)
+  (flushPages this)
+  (set-field! _info this (ref this))
+  (for ([(key val) (in-hash (· this info))])
+    ;; upgrade string literal to String struct
+    (hash-set! (· this _info data) key (if (string? val) (String val) val)))
+  (· this _info end)
+
+  ;; todo: fonts
+  ;; for name, font of @_fontFamilies
+  ;; font.finalize()
+
+  (· this _root end)
+  (· this _root data Pages end)
+
+  (if (zero? (· this _waiting))
+      (· this _finalize)
+      (set-field! _ended this #t))
+
+  #t)
+
+
+(define/contract (_finalize this [fn #f])
+  (() ((or/c procedure? #f)) . ->*m . void?)
+  ;; generate xref
+  (define xref-offset (· this _offset))
+  (_write this "xref")
+  (_write this (format "0 ~a" (add1 (length (· this _offsets)))))
+  (_write this "0000000000 65535 f ")
+  (for ([offset (in-list (· this _offsets))])
+    (_write this (string-append
                   (~r offset #:min-width 10 #:pad-string "0")
                   " 00000 n ")))
-      ;; trailer
-      (@_write "trailer")
-      ;; todo: make `PDFObject:convert` a static method
-      (@_write (convert
-                     (mhash 'Size (add1 (length @_offsets))
-                            'Root @_root
-                            'Info @_info)))
+  ;; trailer
+  (_write this "trailer")
+  
+  (_write this (convert
+                (mhash 'Size (add1 (length (· this _offsets)))
+                       'Root (· this _root)
+                       'Info (· this _info))))
 
-      (@_write "startxref")
-      (@_write (number->string xRefOffset))
-      (@_write "%%EOF")
+  (_write this "startxref")
+  (_write this (number xref-offset))
+  (_write this "%%EOF")
 
-      ;; end the stream
-      ;; in node you (@push null) which signals to the stream
-      ;; to copy to its output port
-      ;; here we'll do it manually
-      (copy-port (open-input-bytes (apply bytes-append (reverse @byte-strings))) op)
-      (close-output-port op))))
-
-
-
-#;(module+ test
-    (define doc (new PDFDocument))
-    (require rackunit racket/file)
-    (define ob (open-output-bytes))
-    (send doc pipe ob)
-    (check-true (send doc end))
-    (define result-str (get-output-bytes ob))
-    (define fn "out")
-    (with-output-to-file (string-append fn ".pdf")
-      (λ () (display result-str)) #:exists 'replace)
-    (check-equal? (file->bytes (string-append fn ".pdf")) (file->bytes (string-append fn " copy.pdf")))
-    (display (bytes->string/latin-1 result-str)))
+  ;; end the stream
+  ;; in node you (@push null) which signals to the stream
+  ;; to copy to its output port
+  ;; here we'll do it manually
+  (copy-port (open-input-bytes (apply bytes-append (reverse (· this byte-strings)))) (· this op))
+  (close-output-port (· this op)))
