@@ -12,6 +12,7 @@
      save
      restore
      closePath
+     lineWidth
      dash
      moveTo
      lineTo
@@ -24,6 +25,7 @@
      _windingRule
      fill
      stroke
+     fillAndStroke
      transform
      translate
      scale)))
@@ -55,6 +57,11 @@
 (define/contract (closePath this)
   (->m object?)
   (send this addContent "h"))
+
+
+(define/contract (lineWidth this w)
+  (number? . ->m . object?)
+  (send this addContent (format "#~a" (number w))))
 
 
 (define/contract (dash this length [options (mhash)])
@@ -155,6 +162,13 @@
   (() ((or/c color-string? #f)) . ->*m . object?)
   (when color (send this strokeColor color))
   (send this addContent "S"))
+
+
+(define/contract (fillAndStroke this [fill #f] [stroke fill] #:rule [rule #f])
+  (() ((or/c color-string? #f) (or/c color-string? #f) #:rule (or/c string? #f)) . ->*m . object?)
+  (when fill
+    (send* this [fillColor fill] [strokeColor stroke]))
+  (send this addContent (format "B~a" (_windingRule rule))))
 
 
 (define tm/c (list/c number? number? number? number? number? number?))

@@ -159,4 +159,7 @@
   (begin (as-method id) ...))
 
 (define (color-string? x)
-  (and (string? x) (or (= (string-length x) 4) (= (string-length x) 7)) (string-prefix? x "#")))
+  (and (string? x)
+       (if (string-prefix? x "#")
+           (or (= (string-length x) 4) (= (string-length x) 7))
+           #t)))

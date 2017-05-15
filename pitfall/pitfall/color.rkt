@@ -15,7 +15,9 @@
      _setColor
      _setColorSpace
      fillColor
+     strokeColor
      fillOpacity
+     strokeOpacity
      _doOpacity)))
 
     
@@ -56,7 +58,7 @@
 
 
 (define/contract (_setColor this color stroke)
-  (color-string? (or/c #f number?) . ->m . boolean?)
+  (color-string? (or/c boolean? number?) . ->m . boolean?)
   (let ([color (_normalizeColor color)]
         [op (if stroke "SCN" "scn")])
     (cond
@@ -93,9 +95,23 @@
   this)
 
 
+(define/contract (strokeColor this color [opacity 1])
+  ((color-string?) ((or/c number? #f)) . ->*m . object?)
+  (unless (_normalizeColor color)
+    (raise-argument-error 'strokeColor "valid color string" color))
+  (when (_setColor this color #t) (strokeOpacity this opacity))
+  this)
+
+
 (define/contract (fillOpacity this opacity)
   ((or/c number? #f) . ->m . object?)
   (_doOpacity this opacity #f)
+  this)
+
+
+(define/contract (strokeOpacity this opacity)
+  ((or/c number? #f) . ->m . object?)
+  (_doOpacity this #f opacity)
   this)
 
 
