@@ -84,8 +84,8 @@
   (number? number? number? . ->m . object?)
   (ellipse this x y radius))
 
-(define/contract (_windingRule this rule)
-  ((or/c string? #f) . ->m . string?)
+(define/contract (_windingRule rule)
+  ((or/c string? #f) . -> . string?)
   (if (and (string? rule) (regexp-match #rx"^even-?odd$" rule)) "*" ""))
 
 (define/contract (fill this color [rule #f])
@@ -94,7 +94,7 @@
     (set! rule color)
     (set! color #f))
   (when color (send this fillColor color)) ;; fillColor method is from color mixin
-  (send this addContent (format "f~a" (_windingRule this rule))))
+  (send this addContent (format "f~a" (_windingRule rule))))
 
 (define tm/c (list/c number? number? number? number? number? number?))
 (define/contract (make-transform-string ctm)

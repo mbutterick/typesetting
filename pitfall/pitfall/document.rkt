@@ -126,7 +126,8 @@
                   (newBuffer (string-append data "\n"))
                   data)])
     (push this data)
-    (void (increment-field! _offset this (buffer-length data)))))
+    (increment-field! _offset this (buffer-length data))
+    (void)))
 
 
 (define/contract (addContent this data)

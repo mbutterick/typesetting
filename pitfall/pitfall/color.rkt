@@ -26,39 +26,38 @@
   (set-field! _gradCount this 0))
 
 
-(define/contract (_normalizeColor this color)
-  ((or/c string? (listof number?)) . ->m . (or/c (listof number?) #f))
+(define/contract (_normalizeColor color)
+  ((or/c string? (listof number?)) . -> . (or/c (listof number?) #f))
   ;; parses color string into list of values
-  (cond
-    #;[(is-a? color PDFGradient) color]  ; todo
-    ;; 3-digit hex becomes 6-digit hex
-    [(and (string? color)
-          (regexp-match #px"^#(?i:[0-9A-F]){3}$" color))
-     (_normalizeColor this
-                      (list->string (cdr (apply append
-                                                (for/list ([c (in-string color)])
-                                                  (list c c))))))] ; change #abc to ##aabbcc then drop the first char
-    ;; 6-digit hexish string becomes list of hex numbers and maybe #f vals
-    [(and (string? color) (= 7 (string-length color)) (string-prefix? color "#"))
-     (_normalizeColor this
-                      (for/list ([str (in-list (regexp-match* #rx".." (string-trim color "#")))])
-                        (string->number str 16)))] ; match two at a time and convert to hex
-    ;; named color
-    [(and (string? color) (hash-ref namedColors color #f)) => (curry _normalizeColor this)]
-    ;; array of numbers
-    [(and (list? color) (andmap number? color))
-     (for/list ([i (in-list color)])
-       (define x (/ i (case (length color)
-                        [(3) 255.0] ; RGB
-                        [(4) 100.0] ; CMYK
-                        [else 1.0])))
-       (if (integer? x) (inexact->exact x) x))]
-    [else #f]))
+  (let loop ([color color])
+    (cond
+      #;[(is-a? color PDFGradient) color]  ; todo
+      ;; 3-digit hex becomes 6-digit hex
+      [(and (string? color)
+            (regexp-match #px"^#(?i:[0-9A-F]){3}$" color))
+       (loop (list->string (cdr (apply append
+                                       (for/list ([c (in-string color)])
+                                         (list c c))))))] ; change #abc to ##aabbcc then drop the first char
+      ;; 6-digit hexish string becomes list of hex numbers and maybe #f vals
+      [(and (string? color) (= 7 (string-length color)) (string-prefix? color "#"))
+       (loop (for/list ([str (in-list (regexp-match* #rx".." (string-trim color "#")))])
+               (string->number str 16)))] ; match two at a time and convert to hex
+      ;; named color
+      [(and (string? color) (hash-ref namedColors color #f)) => loop]
+      ;; array of numbers
+      [(and (list? color) (andmap number? color))
+       (for/list ([i (in-list color)])
+         (define x (/ i (case (length color)
+                          [(3) 255.0] ; RGB
+                          [(4) 100.0] ; CMYK
+                          [else 1.0])))
+         (if (integer? x) (inexact->exact x) x))]
+      [else #f])))
 
 
 (define/contract (_setColor this color stroke)
   (color-string? (or/c #f number?) . ->m . boolean?)
-  (let ([color (_normalizeColor this color)]
+  (let ([color (_normalizeColor color)]
         [op (if stroke "SCN" "scn")])
     (cond
       [(not color)]
@@ -84,7 +83,7 @@
 
 (define/contract (fillColor this color [opacity 1])
   ((color-string?) ((or/c number? #f)) . ->*m . object?)
-  (unless (_normalizeColor this color)
+  (unless (_normalizeColor color)
     (raise-argument-error 'fillColor "valid color string" color))
   (when (_setColor this color #f) (fillOpacity this opacity))
 
@@ -280,9 +279,9 @@
 (module+ test
   (require rackunit)
   (define c (new (color-mixin)))
-  (check-equal? (_normalizeColor c "#6699Cc") '(0.4 0.6 0.8))
-  (check-false (_normalizeColor c "#88aaCCC"))
-  (check-equal? (_normalizeColor c "#69C") '(0.4 0.6 0.8))
-  (check-equal? (_normalizeColor c "#69c") '(0.4 0.6 0.8))
-  (check-false (_normalizeColor c "#8aCC"))
-  (check-equal? (_normalizeColor c "aqua") '(0 1 1)))
+  (check-equal? (_normalizeColor "#6699Cc") '(0.4 0.6 0.8))
+  (check-false (_normalizeColor "#88aaCCC"))
+  (check-equal? (_normalizeColor "#69C") '(0.4 0.6 0.8))
+  (check-equal? (_normalizeColor "#69c") '(0.4 0.6 0.8))
+  (check-false (_normalizeColor "#8aCC"))
+  (check-equal? (_normalizeColor "aqua") '(0 1 1)))

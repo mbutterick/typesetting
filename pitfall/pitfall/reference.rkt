@@ -45,6 +45,7 @@
           (hash-update! (· this data) 'Length (λ (len) (+ len (buffer-length chunk))))])
   (callback))
 
+
 (define/contract (end this [chunk #f])
   (() ((or/c any/c #f)) . ->*m . void?)
   ; (super) ; todo
@@ -52,23 +53,26 @@
       (void) ; todo (deflate-end)
       (send this finalize)))
 
+
 (define/contract (finalize this)
   (->m void?)
   (set-field! offset this (· this document _offset))
-      
-  (send (· this document) _write (format "~a ~a obj" (· this id) (· this gen)))
-  (send (· this document) _write (convert (· this data)))
 
-  (when (positive? (length (· this chunks)))
-    (send (· this document) _write "stream")
-    (for ([chunk (in-list (· this chunks))])
-      (send (· this document) _write chunk))
+  (define this-doc (· this document)) 
+  (send* this-doc
+    [_write (format "~a ~a obj" (· this id) (· this gen))]
+    [_write (convert (· this data))])
 
-    (set-field! chunks this null) ; free up memory
-    (send (· this document) _write "\nendstream"))
+  (let ([this-chunks (· this chunks)])
+    (when (positive? (length this-chunks))
+      (send this-doc _write "stream")
+      (for ([chunk (in-list this-chunks)])
+        (send this-doc _write chunk))
+      (send this-doc _write "\nendstream")))
 
-  (send (· this document) _write "endobj")
-  (send (· this document) _refEnd this))
+  (send* this-doc
+    [_write "endobj"]
+    [_refEnd this]))
 
 (define/contract (toString this)
   (->m string?)
