@@ -104,7 +104,7 @@
 (define/contract (_line this text [options (mhash)] [wrapper #f])
   ((string?) (hash? (or/c procedure? #f)) . ->*m . void?)
   (send this _fragment text (· this x) (· this y) options)
-  (define lineGap (or (hash-ref options 'lineGap #f) (· this _lineGap) 0))
+  (define lineGap (or (hash-ref options 'lineGap #f) (· this _lineGap) 0))
   (if (not wrapper)
       (increment-field! x this (send this widthOfString text))
       (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
@@ -129,11 +129,10 @@
   ;; flip coordinate system
   (send this save)
   (send this transform 1 0 0 -1 0 (· this page height))
-  (set! y (- (· this page height) y (* (/ (· this _font ascender) 1000) (· this _fontSize))))
+  (set! y (- (· this page height) y)) ; (@_font.ascender / 1000 * @_fontSize) ; todo
 
   ;; add current font to page if necessary
   (hash-ref! (· this page fonts) (· this _font id) (λ () (· this font ref)))
-  
 
   ;; begin the text object
   (send this addContent "BT")

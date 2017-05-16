@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "path.rkt")
+(require "../path.rkt")
 (provide vector-mixin default-ctm-value)
 
 (define (vector-mixin [% mixin-tester%])
