@@ -64,7 +64,7 @@
     ;; load the font
     [else
      (define id (format "F~a" (increment-field! _fontCount this)))
-     (set-field! _font this (PDFFont-open this src family id))
+     (set-field! _font this (open-pdffont this src family id))
      ;; check for existing font familes with the same name already in the PDF
      ;; useful if the font was passed as a buffer
      (let ([font (· this _fontFamilies (· this _font name))])
