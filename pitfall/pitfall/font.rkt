@@ -37,8 +37,8 @@
   (class PDFFont
     (super-new)
     (init-field document name id)
-    (field [font (make-object AFMFont ((hash-ref STANDARD_FONTS name)))])
-    (field [ascender (· font ascender)]
+    (field [font (make-object AFMFont ((hash-ref STANDARD_FONTS name)))]
+           [ascender (· font ascender)]
            [descender (· font descender)]
            [bbox (· font bbox)]
            [lineGap (· font lineGap)])
@@ -58,20 +58,20 @@
 
 (define/contract (encode this text [options #f])
   ((string?) ((or/c hash? #f)) . ->*m . (list/c (listof string?) (listof hash?)))
-  (define encoded (send (· this font) encodeText text))
-  (define glyphs (send (· this font) glyphsForString (~a text)))
-  (define advances (send (· this font) advancesForGlyphs glyphs))
+  (define this-font (· this font))
+  (define encoded (send this-font encodeText text))
+  (define glyphs (send this-font glyphsForString text))
+  (define advances (send this-font advancesForGlyphs glyphs))
   (define positions
-    (for/list ([(glyph i) (in-indexed glyphs)])
-      (mhash 'xAdvance (list-ref advances i)
-             'yAdvance 0
-             'xOffset 0
-             'yOffset 0
-             'advanceWidth (send (· this font) widthOfGlyph glyph)))) 
-
+    (for/list ([(glyph i) (in-indexed glyphs)]
+               [advance (in-list advances)])
+      (hasheq 'xAdvance advance
+              'yAdvance 0
+              'xOffset 0
+              'yOffset 0
+              'advanceWidth (send this-font widthOfGlyph glyph)))) 
   (list encoded positions))
 
 
 (module+ test
-  (define stdfont (make-object StandardFont #f "Helvetica" #f))
-  stdfont)
+  (define stdfont (make-object StandardFont #f "Helvetica" #f)))
