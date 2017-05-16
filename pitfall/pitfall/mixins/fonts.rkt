@@ -25,7 +25,7 @@
   (set-field! _fontCount this 0)
 
   (set-field! _fontSize this 12)
-  (set-field! _font this null)
+  (set-field! _font this #f)
 
   (set-field! _registeredFonts this (mhash))
 
@@ -64,16 +64,20 @@
     ;; load the font
     [else
      (define id (format "F~a" (increment-field! _fontCount this)))
-     (set-field! _font this (open-pdffont this src family id))
+     (set-field! _font this (PDFFont-open this src family id))
+     
      ;; check for existing font familes with the same name already in the PDF
      ;; useful if the font was passed as a buffer
-     (let ([font (· this _fontFamilies (· this _font name))])
+     (let* ([this-ff (· this _fontFamilies)]
+            [this-f (· this _font)]
+            [font (hash-ref this-ff (· this-f name) #f)])
        (cond
          [font (set-field! _font this font)]
          ;; save the font for reuse later
-         [else (when cacheKey
-                 (hash-set! (· this _fontFamilies) cacheKey (· this _font)))
-               (hash-set! (· this _fontFamilies) name (· this _font))]))
+         [else
+          (when cacheKey
+            (hash-set! this-ff cacheKey this-f))
+          (hash-set! this-ff (· this-f name) this-f)]))
      this]))
 
 (module+ test

@@ -19,6 +19,6 @@
 
 (module reader syntax/module-reader
   #:language 'pitfall/racket
-  #:read read
-  #:read-syntax read-syntax
+  #:read @-read
+  #:read-syntax @-read-syntax
   (require (prefix-in @- scribble/reader)))

@@ -41,7 +41,7 @@
 
 
 (define/contract (_text this text x y options lineCallback)
-  (string? number? number? hash? procedure? . ->m . object?)
+  (string? (or/c number? #f) (or/c number? #f) hash? procedure? . ->m . object?)
   (set! options (send this _initOptions options x y))
 
   ;; Convert text to a string
@@ -64,7 +64,7 @@
   this)
 
 
-(define (text this text-string [x 0] [y 0] [options (mhash)])
+(define (text this text-string [x #f] [y #f] [options (mhash)])
   (send this _text text-string x y options (curry _line this)))
 
 
@@ -129,11 +129,11 @@
   ;; flip coordinate system
   (send this save)
   (send this transform 1 0 0 -1 0 (· this page height))
-  (set! y (- (· this page height) y)) ; (@_font.ascender / 1000 * @_fontSize) ; todo
+  (set! y (- (· this page height) y (* (/ (· this _font ascender) 1000) (· this _fontSize))))
 
   ;; add current font to page if necessary
-  (hash-ref! (· this page fonts) (· this _font id) (λ () (· this font ref)))
-
+  (hash-ref! (· this page fonts) (· this _font id) (λ () "a font ref" (· this _font ref)))
+  
   ;; begin the text object
   (send this addContent "BT")
 
@@ -171,5 +171,5 @@
 
   ;; restore flipped coordinate system
   (send this restore)
-  (display 'end-fragment))
+  (void))
 

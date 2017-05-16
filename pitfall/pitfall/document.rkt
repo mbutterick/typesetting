@@ -41,7 +41,7 @@
     (· this initColor)
     (· this initVector)
     (· this initFonts)
-    (· this initText) ; todo
+    (· this initText)
     #;(· this initImages) ; todo
 
     (as-methods
@@ -166,6 +166,8 @@
   ;; todo: fonts
   ;; for name, font of @_fontFamilies
   ;; font.finalize()
+  (for ([font (in-hash-values (· this _fontFamilies))])
+    (· font finalize))
 
   (· this _root end)
   (· this _root data Pages end)

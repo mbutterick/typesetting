@@ -9,7 +9,7 @@
          [(object? x) (with-handlers ([exn:fail:object? (λ (exn) (send x ref))])
                         (get-field ref x))]
          [(hash? x) (hash-ref x 'ref)]
-         [else (raise-argument-error '· "object or hash" x)])]
+         [else (raise-argument-error '· (format "~a must be object or hash" 'x) x)])]
     [(_ x ref0 . refs) #'(· (· x ref0) . refs)]))
 
 (define-syntax (·map stx)
@@ -93,7 +93,8 @@
 (module+ test
   (check-equal? (number 4.5) "4.5")
   (check-equal? (number 4.0) "4")
-  (check-equal? (number 4) "4"))
+  (check-equal? (number 4) "4")
+  (check-equal? (number -4) "-4"))
 
 
 (define-syntax (send*/fold stx)
