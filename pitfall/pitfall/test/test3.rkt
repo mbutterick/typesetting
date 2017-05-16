@@ -7,4 +7,4 @@
    (send doc text "Hello world")
    (send doc end)))
 
-;(check-copy-equal? this)
+(check-copy-equal? this)

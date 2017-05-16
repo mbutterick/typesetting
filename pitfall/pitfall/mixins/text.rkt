@@ -1,4 +1,5 @@
 #lang pitfall/racket
+(require sugar/list)
 (provide text-mixin)
 
 (define (text-mixin [% mixin-tester%])
@@ -140,7 +141,8 @@
   ;; text position
   (send this addContent (format "1 0 0 1 ~a ~a Tm" (number x) (number y)))
 
-  ;; font and font size ; todo
+  ;; font and font size
+  (send this addContent (format "/~a ~a Tf" (· this _font id) (number (· this _fontSize))))
 
   ;; rendering mode
   (define mode (cond
@@ -158,13 +160,70 @@
   ;; If we have a word spacing value, we need to encode each word separately
   ;; since the normal Tw operator only works on character code 32, which isn't
   ;; used for embedded fonts.
-  ;; todo
+  (match-define (list encoded positions)
+    (cond
+      [(not (zero? wordSpacing))
+       (void)] ; todo
+      [else
+       (send (· this _font) encode text (hash-ref options 'features #f))]))
 
-  ;; Adds a segment of text to the TJ command buffer ; todo
+  (define scale (/ (· this _fontSize) 1000.0))
+  (define commands empty)
+  (define last 0)
+  (define hadOffset #f)
+  
+  ;; Adds a segment of text to the TJ command buffer
+  (define (addSegment cur)
+    (when (< last cur)
+      (define hex (string-append* (sublist encoded last cur)))
+      (define advance
+        (let ([pos (list-ref positions (sub1 cur))])
+          (- (· pos xAdvance) (· pos advanceWidth))))
+      (push-end! commands
+                 (format "<~a> ~a" hex (number (- advance)))))
+    (set! last cur))
+        
 
-  ;; Flushes the current TJ commands to the output stream ; todo
+  ;; Flushes the current TJ commands to the output stream
+  (define (flush i)
+    (addSegment i)
 
-  ;; Flush any remaining commands ; todo
+    (when (positive? (length commands))
+      (send this addContent (format "[~a] TJ" (string-join commands " ")))
+      (set! commands empty)))
+
+  
+  (for ([(pos i) (in-indexed positions)])
+    ;; If we have an x or y offset, we have to break out of the current TJ command
+    ;; so we can move the text position.
+    (cond
+      [(or (not (zero? (· pos xOffset))) (not (zero? (· pos yOffset))))
+       ;; Flush the current buffer
+       (flush i)
+       ;; Move the text position and flush just the current character
+       (send this addContent
+             (format "1 0 0 1 ~a ~a Tm"
+                     (number (+ x (* (· pos xOffset) scale)))
+                     (number (+ y (* (· pos yOffset) scale)))))
+       (flush (add1 i))
+       (set! hadOffset #t)]
+      [else
+       ;; If the last character had an offset, reset the text position
+       (when hadOffset
+         (send this addContent (format "1 0 0 1 ~a ~a Tm"
+                                       (number x) (number y)))
+         (set! hadOffset #f))
+
+       ;; Group segments that don't have any advance adjustments
+       (unless (zero? (- (· pos xAdvance) (· pos advanceWidth)))
+         (addSegment (add1 i)))])
+
+    (set! x (+ x (* (· pos xAdvance) scale))))
+  
+  
+  ;; Flush any remaining commands
+  (let ([i (length positions)])
+    (flush i))
   
   ;; end the text object
   (send this addContent "ET")

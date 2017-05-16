@@ -43,7 +43,8 @@
            [bbox (· font bbox)]
            [lineGap (· font lineGap)])
     (as-methods
-     embed)))
+     embed
+     encode)))
 
 (define/contract (embed this)
   (->m void?)
@@ -54,6 +55,21 @@
                      'Encoding "WinAnsiEncoding"))
   (· this dictionary end))
 
+
+(define/contract (encode this text [options #f])
+  ((string?) ((or/c hash? #f)) . ->*m . (list/c (listof string?) (listof hash?)))
+  (define encoded (send (· this font) encodeText text))
+  (define glyphs (send (· this font) glyphsForString (~a text)))
+  (define advances (send (· this font) advancesForGlyphs glyphs))
+  (define positions
+    (for/list ([(glyph i) (in-indexed glyphs)])
+      (mhash 'xAdvance (list-ref advances i)
+             'yAdvance 0
+             'xOffset 0
+             'yOffset 0
+             'advanceWidth (send (· this font) widthOfGlyph glyph)))) 
+
+  (list encoded positions))
 
 
 (module+ test

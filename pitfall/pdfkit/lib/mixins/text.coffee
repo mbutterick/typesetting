@@ -266,6 +266,10 @@ module.exports =
     addSegment = (cur) =>
       if last < cur
         hex = encoded.slice(last, cur).join ''
+        console.log(last)
+        console.log(cur)
+        console.log(encoded.slice(last, cur))
+        console.log(hex)
         advance = positions[cur - 1].xAdvance - positions[cur - 1].advanceWidth
         commands.push "<#{hex}> #{number(-advance)}"
 
