@@ -12,7 +12,8 @@
      _initOptions
      _text
      _fragment
-     text)))
+     text
+     widthOfString)))
 
 (define/contract (initText this)
   (->m void?)
@@ -67,6 +68,12 @@
   (send this _text text-string x y options (curry _line this)))
 
 
+(define/contract (widthOfString this string [options (mhash)])
+  ((string?) (hash?) . ->*m . number?)
+  42 ; todo
+  )
+
+
 (define/contract (_initOptions this [options (mhash)] [x #f] [y #f])
   (() (hash? (or/c number? #f) (or/c number? #f)) . ->*m . hash?)
 
@@ -97,13 +104,71 @@
 (define/contract (_line this text [options (mhash)] [wrapper #f])
   ((string?) (hash? (or/c procedure? #f)) . ->*m . void?)
   (send this _fragment text (· this x) (· this y) options)
-  (define lineGap (or (· options lineGap) (· this _lineGap) 0))
+  (define lineGap (or (hash-ref options 'lineGap #f) (· this _lineGap) 0))
   (if (not wrapper)
       (increment-field! x this (send this widthOfString text))
-      (increment-field! y (+ (send this currentLineHeight #t) lineGap))))
+      (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
+  (void))
 
 
 (define/contract (_fragment this text x y options)
   (string? number? number? hash? . ->m . void?)
-  (error '_fragment))
+
+  (define align (hash-ref options 'align 'left))
+  (define wordSpacing (hash-ref options 'wordSpacing 0))
+  (define characterSpacing (hash-ref options 'characterSpacing 0))
+
+  ;;  text alignments ; todo
+
+  ;; calculate the actual rendered width of the string after word and character spacing ; todo
+
+  ;; create link annotations if the link option is given ; todo
+
+  ;; create underline or strikethrough line ; todo
+
+  ;; flip coordinate system
+  (send this save)
+  (send this transform 1 0 0 -1 0 (· this page height))
+  (set! y (- (· this page height) y)) ; (@_font.ascender / 1000 * @_fontSize) ; todo
+
+  ;; add current font to page if necessary ; todo
+
+  ;; begin the text object
+  (send this addContent "BT")
+
+  ;; text position
+  (send this addContent (format "1 0 0 1 ~a ~a Tm" (number x) (number y)))
+
+  ;; font and font size ; todo
+
+  ;; rendering mode
+  (define mode (cond
+                 [(and (hash-ref options 'fill #f) (hash-ref options 'stroke #f)) 2]
+                 [(hash-ref options 'stroke #f) 1]
+                 [else 0]))
+  (when (and mode (not (zero? mode)))
+    (send this addContent (format "~a Tr" mode)))
+
+  ;; Character spacing
+  (when (and characterSpacing (not (zero? characterSpacing)))
+    (send this addContent (format "~a Tc" characterSpacing)))
+
+  ;; Add the actual text
+  ;; If we have a word spacing value, we need to encode each word separately
+  ;; since the normal Tw operator only works on character code 32, which isn't
+  ;; used for embedded fonts.
+  ;; todo
+
+  ;; Adds a segment of text to the TJ command buffer ; todo
+
+  ;; Flushes the current TJ commands to the output stream ; todo
+
+  ;; Flush any remaining commands ; todo
+  
+  ;; end the text object
+  (send this addContent "ET")
+
+  ;; restore flipped coordinate system
+  (send this restore)
+  (display 'end-fragment))
 
