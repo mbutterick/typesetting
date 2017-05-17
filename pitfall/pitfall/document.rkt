@@ -1,9 +1,9 @@
 #lang pitfall/racket
 (require "reference.rkt" "object.rkt" "page.rkt")
-(require "vector.rkt" "color.rkt" "fonts.rkt" "text.rkt")
+(require "vector.rkt" "color.rkt" "fonts.rkt" "text.rkt" "images.rkt")
 (provide PDFDocument)
 
-(define mixed% (text-mixin (fonts-mixin (color-mixin (vector-mixin object%)))))
+(define mixed% (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%))))))
 
 (define PDFDocument
   (class mixed% ; actually is an instance of readable.Stream, which is an input port
@@ -42,7 +42,7 @@
     (· this initVector)
     (· this initFonts)
     (· this initText)
-    #;(· this initImages) ; todo
+    (· this initImages)
 
     (as-methods
      addPage
