@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "../font.rkt")
+(require "font.rkt")
 (provide fonts-mixin)
 
 (define (fonts-mixin [% mixin-tester%])
@@ -75,8 +75,7 @@
          [font (set-field! _font this font)]
          ;; save the font for reuse later
          [else
-          (when cacheKey
-            (hash-set! this-ff cacheKey this-f))
+          (when cacheKey (hash-set! this-ff cacheKey this-f))
           (hash-set! this-ff (· this-f name) this-f)]))
      this]))
 

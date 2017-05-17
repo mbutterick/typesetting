@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "font/standard-fonts.rkt" "font/afm.rkt" "reference.rkt")
+(require "standard-fonts.rkt" "afm.rkt" "reference.rkt")
 (provide PDFFont PDFFont-open)
 
 (define PDFFont
