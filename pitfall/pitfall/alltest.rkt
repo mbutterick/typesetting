@@ -4,4 +4,5 @@
            pitfall/test/test1
            pitfall/test/test2
            pitfall/test/test3
+           pitfall/test/test4
            pitfall/page-test))

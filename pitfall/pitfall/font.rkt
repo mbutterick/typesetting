@@ -84,7 +84,7 @@
   (define glyphs (send this-font glyphsForString str))
   (define advances (send this-font advancesForGlyphs glyphs))
   (define width (apply + advances))
-  (define scale (/ size 1000))
+  (define scale (/ size 1000.0))
   (* width scale))
 
 
