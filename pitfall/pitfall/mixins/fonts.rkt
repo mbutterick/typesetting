@@ -16,7 +16,8 @@
 
     (as-methods
      initFonts
-     font)))
+     font
+     fontSize)))
 
 
 (define/contract (initFonts this)
@@ -78,6 +79,11 @@
             (hash-set! this-ff cacheKey this-f))
           (hash-set! this-ff (· this-f name) this-f)]))
      this]))
+
+(define/contract (fontSize this size)
+  (number? . ->m . object?)
+  (set-field! _fontSize this size)
+  this)
 
 (module+ test
   (define fo (new (fonts-mixin))))
