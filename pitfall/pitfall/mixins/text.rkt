@@ -43,24 +43,20 @@
 
 (define/contract (_text this text x y options lineCallback)
   (string? (or/c number? #f) (or/c number? #f) hash? procedure? . ->m . object?)
-  (set! options (send this _initOptions options x y))
+  
+  (let* ([options (send this _initOptions options x y)]
+         [text (format "~a" text)] ;; Convert text to a string
+         ;; if the wordSpacing option is specified, remove multiple consecutive spaces
+         [text (if (hash-ref options 'wordSpacing #f)
+                   (string-replace text #px"\\s{2,}" " ")
+                   text)])
 
-  ;; Convert text to a string
-  ;; q: what else might it be?
-  (set! text (format "~a" text))
-
-  ;; if the wordSpacing option is specified, remove multiple consecutive spaces
-  (when (hash-ref options 'wordSpacing #f)
-    (set! text (string-replace text #px"\\s{2,}" " ")))
-
-  ;; word wrapping
-  (cond
-    #;[(hash-ref options 'width #f)
-
-       ] ; todo
-    [else ; render paragraphs as single lines
-     (for ([line (in-list (string-split text "\n"))])
-       (lineCallback line options))])
+    ;; word wrapping
+    (cond
+      #;[(hash-ref options 'width #f) (error 'unimplemented-branch-of-_text)] ; todo
+      [else ; render paragraphs as single lines
+       (for ([line (in-list (string-split text "\n"))])
+         (lineCallback line options))]))
   
   this)
 
@@ -69,37 +65,37 @@
   (send this _text text-string x y options (curry _line this)))
 
 
-(define/contract (widthOfString this string [options (mhash)])
+(define/contract (widthOfString this str [options (mhash)])
   ((string?) (hash?) . ->*m . number?)
-  42 ; todo
-  )
+  (+ (send (· this _font) widthOfString str (· this _fontSize) (hash-ref options 'features #f))
+     (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
 
 
 (define/contract (_initOptions this [options (mhash)] [x #f] [y #f])
   (() (hash? (or/c number? #f) (or/c number? #f)) . ->*m . hash?)
 
   ;; clone options object
-  (set! options (hash-copy options))
+  (let ([options (hash-copy options)])
 
-  ;; extend options with previous values for continued text
-  (when (· this _textOptions)
-    (for ([(key val) (in-hash (· this _textOptions))]
-          #:unless (equal? (key "continued")))
-      (hash-ref! options key val)))
+    ;; extend options with previous values for continued text
+    (when (· this _textOptions)
+      (for ([(key val) (in-hash (· this _textOptions))]
+            #:unless (equal? (key "continued")))
+        (hash-ref! options key val)))
 
-  ;; Update the current position
-  (when x (set-field! x this x))
-  (when y (set-field! y this y))
+    ;; Update the current position
+    (when x (set-field! x this x))
+    (when y (set-field! y this y))
 
-  ;; wrap to margins if no x or y position passed
-  (unless (not (hash-ref options 'lineBreak #t))
-    (define margins (· this page margins))
-    (hash-ref! options 'width (λ () (- (· this page width) (· this x) (· margins right)))))
+    ;; wrap to margins if no x or y position passed
+    (unless (not (hash-ref options 'lineBreak #t))
+      (define margins (· this page margins))
+      (hash-ref! options 'width (λ () (- (· this page width) (· this x) (· margins right)))))
 
-  (hash-ref! options 'columns 0)
-  (hash-ref! options 'columnGap 18) ; 1/4 inch in PS points
+    (hash-ref! options 'columns 0)
+    (hash-ref! options 'columnGap 18) ; 1/4 inch in PS points
 
-  options)
+    options))
   
 
 (define/contract (_line this text [options (mhash)] [wrapper #f])
@@ -112,7 +108,7 @@
   (void))
 
 
-(define/contract (_fragment this text x y options)
+(define/contract (_fragment this text x y-in options)
   (string? number? number? hash? . ->m . void?)
 
   (define align (hash-ref options 'align 'left))
@@ -130,10 +126,10 @@
   ;; flip coordinate system
   (send this save)
   (send this transform 1 0 0 -1 0 (· this page height))
-  (set! y (- (· this page height) y (* (/ (· this _font ascender) 1000) (· this _fontSize))))
+  (define y (- (· this page height) y-in (* (/ (· this _font ascender) 1000) (· this _fontSize))))
 
   ;; add current font to page if necessary
-  (hash-ref! (· this page fonts) (· this _font id) (λ () "a font ref" (· this _font ref)))
+  (hash-ref! (· this page fonts) (· this _font id) (λ () (· this _font ref)))
   
   ;; begin the text object
   (send this addContent "BT")
@@ -145,15 +141,15 @@
   (send this addContent (format "/~a ~a Tf" (· this _font id) (number (· this _fontSize))))
 
   ;; rendering mode
-  (define mode (cond
-                 [(and (hash-ref options 'fill #f) (hash-ref options 'stroke #f)) 2]
-                 [(hash-ref options 'stroke #f) 1]
-                 [else 0]))
-  (when (and mode (not (zero? mode)))
-    (send this addContent (format "~a Tr" mode)))
+  (let ([mode (cond
+                [(and (hash-ref options 'fill #f) (hash-ref options 'stroke #f)) 2]
+                [(hash-ref options 'stroke #f) 1]
+                [else 0])])
+    (when (and mode (not (zero? mode)))
+      (send this addContent (format "~a Tr" mode))))
 
   ;; Character spacing
-  (when (and characterSpacing (not (zero? characterSpacing)))
+  (when (not (zero? characterSpacing))
     (send this addContent (format "~a Tc" characterSpacing)))
 
   ;; Add the actual text
@@ -162,10 +158,8 @@
   ;; used for embedded fonts.
   (match-define (list encoded positions)
     (cond
-      [(not (zero? wordSpacing))
-       (error 'unimplemented-brach)] ; todo
-      [else
-       (send (· this _font) encode text (hash-ref options 'features #f))]))
+      [(not (zero? wordSpacing)) (error 'unimplemented-brach)] ; todo
+      [else (send (· this _font) encode text (hash-ref options 'features #f))]))
 
   (define scale (/ (· this _fontSize) 1000.0))
   (define commands empty)
@@ -174,10 +168,10 @@
   ;; Adds a segment of text to the TJ command buffer
   (define (addSegment cur)
     (when (< last cur)
-      (define hex (string-append* (sublist encoded last cur)))
-      (define advance (let ([pos (list-ref positions (sub1 cur))])
-                        (- (· pos xAdvance) (· pos advanceWidth))))
-      (push-end! commands (format "<~a> ~a" hex (number (- advance)))))
+      (let* ([hex (string-append* (sublist encoded last cur))]
+             [posn (list-ref positions (sub1 cur))]
+             [advance (- (· posn xAdvance) (· posn advanceWidth))])
+        (push-end! commands (format "<~a> ~a" hex (number (- advance))))))
     (set! last cur))
         
 
@@ -190,18 +184,18 @@
 
   
   (for/fold ([hadOffset #f] [x x])
-            ([(pos i) (in-indexed positions)])
-    ;; If we have an x or y offset, we have to break out of the current TJ command
-    ;; so we can move the text position.
-    (define nextOffset
+            ([(posn i) (in-indexed positions)])
+    (define havingOffset
       (cond
-        [(or (not (zero? (· pos xOffset))) (not (zero? (· pos yOffset))))
+        ;; If we have an x or y offset, we have to break out of the current TJ command
+        ;; so we can move the text position.
+        [(or (not (zero? (· posn xOffset))) (not (zero? (· posn yOffset))))
          ;; Flush the current buffer
          (flush i)
          ;; Move the text position and flush just the current character
          (send this addContent (format "1 0 0 1 ~a ~a Tm"
-                                       (number (+ x (* (· pos xOffset) scale)))
-                                       (number (+ y (* (· pos yOffset) scale)))))
+                                       (number (+ x (* (· posn xOffset) scale)))
+                                       (number (+ y (* (· posn yOffset) scale)))))
          (flush (add1 i))
          #t]
         [else
@@ -210,12 +204,12 @@
            (send this addContent (format "1 0 0 1 ~a ~a Tm" (number x) (number y))))
 
          ;; Group segments that don't have any advance adjustments
-         (unless (zero? (- (· pos xAdvance) (· pos advanceWidth)))
+         (unless (zero? (- (· posn xAdvance) (· posn advanceWidth)))
            (addSegment (add1 i)))
 
          #f]))
 
-    (values nextOffset (+ x (* (· pos xAdvance) scale))))
+    (values havingOffset (+ x (* (· posn xAdvance) scale))))
   
   
   ;; Flush any remaining commands

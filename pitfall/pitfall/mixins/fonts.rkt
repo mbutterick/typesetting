@@ -38,20 +38,19 @@
 (define/contract (font this src [size-or-family #f] [maybe-size #f])
   ((any/c) ((or/c string? number? #f) (or/c number? #f)) . ->*m . object?)
   
-  (define-values (family size) (if (number? size-or-family)
-                                   (values #f size-or-family)
-                                   (values size-or-family maybe-size)))
+  (match-define (list family size) (if (number? size-or-family)
+                                       (list #f size-or-family)
+                                       (list size-or-family maybe-size)))
   ;; check registered fonts if src is a string
-  (define cacheKey #f)
-  
-  (cond
-    [(and (string? src) (hash-ref (· this _registeredFonts) src #f))
-     (set! cacheKey src)
-     (set! src (hash-ref (hash-ref (· this _registeredFonts) src) src #f))
-     (set! family (hash-ref (hash-ref (· this _registeredFonts) src) family #f))]
-    [else
-     (set! cacheKey (or family src))
-     (set! cacheKey (if (string? cacheKey) cacheKey #f))])
+  (define cacheKey (let ([this-rfs (· this _registeredFonts)])
+                     (cond
+                       [(and (string? src) (hash-ref this-rfs src #f))
+                        (define ck src)
+                        (set! src (hash-ref (hash-ref this-rfs src) src #f))
+                        (set! family (hash-ref (hash-ref this-rfs src) family #f))
+                        ck]
+                       [else (let ([ck (or family src)])
+                               (and (string? ck) ck))])))
 
   (when size (set-field! fontSize this size))
 

@@ -35,8 +35,7 @@
     (cond
       #;[(is-a? color PDFGradient) color]  ; todo
       ;; 3-digit hex becomes 6-digit hex
-      [(and (string? color)
-            (regexp-match #px"^#(?i:[0-9A-F]){3}$" color))
+      [(and (string? color) (regexp-match #px"^#(?i:[0-9A-F]){3}$" color))
        (loop (list->string (cdr (apply append
                                        (for/list ([c (in-string color)])
                                          (list c c))))))] ; change #abc to ##aabbcc then drop the first char
@@ -115,27 +114,24 @@
   this)
 
 
-(define/contract (_doOpacity this fillOpacity strokeOpacity)
-  ((or/c number? #f) (or/c number? #f) . ->m . object?)
-  (when (or fillOpacity strokeOpacity)
-    (set! fillOpacity (and fillOpacity (bounded 0 fillOpacity 1)))
-    (set! strokeOpacity (and strokeOpacity (bounded 0 strokeOpacity 1)))
-
+(define/contract (_doOpacity this [fill-arg #f] [stroke-arg #f])
+  (() ((or/c number? #f) (or/c number? #f)) . ->*m . object?)
+  (define fill-opacity (and fill-arg (bounded 0 fill-arg 1)))
+  (define stroke-opacity (and stroke-arg (bounded 0 stroke-arg 1)))
+  (when (or fill-opacity stroke-opacity)
     (define key (format "~a_~a"
-                        (if fillOpacity (number fillOpacity) "")
-                        (if strokeOpacity (number strokeOpacity) "")))
+                        (if fill-opacity (number fill-opacity) "")
+                        (if stroke-opacity (number stroke-opacity) "")))
         
     (match-define (list dictionary name)
       (hash-ref! (get-field _opacityRegistry this) key
                  (λ ()
                    (define dictionary (mhash 'Type "ExtGState"))
-                   (when fillOpacity
-                     (hash-set! dictionary 'ca fillOpacity))
-                   (when strokeOpacity
-                     (hash-set! dictionary 'CA strokeOpacity))
-                   (define dict-ref (send this ref dictionary))
-                   (· dict-ref end)
-                   (list dict-ref (format "Gs~a" (increment-field! _opacityCount this))))))
+                   (when fill-opacity (hash-set! dictionary 'ca fill-opacity))
+                   (when stroke-opacity (hash-set! dictionary 'CA stroke-opacity))
+                   (define ref-dict (send this ref dictionary))
+                   (· ref-dict end)
+                   (list ref-dict (format "Gs~a" (increment-field! _opacityCount this))))))
 
     (hash-set! (· this page ext_gstates) name dictionary)        
     (send this addContent (format "/~a gs" name))))

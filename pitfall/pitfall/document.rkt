@@ -163,9 +163,6 @@
     (hash-set! (· this _info data) key (if (string? val) (String val) val)))
   (· this _info end)
 
-  ;; todo: fonts
-  ;; for name, font of @_fontFamilies
-  ;; font.finalize()
   (for ([font (in-hash-values (· this _fontFamilies))])
     (· font finalize))
 
@@ -183,31 +180,31 @@
   (() ((or/c procedure? #f)) . ->*m . void?)
   ;; generate xref
   (define xref-offset (· this _offset))
-  (_write this "xref")
-  (_write this (format "0 ~a" (add1 (length (· this _offsets)))))
-  (_write this "0000000000 65535 f ")
-  (for ([offset (in-list (· this _offsets))])
-    (_write this (string-append
-                  (~r offset #:min-width 10 #:pad-string "0")
-                  " 00000 n ")))
-  ;; trailer
-  (_write this "trailer")
-  
-  (_write this (convert
-                (mhash 'Size (add1 (length (· this _offsets)))
-                       'Root (· this _root)
-                       'Info (· this _info))))
-
-  (_write this "startxref")
-  (_write this (number xref-offset))
-  (_write this "%%EOF")
+  (with-method ([this-write (this _write)])
+    (define this-offsets (· this _offsets)) 
+    (this-write "xref")
+    (this-write (format "0 ~a" (add1 (length this-offsets))))
+    (this-write "0000000000 65535 f ")
+    (for ([offset (in-list this-offsets)])
+      (this-write (string-append
+                   (~r offset #:min-width 10 #:pad-string "0")
+                   " 00000 n ")))
+    (this-write "trailer") ;; trailer
+    (this-write (convert
+                 (mhash 'Size (add1 (length this-offsets))
+                        'Root (· this _root)
+                        'Info (· this _info))))
+    (this-write "startxref")
+    (this-write (number xref-offset))
+    (this-write "%%EOF"))
 
   ;; end the stream
   ;; in node you (@push null) which signals to the stream
   ;; to copy to its output port
   ;; here we'll do it manually
-  (copy-port (open-input-bytes (apply bytes-append (reverse (· this byte-strings)))) (· this op))
-  (close-output-port (· this op)))
+  (define this-op (· this op))
+  (copy-port (open-input-bytes (apply bytes-append (reverse (· this byte-strings)))) this-op)
+  (close-output-port this-op))
 
 
 (module+ test

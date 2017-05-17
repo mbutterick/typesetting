@@ -174,11 +174,8 @@
   (if (and (string? rule) (regexp-match #rx"^even-?odd$" rule)) "*" ""))
 
 
-(define/contract (fill this color [rule #f])
-  ((color-string?) ((or/c string? #f)) . ->*m . object?)
-  (when (regexp-match #rx"^(even-?odd)|(non-?zero)$" color)
-    (set! rule color)
-    (set! color #f))
+(define/contract (fill this [color #f] #:rule [rule #f])
+  (() ((or/c color-string? #f) #:rule (or/c string? #f)) . ->*m . object?)
   (when color (send this fillColor color)) ;; fillColor method is from color mixin
   (send this addContent (format "f~a" (_windingRule rule))))
 
@@ -191,8 +188,7 @@
 
 (define/contract (fillAndStroke this [fill #f] [stroke fill] #:rule [rule #f])
   (() ((or/c color-string? #f) (or/c color-string? #f) #:rule (or/c string? #f)) . ->*m . object?)
-  (when fill
-    (send* this [fillColor fill] [strokeColor stroke]))
+  (when fill (send* this [fillColor fill] [strokeColor stroke]))
   (send this addContent (format "B~a" (_windingRule rule))))
 
 

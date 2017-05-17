@@ -5,7 +5,7 @@
   (class object%
     (super-new)
     (init-field contents)
-    (field [attributes (mhash)]
+    (field [attributes (mhasheq)]
            [glyphWidths (mhash)]
            [boundingBoxes (mhash)]
            [kernPairs (mhash)])
@@ -14,12 +14,11 @@
     
     (field [charWidths (for/list ([i (in-range 256)])
                          (hash-ref glyphWidths (vector-ref characters i) #f))])
-    (field [bbox (for/list ([attr (in-list (string-split (hash-ref attributes "FontBBox")))])
+    (field [bbox (for/list ([attr (in-list (string-split (hash-ref attributes 'FontBBox)))])
                    (or (string->number attr) 0))])
-    (field [ascender (string->number (or (hash-ref attributes "Ascender" #f) "0"))])
-    (field [descender (string->number (or (hash-ref attributes "Descender" #f) "0"))])
-    (field [lineGap (- (- (list-ref bbox 3) (list-ref bbox 1))
-                       (- ascender descender))])
+    (field [ascender (string->number (or (hash-ref attributes 'Ascender #f) "0"))])
+    (field [descender (string->number (or (hash-ref attributes 'Descender #f) "0"))])
+    (field [lineGap (- (- (list-ref bbox 3) (list-ref bbox 1)) (- ascender descender))])
                    
     (as-methods
      parse
@@ -37,21 +36,19 @@
 
 (define/contract (parse this)
   (->m void?)
-  (define section #f)
-  (for ([line (in-list (string-split (· this contents) "\n"))])
-    ;; `section` preserves state during the loop
-    (cond
-      [(regexp-match #px"^Start(\\w+)" line)
-       => (λ (match) (set! section (cadr match)))]
-      [(regexp-match #px"^End(\\w+)" line) (set! section #f)])
-
-    (case section
+  (for*/fold ([last-section #f])
+             ([line (in-list (string-split (· this contents) "\n"))])
+    (define current-section (cond
+                              [(regexp-match #px"^Start(\\w+)" line) => (λ (match) (cadr match))]
+                              [(regexp-match #px"^End(\\w+)" line) #f]
+                              [else last-section]))
+    (case current-section
       [("FontMetrics")
        ;; line looks like this:
        ;; FontName Helvetica
        ;; key space value. Possibly multiple lines with same key.
        (match-define (list _ key value) (regexp-match #px"^(\\w+)\\s+(.*)" line))
-       (hash-update! (· this attributes) key
+       (hash-update! (· this attributes) (string->symbol key)
                      (λ (v) (if (equal? v value)
                                 value
                                 (append (if (pair? v) v (list v)) (list value)))) value)]
@@ -68,61 +65,60 @@
       [("KernPairs")
        (when (string-prefix? line "KPX")
          (match-define (list _ left right val) (string-split line))
-         (hash-set! (· this kernPairs) (make-kern-table-key left right) (string->number val)))]))
-  )
+         (hash-set! (· this kernPairs) (make-kern-table-key left right) (string->number val)))])
+    current-section)
+  (void))
 
 (define (make-kern-table-key left right)
   (cons left right))
 
 (define win-ansi-table
-  (hash     402  131
-            8211 150
-            8212 151
-            8216 145
-            8217 146
-            8218 130
-            8220 147
-            8221 148
-            8222 132
-            8224 134
-            8225 135
-            8226 149
-            8230 133
-            8364 128
-            8240 137
-            8249 139
-            8250 155
-            710  136
-            8482 153
-            338  140
-            339  156
-            732  152
-            352  138
-            353  154
-            376  159
-            381  142
-            382  158))
+  (hasheqv     402  131
+               8211 150
+               8212 151
+               8216 145
+               8217 146
+               8218 130
+               8220 147
+               8221 148
+               8222 132
+               8224 134
+               8225 135
+               8226 149
+               8230 133
+               8364 128
+               8240 137
+               8249 139
+               8250 155
+               710  136
+               8482 153
+               338  140
+               339  156
+               732  152
+               352  138
+               353  154
+               376  159
+               381  142
+               382  158))
 
-(define/contract (encodeText this text)
+
+(define/contract (encodeText this str)
   (string? . ->m . (listof string?))
-  (for/list ([c (in-string text)])
+  (for/list ([c (in-string str)])
     (define cint (char->integer c))
     (number->string (hash-ref win-ansi-table cint cint) 16)))
 
 
-(define/contract (glyphsForString this string)
+(define/contract (glyphsForString this str)
   (string? . ->m . (listof any/c))
-  (for/list ([c (in-string string)])
-    (define charCode (char->integer c))
-    (send this characterToGlyph charCode)))
+  (for/list ([c (in-string str)])
+    (send this characterToGlyph (char->integer c))))
 
   
-(define/contract (characterToGlyph this character)
+(define/contract (characterToGlyph this cint)
   (integer? . ->m . any)
-  (define idx (hash-ref win-ansi-table character character))
-  (if (< idx (vector-length characters))
-      (vector-ref characters idx)
-      ".notdef"))
+  (define idx (hash-ref win-ansi-table cint cint))
+  (vector-ref characters (if (< idx (vector-length characters)) idx 0)))
 
 
 (define/contract (widthOfGlyph this glyph)
@@ -139,8 +135,7 @@
   ((listof any/c) . ->m . (listof number?))
   (for/list ([left (in-list glyphs)]
              [right (in-list (append (cdr glyphs) (list #\nul)))])
-    (+ (send this widthOfGlyph left)
-       (send this getKernPair left right))))
+    (+ (send this widthOfGlyph left) (send this getKernPair left right))))
 
 
 (define characters (list->vector (string-split @string-append{

@@ -37,14 +37,15 @@
   (class PDFFont
     (super-new)
     (init-field document name id)
-    (field [font (make-object AFMFont ((hash-ref STANDARD_FONTS name)))]
+    (field [font (make-object AFMFont ((hash-ref standard-fonts name)))]
            [ascender (· font ascender)]
            [descender (· font descender)]
            [bbox (· font bbox)]
            [lineGap (· font lineGap)])
     (as-methods
      embed
-     encode)))
+     encode
+     widthOfString)))
 
 (define/contract (embed this)
   (->m void?)
@@ -71,6 +72,16 @@
               'yOffset 0
               'advanceWidth (send this-font widthOfGlyph glyph)))) 
   (list encoded positions))
+
+
+(define/contract (widthOfString this str size [options #f])
+  ((string? number?) ((or/c hash? #f)) . ->*m . number?)
+  (let* ([this-font (· this font)]
+         [glyphs (send this-font glyphsForString str)]
+         [advances (send this-font advancesForGlyphs glyphs)]
+         [width (apply + advances)]
+         [scale (/ size 1000)])
+    (* width scale)))
 
 
 (module+ test
