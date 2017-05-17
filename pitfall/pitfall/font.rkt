@@ -13,11 +13,13 @@
      finalize)
     ))
 
-(define (PDFFont-open document src family id)
+(define/contract (PDFFont-open document src family id)
+  (object? any/c any/c any/c . -> . (is-a?/c PDFFont))
   (cond
-    [(string? src)
-     (when (isStandardFont src)
-       (make-object StandardFont document src id))]))
+    [(and (string? src) (isStandardFont src)
+          (make-object StandardFont document src id))]
+    ;; todo: other font-loading cases
+    [else (raise-argument-error 'PDFFont-open "loadable font name" src)]))
 
 
 (define/contract (ref this)
@@ -37,7 +39,8 @@
   (class PDFFont
     (super-new)
     (init-field document name id)
-    (field [font (make-object AFMFont ((hash-ref standard-fonts name)))]
+    (field [font (make-object AFMFont ((hash-ref standard-fonts name
+                                                 (λ () (raise-argument-error 'PDFFont "valid font name" name)))))]
            [ascender (· font ascender)]
            [descender (· font descender)]
            [bbox (· font bbox)]
@@ -46,6 +49,7 @@
      embed
      encode
      widthOfString)))
+
 
 (define/contract (embed this)
   (->m void?)
@@ -76,12 +80,12 @@
 
 (define/contract (widthOfString this str size [options #f])
   ((string? number?) ((or/c hash? #f)) . ->*m . number?)
-  (let* ([this-font (· this font)]
-         [glyphs (send this-font glyphsForString str)]
-         [advances (send this-font advancesForGlyphs glyphs)]
-         [width (apply + advances)]
-         [scale (/ size 1000)])
-    (* width scale)))
+  (define this-font (· this font))
+  (define glyphs (send this-font glyphsForString str))
+  (define advances (send this-font advancesForGlyphs glyphs))
+  (define width (apply + advances))
+  (define scale (/ size 1000))
+  (* width scale))
 
 
 (module+ test
