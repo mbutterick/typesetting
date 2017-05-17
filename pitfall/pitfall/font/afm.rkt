@@ -67,13 +67,14 @@
          (hash-set! (· this glyphWidths) name width))]
       [("KernPairs")
        (when (string-prefix? line "KPX")
-         (match-define (list _ g1 g2 val) (string-split line))
-         (hash-set! (· this kernPairs) (format "~a~a~a" g1 #\nul g2) (string->number val)))]))
-
-
+         (match-define (list _ left right val) (string-split line))
+         (hash-set! (· this kernPairs) (make-kern-table-key left right) (string->number val)))]))
   )
 
-(define WIN_ANSI_MAP
+(define (make-kern-table-key left right)
+  (cons left right))
+
+(define win-ansi-table
   (hash     402  131
             8211 150
             8212 151
@@ -106,7 +107,7 @@
   (string? . ->m . (listof string?))
   (for/list ([c (in-string text)])
     (define cint (char->integer c))
-    (number->string (hash-ref WIN_ANSI_MAP cint cint) 16)))
+    (number->string (hash-ref win-ansi-table cint cint) 16)))
 
 
 (define/contract (glyphsForString this string)
@@ -118,7 +119,7 @@
   
 (define/contract (characterToGlyph this character)
   (integer? . ->m . any)
-  (define idx (hash-ref WIN_ANSI_MAP character character))
+  (define idx (hash-ref win-ansi-table character character))
   (if (< idx (vector-length characters))
       (vector-ref characters idx)
       ".notdef"))
@@ -131,7 +132,7 @@
 
 (define/contract (getKernPair this left right)
   ((or/c char? string?) (or/c char? string?) . ->m . number?)
-  (hash-ref (· this kernPairs) (format "~a~a~a" left #\nul right) 0))
+  (hash-ref (· this kernPairs) (make-kern-table-key left right) 0))
 
 
 (define/contract (advancesForGlyphs this glyphs)
