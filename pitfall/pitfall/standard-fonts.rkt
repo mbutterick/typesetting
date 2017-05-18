@@ -1,33 +1,24 @@
 #lang pitfall/racket
-(require racket/runtime-path (for-syntax racket/base racket/format))
+(require racket/runtime-path (for-syntax racket/base racket/path racket/syntax))
 (provide isStandardFont standard-fonts)
 
 (define (isStandardFont name) (hash-ref standard-fonts name #f))
 
-(define-syntax (drps stx)
+(define-syntax (define-afm-table stx)
   (syntax-case stx ()
-    [(_ hashid id ...)
-     (let ([id-strings (map ~a (map syntax->datum (syntax->list #'(id ...))))])
-       (with-syntax ([(path ...) (map (λ (d) (format "data/~a.afm" d)) id-strings)]
-                     [(id-str ...) id-strings])
-         #'(begin (define-runtime-path id path) ...
-                  (define hashid (make-hash (list (cons id-str (λ () (file->string id))) ...))))))]))
+    [(_ hashid dir)
+     (let* ([path-strings (for/list ([p (in-directory (syntax->datum #'dir) #t)]
+                                     #:when (and (file-exists? p) (path-has-extension? p #"afm") p))
+                            (path->string p))]
+            [id-strings (for/list ([pstr (in-list path-strings)])
+                          (path->string (cadr (explode-path (path-replace-extension pstr #"")))))])
+       (with-syntax ([(PATH-STR ...) path-strings]
+                     [(ID-STR ...) id-strings]
+                     [(ID ...) (map (λ (id-str) (format-id #'hashid "~a" id-str)) id-strings)])
+         #'(begin (define-runtime-path ID PATH-STR) ...
+                  (define hashid (make-hash (list (cons ID-STR (procedure-rename (λ () (file->string ID)) 'ID)) ...))))))]))
 
-(drps standard-fonts
-      Courier-Bold
-      Courier-BoldOblique
-      Courier-Oblique
-      Courier
-      Helvetica-Bold 
-      Helvetica-BoldOblique 
-      Helvetica-Oblique 
-      Helvetica 
-      Symbol 
-      Times-Bold 
-      Times-BoldItalic 
-      Times-Italic 
-      Times-Roman 
-      ZapfDingbats)
+(define-afm-table standard-fonts "data")
 
 
 (module+ test

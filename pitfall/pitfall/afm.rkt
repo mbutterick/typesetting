@@ -46,12 +46,13 @@
       [("FontMetrics")
        ;; line looks like this:
        ;; FontName Helvetica
-       ;; key space value. Possibly multiple lines with same key.
+       ;; `key space value`. Possibly multiple lines with same key.
        (match-define (list _ key value) (regexp-match #px"^(\\w+)\\s+(.*)" line))
        (hash-update! (· this attributes) (string->symbol key)
-                     (λ (v) (if (equal? v value)
+                     (λ (v) (if (eq? v 'init-val)
                                 value
-                                (append (if (pair? v) v (list v)) (list value)))) value)]
+                                (append (if (pair? v) v (list v)) (list value))))
+                     'init-val)]
       [("CharMetrics")
        ;; line looks like this:
        ;; C 33 ; WX 278 ; N exclam ; B 90 0 187 718 ;
@@ -138,78 +139,80 @@
     (+ (send this widthOfGlyph left) (send this getKernPair left right))))
 
 
-(define characters (list->vector (string-split @string-append{
-                                                              .notdef       .notdef        .notdef        .notdef
-                                                                            .notdef       .notdef        .notdef        .notdef
-                                                                            .notdef       .notdef        .notdef        .notdef
-                                                                            .notdef       .notdef        .notdef        .notdef
-                                                                            .notdef       .notdef        .notdef        .notdef
-                                                                            .notdef       .notdef        .notdef        .notdef
-                                                                            .notdef       .notdef        .notdef        .notdef
-                                                                            .notdef       .notdef        .notdef        .notdef
+(define characters
+  (list->vector
+   (string-split
+    @string-append{              .notdef       .notdef        .notdef        .notdef
+                                               .notdef       .notdef        .notdef        .notdef
+                                               .notdef       .notdef        .notdef        .notdef
+                                               .notdef       .notdef        .notdef        .notdef
+                                               .notdef       .notdef        .notdef        .notdef
+                                               .notdef       .notdef        .notdef        .notdef
+                                               .notdef       .notdef        .notdef        .notdef
+                                               .notdef       .notdef        .notdef        .notdef
 
-                                                                            space         exclam         quotedbl       numbersign
-                                                                            dollar        percent        ampersand      quotesingle
-                                                                            parenleft     parenright     asterisk       plus
-                                                                            comma         hyphen         period         slash
-                                                                            zero          one            two            three
-                                                                            four          five           six            seven
-                                                                            eight         nine           colon          semicolon
-                                                                            less          equal          greater        question
+                                               space         exclam         quotedbl       numbersign
+                                               dollar        percent        ampersand      quotesingle
+                                               parenleft     parenright     asterisk       plus
+                                               comma         hyphen         period         slash
+                                               zero          one            two            three
+                                               four          five           six            seven
+                                               eight         nine           colon          semicolon
+                                               less          equal          greater        question
 
-                                                                            at            A              B              C
-                                                                            D             E              F              G
-                                                                            H             I              J              K
-                                                                            L             M              N              O
-                                                                            P             Q              R              S
-                                                                            T             U              V              W
-                                                                            X             Y              Z              bracketleft
-                                                                            backslash     bracketright   asciicircum    underscore
+                                               at            A              B              C
+                                               D             E              F              G
+                                               H             I              J              K
+                                               L             M              N              O
+                                               P             Q              R              S
+                                               T             U              V              W
+                                               X             Y              Z              bracketleft
+                                               backslash     bracketright   asciicircum    underscore
 
-                                                                            grave         a              b              c
-                                                                            d             e              f              g
-                                                                            h             i              j              k
-                                                                            l             m              n              o
-                                                                            p             q              r              s
-                                                                            t             u              v              w
-                                                                            x             y              z              braceleft
-                                                                            bar           braceright     asciitilde     .notdef
+                                               grave         a              b              c
+                                               d             e              f              g
+                                               h             i              j              k
+                                               l             m              n              o
+                                               p             q              r              s
+                                               t             u              v              w
+                                               x             y              z              braceleft
+                                               bar           braceright     asciitilde     .notdef
 
-                                                                            Euro          .notdef        quotesinglbase florin
-                                                                            quotedblbase  ellipsis       dagger         daggerdbl
-                                                                            circumflex    perthousand    Scaron         guilsinglleft
-                                                                            OE            .notdef        Zcaron         .notdef
-                                                                            .notdef       quoteleft      quoteright     quotedblleft
-                                                                            quotedblright bullet         endash         emdash
-                                                                            tilde         trademark      scaron         guilsinglright
-                                                                            oe            .notdef        zcaron         ydieresis
+                                               Euro          .notdef        quotesinglbase florin
+                                               quotedblbase  ellipsis       dagger         daggerdbl
+                                               circumflex    perthousand    Scaron         guilsinglleft
+                                               OE            .notdef        Zcaron         .notdef
+                                               .notdef       quoteleft      quoteright     quotedblleft
+                                               quotedblright bullet         endash         emdash
+                                               tilde         trademark      scaron         guilsinglright
+                                               oe            .notdef        zcaron         ydieresis
 
-                                                                            space         exclamdown     cent           sterling
-                                                                            currency      yen            brokenbar      section
-                                                                            dieresis      copyright      ordfeminine    guillemotleft
-                                                                            logicalnot    hyphen         registered     macron
-                                                                            degree        plusminus      twosuperior    threesuperior
-                                                                            acute         mu             paragraph      periodcentered
-                                                                            cedilla       onesuperior    ordmasculine   guillemotright
-                                                                            onequarter    onehalf        threequarters  questiondown
+                                               space         exclamdown     cent           sterling
+                                               currency      yen            brokenbar      section
+                                               dieresis      copyright      ordfeminine    guillemotleft
+                                               logicalnot    hyphen         registered     macron
+                                               degree        plusminus      twosuperior    threesuperior
+                                               acute         mu             paragraph      periodcentered
+                                               cedilla       onesuperior    ordmasculine   guillemotright
+                                               onequarter    onehalf        threequarters  questiondown
 
-                                                                            Agrave        Aacute         Acircumflex    Atilde
-                                                                            Adieresis     Aring          AE             Ccedilla
-                                                                            Egrave        Eacute         Ecircumflex    Edieresis
-                                                                            Igrave        Iacute         Icircumflex    Idieresis
-                                                                            Eth           Ntilde         Ograve         Oacute
-                                                                            Ocircumflex   Otilde         Odieresis      multiply
-                                                                            Oslash        Ugrave         Uacute         Ucircumflex
-                                                                            Udieresis     Yacute         Thorn          germandbls
+                                               Agrave        Aacute         Acircumflex    Atilde
+                                               Adieresis     Aring          AE             Ccedilla
+                                               Egrave        Eacute         Ecircumflex    Edieresis
+                                               Igrave        Iacute         Icircumflex    Idieresis
+                                               Eth           Ntilde         Ograve         Oacute
+                                               Ocircumflex   Otilde         Odieresis      multiply
+                                               Oslash        Ugrave         Uacute         Ucircumflex
+                                               Udieresis     Yacute         Thorn          germandbls
 
-                                                                            agrave        aacute         acircumflex    atilde
-                                                                            adieresis     aring          ae             ccedilla
-                                                                            egrave        eacute         ecircumflex    edieresis
-                                                                            igrave        iacute         icircumflex    idieresis
-                                                                            eth           ntilde         ograve         oacute
-                                                                            ocircumflex   otilde         odieresis      divide
-                                                                            oslash        ugrave         uacute         ucircumflex
-                                                                            udieresis     yacute         thorn          ydieresis})))
+                                               agrave        aacute         acircumflex    atilde
+                                               adieresis     aring          ae             ccedilla
+                                               egrave        eacute         ecircumflex    edieresis
+                                               igrave        iacute         icircumflex    idieresis
+                                               eth           ntilde         ograve         oacute
+                                               ocircumflex   otilde         odieresis      divide
+                                               oslash        ugrave         uacute         ucircumflex
+                                               udieresis     yacute         thorn          ydieresis})))
 
 (module+ test
   (define afmfont (AFMFont-open "data/helvetica.afm"))

@@ -68,7 +68,7 @@
   (define glyphs (send this-font glyphsForString text))
   (define advances (send this-font advancesForGlyphs glyphs))
   (define positions
-    (for/list ([(glyph i) (in-indexed glyphs)]
+    (for/list ([glyph (in-list glyphs)]
                [advance (in-list advances)])
       (hasheq 'xAdvance advance
               'yAdvance 0

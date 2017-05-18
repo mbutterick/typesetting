@@ -42,7 +42,7 @@
     (· this initVector)
     (· this initFonts)
     (· this initText)
-    (· this initImages)
+    ;(· this initImages)
 
     (as-methods
      addPage
