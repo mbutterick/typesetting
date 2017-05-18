@@ -1,4 +1,5 @@
 #lang pitfall/racket
+(require "jpeg.rkt" "png.rkt")
 (provide PDFImage)
 
 (define PDFImage

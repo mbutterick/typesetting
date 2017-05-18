@@ -35,6 +35,7 @@
 
 ;; Convert little endian UTF-16 to big endian
 ;; endianness of `bytes-open-converter` is relative to platform, so little endian on all x86
+;; can detect with `system-big-endian?`
 (define/contract (utf8->utf16 bytes)
   (bytes? . -> . bytes?)
   (define-values (bs bslen bsresult)

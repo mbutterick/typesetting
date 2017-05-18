@@ -164,3 +164,8 @@
        (if (string-prefix? x "#")
            (or (= (string-length x) 4) (= (string-length x) 7))
            #t)))
+
+(define-syntax-rule (define-subclass CLASS-ID (SUBCLASS-ID INIT-FIELD ...) . EXPRS)
+  (define SUBCLASS-ID
+    (class CLASS-ID
+      (init-field INIT-FIELD ...) . EXPRS)))

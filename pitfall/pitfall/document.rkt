@@ -5,68 +5,66 @@
 
 (define mixed% (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%))))))
 
-(define PDFDocument
-  (class mixed% ; actually is an instance of readable.Stream, which is an input port
-    (init-field [options (mhash)])
-    (super-new)
+(define-subclass mixed% (PDFDocument [options (mhash)])
+  (super-new)
 
-    (field [byte-strings empty] ; list of byte chunks to push onto; simulates interface of stream.readable
-           [version 1.3] ; PDF version
-           [compress (hash-ref options 'compress #t)] ; Whether streams should be compressed
-           [_pageBuffer null]
-           [_pageBufferStart 0]
-           [_offsets null] ; The PDF object store
-           [_waiting 0]
-           [_ended #f]
-           [_offset 0]
-           [_root (ref this
-                       (mhash 'Type "Catalog"
-                              'Pages (ref this
-                                          (mhash 'Type "Pages"
-                                                 'Count 0
-                                                 'Kids empty))))] ; top object
-           [page #f] ; The current page
-           [x 0]
-           [y 0]
-           [info (mhash
-                  'Producer "PitfallKit"
-                  'Creator "PitfallKit"
-                  'CreationDate (seconds->date (if (test-mode)
-                                                   0
-                                                   (current-seconds)) #f))]  ; Initialize the metadata
-           [op #f] ; for `pipe`
-           [_info #f]) ; for `end`
+  (field [byte-strings empty] ; list of byte chunks to push onto; simulates interface of stream.readable
+         [version 1.3] ; PDF version
+         [compress (hash-ref options 'compress #t)] ; Whether streams should be compressed
+         [_pageBuffer null]
+         [_pageBufferStart 0]
+         [_offsets null] ; The PDF object store
+         [_waiting 0]
+         [_ended #f]
+         [_offset 0]
+         [_root (ref this
+                     (mhash 'Type "Catalog"
+                            'Pages (ref this
+                                        (mhash 'Type "Pages"
+                                               'Count 0
+                                               'Kids empty))))] ; top object
+         [page #f] ; The current page
+         [x 0]
+         [y 0]
+         [info (mhash
+                'Producer "PitfallKit"
+                'Creator "PitfallKit"
+                'CreationDate (seconds->date (if (test-mode)
+                                                 0
+                                                 (current-seconds)) #f))]  ; Initialize the metadata
+         [op #f] ; for `pipe`
+         [_info #f]) ; for `end`
 
-    ;; Initialize mixins
-    (· this initColor)
-    (· this initVector)
-    (· this initFonts)
-    (· this initText)
-    ;(· this initImages)
+  ;; Initialize mixins
+  (· this initColor)
+  (· this initVector)
+  (· this initFonts)
+  (· this initText)
+  ;(· this initImages)
 
-    (as-methods
-     addPage
-     flushPages
-     ref
-     push
-     _write
-     addContent
-     _refEnd
-     pipe
-     end
-     _finalize)
+  (as-methods
+   addPage
+   flushPages
+   ref
+   push
+   _write
+   addContent
+   _refEnd
+   pipe
+   end
+   _finalize)
 
-    (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) ; if no 'info key, nothing will be copied from (hash)
-      (hash-set! info key val))
+  (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) ; if no 'info key, nothing will be copied from (hash)
+    (hash-set! info key val))
 
-    ;; Write the header
-    (_write this (format "%PDF-~a" version)) ;  PDF version
-    (let ([c (integer->char #xFF)])
-      (_write this (string-append "%" (string c c c c)))) ; 4 binary chars, as recommended by the spec
+  ;; Write the header
+  (_write this (format "%PDF-~a" version)) ;  PDF version
+  (let ([c (integer->char #xFF)])
+    (_write this (string-append "%" (string c c c c)))) ; 4 binary chars, as recommended by the spec
 
-    ;; Add the first page
-    (unless (not (hash-ref options 'autoFirstPage #t))
-      (addPage this))))
+  ;; Add the first page
+  (unless (not (hash-ref options 'autoFirstPage #t))
+    (addPage this)))
 
     
 (define/contract (addPage this [options-arg (· this options)])
