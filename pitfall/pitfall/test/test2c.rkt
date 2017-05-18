@@ -1,8 +1,8 @@
 #lang pitfall/pdftest
-(define-runtime-path this "test2rkt.pdf")
+(define-runtime-path this "test2crkt.pdf")
 
 (check-true
- (let ([doc (make-object PDFDocument (hash 'compress #f))])
+ (let ([doc (make-object PDFDocument (hash 'compress #t))])
    (send doc pipe (open-output-file this #:exists 'replace))
 
    ;; curved path as bezier

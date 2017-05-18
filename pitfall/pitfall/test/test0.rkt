@@ -7,4 +7,4 @@
    (send doc pipe (open-output-file this #:exists 'replace))
    (send doc end)))
 
-;(check-copy-equal? this)
+(check-copy-equal? this)

@@ -11,7 +11,7 @@ class PDFReference extends stream.Writable
     super decodeStrings: no
     @gen = 0
     @deflate = null
-    @compress = no
+    @compress = @document.compress and not @data.Filter
     @uncompressedLength = 0
     @chunks = []
     
@@ -38,9 +38,7 @@ class PDFReference extends stream.Writable
     
     if @compress
       @initDeflate() if not @deflate
-      console.log("chunk = " + chunk)
       @deflate.write chunk
-      console.log("wrote chunk")
     else
       @chunks.push chunk
       @data.Length += chunk.length
@@ -50,12 +48,19 @@ class PDFReference extends stream.Writable
   end: (chunk) ->
     super
     
+    console.log("end! " + @id)
+    console.log(@chunks)
     if @deflate
       @deflate.end()
     else
       @finalize()
     
   finalize: =>
+
+
+    console.log("finalize! " + @id)
+    console.log(@chunks)
+
     @offset = @document._offset
     
     @document._write "#{@id} #{@gen} obj"

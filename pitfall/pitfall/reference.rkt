@@ -1,31 +1,36 @@
 #lang pitfall/racket
-(require "object.rkt")
+(require "object.rkt" "zlib.rkt")
 (provide PDFReference)
 
-(define PDFReference
-  (class object%
-    (super-new)
-    (init-field document id [data (mhash)])
-    (field [gen 0]
-           [deflate #f]
-           [compress (and (compression-enabled)
-                          (· document compress)
-                          (not (hash-ref data 'Filter #f)))]
-           [uncompressedLength 0]
-           [chunks empty]
-           [offset #f])
+#|
+(when (· this deflate)
+    (define compressed-chunks (map deflate (· this chunks)))
+    (set-field! chunks this compressed-chunks)
+    (hash-set! (· this data) 'Length (apply + (map bytes-length compressed-chunks))))
+|#
 
-    (as-methods
-     initDeflate
-     write
-     _write
-     end
-     finalize
-     toString)))
+(define-subclass object% (PDFReference document id [data (mhash)])
+  (super-new)
+  (field [gen 0]
+         [deflate #f]
+         [compress (and (· document compress)
+                        (not (hash-ref data 'Filter #f)))]
+         [uncompressedLength 0]
+         [chunks empty]
+         [offset #f])
+
+  (as-methods
+   initDeflate
+   write
+   _write
+   end
+   finalize
+   toString))
 
 (define/contract (initDeflate this)
   (->m void?)
-  (hash-ref! (· this data) 'Filter "FlateDecode"))
+  (hash-ref! (· this data) 'Filter "FlateDecode")
+  (set-field! deflate this #t))
 
 (define/contract (write this data)
   (any/c . ->m . void?)
@@ -38,24 +43,28 @@
                     (newBuffer (string-append chunk-in "\n"))))
   (increment-field! uncompressedLength this (buffer-length chunk))
   (hash-ref! (· this data) 'Length 0)
-  (cond
-    #;[(· this compress) (when (not (· this deflate)) (initDeflate))
-                         (send deflater write chunk)] ; todo: implement compression
-    [else (push-end-field! chunks this chunk)
-          (hash-update! (· this data) 'Length (λ (len) (+ len (buffer-length chunk))))])
+
+  (when (· this compress) (send this initDeflate))
+
+  (push-end-field! chunks this chunk)
+  (hash-update! (· this data) 'Length (curry + (buffer-length chunk)))
   (callback))
 
 
 (define/contract (end this [chunk #f])
   (() ((or/c any/c #f)) . ->*m . void?)
   ; (super) ; todo
-  (if (· this deflate)
-      (void) ; todo (deflate-end)
-      (send this finalize)))
+  (when (· this deflate)
+    (set-field! chunks this (list (deflate (apply bytes-append (· this chunks)))))
+    (hash-set! (· this data) 'Length (apply + (map buffer-length (· this chunks)))))
+  #;(report* 'end! (· this id) (· this chunks))
+  (send this finalize))
 
 
 (define/contract (finalize this)
   (->m void?)
+  #;(report* 'finalize! (· this id) (· this chunks))
+
   (set-field! offset this (· this document _offset))
 
   (define this-doc (· this document)) 
