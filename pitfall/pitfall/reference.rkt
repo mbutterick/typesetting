@@ -38,6 +38,7 @@
 
 (define/contract (_write this chunk-in encoding callback)
   (any/c (or/c string? #f) procedure? . ->m . any/c)
+  #;(report* '_write (· this id) chunk-in)
   (define chunk (if (isBuffer? chunk-in)
                     chunk-in
                     (newBuffer (string-append chunk-in "\n"))))

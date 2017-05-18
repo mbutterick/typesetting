@@ -27,8 +27,8 @@
          [x 0]
          [y 0]
          [info (mhash
-                'Producer "PitfallKit"
-                'Creator "PitfallKit"
+                'Producer "PITKIT"
+                'Creator "PITKIT"
                 'CreationDate (seconds->date (if (test-mode)
                                                  0
                                                  (current-seconds)) #f))]  ; Initialize the metadata

@@ -118,8 +118,8 @@ endobj
 9 0 obj
 <<
 /CreationDate (D:19700101000000Z)
-/Creator (PitfallKit)
-/Producer (PitfallKit)
+/Creator (PITKIT)
+/Producer (PITKIT)
 >>
 endobj
 2 0 obj
@@ -138,8 +138,8 @@ endobj
 xref
 0 10
 0000000000 65535 f 
-0000001460 00000 n 
-0000001411 00000 n 
+0000001452 00000 n 
+0000001403 00000 n 
 0000000370 00000 n 
 0000000253 00000 n 
 0000000149 00000 n 
@@ -154,5 +154,5 @@ trailer
 /Size 10
 >>
 startxref
-1517
+1509
 %%EOF
