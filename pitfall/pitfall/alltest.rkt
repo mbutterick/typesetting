@@ -10,4 +10,5 @@
            pitfall/test/test2c
            pitfall/test/test3c
            pitfall/test/test4c
-           pitfall/page-test))
+           pitfall/page-test
+           (submod pitfall/zlib test)))

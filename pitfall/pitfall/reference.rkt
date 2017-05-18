@@ -2,19 +2,11 @@
 (require "object.rkt" "zlib.rkt")
 (provide PDFReference)
 
-#|
-(when (· this deflate)
-    (define compressed-chunks (map deflate (· this chunks)))
-    (set-field! chunks this compressed-chunks)
-    (hash-set! (· this data) 'Length (apply + (map bytes-length compressed-chunks))))
-|#
-
 (define-subclass object% (PDFReference document id [data (mhash)])
   (super-new)
   (field [gen 0]
          [i-wanna-be-deflated #f]
-         [compress (and (· document compress)
-                        (not (hash-ref data 'Filter #f)))]
+         [compress (and (· document compress) (not (hash-ref data 'Filter #f)))]
          [chunks empty]
          [offset #f])
 
@@ -28,6 +20,7 @@
 (define/contract (write this data)
   (any/c . ->m . void?)
   (send this _write data #f void))
+
 
 (define/contract (_write this chunk-in encoding callback)
   ((or/c string? isBuffer?) (or/c string? #f) procedure? . ->m . any/c)
