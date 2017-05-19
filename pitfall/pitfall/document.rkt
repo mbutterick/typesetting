@@ -14,7 +14,6 @@
          [_pageBuffer null]
          [_pageBufferStart 0]
          [_offsets (mhash)] ; The PDF object store
-         [_waiting 0]
          [_ended #f]
          [_offset 0]
          [_root (ref this
@@ -109,7 +108,6 @@
   (() (hash?) . ->*m . (is-a?/c PDFReference))
   (define next-refid (add1 (length (hash-keys (· this _offsets)))))
   (hash-set! (· this _offsets) next-refid #f)
-  (increment-field! _waiting this)
   (make-object PDFReference this next-refid payload))
 
 
@@ -129,11 +127,16 @@
   this)
 
 
+(define/contract (offsets-missing? this)
+  (->m boolean?)
+  ;; `boolean?` matches #f values
+  (positive? (length (filter boolean? (hash-values (· this _offsets))))))
+
+
 (define/contract (_refEnd this ref)
   ((is-a?/c PDFReference) . ->m . void?)
   (hash-set! (· this _offsets) (· ref id) (· ref offset))
-  (increment-field! _waiting this -1)
-  (if (and (zero? (· this _waiting)) (· this _ended))
+  (if (and (not (offsets-missing? this)) (· this _ended))
       (· this _finalize)
       (set-field! _ended this #f)))
 
@@ -159,7 +162,7 @@
   (· this _root payload Pages end)
 
   (cond
-    [(positive? (· this _waiting)) (set-field! _ended this #t)]
+    [(offsets-missing? this) (set-field! _ended this #t)]
     [else
      ;; generate xref
      (define xref-offset (· this _offset))
