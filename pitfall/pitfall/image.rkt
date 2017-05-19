@@ -1,17 +1,16 @@
 #lang pitfall/racket
 (require "jpeg.rkt" "png.rkt")
-(provide PDFImage)
+(provide PDFImage-open)
 
-(define PDFImage
+#;(define PDFImage
   (class object%
     (super-new)
 
     (as-methods
-     open)))
+     )))
 
-
-(define/contract (open this src label)
-  (any/c any/c . ->m . bytes?)
+(define/contract (PDFImage-open src label)
+  (any/c any/c . -> . (or/c (is-a?/c PNG)))
   (define data (cond
                  [(isBuffer? src) src]
                  ;;else if src instanceof ArrayBuffer
@@ -21,8 +20,8 @@
                  [else (file->bytes src)]))
   (cond
     [(equal? (subbytes data 0 2) (bytes #xff #xd8))
-     'doJpeg]
+     (error 'do-jpeg-unimplemented)]
     [(equal? (subbytes data 0 4) (apply bytes (cons #x89 (map char->integer '(#\P #\N #\G)))))
-     'doPNG]
+     (make-object PNG data label)]
     [else (raise-argument-error 'PDFImage-open "valid image format" src)]))
            
