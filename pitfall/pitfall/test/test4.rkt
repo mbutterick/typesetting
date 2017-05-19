@@ -66,3 +66,4 @@
    (send doc end)))
 
 (check-copy-equal? this)
+(check-pdfkit? this)
