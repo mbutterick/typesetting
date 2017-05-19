@@ -53,7 +53,7 @@
 
 (define/contract (embed this)
   (->m void?)
-  (set-field! data (· this dictionary)
+  (set-field! payload (· this dictionary)
               (mhash 'Type "Font"
                      'BaseFont (· this name)
                      'Subtype "Type1"

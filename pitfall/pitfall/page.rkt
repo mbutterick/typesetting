@@ -29,7 +29,7 @@
            [dictionary
             (send document ref
                   (mhash 'Type "Page"
-                         'Parent (· document _root data Pages)
+                         'Parent (· document _root payload Pages)
                          'MediaBox (list 0 0 width height)
                          'Contents content
                          'Resources resources))])
@@ -47,23 +47,23 @@
 ;; Lazily create these dictionaries
 (define/contract (fonts this)
   (->m hash?)
-  (hash-ref! (· this resources data) 'Font (make-hash)))
+  (hash-ref! (· this resources payload) 'Font (make-hash)))
 
 (define/contract (xobjects this)
   (->m hash?)
-  (hash-ref! (· this resources data) 'XObject (make-hash)))
+  (hash-ref! (· this resources payload) 'XObject (make-hash)))
 
 (define/contract (ext_gstates this)
   (->m hash?)
-  (hash-ref! (· this resources data) 'ExtGState (make-hash)))
+  (hash-ref! (· this resources payload) 'ExtGState (make-hash)))
 
 (define/contract (patterns this)
   (->m hash?)
-  (hash-ref! (· this resources data) 'Pattern (make-hash)))
+  (hash-ref! (· this resources payload) 'Pattern (make-hash)))
 
 (define/contract (annotations this)
   (->m hash?)
-  (hash-ref! (· this resources data) 'Annots null))
+  (hash-ref! (· this resources payload) 'Annots null))
 
 
 (define/contract (maxY this)

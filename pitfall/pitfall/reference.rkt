@@ -2,7 +2,7 @@
 (require "object.rkt" "zlib.rkt")
 (provide PDFReference)
 
-(define-subclass object% (PDFReference document id [data (mhash)])
+(define-subclass object% (PDFReference document id [payload (mhash)])
   (super-new)
   (field [chunks empty]
          [offset #f])
@@ -15,9 +15,9 @@
 
 (define/contract (write this x)
   ((or/c string? isBuffer?) . ->m . void?)
-  (push-end-field! chunks this (if (isBuffer? x)
-                                   x
-                                   (bytes-append (newBuffer x) #"\n"))))
+  (push-field! chunks this (if (isBuffer? x)
+                               x
+                               (bytes-append (newBuffer x) #"\n"))))
 
 (define got-chunks? pair?)
 
@@ -25,24 +25,24 @@
   (->m void?)
 
   (define chunks-to-write
-    (let ([current-chunks (· this chunks)])
+    (let ([current-chunks (reverse (· this chunks))])
       (if (and (compress-streams?)
-               (not (hash-ref (· this data) 'Filter #f))
+               (not (hash-ref (· this payload) 'Filter #f))
                (got-chunks? current-chunks))
           (let ([deflated-chunk (deflate (apply bytes-append current-chunks))])
-            (hash-set! (· this data) 'Filter "FlateDecode")
+            (hash-set! (· this payload) 'Filter "FlateDecode")
             (list deflated-chunk))
           current-chunks)))
   
   (when (got-chunks? chunks-to-write)
-    (hash-set! (· this data) 'Length (apply + (map buffer-length chunks-to-write))))
+    (hash-set! (· this payload) 'Length (apply + (map buffer-length chunks-to-write))))
 
   (define this-doc (· this document)) 
   (set-field! offset this (· this-doc _offset))
   
   (with-method ([doc_write (this-doc _write)])
     (doc_write (format "~a 0 obj" (· this id)))
-    (doc_write (convert (· this data)))
+    (doc_write (convert (· this payload)))
     (when (got-chunks? chunks-to-write)
       (doc_write "stream")
       (for ([chunk (in-list chunks-to-write)])
