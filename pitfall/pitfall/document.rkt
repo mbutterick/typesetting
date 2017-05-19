@@ -13,7 +13,7 @@
          [version 1.3] ; PDF version
          [_pageBuffer null]
          [_pageBufferStart 0]
-         [_offsets null] ; The PDF object store
+         [_offsets (mhash)] ; The PDF object store
          [_waiting 0]
          [_ended #f]
          [_offset 0]
@@ -46,7 +46,6 @@
    addPage
    flushPages
    ref
-   push
    _write
    addContent
    _refEnd
@@ -54,7 +53,7 @@
    end)
 
   (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) ; if no 'info key, nothing will be copied from (hash)
-       (hash-set! info key val))
+    (hash-set! info key val))
 
   ;; Write the header
   (_write this (format "%PDF-~a" version)) ;  PDF version
@@ -96,11 +95,11 @@
   (->m list?)
   ;; this local variable exists so we're future-proof against
   ;; reentrant calls to flushPages.
-  (define pages (· this _pageBuffer))
+  (define buffered-pages (· this _pageBuffer))
   (set-field! _pageBuffer this empty)
-  (increment-field! _pageBufferStart this (length pages))
-  (for/list ([p (in-list pages)])
-            (· p end)))
+  (increment-field! _pageBufferStart this (length buffered-pages))
+  (for/list ([p (in-list buffered-pages)])
+    (· p end)))
 
 
 ;; every js function argument is 'undefined' by default
@@ -108,25 +107,20 @@
 ;; can be called without arguments
 (define/contract (ref this [payload (mhash)])
   (() (hash?) . ->*m . (is-a?/c PDFReference))
-  (define newref (make-object PDFReference this (add1 (length (· this _offsets))) payload))
-  (push-end-field! _offsets this #f) ; placeholder for this object's offset once it is finalized
+  (define next-refid (add1 (length (hash-keys (· this _offsets)))))
+  (hash-set! (· this _offsets) next-refid #f)
   (increment-field! _waiting this)
-  newref)
-
-
-(define/contract (push this chunk)
-  (isBuffer? . ->m . void?)
-  (push-field! byte-strings this chunk))
+  (make-object PDFReference this next-refid payload))
 
 
 (define/contract (_write this data)
-  (any/c . ->m . void?)
-  (let ([data (if (not (isBuffer? data))
-                  (newBuffer (string-append data "\n"))
-                  data)])
-    (push this data)
-    (increment-field! _offset this (buffer-length data))
-    (void)))
+  ((or/c string? isBuffer?) . ->m . void?)
+  (define bstr (if (not (isBuffer? data))
+                   (newBuffer (string-append data "\n"))
+                   data))
+  (push-field! byte-strings this bstr)
+  (increment-field! _offset this (buffer-length bstr))
+  (void))
 
 
 (define/contract (addContent this data)
@@ -137,10 +131,7 @@
 
 (define/contract (_refEnd this ref)
   ((is-a?/c PDFReference) . ->m . void?)
-  (set-field! _offsets this (for/list ([(offset idx) (in-indexed (· this _offsets))])
-                                      (if (= (· ref id) (add1 idx))
-                                          (· ref offset)
-                                          offset)))
+  (hash-set! (· this _offsets) (· ref id) (· ref offset))
   (increment-field! _waiting this -1)
   (if (and (zero? (· this _waiting)) (· this _ended))
       (· this _finalize)
@@ -157,12 +148,12 @@
   (flushPages this)
   (set-field! _info this (ref this))
   (for ([(key val) (in-hash (· this info))])
-       ;; upgrade string literal to String struct
-       (hash-set! (· this _info payload) key (if (string? val) (String val) val)))
+    ;; upgrade string literal to String struct
+    (hash-set! (· this _info payload) key (if (string? val) (String val) val)))
   (· this _info end)
 
   (for ([font (in-hash-values (· this _fontFamilies))])
-       (· font finalize))
+    (· font finalize))
 
   (· this _root end)
   (· this _root payload Pages end)
@@ -173,12 +164,12 @@
      ;; generate xref
      (define xref-offset (· this _offset))
      (with-method ([this-write (this _write)])
-       (define this-offsets (· this _offsets)) 
+       (define this-offsets (map cdr (sort (hash->list (· this _offsets)) < #:key car))) ; sort by refid
        (this-write "xref")
        (this-write (format "0 ~a" (add1 (length this-offsets))))
        (this-write "0000000000 65535 f ")
        (for ([offset (in-list this-offsets)])
-            (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
+         (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
        (this-write "trailer") ;; trailer
        (this-write (convert
                     (mhash 'Size (add1 (length this-offsets))
