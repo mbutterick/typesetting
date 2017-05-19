@@ -4,53 +4,46 @@
 
 (define-subclass object% (PDFReference document id [data (mhash)])
   (super-new)
-  (field [gen 0]
-         [compress (and (· document compress) (not (hash-ref data 'Filter #f)))]
-         [chunks empty]
+  (field [chunks empty]
          [offset #f])
 
   (as-methods
    write
-   _write
    end
    toString))
 
 
-(define/contract (write this data)
-  (any/c . ->m . void?)
-  (send this _write data #f void))
+(define/contract (write this x)
+  ((or/c string? isBuffer?) . ->m . void?)
+  (push-end-field! chunks this (if (isBuffer? x)
+                                   x
+                                   (bytes-append (newBuffer x) #"\n"))))
 
-
-(define/contract (_write this chunk-in encoding callback)
-  ((or/c string? isBuffer?) (or/c string? #f) procedure? . ->m . any/c)
-  (define chunk (if (isBuffer? chunk-in)
-                    chunk-in
-                    (newBuffer (string-append chunk-in "\n"))))
-  (push-end-field! chunks this chunk)
-  (hash-update! (· this data) 'Length (curry + (buffer-length chunk)) 0)
-  (callback))
-
+(define got-chunks? pair?)
 
 (define/contract (end this)
   (->m void?)
 
   (define chunks-to-write
     (let ([current-chunks (· this chunks)])
-      (if (and (· this compress) (pair? current-chunks))
+      (if (and (compress-streams?)
+               (not (hash-ref (· this data) 'Filter #f))
+               (got-chunks? current-chunks))
           (let ([deflated-chunk (deflate (apply bytes-append current-chunks))])
-            (hash-set*! (· this data)
-                        'Filter "FlateDecode"
-                        'Length (buffer-length deflated-chunk))
+            (hash-set! (· this data) 'Filter "FlateDecode")
             (list deflated-chunk))
           current-chunks)))
+  
+  (when (got-chunks? chunks-to-write)
+    (hash-set! (· this data) 'Length (apply + (map buffer-length chunks-to-write))))
 
   (define this-doc (· this document)) 
   (set-field! offset this (· this-doc _offset))
   
   (with-method ([doc_write (this-doc _write)])
-    (doc_write (format "~a ~a obj" (· this id) (· this gen)))
+    (doc_write (format "~a 0 obj" (· this id)))
     (doc_write (convert (· this data)))
-    (when (pair? chunks-to-write)
+    (when (got-chunks? chunks-to-write)
       (doc_write "stream")
       (for ([chunk (in-list chunks-to-write)])
            (doc_write chunk))
@@ -62,4 +55,4 @@
 
 (define/contract (toString this)
   (->m string?)
-  (format "~a ~a R" (· this id) (· this gen)))
+  (format "~a 0 R" (· this id)))

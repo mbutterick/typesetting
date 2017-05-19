@@ -8,9 +8,9 @@
 (define-subclass mixed% (PDFDocument [options (mhash)])
   (super-new)
 
+  (compress-streams? (hash-ref options 'compress #t))
   (field [byte-strings empty] ; list of byte chunks to push onto; simulates interface of stream.readable
          [version 1.3] ; PDF version
-         [compress (hash-ref options 'compress #t)] ; Whether streams should be compressed
          [_pageBuffer null]
          [_pageBufferStart 0]
          [_offsets null] ; The PDF object store
