@@ -1,6 +1,6 @@
 #lang pitfall/racket
 (provide (all-from-out pitfall/racket))
-(provide check-copy-equal? check-pdfkit?)
+(provide check-copy-equal? check-pdfkit? make-doc)
 
 (test-mode #t)
 
@@ -23,6 +23,14 @@
 (define-syntax-rule (check-pdfkit? this)
   (check-equal? (bytes-length (file->bytes this))
                 (bytes-length (file->bytes (this->pdfkit-control this)))))
+
+(define (make-doc ps compress? [proc (λ (doc) doc)])
+  (define doc (make-object PDFDocument (hash 'compress compress?)))
+  (send doc pipe (open-output-file ps #:exists 'replace))
+  (proc doc)
+  (send doc end)
+  (check-copy-equal? ps)
+  (check-pdfkit? ps))
 
 
 (module reader syntax/module-reader

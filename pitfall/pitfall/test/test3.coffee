@@ -1,10 +1,16 @@
 PDFDocument = require 'pdfkit'
 fs = require 'fs'
 
-# Create a new PDFDocument
+make = (doc) -> 
+    doc.text("Hello world")
+    doc.end()
+
+
 doc = new PDFDocument({compress: no})
 doc.pipe(fs.createWriteStream('test3.pdf'))
+make doc
 
-doc.text("Hello world")
+doc = new PDFDocument({compress: yes})
+doc.pipe(fs.createWriteStream('test3c.pdf'))
+make doc
 
-doc.end()

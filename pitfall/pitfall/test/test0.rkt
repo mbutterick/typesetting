@@ -1,11 +1,7 @@
 #lang pitfall/pdftest
+
 (define-runtime-path this "test0rkt.pdf")
+(make-doc this #f)
 
-(check-true
- (let ()
-   (define doc (make-object PDFDocument (hash 'compress #f)))
-   (send doc pipe (open-output-file this #:exists 'replace))
-   (send doc end)))
-
-(check-copy-equal? this)
-(check-pdfkit? this)
+(define-runtime-path that "test0crkt.pdf")
+(make-doc that #t)

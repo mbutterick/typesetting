@@ -140,7 +140,7 @@
 
 
 (define/contract (end this) ; called from source file to finish doc
-  (->m boolean?)
+  (->m void?)
   (flushPages this)
   (define _info (ref this))
   (for ([(key val) (in-hash (· this info))])
@@ -179,8 +179,7 @@
   (define this-output-port (· this output-port))
   (copy-port (open-input-bytes
               (apply bytes-append (reverse (· this byte-strings)))) this-output-port)
-  (close-output-port this-output-port)
-  #t)
+  (close-output-port this-output-port))
 
 
 

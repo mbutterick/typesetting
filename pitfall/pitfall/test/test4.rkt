@@ -1,11 +1,7 @@
 #lang pitfall/pdftest
-(define-runtime-path this "test4rkt.pdf")
 
-(check-true
- (let ([doc (make-object PDFDocument (hash 'compress #f))])
-   (send doc pipe (open-output-file this #:exists 'replace))
-
-   (send* doc
+(define (proc doc)
+  (send* doc
      [font "Courier-Bold"]
      [fontSize 10]
      [text "Hello"]
@@ -60,10 +56,11 @@
      [translate -30 30]
      [font "ZapfDingbats"]
      [fontSize 34]
-     [text "Hello"])
+     [text "Hello"]))
 
-   
-   (send doc end)))
+(define-runtime-path this "test4rkt.pdf")
+(make-doc this #f proc)
 
-(check-copy-equal? this)
-(check-pdfkit? this)
+(define-runtime-path that "test4crkt.pdf")
+(make-doc that #t proc)
+
