@@ -4,7 +4,7 @@
 
 (define-subclass object% (PDFReference document id [payload (mhash)])
   (super-new)
-  (field [chunks empty]
+  (field [byte-strings empty]
          [offset #f])
 
   (as-methods
@@ -15,38 +15,38 @@
 
 (define/contract (write this x)
   ((or/c string? isBuffer?) . ->m . void?)
-  (push-field! chunks this (if (isBuffer? x)
-                               x
-                               (bytes-append (newBuffer x) #"\n"))))
+  (push-field! byte-strings this (if (isBuffer? x)
+                                     x
+                                     (bytes-append (newBuffer x) #"\n"))))
 
-(define got-chunks? pair?)
+(define got-byte-strings? pair?)
 
 (define/contract (end this)
   (->m void?)
 
-  (define chunks-to-write
-    (let ([current-chunks (reverse (· this chunks))])
+  (define bstrs-to-write
+    (let ([current-bstrs (reverse (· this byte-strings))])
       (if (and (compress-streams?)
                (not (hash-ref (· this payload) 'Filter #f))
-               (got-chunks? current-chunks))
-          (let ([deflated-chunk (deflate (apply bytes-append current-chunks))])
+               (got-byte-strings? current-bstrs))
+          (let ([deflated-chunk (deflate (apply bytes-append current-bstrs))])
             (hash-set! (· this payload) 'Filter "FlateDecode")
             (list deflated-chunk))
-          current-chunks)))
+          current-bstrs)))
   
-  (when (got-chunks? chunks-to-write)
-    (hash-set! (· this payload) 'Length (apply + (map buffer-length chunks-to-write))))
+  (when (got-byte-strings? bstrs-to-write)
+    (hash-set! (· this payload) 'Length (apply + (map buffer-length bstrs-to-write))))
 
   (define this-doc (· this document)) 
   (set-field! offset this (· this-doc _offset))
   
-  (with-method ([doc_write (this-doc _write)])
+  (with-method ([doc_write (this-doc write)])
     (doc_write (format "~a 0 obj" (· this id)))
     (doc_write (convert (· this payload)))
-    (when (got-chunks? chunks-to-write)
+    (when (got-byte-strings? bstrs-to-write)
       (doc_write "stream")
-      (for ([chunk (in-list chunks-to-write)])
-           (doc_write chunk))
+      (for ([bstr (in-list bstrs-to-write)])
+        (doc_write bstr))
       (doc_write "\nendstream"))
     (doc_write "endobj"))
   

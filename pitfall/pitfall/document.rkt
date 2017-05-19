@@ -9,12 +9,12 @@
   (super-new)
 
   (compress-streams? (hash-ref options 'compress #t))
-  (field [byte-strings empty] ; list of byte chunks to push onto; simulates interface of stream.readable
-         [version 1.3] ; PDF version
+  
+  (field [byte-strings empty]
+         [pdf-version 1.3]
          [_pageBuffer null]
          [_pageBufferStart 0]
          [_offsets (mhash)] ; The PDF object store
-         [_ended #f]
          [_offset 0]
          [_root (ref this
                      (mhash 'Type "Catalog"
@@ -31,8 +31,8 @@
                 'CreationDate (seconds->date (if (test-mode)
                                                  0
                                                  (current-seconds)) #f))]  ; Initialize the metadata
-         [op #f] ; for `pipe`
-         [_info #f]) ; for `end`
+         [output-port #f]) ; for `pipe`
+        
 
   ;; Initialize mixins
   (· this initColor)
@@ -45,7 +45,7 @@
    addPage
    flushPages
    ref
-   _write
+   write
    addContent
    _refEnd
    pipe
@@ -55,13 +55,11 @@
     (hash-set! info key val))
 
   ;; Write the header
-  (_write this (format "%PDF-~a" version)) ;  PDF version
-  (let ([c (integer->char #xFF)])
-    (_write this (string-append "%" (string c c c c)))) ; 4 binary chars, as recommended by the spec
+  (write this (format "%PDF-~a" pdf-version)) ;  PDF version
+  (write this (string-append "%" (list->string (map integer->char (make-list 4 #xFF))))) ; 4 binary chars, as recommended by the spec
 
   ;; Add the first page
-  (unless (not (hash-ref options 'autoFirstPage #t))
-    (addPage this)))
+  (when (hash-ref options 'autoFirstPage #t) (addPage this)))
 
     
 (define/contract (addPage this [options-arg (· this options)])
@@ -91,14 +89,13 @@
 
 
 (define/contract (flushPages this)
-  (->m list?)
+  (->m void?)
   ;; this local variable exists so we're future-proof against
   ;; reentrant calls to flushPages.
-  (define buffered-pages (· this _pageBuffer))
-  (set-field! _pageBuffer this empty)
-  (increment-field! _pageBufferStart this (length buffered-pages))
-  (for/list ([p (in-list buffered-pages)])
-    (· p end)))
+  (define pb (· this _pageBuffer))
+  (for-each (λ (p) (· p end)) pb)
+  (increment-field! _pageBufferStart this (length pb))
+  (set-field! _pageBuffer this empty))
 
 
 ;; every js function argument is 'undefined' by default
@@ -111,14 +108,13 @@
   (make-object PDFReference this next-refid payload))
 
 
-(define/contract (_write this data)
-  ((or/c string? isBuffer?) . ->m . void?)
-  (define bstr (if (not (isBuffer? data))
-                   (newBuffer (string-append data "\n"))
-                   data))
+(define/contract (write this x)
+  ((or/c string? isBuffer?) . ->m . any/c)
+  (define bstr (if (not (isBuffer? x))
+                   (newBuffer (string-append x "\n"))
+                   x))
   (push-field! byte-strings this bstr)
-  (increment-field! _offset this (buffer-length bstr))
-  (void))
+  (increment-field! _offset this (buffer-length bstr)))
 
 
 (define/contract (addContent this data)
@@ -135,25 +131,22 @@
 
 (define/contract (_refEnd this ref)
   ((is-a?/c PDFReference) . ->m . void?)
-  (hash-set! (· this _offsets) (· ref id) (· ref offset))
-  (if (and (not (offsets-missing? this)) (· this _ended))
-      (· this _finalize)
-      (set-field! _ended this #f)))
+  (hash-set! (· this _offsets) (· ref id) (· ref offset)))
 
 
 (define/contract (pipe this port)
   (port? . ->m . void?)
-  (set-field! op this port))
+  (set-field! output-port this port))
 
 
-(define/contract (end this)
+(define/contract (end this) ; called from source file to finish doc
   (->m boolean?)
   (flushPages this)
-  (set-field! _info this (ref this))
+  (define _info (ref this))
   (for ([(key val) (in-hash (· this info))])
     ;; upgrade string literal to String struct
-    (hash-set! (· this _info payload) key (if (string? val) (String val) val)))
-  (· this _info end)
+    (hash-set! (· _info payload) key (if (string? val) (String val) val)))
+  (· _info end)
 
   (for ([font (in-hash-values (· this _fontFamilies))])
     (· font finalize))
@@ -161,35 +154,32 @@
   (· this _root end)
   (· this _root payload Pages end)
 
-  (cond
-    [(offsets-missing? this) (set-field! _ended this #t)]
-    [else
-     ;; generate xref
-     (define xref-offset (· this _offset))
-     (with-method ([this-write (this _write)])
-       (define this-offsets (map cdr (sort (hash->list (· this _offsets)) < #:key car))) ; sort by refid
-       (this-write "xref")
-       (this-write (format "0 ~a" (add1 (length this-offsets))))
-       (this-write "0000000000 65535 f ")
-       (for ([offset (in-list this-offsets)])
-         (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
-       (this-write "trailer") ;; trailer
-       (this-write (convert
-                    (mhash 'Size (add1 (length this-offsets))
-                           'Root (· this _root)
-                           'Info (· this _info))))
-       (this-write "startxref")
-       (this-write (number xref-offset))
-       (this-write "%%EOF"))
+  ;; generate xref
+  (define xref-offset (· this _offset))
+  (with-method ([this-write (this write)])
+    (define this-offsets (map cdr (sort (hash->list (· this _offsets)) < #:key car))) ; sort by refid
+    (this-write "xref")
+    (this-write (format "0 ~a" (add1 (length this-offsets))))
+    (this-write "0000000000 65535 f ")
+    (for ([offset (in-list this-offsets)])
+      (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
+    (this-write "trailer") ;; trailer
+    (this-write (convert
+                 (mhash 'Size (add1 (length this-offsets))
+                        'Root (· this _root)
+                        'Info _info)))
+    (this-write "startxref")
+    (this-write (number xref-offset))
+    (this-write "%%EOF"))
      
-     ;; end the stream
-     ;; in node you (@push null) which signals to the stream
-     ;; to copy to its output port
-     ;; here we'll do it manually
-     (define this-op (· this op))
-     (copy-port (open-input-bytes
-                 (apply bytes-append (reverse (· this byte-strings)))) this-op)
-     (close-output-port this-op)])
+  ;; end the stream
+  ;; in node you (@push null) which signals to the stream
+  ;; to copy to its output port
+  ;; here we'll do it manually
+  (define this-output-port (· this output-port))
+  (copy-port (open-input-bytes
+              (apply bytes-append (reverse (· this byte-strings)))) this-output-port)
+  (close-output-port this-output-port)
   #t)
 
 
