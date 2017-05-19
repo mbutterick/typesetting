@@ -2,17 +2,17 @@ PDFDocument = require 'pdfkit'
 fs = require 'fs'
 
 make = (doc) -> 
-    doc.text('Page 1')
-   .addPage()
-   .text('Page 2')
-   .addPage()
-   .text('Page 3')
-   .addPage()
-   .text('Page 4')
-   .addPage()
-   .text('Page 5')
-   .addPage()
-   .text('Page 6')
+   doc.text('Page 1')
+      .addPage()
+      .text('Page 2')
+      .addPage()
+      .text('Page 3')
+      .addPage()
+      .text('Page 4')
+      .addPage()
+      .text('Page 5')
+      .addPage()
+      .text('Page 6')
 
    doc.end()
 

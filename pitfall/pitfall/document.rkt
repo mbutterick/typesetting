@@ -13,7 +13,6 @@
   (field [byte-strings empty]
          [pdf-version 1.3]
          [_pageBuffer null]
-         [_pageBufferStart 0]
          [_offsets (mhash)] ; The PDF object store
          [_offset 0]
          [_root (ref this
@@ -52,7 +51,7 @@
    end)
 
   (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) ; if no 'info key, nothing will be copied from (hash)
-    (hash-set! info key val))
+       (hash-set! info key val))
 
   ;; Write the header
   (write this (format "%PDF-~a" pdf-version)) ;  PDF version
@@ -70,11 +69,13 @@
 
   ;; create a page object
   (set-field! page this (make-object PDFPage this options-arg))
-  (push-end-field! _pageBuffer this (· this page))
-  ;; add the page to the object store
+  (push-field! _pageBuffer this (· this page))
+  
+  ;; in Kids, store page dictionaries in correct order
+  ;; this determines order in document
   (define pages (· this _root payload Pages payload))
-  (hash-update! pages 'Kids (curry cons (· this page dictionary)))
-  (hash-update! pages 'Count add1)
+  (hash-update! pages 'Kids (λ (val) (append val (list (· this page dictionary)))))
+  (hash-set! pages 'Count (length (hash-ref pages 'Kids)))
 
   ;; reset x and y coordinates
   (set-field! x this (· this page margins left))
@@ -83,18 +84,13 @@
   ;; the top left rather than the bottom left
   (set-field! _ctm this default-ctm-value)
   (send this transform 1 0 0 -1 0 (· this page height))
-
-  #;(@emit "pageAdded") ; from eventemitter interface
   this)
 
 
 (define/contract (flushPages this)
   (->m void?)
-  ;; this local variable exists so we're future-proof against
-  ;; reentrant calls to flushPages.
   (define pb (· this _pageBuffer))
   (for-each (λ (p) (· p end)) pb)
-  (increment-field! _pageBufferStart this (length pb))
   (set-field! _pageBuffer this empty))
 
 
@@ -144,12 +140,12 @@
   (flushPages this)
   (define _info (ref this))
   (for ([(key val) (in-hash (· this info))])
-    ;; upgrade string literal to String struct
-    (hash-set! (· _info payload) key (if (string? val) (String val) val)))
+       ;; upgrade string literal to String struct
+       (hash-set! (· _info payload) key (if (string? val) (String val) val)))
   (· _info end)
 
   (for ([font (in-hash-values (· this _fontFamilies))])
-    (· font finalize))
+       (· font finalize))
 
   (· this _root end)
   (· this _root payload Pages end)
@@ -162,7 +158,7 @@
     (this-write (format "0 ~a" (add1 (length this-offsets))))
     (this-write "0000000000 65535 f ")
     (for ([offset (in-list this-offsets)])
-      (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
+         (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
     (this-write "trailer") ;; trailer
     (this-write (convert
                  (mhash 'Size (add1 (length this-offsets))
