@@ -127,7 +127,7 @@
 
 (define/contract (_refEnd this ref)
   ((is-a?/c PDFReference) . ->m . void?)
-  (report* (· ref id) (· this _offsets))
+  #;(report* (· ref id) (· this _offsets))
   (hash-set! (· this _offsets) (· ref id) (· ref offset)))
 
 
@@ -138,8 +138,8 @@
 
 (define/contract (end this) ; called from source file to finish doc
   (->m void?)
-  (report* 'start-end)
-  (report* (· this _offsets))
+  #;(report* 'start-end)
+  #;(report* (· this _offsets))
 
   (flushPages this)
   (define _info (ref this))
@@ -147,18 +147,19 @@
     ;; upgrade string literal to String struct
     (hash-set! (· _info payload) key (if (string? val) (String val) val)))
 
-  (report* (· this _offsets))
+
+  #;(report* (· this _offsets))
   (· _info end)
 
   (for ([font (in-hash-values (· this _fontFamilies))])
     (· font finalize))
 
-  (report* (· this _offsets))
+  #;(report* (· this _offsets))
 
   (· this _root end)
-  (report* (· this _offsets))
+  #;(report* (· this _offsets))
   (· this _root payload Pages end)
-  (report* (· this _offsets))
+  #;(report* (· this _offsets))
 
   ;; generate xref
   (define xref-offset (· this _offset))

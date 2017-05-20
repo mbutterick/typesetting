@@ -1,5 +1,5 @@
 #lang racket/base
-(require (for-syntax racket/base racket/syntax) racket/class sugar/list racket/list (only-in br/list push! pop!) racket/string)
+(require (for-syntax racket/base racket/syntax) racket/class sugar/list racket/list (only-in br/list push! pop!) racket/string racket/format)
 (provide (all-defined-out) push! pop!)
 
 (define-syntax (· stx)
@@ -169,3 +169,10 @@
   (define SUBCLASS-ID
     (class CLASS-ID
       (init-field INIT-FIELD ...) . EXPRS)))
+
+(define (bytes->hex bstr)
+  (map (λ (b) (string->symbol (string-append (if (< b 16)
+                                                   "x0" "x") (~r b #:base 16)))) (bytes->list bstr)))
+
+(module+ test
+  (check-equal? (bytes->hex #"PNG") '(x50 x4e x47)))

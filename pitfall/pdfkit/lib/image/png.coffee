@@ -3,10 +3,15 @@ PNG = require 'png-js'
 
 class PNGImage
   constructor: (data, @label) ->
+    console.log("raw data")
+    console.log(data.slice(0, 20))
     @image = new PNG(data)
     @width = @image.width
     @height = @image.height
     @imgData = @image.imgData
+    console.log("result from png-js")
+    console.log(@imgData.slice(0, 20))
+    console.log(@image)
     @obj = null
 
   embed: (@document) ->
@@ -43,12 +48,14 @@ class PNGImage
     # For PNG color types 0, 2 and 3, the transparency data is stored in
     # a dedicated PNG chunk.
     if @image.transparency.grayscale
+      console.log("transparency.grayscale")
       # Use Color Key Masking (spec section 4.8.5)
       # An array with N elements, where N is two times the number of color components.
       val = @image.transparency.greyscale
       @obj.data['Mask'] = [val, val]
 
     else if @image.transparency.rgb
+      console.log("transparency.rgb")
       # Use Color Key Masking (spec section 4.8.5)
       # An array with N elements, where N is two times the number of color components.
       rgb = @image.transparency.rgb
@@ -59,11 +66,13 @@ class PNGImage
       @obj.data['Mask'] = mask
 
     else if @image.transparency.indexed
+      console.log("transparency.indexed")
       # Create a transparency SMask for the image based on the data
       # in the PLTE and tRNS sections. See below for details on SMasks.
       @loadIndexedAlphaChannel()
 
     else if @image.hasAlphaChannel
+      console.log("alphachannel")
       # For PNG color types 4 and 6, the transparency data is stored as a alpha
       # channel mixed in with the main image data. Separate this data out into an
       # SMask object and store it separately in the PDF.
@@ -88,6 +97,7 @@ class PNGImage
       @obj.data['SMask'] = sMask
 
     # add the actual image data
+    console.log(@imgData)
     @obj.end @imgData
 
     # free memory

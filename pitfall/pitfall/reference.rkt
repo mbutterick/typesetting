@@ -26,11 +26,11 @@
   (when chunk
     (send this write chunk))
 
-  (report* 'end! (· this id))
+  #;(report* 'end! (· this id))
   (define bstrs-to-write
     (let ([current-bstrs (reverse (· this byte-strings))])
-      (if (and (or (compress-streams?)
-               (equal? (hash-ref (· this payload) 'Filter #f) "FlateDecode"))
+      (if (and (compress-streams?)
+               (not (hash-ref (· this payload) 'Filter #f))
                (got-byte-strings? current-bstrs))
           (let ([deflated-chunk (deflate (apply bytes-append current-bstrs))])
             (hash-set! (· this payload) 'Filter "FlateDecode")
@@ -53,7 +53,7 @@
       (doc_write "\nendstream"))
     (doc_write "endobj"))
 
-  (report (· this id))
+  #;(report (· this id))
   (send this-doc _refEnd this))
 
 
