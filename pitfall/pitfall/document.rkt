@@ -52,7 +52,7 @@
    end)
 
   (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) ; if no 'info key, nothing will be copied from (hash)
-       (hash-set! info key val))
+    (hash-set! info key val))
 
   ;; Write the header
   (write this (format "%PDF-~a" pdf-version)) ;  PDF version
@@ -127,10 +127,8 @@
 
 (define/contract (_refEnd this ref)
   ((is-a?/c PDFReference) . ->m . void?)
-  (hash-set! (· this _offsets) (· ref id) (· ref offset))
-  (if (and (not (offsets-missing? this)) (· this _ended))
-      (· this _finalize)
-      (set-field! _ended this #f)))
+  (report* (· ref id) (· this _offsets))
+  (hash-set! (· this _offsets) (· ref id) (· ref offset)))
 
 
 (define/contract (pipe this port)
@@ -140,48 +138,54 @@
 
 (define/contract (end this) ; called from source file to finish doc
   (->m void?)
+  (report* 'start-end)
+  (report* (· this _offsets))
+
   (flushPages this)
   (define _info (ref this))
   (for ([(key val) (in-hash (· this info))])
-       ;; upgrade string literal to String struct
-       (hash-set! (· _info payload) key (if (string? val) (String val) val)))
+    ;; upgrade string literal to String struct
+    (hash-set! (· _info payload) key (if (string? val) (String val) val)))
+
+  (report* (· this _offsets))
   (· _info end)
 
   (for ([font (in-hash-values (· this _fontFamilies))])
-       (· font finalize))
+    (· font finalize))
+
+  (report* (· this _offsets))
 
   (· this _root end)
+  (report* (· this _offsets))
   (· this _root payload Pages end)
+  (report* (· this _offsets))
 
-  (cond
-    [(offsets-missing? this) (set-field! _ended this #t)]
-    [else
-     ;; generate xref
-     (define xref-offset (· this _offset))
-     (with-method ([this-write (this write)])
-       (define this-offsets (map cdr (sort (hash->list (· this _offsets)) < #:key car))) ; sort by refid
-       (this-write "xref")
-       (this-write (format "0 ~a" (add1 (length this-offsets))))
-       (this-write "0000000000 65535 f ")
-       (for ([offset (in-list this-offsets)])
-            (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
-       (this-write "trailer") ;; trailer
-       (this-write (convert
-                    (mhash 'Size (add1 (length this-offsets))
-                           'Root (· this _root)
-                           'Info _info)))
-       (this-write "startxref")
-       (this-write (number xref-offset))
-       (this-write "%%EOF"))
+  ;; generate xref
+  (define xref-offset (· this _offset))
+  (with-method ([this-write (this write)])
+    (define this-offsets (map cdr (sort (hash->list (· this _offsets)) < #:key car))) ; sort by refid
+    (this-write "xref")
+    (this-write (format "0 ~a" (add1 (length this-offsets))))
+    (this-write "0000000000 65535 f ")
+    (for ([offset (in-list this-offsets)])
+      (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
+    (this-write "trailer") ;; trailer
+    (this-write (convert
+                 (mhash 'Size (add1 (length this-offsets))
+                        'Root (· this _root)
+                        'Info _info)))
+    (this-write "startxref")
+    (this-write (number xref-offset))
+    (this-write "%%EOF"))
      
-     ;; end the stream
-     ;; in node you (@push null) which signals to the stream
-     ;; to copy to its output port
-     ;; here we'll do it manually
-     (define this-output-port (· this output-port))
-     (copy-port (open-input-bytes
-                 (apply bytes-append (reverse (· this byte-strings)))) this-output-port)
-     (close-output-port this-output-port)]))
+  ;; end the stream
+  ;; in node you (@push null) which signals to the stream
+  ;; to copy to its output port
+  ;; here we'll do it manually
+  (define this-output-port (· this output-port))
+  (copy-port (open-input-bytes
+              (apply bytes-append (reverse (· this byte-strings)))) this-output-port)
+  (close-output-port this-output-port))
 
 
 

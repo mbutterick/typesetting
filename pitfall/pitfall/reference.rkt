@@ -21,13 +21,16 @@
 
 (define got-byte-strings? pair?)
 
-(define/contract (end this)
-  (->m void?)
+(define/contract (end this [chunk #f])
+  (() ((or/c string? isBuffer?)) . ->*m . void?)
+  (when chunk
+    (send this write chunk))
 
+  (report* 'end! (· this id))
   (define bstrs-to-write
     (let ([current-bstrs (reverse (· this byte-strings))])
-      (if (and (compress-streams?)
-               (not (hash-ref (· this payload) 'Filter #f))
+      (if (and (or (compress-streams?)
+               (equal? (hash-ref (· this payload) 'Filter #f) "FlateDecode"))
                (got-byte-strings? current-bstrs))
           (let ([deflated-chunk (deflate (apply bytes-append current-bstrs))])
             (hash-set! (· this payload) 'Filter "FlateDecode")
@@ -49,7 +52,8 @@
         (doc_write bstr))
       (doc_write "\nendstream"))
     (doc_write "endobj"))
-  
+
+  (report (· this id))
   (send this-doc _refEnd this))
 
 

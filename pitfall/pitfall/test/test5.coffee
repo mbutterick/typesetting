@@ -6,16 +6,15 @@ make = (doc) ->
     doc.font('Times-Italic')
        .fontSize(25)
        .text('Some text with an embedded font!', 100, 100, lineBreak: no)
-       .image('assets/test.png', 100, 160, width: 412)
-       .image('assets/test.jpeg', 190, 400, height: 300)
-       
+       .image('death.png', 100, 160, width: 412)
+
     doc.end()
 
 doc = new PDFDocument({compress: no})
 doc.pipe(fs.createWriteStream('test5.pdf'))
 make doc
 
-doc = new PDFDocument({compress: yes})
-doc.pipe(fs.createWriteStream('test5c.pdf'))
-make doc
+#doc = new PDFDocument({compress: yes})
+#doc.pipe(fs.createWriteStream('test5c.pdf'))
+#make doc
 

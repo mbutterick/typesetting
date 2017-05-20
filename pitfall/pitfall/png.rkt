@@ -13,7 +13,8 @@
          [document #f]) ; for `embed`
 
   (as-methods
-   embed))
+   embed
+   finalize))
 
 
 (define png-grayscale 1)
@@ -27,7 +28,7 @@
                 (send (· this document) ref
                       (mhash 'Type "XObject"
                              'Subtype "Image"
-                             'BitsPerComponent: (· this image get-depth)
+                             'BitsPerComponent (· this image get-depth)
                              'Width (· this width)
                              'Height (· this height)
                              'Filter "FlateDecode")))
@@ -35,9 +36,7 @@
     (define params (mhash))
     (unless (· this image has-alpha-channel?)
       (set! params (send (· this document) ref (mhash 'Predictor 15
-                                                      'Colors (· this image get-depth)
-                                                      ;; or maybe
-                                                      #;(if (· this image is-color?)
+                                                      'Colors (if (· this image is-color?)
                                                             png-color
                                                             png-grayscale)
                                                       'BitsPerComponent (· this image get-depth)
@@ -47,7 +46,13 @@
     (hash-set! (· this obj payload) 'DecodeParms params)
     (send params end)
 
+    (send this finalize)
+
     #;(error 'stop-in-png:embed)))
+
+(define (finalize this)
+  ;; add the actual image data
+  (send (· this obj) end (· this imgData)))
 
 #;(module+ test
     (define data (file->bytes "test/assets/test.png"))

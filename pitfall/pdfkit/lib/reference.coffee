@@ -21,12 +21,12 @@ class PDFReference extends stream.Writable
     @deflate = zlib.createDeflate()
 
     @deflate.on 'data', (chunk) =>
-      console.log("got data event for ref " + @id + " from " + this.toString())
+      # console.log("got data event for ref " + @id + " from " + this.toString())
       @chunks.push chunk
       @data.Length += chunk.length
       
     @deflate.on 'end', () => 
-      console.log("got end event for ref " + @id + " from " + this.toString())
+      #console.log("got end event for ref " + @id + " from " + this.toString())
       @finalize()
     
   _write: (chunk, encoding, callback) ->
@@ -49,7 +49,7 @@ class PDFReference extends stream.Writable
     super
     
     console.log("end! " + @id)
-    console.log(@chunks)
+    # console.log(@chunks)
     if @deflate
       @deflate.end()
     else
@@ -58,8 +58,8 @@ class PDFReference extends stream.Writable
   finalize: =>
 
 
-    console.log("finalize! " + @id)
-    console.log(@chunks)
+    #console.log("finalize! " + @id)
+    #console.log(@chunks)
 
     @offset = @document._offset
     
@@ -75,6 +75,7 @@ class PDFReference extends stream.Writable
       @document._write '\nendstream'
       
     @document._write 'endobj'
+    console.log(@id)
     @document._refEnd(this)
     
   toString: ->
