@@ -1,11 +1,13 @@
 #lang pitfall/pdftest
 
+(define-runtime-path death "death.png")
+
 (define (proc doc)
   (send* doc
   [font "Times-Italic"]
   [fontSize 25]
   [text "Some fantastic text!" 100 100 (hash 'lineBreak #f)]
-  [image "death.png" 100 160 (hash 'width 412)]))
+  [image death 100 160 (hash 'width 412)]))
 
 (define-runtime-path this "test5rkt.pdf")
 (make-doc this #f proc #:test #t)
