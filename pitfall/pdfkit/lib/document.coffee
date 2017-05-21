@@ -145,11 +145,12 @@ class PDFDocument extends stream.Readable
     return this
 
   _refEnd: (ref) ->
-    console.log(ref.id)
-    console.log(@_offsets)
+    #console.log(ref.id)
+    #console.log(@_offsets)
     @_offsets[ref.id - 1] = ref.offset
     if --@_waiting is 0 and @_ended
-      console.log("finalize") ; @_finalize()
+      #console.log("finalize") ; 
+      @_finalize()
       @_ended = false
 
   write: (filename, fn) ->
@@ -173,8 +174,8 @@ class PDFDocument extends stream.Readable
     '
 
   end: ->
-    console.log("start document end")
-    console.log(@_offsets)
+    #console.log("start document end")
+    #console.log(@_offsets)
     @flushPages()
     @_info = @ref()
     for key, val of @info
@@ -182,25 +183,26 @@ class PDFDocument extends stream.Readable
         val = new String val
       @_info.data[key] = val
 
-    console.log(@_offsets)
+    #console.log(@_offsets)
     @_info.end()
 
     for name, font of @_fontFamilies
       font.finalize()
 
-    console.log(@_offsets)
+    #console.log(@_offsets)
 
     @_root.end()
-    console.log(@_offsets)
+    #console.log(@_offsets)
 
     @_root.data.Pages.end()
 
-    console.log(@_offsets)
+    #console.log(@_offsets)
     if @_waiting is 0
-      console.log(@_offsets.length)
-      console.log("finalize2") ; @_finalize()
+      #console.log(@_offsets.length)
+      #console.log("finalize2") ; @_finalize()
     else
-      console.log("ended is true") ; @_ended = true
+      #console.log("ended is true") ; 
+      @_ended = true
 
   _finalize: (fn) ->
     # generate xref

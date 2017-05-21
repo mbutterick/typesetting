@@ -48,7 +48,7 @@ class PDFReference extends stream.Writable
   end: (chunk) ->
     super
     
-    console.log("end! " + @id)
+    #console.log("end! " + @id)
     # console.log(@chunks)
     if @deflate
       @deflate.end()
@@ -75,7 +75,7 @@ class PDFReference extends stream.Writable
       @document._write '\nendstream'
       
     @document._write 'endobj'
-    console.log(@id)
+    #console.log(@id)
     @document._refEnd(this)
     
   toString: ->

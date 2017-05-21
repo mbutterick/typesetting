@@ -3,15 +3,15 @@ PNG = require 'png-js'
 
 class PNGImage
   constructor: (data, @label) ->
-    console.log("raw data")
-    console.log(data.slice(0, 20))
+    #console.log("raw data")
+    #console.log(data.slice(0, 20))
     @image = new PNG(data)
     @width = @image.width
     @height = @image.height
     @imgData = @image.imgData
-    console.log("result from png-js")
-    console.log(@imgData.slice(0, 20))
-    console.log(@image)
+    #console.log("result from png-js")
+    #console.log(@imgData.slice(0, 20))
+    #console.log(@image)
     @obj = null
 
   embed: (@document) ->
@@ -47,7 +47,7 @@ class PNGImage
 
     # For PNG color types 0, 2 and 3, the transparency data is stored in
     # a dedicated PNG chunk.
-    if @image.transparency.grayscale
+    if @image.transparency.grayscale  
       console.log("transparency.grayscale")
       # Use Color Key Masking (spec section 4.8.5)
       # An array with N elements, where N is two times the number of color components.
@@ -72,7 +72,7 @@ class PNGImage
       @loadIndexedAlphaChannel()
 
     else if @image.hasAlphaChannel
-      console.log("alphachannel")
+      console.log("got alphachannel " + @image.colorType + " in png.coffee")
       # For PNG color types 4 and 6, the transparency data is stored as a alpha
       # channel mixed in with the main image data. Separate this data out into an
       # SMask object and store it separately in the PDF.
@@ -97,7 +97,7 @@ class PNGImage
       @obj.data['SMask'] = sMask
 
     # add the actual image data
-    console.log(@imgData)
+    #console.log(@imgData)
     @obj.end @imgData
 
     # free memory
@@ -105,6 +105,7 @@ class PNGImage
     @imgData = null
 
   splitAlphaChannel: ->
+    console.log("start splitAlphaChannel in png.coffee")
     @image.decodePixels (pixels) =>
       colorByteSize = @image.colors * @image.bits / 8
       pixelCount = @width * @height

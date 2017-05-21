@@ -74,6 +74,11 @@
     [(_ field o expr)
      #'(begin (set-field! field o (+ (get-field field o) expr)) (get-field field o))]))
 
+(define-syntax (increment! stx)
+  (syntax-case stx ()
+    [(_ id)  #'(increment! id 1)]
+    [(_ id expr)
+     #'(begin (set! id (+ id expr)) id)]))
 
 
 (module+ test
@@ -172,7 +177,7 @@
 
 (define (bytes->hex bstr)
   (map (λ (b) (string->symbol (string-append (if (< b 16)
-                                                   "x0" "x") (~r b #:base 16)))) (bytes->list bstr)))
+                                                 "x0" "x") (~r b #:base 16)))) (bytes->list bstr)))
 
 (module+ test
   (check-equal? (bytes->hex #"PNG") '(x50 x4e x47)))
