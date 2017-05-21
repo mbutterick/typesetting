@@ -5,8 +5,8 @@ make = (doc) ->
     # Set the font, draw some text, and embed an image
     doc.font('Times-Italic')
        .fontSize(25)
-       .text('Some fantastic text!', 100, 100, lineBreak: no)
-       .image('assets/death.png', 100, 160, width: 412)
+       .text('Here comes a JPEG!', 100, 100, lineBreak: no)
+       .image('assets/test.jpeg', 100, 160, width: 412)
 
     doc.end()
 

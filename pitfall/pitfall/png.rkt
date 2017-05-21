@@ -9,19 +9,17 @@
          [width (· image width)]
          [height (· image height)]
          [imgData (· image imgData)]
-         [obj #f]
-         [document #f])
+         [obj #f])
 
   (as-methods
    embed))
 
 (define/contract (embed this doc-in)
   (object? . ->m . void?)
-  (set-field! document this doc-in)
   
   (unless (· this obj)
     (set-field! obj this
-                (send (· this document) ref
+                (send doc-in ref
                       (mhash 'Type "XObject"
                              'Subtype "Image"
                              'BitsPerComponent (· this image bits)
@@ -30,7 +28,7 @@
                              'Filter "FlateDecode")))
 
     (unless (· this image hasAlphaChannel)
-      (define params (send (· this document) ref (mhash 'Predictor 15
+      (define params (send doc-in ref (mhash 'Predictor 15
                                                         'Colors (· this image colors)
                                                         'BitsPerComponent (· this image bits)
                                                         'Columns (· this width))))
@@ -40,7 +38,7 @@
     (cond
       [(hash-ref (· this image) 'palette #f)
        ;; embed the color palette in the PDF as an object stream
-       (define palette-ref (· this document ref))
+       (define palette-ref (· doc-in ref))
        (send palette-ref end (· this image palette))
 
        ;; build the color space array for the image

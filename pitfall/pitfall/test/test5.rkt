@@ -1,6 +1,6 @@
 #lang pitfall/pdftest
 
-(define-runtime-path death "death.png")
+(define-runtime-path death "assets/death.png")
 
 (define (proc doc)
   (send* doc

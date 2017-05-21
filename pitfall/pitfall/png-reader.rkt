@@ -47,7 +47,8 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
          (loop)]))))
 
 (define (read-32bit-integer)
-  (integer-bytes->integer (read-bytes 4) #t #t))
+  (define signed #f) (define big-endian #t)
+  (integer-bytes->integer (read-bytes 4) signed big-endian))
 
 (module+ test
   (require rackunit)

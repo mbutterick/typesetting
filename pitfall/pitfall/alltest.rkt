@@ -7,5 +7,6 @@
            pitfall/test/test4
            pitfall/test/test5
            pitfall/test/test6
+           pitfall/test/test7
            pitfall/page-test
            (submod pitfall/zlib test)))
