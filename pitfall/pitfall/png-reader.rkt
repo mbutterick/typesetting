@@ -87,11 +87,11 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
   (define pos 0)
   (define c 0)
 
-  (report* width height)
+  #;(report* width height)
   (parameterize ([current-input-port (open-input-bytes data)])
     (for/fold ([_ #f]) ([row (in-naturals)]
                         #:break (eof-object? (peek-byte)))
-      (report row)
+      #;(report row)
       (define b (read-byte))
       (case b
         [(0) ; none
@@ -165,7 +165,7 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                
            )]
         [else (error 'invalid-filter-algorithm (format "~a" b))])))
-  (report (bytes-length pixels))
+  #;(report (bytes-length pixels))
   (fn pixels))
 
 

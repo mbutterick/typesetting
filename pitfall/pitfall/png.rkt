@@ -93,25 +93,28 @@
   (define (pixel-proc pixels)
     (define colorByteSize (* (· this image colors) (/ (· this image bits) 8)))
     (define pixelCount (* (· this width) (· this height)))
-    (define imgData (make-bytes (* pixelCount colorByteSize)))
-    (define alphaChannel (make-bytes pixelCount))
+    #;(define imgData (make-bytes (* pixelCount colorByteSize)))
+    #;(define alphaChannel (make-bytes pixelCount))
 
-    (define i 0)
-    (define p 0)
-    (define a 0)
     (define len (bytes-length pixels))
 
-    (for ([idx (in-naturals)]
-          #:when (< i len))
-      (bytes-set! imgData p (bytes-ref pixels i))
-      (increment! p) (increment! i)
-      (bytes-set! imgData p (bytes-ref pixels i))
-      (increment! p) (increment! i)
-      (bytes-set! imgData p (bytes-ref pixels i))
-      (increment! p) (increment! i)
-      (bytes-set! alphaChannel a (bytes-ref pixels i))
-      (increment! a) (increment! i))
+    #;(report* len (* pixelCount colorByteSize) pixelCount)
+    (define-values (imgBytes alphaBytes)
+      (for/fold ([img-bytes empty]
+                 [alpha-bytes empty])
+                ([b (in-bytes pixels)]
+                 [i (in-naturals)])
+        (if (= (modulo i 4) 3)
+            (values img-bytes (cons b alpha-bytes))
+            (values (cons b img-bytes) alpha-bytes))))
 
+    (define imgData (apply bytes (reverse imgBytes)))
+    (define alphaChannel (apply bytes (reverse alphaBytes)))
+
+    #;(report* (bytes-length imgData) (bytes-length alphaChannel))
+
+    #;(error 'in-pixel-proc)
+    
     (define done 0)
     (set-field! imgData this (deflate imgData))
     (increment! done)
@@ -121,7 +124,8 @@
     (increment! done)
     (when (= done 2) (· this finalize))
       
-
+    (report* done)
+    (void)
 
     )
   (decodePixels (· this imgData) (· this pixelBitlength) (· this width) (· this height) pixel-proc))
