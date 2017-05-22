@@ -86,6 +86,16 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                               0
                               (bytes-ref pixels (- c pixelBytes))))
 
+  (define (upper-byte row col i)
+    (if (zero? row)
+        row
+        (bytes-ref pixels
+                   (+ (* (sub1 row) scanlineLength)
+                      (* col pixelBytes)
+                      (modulo i pixelBytes)))))
+
+  (define (get-col i) ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
+
   (parameterize ([current-input-port (open-input-bytes (inflate imgData))])
     (for/fold ([c 0]) ([row (in-naturals)]
                        #:break (eof-object? (peek-byte)))
@@ -107,42 +117,23 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
          (for/fold ([c c])
                    ([i (in-range scanlineLength)]
                     [byte (in-port read-byte)])
-           (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
-           (define upper (if (zero? row)
-                             row
-                             (bytes-ref pixels
-                                        (+ (* (sub1 row) scanlineLength)
-                                           (* col pixelBytes)
-                                           (modulo i pixelBytes)))))
-           (bytes-set! pixels c (modulo (+ upper byte) 256))
+           (bytes-set! pixels c (modulo (+ (upper-byte row (get-col i) i) byte) 256))
            (add1 c))]
         [(3) ; average
          (for/fold ([c c])
                    ([i (in-range scanlineLength)]
                     [byte (in-port read-byte)])
-           (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
-           (define left (left-byte i c))
-           (define upper (if (zero? row)
-                             row
-                             (bytes-ref pixels
-                                        (+ (* (sub1 row) scanlineLength)
-                                           (* col pixelBytes)
-                                           (modulo i pixelBytes)))))
-           (bytes-set! pixels c (modulo (+ byte (floor (/ (+ left upper) 2))) 256))
+           (bytes-set! pixels c (modulo (+ byte (floor (/ (+ (left-byte i c) (upper-byte row (get-col i) i)) 2))) 256))
            (add1 c))]
         [(4) ; paeth
          (for/fold ([c c])
                    ([i (in-range scanlineLength)]
                     [byte (in-port read-byte)])
-           (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
-           (define left (left-byte i c))
+           (define col (get-col i))
            (match-define (list upper upperLeft)
              (cond
                [(zero? row) (list 0 0)]
-               [else (define upper (bytes-ref pixels
-                                              (+ (* (sub1 row) scanlineLength)
-                                                 (* col pixelBytes)
-                                                 (modulo i pixelBytes))))
+               [else (define upper (upper-byte row col i))
                      (define upperLeft (if (zero? col)
                                            col
                                            (bytes-ref pixels
@@ -151,10 +142,10 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                                                          (modulo i pixelBytes)))))
                      (list upper upperLeft)]))
 
+           (define left (left-byte i c))
            (define p (+ left upper (- upperLeft)))
-           (define pa (abs (- p left)))
-           (define pb (abs (- p upper)))
-           (define pc (abs (- p upperLeft)))
+           (match-define (list pa pb pc)
+             (map (λ (x) (abs (- p x))) (list left upper upperLeft)))
 
            (define paeth (cond
                            [((pa . <= . pb) . and . (pa . <= . pc)) left]
@@ -162,9 +153,7 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                            [else upperLeft]))
            
            (bytes-set! pixels c (modulo (+ byte paeth) 256))
-           (add1 c)
-               
-           )]
+           (add1 c))]
         [else (error 'invalid-png-filter-algorithm )])))
   pixels)
 
