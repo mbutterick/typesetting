@@ -79,7 +79,6 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
   (bytes? number? number? number? . -> . any/c)
   (define pixelBytes (/ pixelBitLength 8))
   (define scanlineLength (* pixelBytes width))
-
   (define pixels (make-bytes (* scanlineLength height)))
 
   (define (left-byte i c) (if (< i pixelBytes)
@@ -97,8 +96,9 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
   (define (get-col i) ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
 
   (parameterize ([current-input-port (open-input-bytes (inflate imgData))])
-    (for/fold ([c 0]) ([row (in-naturals)]
-                       #:break (eof-object? (peek-byte)))
+    (for/fold ([c 0])
+              ([row (in-naturals)]
+               #:break (eof-object? (peek-byte)))
       (case (read-byte)
         [(0) ; none
          (for/fold ([c c])
@@ -143,13 +143,15 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                      (list upper upperLeft)]))
 
            (define left (left-byte i c))
-           (define p (+ left upper (- upperLeft)))
+           
            (match-define (list pa pb pc)
-             (map (λ (x) (abs (- p x))) (list left upper upperLeft)))
-
+             (for/list ([x (in-list (list left upper upperLeft))])
+               (define p (+ left upper (- upperLeft)))
+               (abs (- p x))))
+           
            (define paeth (cond
-                           [((pa . <= . pb) . and . (pa . <= . pc)) left]
-                           [(pb . <= . pc) upper]
+                           [(and (<= pa pb) (<= pa pc)) left]
+                           [(<= pb pc) upper]
                            [else upperLeft]))
            
            (bytes-set! pixels c (modulo (+ byte paeth) 256))
