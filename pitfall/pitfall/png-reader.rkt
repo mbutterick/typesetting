@@ -81,27 +81,27 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
   (define scanlineLength (* pixelBytes width))
 
   (define pixels (make-bytes (* scanlineLength height)))
-  (define c 0)
 
   (parameterize ([current-input-port (open-input-bytes (inflate imgData))])
-    (for ([row (in-naturals)]
-          #:break (eof-object? (peek-byte)))
+    (for/fold ([c 0]) ([row (in-naturals)]
+                       #:break (eof-object? (peek-byte)))
       (case (read-byte)
         [(0) ; none
-         (for ([i (in-range scanlineLength)])
+         (for/fold ([c c])
+                   ([i (in-range scanlineLength)])
            (define b (read-byte))
            (bytes-set! pixels c b)
-           (increment! c))]
+           (add1 c))]
         [(1) ; sub
-         (for ([i (in-range scanlineLength)])
+         (for/fold ([c c]) ([i (in-range scanlineLength)])
            (define byte (read-byte))
            (define left (if (< i pixelBytes)
                             0
                             (bytes-ref pixels (- c pixelBytes))))
            (bytes-set! pixels c (modulo (+ byte left) 256))
-           (increment! c))]
+           (add1 c))]
         [(2) ; up
-         (for ([i (in-range scanlineLength)])
+         (for/fold ([c c]) ([i (in-range scanlineLength)])
            (define byte (read-byte))
            (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
            (define upper (if (zero? row)
@@ -111,9 +111,9 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                                            (* col pixelBytes)
                                            (modulo i pixelBytes)))))
            (bytes-set! pixels c (modulo (+ upper byte) 256))
-           (increment! c))]
+           (add1 c))]
         [(3) ; average
-         (for ([i (in-range scanlineLength)])
+         (for/fold ([c c]) ([i (in-range scanlineLength)])
            (define byte (read-byte))
            (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
            (define left (if (< i pixelBytes)
@@ -126,9 +126,9 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                                            (* col pixelBytes)
                                            (modulo i pixelBytes)))))
            (bytes-set! pixels c (modulo (+ byte (floor (/ (+ left upper) 2))) 256))
-           (increment! c))]
+           (add1 c))]
         [(4) ; paeth
-         (for ([i (in-range scanlineLength)])
+         (for/fold ([c c]) ([i (in-range scanlineLength)])
            (define byte (read-byte))
            (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
            (define left (if (< i pixelBytes)
@@ -160,7 +160,7 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                            [else upperLeft]))
            
            (bytes-set! pixels c (modulo (+ byte paeth) 256))
-           (increment! c)
+           (add1 c)
                
            )]
         [else (error 'invalid-png-filter-algorithm )])))
