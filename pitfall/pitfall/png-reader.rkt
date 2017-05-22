@@ -82,27 +82,31 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
 
   (define pixels (make-bytes (* scanlineLength height)))
 
+  (define (left-byte i c) (if (< i pixelBytes)
+                              0
+                              (bytes-ref pixels (- c pixelBytes))))
+
   (parameterize ([current-input-port (open-input-bytes (inflate imgData))])
     (for/fold ([c 0]) ([row (in-naturals)]
                        #:break (eof-object? (peek-byte)))
       (case (read-byte)
         [(0) ; none
          (for/fold ([c c])
-                   ([i (in-range scanlineLength)])
-           (define b (read-byte))
-           (bytes-set! pixels c b)
+                   ([i (in-range scanlineLength)]
+                    [byte (in-port read-byte)])
+           (bytes-set! pixels c byte)
            (add1 c))]
         [(1) ; sub
-         (for/fold ([c c]) ([i (in-range scanlineLength)])
-           (define byte (read-byte))
-           (define left (if (< i pixelBytes)
-                            0
-                            (bytes-ref pixels (- c pixelBytes))))
+         (for/fold ([c c])
+                   ([i (in-range scanlineLength)]
+                    [byte (in-port read-byte)])
+           (define left (left-byte i c))
            (bytes-set! pixels c (modulo (+ byte left) 256))
            (add1 c))]
         [(2) ; up
-         (for/fold ([c c]) ([i (in-range scanlineLength)])
-           (define byte (read-byte))
+         (for/fold ([c c])
+                   ([i (in-range scanlineLength)]
+                    [byte (in-port read-byte)])
            (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
            (define upper (if (zero? row)
                              row
@@ -113,12 +117,11 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
            (bytes-set! pixels c (modulo (+ upper byte) 256))
            (add1 c))]
         [(3) ; average
-         (for/fold ([c c]) ([i (in-range scanlineLength)])
-           (define byte (read-byte))
+         (for/fold ([c c])
+                   ([i (in-range scanlineLength)]
+                    [byte (in-port read-byte)])
            (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
-           (define left (if (< i pixelBytes)
-                            0
-                            (bytes-ref pixels (- c pixelBytes))))
+           (define left (left-byte i c))
            (define upper (if (zero? row)
                              row
                              (bytes-ref pixels
@@ -128,12 +131,11 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
            (bytes-set! pixels c (modulo (+ byte (floor (/ (+ left upper) 2))) 256))
            (add1 c))]
         [(4) ; paeth
-         (for/fold ([c c]) ([i (in-range scanlineLength)])
-           (define byte (read-byte))
+         (for/fold ([c c])
+                   ([i (in-range scanlineLength)]
+                    [byte (in-port read-byte)])
            (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
-           (define left (if (< i pixelBytes)
-                            0
-                            (bytes-ref pixels (- c pixelBytes))))
+           (define left (left-byte i c))
            (match-define (list upper upperLeft)
              (cond
                [(zero? row) (list 0 0)]
