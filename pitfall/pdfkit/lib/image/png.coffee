@@ -107,6 +107,10 @@ class PNGImage
   splitAlphaChannel: ->
     console.log("start splitAlphaChannel in png.coffee")
     @image.decodePixels (pixels) =>
+      console.log("decoded pixels length=" + pixels.length);
+      console.log("decoded pixels=");
+      console.log(pixels);
+
       colorByteSize = @image.colors * @image.bits / 8
       pixelCount = @width * @height
       imgData = new Buffer(pixelCount * colorByteSize)
@@ -120,13 +124,28 @@ class PNGImage
         imgData[p++] = pixels[i++]
         alphaChannel[a++] = pixels[i++]
 
+      console.log("uncompressed imgData length=" + imgData.length)
+      console.log("uncompressed imgData=")
+      console.log(imgData)
+
+      console.log("uncompressed alphaChannel length=" + alphaChannel.length)
+      console.log("uncompressed alphaChannel=")
+      console.log(alphaChannel)
+
       done = 0
       zlib.deflate imgData, (err, @imgData) =>
         throw err if err
+        console.log("compressed @imgData length=" + @imgData.length)
+        console.log("compressed @imgData=")
+        console.log(@imgData)
+
         @finalize() if ++done is 2
 
       zlib.deflate alphaChannel, (err, @alphaChannel) =>
         throw err if err
+        console.log("compressed @alphaChannel length=" + @alphaChannel.length)
+        console.log("compressed @alphaChannel=")
+        console.log(@alphaChannel)
         @finalize() if ++done is 2
 
   loadIndexedAlphaChannel: (fn) ->

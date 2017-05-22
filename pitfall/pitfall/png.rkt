@@ -77,7 +77,7 @@
             (mhash 'Type "XObject"
                    'Subtype "Image"
                    'Height (· this height)
-                   'With (· this width)
+                   'Width (· this width)
                    'BitsPerComponent 8
                    'Filter "FlateDecode"
                    'ColorSpace "DeviceGray"
@@ -111,25 +111,38 @@
     (define imgData (apply bytes (reverse imgBytes)))
     (define alphaChannel (apply bytes (reverse alphaBytes)))
 
+    
+    (report (bytes-length imgData) 'uncompressed-imgdata-length)
+    (report (bytes->hex (subbytes imgData 0 20)) 'uncompressed-imgdata)
+
+    (report (bytes-length alphaChannel) 'uncompressed-alphaChannel-length)
+    (report (bytes->hex (subbytes alphaChannel 0 20)) 'uncompressed-alphaChannel)
+  
     #;(report* (bytes-length imgData) (bytes-length alphaChannel))
 
     #;(error 'in-pixel-proc)
-    
-    (define done 0)
-    (set-field! imgData this (deflate imgData))
-    (increment! done)
-    (when (= done 2) (· this finalize))
 
-    (set-field! alphaChannel this (deflate alphaChannel))
-    (increment! done)
-    (when (= done 2) (· this finalize))
+    (define imgDataCompressed (deflate imgData))
+    (define alphaChannelCompressed (deflate alphaChannel))
+
+    
+    (report (bytes-length alphaChannelCompressed) 'alphaChannelCompressed-length)
+    (report (bytes->hex (subbytes alphaChannelCompressed 0 20)) 'alphaChannelCompressed)
+
+    (report (bytes-length imgDataCompressed) 'imgDataCompressed-length)
+    (report (bytes->hex (subbytes imgDataCompressed 0 20)) 'imgDataCompressed)
+
+    
+    (set-field! imgData this imgDataCompressed)
+    (set-field! alphaChannel this alphaChannelCompressed)
+    (· this finalize)
       
-    (report* done)
+    #;(report* 'done)
     (void)
 
     )
   (decodePixels (· this imgData) (· this pixelBitlength) (· this width) (· this height) pixel-proc))
 
-(module+ test
-  (define pic (make-object PNG (file->bytes "test/assets/test.png")))
-  (splitAlphaChannel pic))
+#;(module+ test
+    (define pic (make-object PNG (file->bytes "test/assets/test.png")))
+    (splitAlphaChannel pic))

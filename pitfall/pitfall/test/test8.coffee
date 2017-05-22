@@ -14,7 +14,7 @@ doc = new PDFDocument({compress: no})
 doc.pipe(fs.createWriteStream('test8.pdf'))
 make doc
 
-doc = new PDFDocument({compress: yes})
-doc.pipe(fs.createWriteStream('test8c.pdf'))
-make doc
+#doc = new PDFDocument({compress: yes})
+#doc.pipe(fs.createWriteStream('test8c.pdf'))
+#make doc
 

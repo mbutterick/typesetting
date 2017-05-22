@@ -165,7 +165,8 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                
            )]
         [else (error 'invalid-filter-algorithm (format "~a" b))])))
-  #;(report (bytes-length pixels))
+  (report (bytes-length pixels) 'decoded-pixels-length)
+  (report (bytes->hex (subbytes pixels 0 20)))
   (fn pixels))
 
 
