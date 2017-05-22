@@ -104,9 +104,13 @@ class PNGImage
     @image = null
     @imgData = null
 
+  hitme = 0
+
   splitAlphaChannel: ->
     console.log("start splitAlphaChannel in png.coffee")
     @image.decodePixels (pixels) =>
+      console.log("hitme=" + hitme++)
+      console.log("in png.coffee")
       console.log("decoded pixels length=" + pixels.length);
       console.log("decoded pixels=");
       console.log(pixels);
@@ -132,6 +136,12 @@ class PNGImage
       console.log("uncompressed alphaChannel=")
       console.log(alphaChannel)
 
+      # boomstick temp
+      #@imgData = imgData
+      #@alphaChannel = alphaChannel
+      #@finalize()
+      # end boomstick temp
+
       done = 0
       zlib.deflate imgData, (err, @imgData) =>
         throw err if err
@@ -150,6 +160,7 @@ class PNGImage
 
   loadIndexedAlphaChannel: (fn) ->
     transparency = @image.transparency.indexed
+    console.log("oh hello")
     @image.decodePixels (pixels) =>
       alphaChannel = new Buffer(@width * @height)
 

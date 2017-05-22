@@ -113,9 +113,10 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
            (define col ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
            (define upper (if (zero? row)
                              row
-                             (+ (* (bytes-ref pixels (sub1 row)) scanlineLength)
-                                (* col pixelBytes)
-                                (modulo i pixelBytes))))
+                             (bytes-ref pixels
+                                        (+ (* (sub1 row) scanlineLength)
+                                           (* col pixelBytes)
+                                           (modulo i pixelBytes)))))
            (bytes-set! pixels c (modulo (+ upper byte) 256))
            (increment! c))]
         [(3) ; average
@@ -127,9 +128,10 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
                             (bytes-ref pixels (- c pixelBytes))))
            (define upper (if (zero? row)
                              row
-                             (+ (* (bytes-ref pixels (sub1 row)) scanlineLength)
-                                (* col pixelBytes)
-                                (modulo i pixelBytes))))
+                             (bytes-ref pixels
+                                        (+ (* (sub1 row) scanlineLength)
+                                           (* col pixelBytes)
+                                           (modulo i pixelBytes)))))
            (bytes-set! pixels c (modulo (+ byte (floor (/ (+ left upper) 2))) 256))
            (increment! c))]
         [(4) ; paeth
@@ -142,12 +144,16 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
            (match-define (list upper upperLeft)
              (cond
                [(zero? row) (list 0 0)]
-               [else (define upper (+ (* (bytes-ref pixels (sub1 row)) scanlineLength)
-                                      (* col pixelBytes)
-                                      (modulo i pixelBytes)))
-                     (define upperLeft (+ (* (bytes-ref pixels (sub1 row)) scanlineLength)
-                                          (* (sub1 col) pixelBytes)
-                                          (modulo i pixelBytes)))
+               [else (define upper (bytes-ref pixels
+                                              (+ (* (sub1 row) scanlineLength)
+                                                 (* col pixelBytes)
+                                                 (modulo i pixelBytes))))
+                     (define upperLeft (if (zero? col)
+                                           col
+                                           (bytes-ref pixels
+                                                      (+ (* (sub1 row) scanlineLength)
+                                                         (* (sub1 col) pixelBytes)
+                                                         (modulo i pixelBytes)))))
                      (list upper upperLeft)]))
 
            (define p (+ left upper (- upperLeft)))
