@@ -72,7 +72,7 @@ class PNGImage
       @loadIndexedAlphaChannel()
 
     else if @image.hasAlphaChannel
-      console.log("got alphachannel " + @image.colorType + " in png.coffee")
+      #console.log("got alphachannel " + @image.colorType + " in png.coffee")
       # For PNG color types 4 and 6, the transparency data is stored as a alpha
       # channel mixed in with the main image data. Separate this data out into an
       # SMask object and store it separately in the PDF.
@@ -107,13 +107,13 @@ class PNGImage
   hitme = 0
 
   splitAlphaChannel: ->
-    console.log("start splitAlphaChannel in png.coffee")
+    #console.log("start splitAlphaChannel in png.coffee")
     @image.decodePixels (pixels) =>
-      console.log("hitme=" + hitme++)
-      console.log("in png.coffee")
-      console.log("decoded pixels length=" + pixels.length);
-      console.log("decoded pixels=");
-      console.log(pixels);
+      #console.log("hitme=" + hitme++)
+      #console.log("in png.coffee")
+      #console.log("decoded pixels length=" + pixels.length);
+      #console.log("decoded pixels=");
+      #console.log(pixels);
 
       colorByteSize = @image.colors * @image.bits / 8
       pixelCount = @width * @height
@@ -128,13 +128,13 @@ class PNGImage
         imgData[p++] = pixels[i++]
         alphaChannel[a++] = pixels[i++]
 
-      console.log("uncompressed imgData length=" + imgData.length)
-      console.log("uncompressed imgData=")
-      console.log(imgData)
+      #console.log("uncompressed imgData length=" + imgData.length)
+      #console.log("uncompressed imgData=")
+      #console.log(imgData)
 
-      console.log("uncompressed alphaChannel length=" + alphaChannel.length)
-      console.log("uncompressed alphaChannel=")
-      console.log(alphaChannel)
+      #console.log("uncompressed alphaChannel length=" + alphaChannel.length)
+      #console.log("uncompressed alphaChannel=")
+      #console.log(alphaChannel)
 
       # boomstick temp
       #@imgData = imgData
@@ -145,22 +145,22 @@ class PNGImage
       done = 0
       zlib.deflate imgData, (err, @imgData) =>
         throw err if err
-        console.log("compressed @imgData length=" + @imgData.length)
-        console.log("compressed @imgData=")
-        console.log(@imgData)
+        #console.log("compressed @imgData length=" + @imgData.length)
+        #console.log("compressed @imgData=")
+        #console.log(@imgData)
 
         @finalize() if ++done is 2
 
       zlib.deflate alphaChannel, (err, @alphaChannel) =>
         throw err if err
-        console.log("compressed @alphaChannel length=" + @alphaChannel.length)
-        console.log("compressed @alphaChannel=")
-        console.log(@alphaChannel)
+        #console.log("compressed @alphaChannel length=" + @alphaChannel.length)
+        ##console.log("compressed @alphaChannel=")
+        #console.log(@alphaChannel)
         @finalize() if ++done is 2
 
   loadIndexedAlphaChannel: (fn) ->
     transparency = @image.transparency.indexed
-    console.log("oh hello")
+    #console.log("oh hello")
     @image.decodePixels (pixels) =>
       alphaChannel = new Buffer(@width * @height)
 

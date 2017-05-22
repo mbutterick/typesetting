@@ -24,14 +24,15 @@
   (check-equal? (bytes-length (file->bytes this))
                 (bytes-length (file->bytes (this->pdfkit-control this)))))
 
-(define (make-doc ps compress? [proc (λ (doc) doc)] #:test [test? #t])
+(define (make-doc ps compress? [proc (λ (doc) doc)] #:test [test? #t] #:pdfkit [pdfkit? #t])
   (define doc (make-object PDFDocument (hash 'compress compress?)))
   (send doc pipe (open-output-file ps #:exists 'replace))
   (proc doc)
   (send doc end)
   (when test?
     (check-copy-equal? ps)
-    (check-pdfkit? ps)))
+    (when pdfkit?
+    (check-pdfkit? ps))))
 
 
 (module reader syntax/module-reader

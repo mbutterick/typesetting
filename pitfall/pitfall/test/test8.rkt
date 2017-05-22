@@ -10,7 +10,7 @@
   [image pic 100 160 (hash 'width 412)]))
 
 (define-runtime-path this "test8rkt.pdf")
-(make-doc this #f proc #:test #f)
+(make-doc this #f proc #:pdfkit #f) ; node's zlib.deflate makes smaller files, for some reason
 
-#;(define-runtime-path that "test8crkt.pdf")
-#;(make-doc that #t proc)
+(define-runtime-path that "test8crkt.pdf")
+(make-doc that #t proc #:pdfkit #f)

@@ -112,11 +112,11 @@
     (define alphaChannel (apply bytes (reverse alphaBytes)))
 
     
-    (report (bytes-length imgData) 'uncompressed-imgdata-length)
-    (report (bytes->hex (subbytes imgData 0 20)) 'uncompressed-imgdata)
+    #;(report (bytes-length imgData) 'uncompressed-imgdata-length)
+    #;(report (bytes->hex (subbytes imgData 0 20)) 'uncompressed-imgdata)
 
-    (report (bytes-length alphaChannel) 'uncompressed-alphaChannel-length)
-    (report (bytes->hex (subbytes alphaChannel 0 20)) 'uncompressed-alphaChannel)
+    #;(report (bytes-length alphaChannel) 'uncompressed-alphaChannel-length)
+    #;(report (bytes->hex (subbytes alphaChannel 0 20)) 'uncompressed-alphaChannel)
   
     #;(report* (bytes-length imgData) (bytes-length alphaChannel))
 
@@ -126,11 +126,11 @@
     (define alphaChannelCompressed (deflate alphaChannel))
 
     
-    (report (bytes-length alphaChannelCompressed) 'alphaChannelCompressed-length)
-    (report (bytes->hex (subbytes alphaChannelCompressed 0 20)) 'alphaChannelCompressed)
+    #;(report (bytes-length alphaChannelCompressed) 'alphaChannelCompressed-length)
+    #;(report (bytes->hex (subbytes alphaChannelCompressed 0 20)) 'alphaChannelCompressed)
 
-    (report (bytes-length imgDataCompressed) 'imgDataCompressed-length)
-    (report (bytes->hex (subbytes imgDataCompressed 0 20)) 'imgDataCompressed)
+    #;(report (bytes-length imgDataCompressed) 'imgDataCompressed-length)
+    #;(report (bytes->hex (subbytes imgDataCompressed 0 20)) 'imgDataCompressed)
 
     
     (set-field! imgData this imgDataCompressed)
