@@ -16,11 +16,11 @@
 
   (as-methods
    embed
-   finalize
    splitAlphaChannel))
 
 (define/contract (embed this doc-in)
   (object? . ->m . void?)
+  
   (set-field! document this doc-in)
   
   (unless (· this obj)
@@ -57,20 +57,17 @@
       [(hash-ref (· this image) 'transparency #f)
        (cond
          [(hash-ref (hash-ref (· this image) 'transparency) 'grayscale #f)
-          ]
+          (error 'transparency-grayscale-not-implemented)]
          [(hash-ref (hash-ref (· this image) 'transparency) 'rgb #f)
-          ]
+          (error 'transparency-rgb-not-implemented)]
          [(hash-ref (hash-ref (· this image) 'transparency) 'indexed #f)
-          ])]
+          (error 'transparency-indexed-not-implemented)])]
       [(hash-ref (· this image) 'hasAlphaChannel #f)
        ;; For PNG color types 4 and 6, the transparency data is stored as a alpha
        ;; channel mixed in with the main image data. Separate this data out into an
        ;; SMask object and store it separately in the PDF.]
-       (· this splitAlphaChannel)]
-      [else (· this finalize)])))
+       (· this splitAlphaChannel)]))
 
-(define/contract (finalize this)
-  (->m void?)
   (when (· this alphaChannel)
     (define sMask
       (send (· this document) ref
@@ -88,60 +85,22 @@
   ;; embed the actual image data
   (send (· this obj) end (· this imgData)))
 
+
 (define/contract (splitAlphaChannel this)
   (->m void?)
-  (define (pixel-proc pixels)
-    (define colorByteSize (* (· this image colors) (/ (· this image bits) 8)))
-    (define pixelCount (* (· this width) (· this height)))
-    #;(define imgData (make-bytes (* pixelCount colorByteSize)))
-    #;(define alphaChannel (make-bytes pixelCount))
+  (define pixels
+    (decodePixels (· this imgData) (· this pixelBitlength) (· this width) (· this height)))
+  (define-values (imgBytes alphaBytes)
+    (for/fold ([img-bytes empty]
+               [alpha-bytes empty])
+              ([b (in-bytes pixels)]
+               [which (in-cycle '(img img img alpha))])
+      (if (eq? which 'alpha)
+          (values img-bytes (cons b alpha-bytes))
+          (values (cons b img-bytes) alpha-bytes))))
 
-    (define len (bytes-length pixels))
-
-    #;(report* len (* pixelCount colorByteSize) pixelCount)
-    (define-values (imgBytes alphaBytes)
-      (for/fold ([img-bytes empty]
-                 [alpha-bytes empty])
-                ([b (in-bytes pixels)]
-                 [i (in-naturals)])
-        (if (= (modulo i 4) 3)
-            (values img-bytes (cons b alpha-bytes))
-            (values (cons b img-bytes) alpha-bytes))))
-
-    (define imgData (apply bytes (reverse imgBytes)))
-    (define alphaChannel (apply bytes (reverse alphaBytes)))
-
-    
-    #;(report (bytes-length imgData) 'uncompressed-imgdata-length)
-    #;(report (bytes->hex (subbytes imgData 0 20)) 'uncompressed-imgdata)
-
-    #;(report (bytes-length alphaChannel) 'uncompressed-alphaChannel-length)
-    #;(report (bytes->hex (subbytes alphaChannel 0 20)) 'uncompressed-alphaChannel)
-  
-    #;(report* (bytes-length imgData) (bytes-length alphaChannel))
-
-    #;(error 'in-pixel-proc)
-
-    (define imgDataCompressed (deflate imgData))
-    (define alphaChannelCompressed (deflate alphaChannel))
-
-    
-    #;(report (bytes-length alphaChannelCompressed) 'alphaChannelCompressed-length)
-    #;(report (bytes->hex (subbytes alphaChannelCompressed 0 20)) 'alphaChannelCompressed)
-
-    #;(report (bytes-length imgDataCompressed) 'imgDataCompressed-length)
-    #;(report (bytes->hex (subbytes imgDataCompressed 0 20)) 'imgDataCompressed)
-
-    
-    (set-field! imgData this imgDataCompressed)
-    (set-field! alphaChannel this alphaChannelCompressed)
-    (· this finalize)
-      
-    #;(report* 'done)
-    (void)
-
-    )
-  (decodePixels (· this imgData) (· this pixelBitlength) (· this width) (· this height) pixel-proc))
+  (set-field! imgData this (deflate (apply bytes (reverse imgBytes))))
+  (set-field! alphaChannel this (deflate (apply bytes (reverse alphaBytes)))))
 
 #;(module+ test
     (define pic (make-object PNG (file->bytes "test/assets/test.png")))

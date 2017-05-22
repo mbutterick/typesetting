@@ -75,25 +75,18 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
          (read-bytes 4) ; skip crc
          (loop)]))))
 
-(define/contract (decodePixels imgData pixelBitLength width height fn)
-  (bytes? number? number? number? procedure? . -> . any/c)
-  (define data (inflate imgData))
+(define/contract (decodePixels imgData pixelBitLength width height)
+  (bytes? number? number? number? . -> . any/c)
   (define pixelBytes (/ pixelBitLength 8))
   (define scanlineLength (* pixelBytes width))
 
   (define pixels (make-bytes (* scanlineLength height)))
-  (define length (bytes-length data))
-  (define row 0)
-  (define pos 0)
   (define c 0)
 
-  #;(report* width height)
-  (parameterize ([current-input-port (open-input-bytes data)])
-    (for/fold ([_ #f]) ([row (in-naturals)]
-                        #:break (eof-object? (peek-byte)))
-      #;(report row)
-      (define b (read-byte))
-      (case b
+  (parameterize ([current-input-port (open-input-bytes (inflate imgData))])
+    (for ([row (in-naturals)]
+          #:break (eof-object? (peek-byte)))
+      (case (read-byte)
         [(0) ; none
          (for ([i (in-range scanlineLength)])
            (define b (read-byte))
@@ -170,10 +163,8 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
            (increment! c)
                
            )]
-        [else (error 'invalid-filter-algorithm (format "~a" b))])))
-  #;(report (bytes-length pixels) 'decoded-pixels-length)
-  #;(report (bytes->hex (subbytes pixels 0 20)))
-  (fn pixels))
+        [else (error 'invalid-png-filter-algorithm )])))
+  pixels)
 
 
 (define (read-32bit-integer)
