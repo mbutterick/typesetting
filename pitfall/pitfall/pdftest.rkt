@@ -17,12 +17,13 @@
 
 
 (define-syntax-rule (check-copy-equal? this)
-  (check-equal? (file->bytes this) (file->bytes (this->control this))))
+  (check-true (for/and ([b1 (in-input-port-bytes (open-input-file this))]
+                        [b2 (in-input-port-bytes (open-input-file (this->control this)))])
+                (equal? b1 b2))))
 
 
 (define-syntax-rule (check-pdfkit? this)
-  (check-equal? (bytes-length (file->bytes this))
-                (bytes-length (file->bytes (this->pdfkit-control this)))))
+  (check-equal? (file-size this) (file-size (this->pdfkit-control this))))
 
 (define (make-doc ps compress? [proc (λ (doc) doc)] #:test [test? #t] #:pdfkit [pdfkit? #t])
   (define doc (make-object PDFDocument (hash 'compress compress?)))
@@ -32,7 +33,7 @@
   (when test?
     (check-copy-equal? ps)
     (when pdfkit?
-    (check-pdfkit? ps))))
+      (check-pdfkit? ps))))
 
 
 (module reader syntax/module-reader
