@@ -6,9 +6,11 @@
   (apply-commands commands doc))
 
 (define (parse path)
-  (for/list ([str (in-list (string-split (string-replace path "," " ") #px"(?=[A-Za-z])"))]
-             #:when (not (string=? str "")))
-    (read (open-input-string (string-append "(" str ")")))))
+  (let* ([path (string-replace path "," " ")] ; no commas
+         [path (string-replace path  #px"(?<=[A-Za-z])" " ")]) ; at least one space after letters
+    (for/list ([str (in-list (string-split path #px"(?=[A-Za-z])"))]
+               #:unless (zero? (string-length str)))
+      (read (open-input-string (format "(~a)" (string-replace str "-" " -")))))))
 
 (module+ test
   (require rackunit)
@@ -18,7 +20,17 @@
      (L 100 160)
      (Q 130 200 150 120)
      (C 190 -40 200 200 300 150)
-     (L 400 90))))
+     (L 400 90)))
+
+  (check-equal?
+   (parse "M-122.304 84.285C-122.304 84.285 -122.203 86.179 -123.027 86.16C-123.851 86.141 -140.305 38.066 -160.833 40.309C-160.833 40.309 -143.05 32.956 -122.304 84.285z")
+   '((M -122.304 84.285)
+     (C -122.304 84.285 -122.203 86.179 -123.027 86.16)
+     (C -123.851 86.141 -140.305 38.066 -160.833 40.309)
+     (C -160.833 40.309 -143.05 32.956 -122.304 84.285)
+     (z)))
+
+  (check-equal? (parse "L100-160") '((L 100 -160))))
 
 (define (apply-commands commands doc)
   (for/fold ([cx 0][cy 0][px 0][py 0][sx 0][sy 0])
@@ -38,4 +50,6 @@
         [(Q) (send doc quadraticCurveTo . cmd-args)
              (match-define (list a0 a1 a2 a3) cmd-args)
              (values a2 a3 a0 a1 sx sy)]
-        [else (values cx cy px py sx sy)]))))
+        [(z) (send doc closePath . cmd-args)
+             (values sx sy px py sx sy)]
+        [else (report cmd-name) (values cx cy px py sx sy)]))))
