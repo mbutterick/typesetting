@@ -38,36 +38,40 @@
             ([cmd (in-list commands)])
     (match-define (cons cmd-name cmd-args) cmd)
     (let loop ([cmd-name cmd-name][cmd-args cmd-args])
+      (match-define (list a0 a1 a2 a3 a4 a5)
+        (append cmd-args (make-list (- 6 (length cmd-args)) #f)))
       (case cmd-name
         [(M) (send doc moveTo . cmd-args)
-             (match-define (list a0 a1) cmd-args)
              (values a0 a1 #f #f a0 a1)]
-        [(m) (match-define (list a0 a1) cmd-args)
-             (loop 'M (list (+ cx a0) (+ cy a1)))]
+        [(m) (loop 'M (list (+ cx a0) (+ cy a1)))]
         [(C) (send doc bezierCurveTo . cmd-args)
-             (match-define (list a0 a1 a2 a3 a4 a5) cmd-args)
              (values a4 a5 a2 a3 sx sy)]
-        [(c) (match-define (list a0 a1 a2 a3 a4 a5) cmd-args)
-             (loop 'C (list (+ cx a0) (+ cy a1)
+        [(c) (loop 'C (list (+ cx a0) (+ cy a1)
                             (+ cx a2) (+ cy a3)
                             (+ cx a4) (+ cy a5)))]
+        [(S) (match-let ([(list px py) (if (not px)
+                                           (list cx cy)
+                                           (list px py))])
+               (send doc bezierCurveyTo (- cx (- px cx)) (- cy (- py cy)) a0 a1 a2 a3)
+               (values a2 a3 a0 a1 sx sy))]
+        [(s) (loop 'S (list (+ cx a0) (+ cy a1)
+                            (+ cx a2) (+ cy a3)))]
         [(L) (send doc lineTo . cmd-args)
-             (match-define (list a0 a1) cmd-args)
              (values a0 a1 #f #f sx sy)]
-        [(l) (match-define (list a0 a1) cmd-args)
-             (loop 'L (list (+ cx a0) (+ cy a1)))]
-        [(H) (match-define (list a0) cmd-args)
-             (loop 'L (list a0 cy))]
-        [(h) (match-define (list a0) cmd-args)
-             (loop 'L (list (+ cx a0) cy))]
-        [(V) (match-define (list a0) cmd-args)
-             (loop 'L (list cx a0))]
-        [(v) (match-define (list a0) cmd-args)
-             (loop 'L (list cx (+ cy a0)))]
-             
+        [(l) (loop 'L (list (+ cx a0) (+ cy a1)))]
+        [(H) (loop 'L (list a0 cy))]
+        [(h) (loop 'L (list (+ cx a0) cy))]
+        [(V) (loop 'L (list cx a0))]
+        [(v) (loop 'L (list cx (+ cy a0)))]
         [(Q) (send doc quadraticCurveTo . cmd-args)
-             (match-define (list a0 a1 a2 a3) cmd-args)
              (values a2 a3 a0 a1 sx sy)]
+        [(q) (loop 'Q (list (+ cx a0) (+ cy a1)
+                            (+ cx a2) (+ cy a3)))]
+        [(T) (match-define (list px py)
+               (if (not px)
+                   (list cx py)
+                   (list (- cx (- px cx) (- cy (- py cy))))))
+             (send doc quadraticCurveTo . cmd-args)]
         [(z) (send doc closePath . cmd-args)
              (values sx sy px py sx sy)]
         [else (raise-argument-error 'apply-commands "valid command name" cmd-name)]))))
