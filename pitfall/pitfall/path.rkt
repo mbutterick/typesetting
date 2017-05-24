@@ -42,12 +42,29 @@
         [(M) (send doc moveTo . cmd-args)
              (match-define (list a0 a1) cmd-args)
              (values a0 a1 #f #f a0 a1)]
+        [(m) (match-define (list a0 a1) cmd-args)
+             (loop 'M (list (+ cx a0) (+ cy a1)))]
         [(C) (send doc bezierCurveTo . cmd-args)
              (match-define (list a0 a1 a2 a3 a4 a5) cmd-args)
              (values a4 a5 a2 a3 sx sy)]
+        [(c) (match-define (list a0 a1 a2 a3 a4 a5) cmd-args)
+             (loop 'C (list (+ cx a0) (+ cy a1)
+                            (+ cx a2) (+ cy a3)
+                            (+ cx a4) (+ cy a5)))]
         [(L) (send doc lineTo . cmd-args)
              (match-define (list a0 a1) cmd-args)
              (values a0 a1 #f #f sx sy)]
+        [(l) (match-define (list a0 a1) cmd-args)
+             (loop 'L (list (+ cx a0) (+ cy a1)))]
+        [(H) (match-define (list a0) cmd-args)
+             (loop 'L (list a0 cy))]
+        [(h) (match-define (list a0) cmd-args)
+             (loop 'L (list (+ cx a0) cy))]
+        [(V) (match-define (list a0) cmd-args)
+             (loop 'L (list cx a0))]
+        [(v) (match-define (list a0) cmd-args)
+             (loop 'L (list cx (+ cy a0)))]
+             
         [(Q) (send doc quadraticCurveTo . cmd-args)
              (match-define (list a0 a1 a2 a3) cmd-args)
              (values a2 a3 a0 a1 sx sy)]
