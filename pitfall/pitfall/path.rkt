@@ -7,10 +7,11 @@
 
 (define (parse path)
   (let* ([path (string-replace path "," " ")] ; no commas
+         [path (string-replace path "-" " -")] ; at least one space before negative signs
          [path (string-replace path  #px"(?<=[A-Za-z])" " ")]) ; at least one space after letters
     (for/list ([str (in-list (string-split path #px"(?=[A-Za-z])"))]
                #:unless (zero? (string-length str)))
-      (read (open-input-string (format "(~a)" (string-replace str "-" " -")))))))
+      (read (open-input-string (format "(~a)" str))))))
 
 (module+ test
   (require rackunit)
@@ -52,4 +53,4 @@
              (values a2 a3 a0 a1 sx sy)]
         [(z) (send doc closePath . cmd-args)
              (values sx sy px py sx sy)]
-        [else (report cmd-name) (values cx cy px py sx sy)]))))
+        [else (raise-argument-error 'apply-commands "valid command name" cmd-name)]))))
