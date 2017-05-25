@@ -75,6 +75,7 @@
                    (list cx py)
                    (list (- cx (- px cx) (- cy (- py cy))))))
              (send doc quadraticCurveTo . cmd-args)]
+        ;; todo other path ops
         [(z) (send doc closePath . cmd-args)
              (values sx sy px py sx sy)]
         [else (raise-argument-error 'apply-commands "valid command name" cmd-name)]))))
