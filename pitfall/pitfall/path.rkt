@@ -1,4 +1,5 @@
 #lang pitfall/racket
+(require brag/support sugar/list)
 (provide parse-svg-path)
 
 (define (parse-svg-path doc path)
@@ -6,12 +7,14 @@
   (apply-commands commands doc))
 
 (define (parse path)
-  (let* ([path (string-replace path "," " ")] ; no commas
-         [path (string-replace path "-" " -")] ; at least one space before negative signs
-         [path (string-replace path  #px"(?<=[A-Za-z])" " ")]) ; at least one space after letters
-    (for/list ([str (in-list (string-split path #px"(?=[A-Za-z])"))]
-               #:unless (zero? (string-length str)))
-      (read (open-input-string (format "(~a)" str))))))
+  (define lex-1
+    (lexer
+     [(eof) eof]
+     [alphabetic (string->symbol lexeme)]
+     [(:: (:? "-") (:+ numeric) (:? (:: "." (:+ numeric)))) (string->number lexeme)]
+     [(:or whitespace ",") (lex-1 input-port)]))
+  (slicef-at (for/list ([tok (in-port lex-1 (open-input-string path))])
+               tok) symbol?))
 
 (module+ test
   (require rackunit)
