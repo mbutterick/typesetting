@@ -1,8 +1,10 @@
 #lang pitfall/pdftest
 
+(define-runtime-path tiger "assets/tiger.json")
+
 (define (proc doc)
   (send doc translate 220 300)
-  (for* ([datum (in-list (read (open-input-string (string-replace (file->string "assets/tiger.json") #rx"[,:]" " "))))]
+  (for* ([datum (in-list (read (open-input-string (string-replace (file->string tiger) #rx"[,:]" " "))))]
          [part (in-value (apply hash datum))])
     (send doc path (hash-ref part 'path))
 

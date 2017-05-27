@@ -11,7 +11,7 @@
     (lexer
      [(eof) eof]
      [alphabetic (string->symbol lexeme)]
-     [(:: (:? "-") (:+ numeric) (:? (:: "." (:+ numeric)))) (string->number lexeme)]
+     [(:: (:? "-") (:* numeric) (:? ".") (:+ numeric)) (string->number lexeme)]
      [(:or whitespace ",") (lex-1 input-port)]))
   (slicef-at (for/list ([tok (in-port lex-1 (open-input-string path))])
                tok) symbol?))
