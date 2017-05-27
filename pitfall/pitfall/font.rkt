@@ -10,7 +10,8 @@
 
     (as-methods
      ref
-     finalize)
+     finalize
+     lineHeight)
     ))
 
 (define/contract (PDFFont-open document src family id)
@@ -33,6 +34,11 @@
   (unless (or (· this embedded) (not (· this dictionary)))
     (· this embed)
     (set-field! embedded this #t)))
+
+(define/contract (lineHeight this size [includeGap #f])
+  ((number?)(boolean?) . ->*m . number?)
+  (define gap (if includeGap (· this lineGap) 0))
+  (* (/ (+ (· this ascender) gap (- (· this descender))) 1000.0) size))
 
 
 (define StandardFont

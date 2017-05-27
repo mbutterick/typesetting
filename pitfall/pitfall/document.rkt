@@ -1,9 +1,9 @@
 #lang pitfall/racket
 (require "reference.rkt" "object.rkt" "page.rkt")
-(require "vector.rkt" "color.rkt" "fonts.rkt" "text.rkt" "images.rkt")
+(require "vector.rkt" "color.rkt" "fonts.rkt" "text.rkt" "images.rkt" "annotations.rkt")
 (provide PDFDocument)
 
-(define mixed% (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%))))))
+(define mixed% (annotation-mixin (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%)))))))
 
 (define-subclass mixed% (PDFDocument [options (mhash)])
   (super-new)

@@ -17,7 +17,8 @@
     (as-methods
      initFonts
      font
-     fontSize)))
+     fontSize
+     currentLineHeight)))
 
 
 (define/contract (initFonts this)
@@ -53,7 +54,7 @@
                        [else (let ([ck (or family src)])
                                (and (string? ck) ck))])))
 
-  (when size (set-field! fontSize this size))
+  (when size (fontSize this size))
 
   ;; fast path: check if the font is already in the PDF
   (cond
@@ -83,6 +84,10 @@
   (number? . ->m . object?)
   (set-field! _fontSize this size)
   this)
+
+(define/contract (currentLineHeight this [includeGap #f])
+  (() (boolean?) . ->*m . number?)
+  (send (· this _font) lineHeight (· this _fontSize) includeGap)) 
 
 (module+ test
   (define fo (new (fonts-mixin))))

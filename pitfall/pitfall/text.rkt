@@ -117,11 +117,36 @@
 
   ;;  text alignments ; todo
 
-  ;; calculate the actual rendered width of the string after word and character spacing ; todo
+  ;; calculate the actual rendered width of the string after word and character spacing
+  (define renderedWidth
+    (+ (or (· options textWidth) 0)
+       (* wordSpacing (sub1 (or (· options wordCount) 0)))
+       (* characterSpacing (sub1 (string-length text)))))
 
-  ;; create link annotations if the link option is given ; todo
+  ;; create link annotations if the link option is given
+  (when (· options link)
+    (report 'zing)
+    (send this link x y-in renderedWidth (· this currentLineHeight) (hash-ref options 'link)))
+  (error 'froom)
 
-  ;; create underline or strikethrough line ; todo
+  
+  ;; create underline or strikethrough line
+  (when (or (· options underline) (· options strike))
+    (send this save)
+    (unless (· options stroke)
+      (send this strokeColor (· this _fillColor)))
+    (define lineWidth (if (< (· this _fontSize) 10)
+                          0.5
+                          (floor (/ (· this _fontSize) 10) 10)))
+    (define d (if (· options underline) 1 2))
+    (define lineY (+ y (/ (· this currentLineHeight) d)))
+    (when (· options underline)
+      (increment! lineY (- lineWidth)))
+
+    (send this moveTo x lineY)
+    (send this lineTo (+ x renderedWidth lineY))
+    (send this stroke)
+    (send this restore))
 
   ;; flip coordinate system
   (send this save)

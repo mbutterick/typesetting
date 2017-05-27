@@ -8,7 +8,7 @@
      #'(cond
          [(object? x) (with-handlers ([exn:fail:object? (λ (exn) (send x ref))])
                         (get-field ref x))]
-         [(hash? x) (hash-ref x 'ref)]
+         [(hash? x) (hash-ref x 'ref #f)]
          [else (raise-argument-error '· (format "~a must be object or hash" 'x) x)])]
     [(_ x ref0 . refs) #'(· (· x ref0) . refs)]))
 
