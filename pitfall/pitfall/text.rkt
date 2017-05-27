@@ -125,26 +125,25 @@
 
   ;; create link annotations if the link option is given
   (when (· options link)
-    (report 'zing)
-    (send this link x y-in renderedWidth (· this currentLineHeight) (hash-ref options 'link)))
-  (error 'froom)
+    (send this link x y-in renderedWidth (· this currentLineHeight) (· options link)))
 
   
   ;; create underline or strikethrough line
   (when (or (· options underline) (· options strike))
     (send this save)
     (unless (· options stroke)
-      (send this strokeColor (· this _fillColor)))
+      (define args (· this _fillColor))
+      (send this strokeColor . args))
     (define lineWidth (if (< (· this _fontSize) 10)
                           0.5
-                          (floor (/ (· this _fontSize) 10) 10)))
+                          (floor (/ (· this _fontSize) 10))))
     (define d (if (· options underline) 1 2))
-    (define lineY (+ y (/ (· this currentLineHeight) d)))
+    (define lineY (+ y-in (/ (· this currentLineHeight) d)))
     (when (· options underline)
       (increment! lineY (- lineWidth)))
 
     (send this moveTo x lineY)
-    (send this lineTo (+ x renderedWidth lineY))
+    (send this lineTo (+ x renderedWidth) lineY)
     (send this stroke)
     (send this restore))
 

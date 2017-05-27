@@ -61,9 +61,11 @@
   (->m hash?)
   (hash-ref! (· this resources payload) 'Pattern (make-hash)))
 
-(define/contract (annotations this)
-  (->m hash?)
-  (hash-ref! (· this resources payload) 'Annots null))
+(define/contract (annotations this [annot #f])
+  (() (any/c) . ->*m . void?)
+  (if (not annot)
+      (hash-ref! (· this resources payload) 'Annots null)
+      (hash-update! (· this resources payload) 'Annots (λ (val) (cons annot val)) null)))
 
 
 (define/contract (maxY this)

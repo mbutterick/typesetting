@@ -16,9 +16,9 @@
               'Type "Annot"
               'Rect (send this _convertRect x y w h)
               'Border '(0 0 0))
-  (hash-ref! options 'C
-             (λ ()
-               (unless (equal? (· options Subtype) "Link")
+  (unless (equal? (· options Subtype) "Link")
+    (hash-ref! options 'C
+               (λ ()
                  (send this _normalizeColor (or (· options color) '(0 0 0))))))
   (hash-remove! options 'color)
 
@@ -28,8 +28,9 @@
   (for ([(k v) (in-hash options)])
     (hash-set! options (string->symbol (string-titlecase (symbol->string k))) v))
 
-  (define ref (· this ref options))
-  (push-field! annotations this ref)
+  
+  (define ref (send this ref options))
+  (send (· this page) annotations ref)
   (· ref end)
   this)
 
