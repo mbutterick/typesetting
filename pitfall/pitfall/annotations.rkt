@@ -22,25 +22,23 @@
                  (send this _normalizeColor (or (· options color) '(0 0 0))))))
   (hash-remove! options 'color)
 
-  (when (string? (· options Dest))
-    (hash-update! options 'Dest (λ (val) (String val))))
+  (when (string? (· options Dest)) (hash-update! options 'Dest String))
 
   (for ([(k v) (in-hash options)])
     (hash-set! options (string->symbol (string-titlecase (symbol->string k))) v))
 
-  
-  (define ref (send this ref options))
-  (send (· this page) annotations ref)
-  (· ref end)
+  (define annots-ref (send this ref options))
+  (send (· this page) annotations annots-ref)
+  (· annots-ref end)
   this)
 
-  
 
 (define/contract (link this x y w h url [options (mhash)])
   ((number? number? number? number? string?) (hash?) . ->*m . object?)
-  (hash-set! options 'Subtype "Link")
-  (hash-set! options 'A (send this ref (mhash 'S "URI"
-                                              'URI (String url))))
+  (hash-set*! options
+              'Subtype "Link"
+              'A (send this ref (mhash 'S "URI"
+                                       'URI (String url))))
   (send (· options A) end)
   (send this annotate x y w h options))
 
@@ -52,8 +50,10 @@
         [y1 (+ y1 h)]
         [x2 (+ x1 w)])
     (match-define (list m0 m1 m2 m3 m4 m5) (· this _ctm))
-    (let* ([x1 (+ (* x1 m0) (* y1 m2) m4)]
-           [y1 (+ (* x1 m1) (* y1 m3) m5)]
-           [x2 (+ (* x2 m0) (* y2 m2) m4)]
-           [y2 (+ (* x2 m1) (* y2 m3) m5)])
-      (list x1 y1 x2 y2))))
+    ;; original code mutates x1 and y1 during transformation
+    ;; I think this is wrong
+    (let* ([x1a (+ (* x1 m0) (* y1 m2) m4)]
+           [y1a (+ (* x1 m1) (* y1 m3) m5)]
+           [x2a (+ (* x2 m0) (* y2 m2) m4)]
+           [y2a (+ (* x2 m1) (* y2 m3) m5)])
+      (list x1a y1a x2a y2a))))
