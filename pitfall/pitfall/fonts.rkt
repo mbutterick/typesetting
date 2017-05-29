@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "font.rkt")
+(require "font.rkt" "font-open.rkt")
 (provide fonts-mixin)
 
 (define (fonts-mixin [% mixin-tester%])
