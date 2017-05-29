@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "standard-fonts.rkt" "afm.rkt" "reference.rkt")
+(require "standard-fonts.rkt" "afm.rkt" "reference.rkt" "fontkit.rkt")
 (provide PDFFont PDFFont-open)
 
 (define PDFFont
@@ -14,13 +14,22 @@
      lineHeight)
     ))
 
+(define-subclass PDFFont (EmbeddedFont document name id)
+  (super-new)
+  'boing)
+
 (define/contract (PDFFont-open document src family id)
   (object? any/c any/c any/c . -> . (is-a?/c PDFFont))
   (cond
-    [(and (string? src) (isStandardFont src)
-          (make-object StandardFont document src id))]
-    ;; todo: other font-loading cases
-    [else (raise-argument-error 'PDFFont-open "loadable font name" src)]))
+    [(and (string? src) (isStandardFont src))
+     (make-object StandardFont document src id)]
+    [else
+     (define font
+       (cond
+         [(string? src) (openSync src family)]
+         ;; todo: other font-loading cases
+         [else (raise-argument-error 'PDFFont-open "loadable font thingy" src)]))
+     (make-object EmbeddedFont document font id)]))
 
 
 (define/contract (ref this)
@@ -41,20 +50,18 @@
   (* (/ (+ (· this ascender) gap (- (· this descender))) 1000.0) size))
 
 
-(define StandardFont
-  (class PDFFont
-    (super-new)
-    (init-field document name id)
-    (field [font (make-object AFMFont ((hash-ref standard-fonts name
-                                                 (λ () (raise-argument-error 'PDFFont "valid font name" name)))))]
-           [ascender (· font ascender)]
-           [descender (· font descender)]
-           [bbox (· font bbox)]
-           [lineGap (· font lineGap)])
-    (as-methods
-     embed
-     encode
-     widthOfString)))
+(define-subclass PDFFont (StandardFont document name id)
+  (super-new)
+  (field [font (make-object AFMFont ((hash-ref standard-fonts name
+                                               (λ () (raise-argument-error 'PDFFont "valid font name" name)))))]
+         [ascender (· font ascender)]
+         [descender (· font descender)]
+         [bbox (· font bbox)]
+         [lineGap (· font lineGap)])
+  (as-methods
+   embed
+   encode
+   widthOfString))
 
 
 (define/contract (embed this)

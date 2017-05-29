@@ -18,7 +18,8 @@
      initFonts
      font
      fontSize
-     currentLineHeight)))
+     currentLineHeight
+     registerFont)))
 
 
 (define/contract (initFonts this)
@@ -46,10 +47,10 @@
   ;; check registered fonts if src is a string
   (define cacheKey (let ([this-rfs (· this _registeredFonts)])
                      (cond
-                       [(and (string? src) (hash-ref this-rfs src #f))
+                       [(and (string? src) (hash-has-key? this-rfs src))
                         (define ck src)
-                        (set! src (hash-ref (hash-ref this-rfs src) src #f))
-                        (set! family (hash-ref (hash-ref this-rfs src) family #f))
+                        (set! src (· (hash-ref this-rfs ck) src))
+                        (set! family (· (hash-ref this-rfs ck) family))
                         ck]
                        [else (let ([ck (or family src)])
                                (and (string? ck) ck))])))
@@ -87,7 +88,14 @@
 
 (define/contract (currentLineHeight this [includeGap #f])
   (() (boolean?) . ->*m . number?)
-  (send (· this _font) lineHeight (· this _fontSize) includeGap)) 
+  (send (· this _font) lineHeight (· this _fontSize) includeGap))
+
+
+(define/contract (registerFont this name src [family #f])
+  ((string? path-string?) ((or/c string? #f)) . ->*m . object?)
+  (hash-set! (· this _registeredFonts) name
+             (mhash 'src src 'family family))
+  this)
 
 (module+ test
   (define fo (new (fonts-mixin))))

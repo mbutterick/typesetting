@@ -37,6 +37,8 @@ module.exports =
       
     # load the font
     id = 'F' + (++@_fontCount)
+    #console.log("src=" + src)
+    #console.log("family=" + family)
     @_font = PDFFont.open(this, src, family, id)
     
     # check for existing font familes with the same name already in the PDF
@@ -59,6 +61,7 @@ module.exports =
     @_font.lineHeight @_fontSize, includeGap
     
   registerFont: (name, src, family) ->
+    #console.log(" " + name + " " + src + " " + family)
     @_registeredFonts[name] = 
       src: src
       family: family

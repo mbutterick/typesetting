@@ -6,6 +6,7 @@ class PDFFont
       if StandardFont.isStandardFont src
         return new StandardFont document, src, id
         
+      console.log("openSync on " + src)
       font = fontkit.openSync src, family
                 
     else if Buffer.isBuffer(src)
