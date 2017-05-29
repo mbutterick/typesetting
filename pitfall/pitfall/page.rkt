@@ -64,8 +64,8 @@
 (define/contract (annotations this [annot #f])
   (() (any/c) . ->*m . void?)
   (if (not annot)
-      (hash-ref! (· this resources payload) 'Annots null)
-      (hash-update! (· this resources payload) 'Annots (λ (val) (cons annot val)) null)))
+      (hash-ref! (· this dictionary payload) 'Annots null)
+      (hash-update! (· this dictionary payload) 'Annots (λ (val) (cons annot val)) null)))
 
 
 (define/contract (maxY this)

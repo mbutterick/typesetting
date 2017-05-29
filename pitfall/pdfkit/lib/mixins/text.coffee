@@ -30,6 +30,7 @@ module.exports =
       text = text.replace(/\s{2,}/g, ' ')
 
     # word wrapping
+    #console.log("options.width=" + options.width)
     if options.width
       wrapper = @_wrapper
       unless wrapper
@@ -42,6 +43,7 @@ module.exports =
 
     # render paragraphs as single lines
     else
+      #console.log("line callback!")
       lineCallback line, options for line in text.split '\n'
 
     return this
@@ -154,6 +156,7 @@ module.exports =
     return options
 
   _line: (text, options = {}, wrapper) ->
+    #console.log("in _line!")
     @_fragment text, @x, @y, options
     lineGap = options.lineGap or @_lineGap or 0
 
@@ -188,20 +191,28 @@ module.exports =
           spaceWidth = @widthOfString(' ') + characterSpacing
           wordSpacing = Math.max 0, (options.lineWidth - textWidth) / Math.max(1, words.length - 1) - spaceWidth
 
+    #console.log("momo me" + options.textWidth)
+
     # calculate the actual rendered width of the string after word and character spacing
-    renderedWidth = options.textWidth + (wordSpacing * (options.wordCount - 1)) + (characterSpacing * (text.length - 1))
+
+    renderedWidth = (options.textWidth || @widthOfString(text, options)) + (wordSpacing * ((options.wordCount || 0) - 1)) + (characterSpacing * (text.length - 1))
 
     # create link annotations if the link option is given
     if options.link
       @link x, y, renderedWidth, @currentLineHeight(), options.link
 
+    #console.log("mama me")
+
     # create underline or strikethrough line
     if options.underline or options.strike
+      console.log("enter underline")
       @save()
       @strokeColor @_fillColor... unless options.stroke
 
       lineWidth = if @_fontSize < 10 then 0.5 else Math.floor(@_fontSize / 10)
       @lineWidth lineWidth
+
+      #console.log("lineWidth" + lineWidth)
 
       d = if options.underline then 1 else 2
       lineY = y + @currentLineHeight() / d
@@ -219,6 +230,8 @@ module.exports =
 
     # add current font to page if necessary
     @page.fonts[@_font.id] ?= @_font.ref()
+
+    #console.log("mercy me")
 
     # begin the text object
     @addContent "BT"

@@ -8,5 +8,8 @@
                                      'link "http://google.com/"
                                      'underline #t)]))
 
+(define-runtime-path this "test11rkt.pdf")
+(make-doc this #f proc #:pdfkit #f)
+
 (define-runtime-path that "test11crkt.pdf")
-(make-doc that #t proc #:test #f)
+(make-doc that #t proc)

@@ -53,7 +53,8 @@
 
     ;; word wrapping
     (cond
-      #;[(hash-ref options 'width #f) (error 'unimplemented-branch-of-_text)] ; todo
+      #;[(· options width)
+         (error 'unimplemented-branch-of-_text)] ; todo
       [else ; render paragraphs as single lines
        (for ([line (in-list (string-split text "\n"))])
          (lineCallback line options))]))
@@ -101,7 +102,7 @@
 (define/contract (_line this text [options (mhash)] [wrapper #f])
   ((string?) (hash? (or/c procedure? #f)) . ->*m . void?)
   (send this _fragment text (· this x) (· this y) options)
-  (define lineGap (or (hash-ref options 'lineGap #f) (· this _lineGap) 0))
+  (define lineGap (or (· options lineGap) (· this _lineGap) 0))
   (if (not wrapper)
       (increment-field! x this (send this widthOfString text))
       (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
@@ -110,7 +111,6 @@
 
 (define/contract (_fragment this text x y-in options)
   (string? number? number? hash? . ->m . void?)
-
   (define align (hash-ref options 'align 'left))
   (define wordSpacing (hash-ref options 'wordSpacing 0))
   (define characterSpacing (hash-ref options 'characterSpacing 0))
@@ -119,7 +119,8 @@
 
   ;; calculate the actual rendered width of the string after word and character spacing
   (define renderedWidth
-    (+ (or (· options textWidth) 0)
+    (+ (or (· options textWidth)
+           (widthOfString this text options))
        (* wordSpacing (sub1 (or (· options wordCount) 0)))
        (* characterSpacing (sub1 (string-length text)))))
 
@@ -132,11 +133,12 @@
   (when (or (· options underline) (· options strike))
     (send this save)
     (unless (· options stroke)
-      (define args (· this _fillColor))
-      (send this strokeColor . args))
+      (define fillColorArgs (· this _fillColor))
+      (send this strokeColor . fillColorArgs))
     (define lineWidth (if (< (· this _fontSize) 10)
                           0.5
                           (floor (/ (· this _fontSize) 10))))
+    (send this lineWidth lineWidth)
     (define d (if (· options underline) 1 2))
     (define lineY (+ y-in (/ (· this currentLineHeight) d)))
     (when (· options underline)

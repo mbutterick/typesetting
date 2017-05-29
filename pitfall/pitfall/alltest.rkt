@@ -11,5 +11,6 @@
            pitfall/test/test8
            pitfall/test/test09
            pitfall/test/test10
+           pitfall/test/test11
            pitfall/page-test
            (submod pitfall/zlib test)))
