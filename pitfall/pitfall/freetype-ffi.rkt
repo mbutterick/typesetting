@@ -9,7 +9,7 @@
     (provide id)))
 
 (define-runtime-lib freetype-lib
-  [(unix) #f] ; todo: get unix runtime path
+  [(unix) (ffi-lib "libfontconfig" '("1" ""))]
   [(macosx) (ffi-lib "libfreetype.6.dylib")]
   [(windows) (ffi-lib "libfreetype-6.dll")])
 
@@ -215,8 +215,8 @@
                                    -> (if (zero? err) ftf (error 'FT_New_Face (format "error ~a" err)))))
 
 (define-freetype FT_Done_Face (_fun _FT_Face
-                                   -> (err : _FT_Error)
-                                   -> (unless (zero? err) (error 'FT_Done_Face (format "error ~a" err)))))
+                                    -> (err : _FT_Error)
+                                    -> (unless (zero? err) (error 'FT_Done_Face (format "error ~a" err)))))
 
 (define-freetype FT_Done_FreeType (_fun _FT_Library -> (err : _FT_Error) -> (if (zero? err) (void) (error 'FT_Done_FreeType))))
 
@@ -239,6 +239,15 @@
 (define+provide FT_LOAD_RENDER (expt 2 2))
 (define+provide FT_LOAD_LINEAR_DESIGN (expt 2 13))
 (define+provide FT_LOAD_NO_RECURSE (expt 2 10))
+
+(define-freetype FT_Get_Postscript_Name (_fun _FT_Face -> _string))
+
+(module+ test
+  (require rackunit)
+  (define ft-library (FT_Init_FreeType))
+  (define face (FT_New_Face ft-library "test/assets/charter.ttf" 0))
+  (check-equal? (FT_Get_Postscript_Name face) "Charter")
+  (check-equal? (FT_FaceRec-units_per_EM face) 1000))
 
 
          

@@ -33,7 +33,6 @@
   (set-field! _registeredFonts this (mhash))
 
   ;; set the default font
-  
   (send this font "Helvetica")
   (void))
 
@@ -61,8 +60,7 @@
   (cond
     [(hash-ref (· this _fontFamilies) cacheKey #f) =>
                                                    (λ (val)
-                                                     (set-field! _font this val)
-                                                     this)]
+                                                     (set-field! _font this val))]
     ;; load the font
     [else
      (define id (format "F~a" (increment-field! _fontCount this)))
@@ -78,8 +76,8 @@
          ;; save the font for reuse later
          [else
           (when cacheKey (hash-set! this-ff cacheKey this-f))
-          (hash-set! this-ff (· this-f name) this-f)]))
-     this]))
+          (hash-set! this-ff (· this-f name) this-f)]))])
+  this)
 
 (define/contract (fontSize this size)
   (number? . ->m . object?)
