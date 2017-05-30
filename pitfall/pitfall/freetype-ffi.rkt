@@ -91,6 +91,8 @@
    [vertBearingX _FT_Pos]
    [vertBearingY _FT_Pos]
    [vertAdvance _FT_Pos]))
+(provide (struct-out FT_Glyph_Metrics)
+         _FT_Glyph_Metrics _FT_Glyph_Metrics-pointer)
 
 (define-cstruct _FT_Vector
   ([x _FT_Pos]
@@ -241,7 +243,9 @@
                                          -> _FT_UInt))
 
 (define-freetype FT_Load_Glyph (_fun _FT_Face _FT_UInt _FT_Int32
-                                     -> (err : _FT_Error)))
+                                     -> (err : _FT_Error)
+                                     -> (unless (zero? err)
+                                          (error 'FT_Load_Glyph "failed, try using FT_LOAD_NO_RECURSE flag instead"))))
 
 (define-freetype FT_Load_Char (_fun _FT_Face _FT_ULong _FT_Int32
                                     -> (err : _FT_Error)))
@@ -299,6 +303,18 @@
               (FT_BBox-yMin bbox)
               (FT_BBox-xMax bbox)
               (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
+
+  (define H-gid 41)
+  (FT_Load_Glyph face H-gid FT_LOAD_NO_RECURSE)
+; want bearingX (lsb) and advanceX (advance width)
+  (define g (FT_FaceRec-glyph face))
+  (define metrics (FT_GlyphSlotRec-metrics g))
+  (define bearingX (FT_Glyph_Metrics-horiBearingX metrics))
+  (check-equal? bearingX 33)
+  (define advanceX (FT_Glyph_Metrics-horiAdvance metrics))
+  (check-equal? advanceX 738)
+
+  (FT_Done_Face face)
   )
 
 

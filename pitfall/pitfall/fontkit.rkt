@@ -1,11 +1,15 @@
 #lang pitfall/racket
-(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt")
+(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt")
 (provide (all-defined-out))
 
 (define-runtime-path charter-path "test/assets/charter.ttf")
 
+;; approximates
+;; https://github.com/devongovett/fontkit/blob/master/src/TTFFont.js
+
 (define-subclass object% (TTFFont filename)
   (super-new)
+  (field [_glyphs (mhash)])
   
   (field [buffer (file->bytes filename)])
 
@@ -33,13 +37,8 @@
    bbox
    createSubset
    has-table?
-   has-cff-table?))
-
-(define (has-table? this tag)
-  (FT_Load_Sfnt_Table (· this ft-face) (tag->int tag) 0 0 0))
-  
-(define (has-cff-table? this)
-  (has-table? this #"CFF "))
+   has-cff-table?
+   getGlyph))
 
 (define/contract (postscriptName this)
   (->m string?)
@@ -72,9 +71,25 @@
 
 (define/contract (createSubset this)
   (->m (is-a?/c Subset))
-  (make-object (if (report (· this has-cff-table?))
+  (make-object (if (· this has-cff-table?)
                    CFFSubset
                    TTFSubset) this))
+
+
+(define (has-table? this tag)
+  (FT_Load_Sfnt_Table (· this ft-face) (tag->int tag) 0 0 0))
+
+  
+(define (has-cff-table? this)
+  (has-table? this #"CFF "))
+
+
+(define/contract (getGlyph this glyph [characters null])
+  ((number?) (list?) . ->*m . object?)
+  (make-object (if (· this has-cff-table?)
+                   CFFGlyph
+                   TTFGlyph) glyph characters this))
+
 
 (define/contract (measure-char-width this char)
   (char? . ->m . number?)
@@ -97,6 +112,7 @@
 ;;fontkit.registerFormat(WOFF2Font); ;; todo
 ;;fontkit.registerFormat(TrueTypeCollection); ;; todo
 ;;fontkit.registerFormat(DFont); ;; todo
+
 
 (define/contract (create filename [postscriptName #f])
   ((string?) ((or/c string? #f)) . ->* . any/c)

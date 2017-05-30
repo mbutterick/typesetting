@@ -6,7 +6,7 @@
   (super-new)
   (field #;[subset (· this font createSubset)]
          [unicode '((0))]
-         #;[widths (list (send (send (· this font) getGlyph 0) advanceWidth))]
+         [widths (list (send (send (· this font) getGlyph 0) advanceWidth))]
          
          [name (· font postscriptName)]
          [scale (/ 1000 (· font unitsPerEm))]
@@ -44,4 +44,9 @@ For now, we'll just measure width of the characters.
   (check-equal? (· ef ascender) 980)
   (check-equal? (· ef descender) -238)
   (check-equal? (· ef lineGap) 0)
-  (check-equal? (· ef bbox) '(-161 -236 1193 963)))
+  (check-equal? (· ef bbox) '(-161 -236 1193 963))
+  (define H-gid 41)
+  (· ef widths)
+  (check-equal? (send (send (· ef font) getGlyph H-gid) advanceWidth) 738)
+
+  )
