@@ -34,7 +34,7 @@ For now, we'll just measure width of the characters.
 ;; called from text.rkt
 (define/contract (encode this text [features #f])
   ((string?) ((or/c list? #f)) . ->*m . list?)
-  (report '(0)))
+  (error 'embedded:encode-not-implemented))
 
 (module+ test
   (require rackunit "fontkit.rkt")
