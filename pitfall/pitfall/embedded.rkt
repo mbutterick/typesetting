@@ -4,11 +4,16 @@
 
 (define-subclass PDFFont (EmbeddedFont document font id)
   (super-new)
-  (field [subset (· this font createSubset)]
+  (field #;[subset (· this font createSubset)]
+         [unicode '((0))]
+         #;[widths (list (send (send (· this font) getGlyph 0) advanceWidth))]
+         
          [name (· font postscriptName)]
          [scale (/ 1000 (· font unitsPerEm))]
          [ascender (* (· font ascent) scale)]
-         [descender (* (· font descent) scale)])
+         [descender (* (· font descent) scale)]
+         [lineGap (* (· font lineGap) scale)]
+         [bbox (· font bbox)])
 
   (as-methods
    widthOfString
@@ -37,4 +42,6 @@ For now, we'll just measure width of the characters.
   (define ef (make-object EmbeddedFont #f f #f))
   (check-equal? (send ef widthOfString "f" 1000) 321.0)
   (check-equal? (· ef ascender) 980)
-  (check-equal? (· ef descender) -238))
+  (check-equal? (· ef descender) -238)
+  (check-equal? (· ef lineGap) 0)
+  (check-equal? (· ef bbox) '(-161 -236 1193 963)))

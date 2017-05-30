@@ -79,6 +79,8 @@
    [yMin _FT_Pos]
    [xMax _FT_Pos]
    [yMax _FT_Pos]))
+(provide (struct-out FT_BBox)
+         _FT_BBox _FT_BBox-pointer)
 
 (define-cstruct _FT_Glyph_Metrics
   ([width _FT_Pos]
@@ -200,6 +202,16 @@
 (provide (struct-out FT_FaceRec)
          _FT_FaceRec _FT_FaceRec-pointer)
 
+(define _FT_Sfnt_Tag _FT_ULong)
+
+(define-cstruct _FT_HoriHeader
+  ([version _FT_Long]
+   [ascent _FT_Short]
+   [descent _FT_Short]
+   [lineGap _FT_Short]))
+(provide (struct-out FT_HoriHeader)
+         _FT_HoriHeader _FT_HoriHeader-pointer)
+
 (define _full-path
   (make-ctype _path
               path->complete-path
@@ -240,14 +252,29 @@
 (define+provide FT_LOAD_LINEAR_DESIGN (expt 2 13))
 (define+provide FT_LOAD_NO_RECURSE (expt 2 10))
 
+
+
 (define-freetype FT_Get_Postscript_Name (_fun _FT_Face -> _string))
 
-(define-freetype FT_Load_Sfnt_Table (_fun _FT_Face _FT_ULong _FT_Long
-                                          (buffer : (_ptr o _FT_Byte))
-                                          (len : (_ptr o _FT_ULong))
+(define-freetype FT_Load_Sfnt_Table (_fun _FT_Face _FT_Sfnt_Tag _FT_Long
+                                          (buffer : (_ptr io _FT_Byte))
+                                          (len : (_ptr io _FT_ULong))
                                           -> (err : _FT_Error)
-                                          -> (and (zero? err) (list buffer len))))
+                                          -> (and (zero? err) #t)))
 
+
+(define+provide _FT_Gettable_Sfnt_Tag (_enum '(ft_sfnt_head = 0
+                                                            ft_sfnt_maxp
+                                                            ft_sfnt_os2
+                                                            ft_sfnt_hhea
+                                                            ft_sfnt_vhea
+                                                            ft_sfnt_post
+                                                            ft_sfnt_pclt)))
+
+(define-freetype FT_Get_Sfnt_Table (_fun _FT_Face _FT_Gettable_Sfnt_Tag
+                                         -> (p : (_cpointer/null 'table-ptr))
+                                         -> (or p (error 'sfnt-table-not-loaded))))
+(provide tag->int)
 (define (tag->int tag)
   (define signed? #f)
   (define big-endian? #t)
@@ -259,8 +286,19 @@
   (define face (FT_New_Face ft-library "test/assets/charter.ttf" 0))
   (check-equal? (FT_Get_Postscript_Name face) "Charter")
   (check-equal? (FT_FaceRec-units_per_EM face) 1000)
-  (FT_Load_Sfnt_Table face (tag->int #"cmap") 0)
-
+  (check-true (FT_Load_Sfnt_Table face (tag->int #"cmap") 0 0 0))
+  (check-false (FT_Load_Sfnt_Table face (tag->int #"zzap") 0 0 0))
+  (check-true (cpointer? (FT_Get_Sfnt_Table face 'ft_sfnt_hhea)))
+  (define charter-hhea-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_hhea) _pointer _FT_HoriHeader-pointer))
+  (check-equal? (FT_HoriHeader-ascent charter-hhea-table) 980)
+  (check-equal? (FT_HoriHeader-descent charter-hhea-table) -238)
+  (check-equal? (FT_HoriHeader-lineGap charter-hhea-table) 0)
+  (check-equal?
+   (let ([bbox (FT_FaceRec-bbox face)])
+        (list (FT_BBox-xMin bbox)
+              (FT_BBox-yMin bbox)
+              (FT_BBox-xMax bbox)
+              (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
   )
 
 

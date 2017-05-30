@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "freetype-ffi.rkt" racket/runtime-path)
+(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt")
 (provide (all-defined-out))
 
 (define-runtime-path charter-path "test/assets/charter.ttf")
@@ -29,7 +29,17 @@
    unitsPerEm
    ascent
    descent
-   createSubset))
+   lineGap
+   bbox
+   createSubset
+   has-table?
+   has-cff-table?))
+
+(define (has-table? this tag)
+  (FT_Load_Sfnt_Table (· this ft-face) (tag->int tag) 0 0 0))
+  
+(define (has-cff-table? this)
+  (has-table? this #"CFF "))
 
 (define/contract (postscriptName this)
   (->m string?)
@@ -47,11 +57,24 @@
   (->m number?)
   (FT_FaceRec-descender (· this ft-face)))
 
-(define/contract (createSubset this)
-  (->m object?)
-(void)
-  )
+(define/contract (lineGap this)
+  (->m number?)
+  (define hhea-table (cast (FT_Get_Sfnt_Table (· this ft-face) 'ft_sfnt_hhea) _pointer _FT_HoriHeader-pointer))
+  (FT_HoriHeader-lineGap hhea-table))
 
+(define/contract (bbox this)
+  (->m any/c)
+  (let ([bbox (FT_FaceRec-bbox (· this ft-face))])
+    (list (FT_BBox-xMin bbox)
+          (FT_BBox-yMin bbox)
+          (FT_BBox-xMax bbox)
+          (FT_BBox-yMax bbox))))
+
+(define/contract (createSubset this)
+  (->m (is-a?/c Subset))
+  (make-object (if (report (· this has-cff-table?))
+                   CFFSubset
+                   TTFSubset) this))
 
 (define/contract (measure-char-width this char)
   (char? . ->m . number?)
@@ -99,4 +122,10 @@
   (check-equal? (· f unitsPerEm) 1000)
   (check-equal? (· f ascent) 980)
   (check-equal? (· f descent) -238)
-  (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0))
+  (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0)
+  (check-false (· f has-cff-table?))
+  (check-equal? (· f lineGap) 0)
+  (· f createSubset)
+  
+
+  )
