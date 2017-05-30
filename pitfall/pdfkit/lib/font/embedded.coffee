@@ -16,6 +16,9 @@ class EmbeddedFont extends PDFFont
 
   encode: (text, features) ->
     {glyphs, positions} = @font.layout text, features
+    for glyph, i in glyphs
+      console.log("glyphid="+glyph.id)
+      console.log("position="+positions[i].toString())
 
     res = []
     for glyph, i in glyphs

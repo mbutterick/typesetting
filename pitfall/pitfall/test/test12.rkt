@@ -23,4 +23,5 @@
   (define doc (make-object PDFDocument))
   (send doc registerFont "Charter" (path->string charter-path))
   (send* doc [font "Charter"])
-  #;doc)
+  (send doc pipe (open-output-string))
+  (send doc end))

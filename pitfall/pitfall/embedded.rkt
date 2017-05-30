@@ -4,8 +4,10 @@
 
 (define-subclass PDFFont (EmbeddedFont document font id)
   (super-new)
-  (field #;[subset (· this font createSubset)]
+  (field [subset (· this font createSubset)]
+         ;; always include the missing glyph (gid = 0)
          [unicode '((0))]
+         ;; always include the width of the missing glyph (gid = 0)
          [widths (list (send (send (· this font) getGlyph 0) advanceWidth))]
          
          [name (· font postscriptName)]
@@ -46,7 +48,7 @@ For now, we'll just measure width of the characters.
   (check-equal? (· ef lineGap) 0)
   (check-equal? (· ef bbox) '(-161 -236 1193 963))
   (define H-gid 41)
-  (· ef widths)
+  (check-equal? (· ef widths) '(278))
   (check-equal? (send (send (· ef font) getGlyph H-gid) advanceWidth) 738)
-
+(· ef subset)
   )
