@@ -28,7 +28,12 @@
    measure-string
    unitsPerEm
    ascent
-   descent))
+   descent
+   createSubset))
+
+(define/contract (postscriptName this)
+  (->m string?)
+  (FT_Get_Postscript_Name (· this ft-face)))
 
 (define/contract (unitsPerEm this)
   (->m number?)
@@ -42,9 +47,10 @@
   (->m number?)
   (FT_FaceRec-descender (· this ft-face)))
 
-(define/contract (postscriptName this)
-  (->m string?)
-  (FT_Get_Postscript_Name (· this ft-face)))
+(define/contract (createSubset this)
+  (->m object?)
+(void)
+  )
 
 
 (define/contract (measure-char-width this char)

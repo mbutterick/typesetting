@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "standard-fonts.rkt" "font.rkt" "fontkit.rkt" "embedded.rkt")
+(require "standard-font.rkt" "font.rkt" "fontkit.rkt" "embedded.rkt")
 (provide PDFFont-open)
 
 (define/contract (PDFFont-open document src family id)

@@ -57,7 +57,7 @@
          (error 'unimplemented-branch-of-_text)] ; todo
       [else ; render paragraphs as single lines
        (for ([line (in-list (string-split text "\n"))])
-         (lineCallback line options))]))
+            (lineCallback line options))]))
   
   this)
 
@@ -82,7 +82,7 @@
     (when (· this _textOptions)
       (for ([(key val) (in-hash (· this _textOptions))]
             #:unless (equal? (key "continued")))
-        (hash-ref! options key val)))
+           (hash-ref! options key val)))
 
     ;; Update the current position
     (when x (set-field! x this x))
@@ -182,10 +182,10 @@
   ;; If we have a word spacing value, we need to encode each word separately
   ;; since the normal Tw operator only works on character code 32, which isn't
   ;; used for embedded fonts.
-  (match-define (list encoded positions)
-    (cond
-      [(not (zero? wordSpacing)) (error 'unimplemented-brach)] ; todo
-      [else (send (· this _font) encode text (hash-ref options 'features #f))]))
+  (match-define (list encoded-char-strs positions)
+    (if (not (zero? wordSpacing))
+        (error 'unimplemented-brach) ; todo
+        (send (· this _font) encode text (hash-ref options 'features #f))))
 
   (define scale (/ (· this _fontSize) 1000.0))
   (define commands empty)
@@ -194,7 +194,7 @@
   ;; Adds a segment of text to the TJ command buffer
   (define (addSegment cur)
     (when (< last cur)
-      (let* ([hex (string-append* (sublist encoded last cur))]
+      (let* ([hex (string-append* (sublist encoded-char-strs last cur))]
              [posn (list-ref positions (sub1 cur))]
              [advance (- (· posn xAdvance) (· posn advanceWidth))])
         (push-end! commands (format "<~a> ~a" hex (number (- advance))))))

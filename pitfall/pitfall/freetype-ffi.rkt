@@ -242,12 +242,26 @@
 
 (define-freetype FT_Get_Postscript_Name (_fun _FT_Face -> _string))
 
+(define-freetype FT_Load_Sfnt_Table (_fun _FT_Face _FT_ULong _FT_Long
+                                          (buffer : (_ptr o _FT_Byte))
+                                          (len : (_ptr o _FT_ULong))
+                                          -> (err : _FT_Error)
+                                          -> (and (zero? err) (list buffer len))))
+
+(define (tag->int tag)
+  (define signed? #f)
+  (define big-endian? #t)
+  (integer-bytes->integer tag signed? big-endian?))
+
 (module+ test
   (require rackunit)
   (define ft-library (FT_Init_FreeType))
   (define face (FT_New_Face ft-library "test/assets/charter.ttf" 0))
   (check-equal? (FT_Get_Postscript_Name face) "Charter")
-  (check-equal? (FT_FaceRec-units_per_EM face) 1000))
+  (check-equal? (FT_FaceRec-units_per_EM face) 1000)
+  (FT_Load_Sfnt_Table face (tag->int #"cmap") 0)
+
+  )
 
 
          

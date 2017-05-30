@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require  "afm.rkt" "font.rkt")
+(require "afm-font.rkt" "font.rkt")
 (require racket/runtime-path (for-syntax racket/base racket/path racket/syntax sugar/debug))
 (provide isStandardFont standard-fonts StandardFont)
 
