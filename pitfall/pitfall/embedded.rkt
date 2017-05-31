@@ -59,6 +59,8 @@ For now, we'll just measure width of the characters.
       (values subset-idx posn)))
   (list subset-idxs new-positions))
 
+(require racket/runtime-path)
+(define-runtime-path charter-path "test/assets/charter.ttf")
 
 (define/contract (embed this)
   (->m void?)
@@ -70,7 +72,7 @@ For now, we'll just measure width of the characters.
 
   ;; todo
   ;; (send (send (· this subset) encodeStream) pipe fontFile)
-  (send fontFile end) ;; temp
+  (send fontFile end (send (· this subset) encode)) ;; temp
 
   ;; todo
   ;; (define familyClass (send (· this font) has-table? #"OS/2"))
@@ -107,7 +109,7 @@ For now, we'll just measure width of the characters.
                                         'FontFile2) fontFile)
 
   (· descriptor end)
-  (report (· descriptor toString) 'descriptor-id)
+  #;(report (· descriptor toString) 'descriptor-id)
 
   (define descendantFont (send (· this document) ref
                                (mhash
@@ -124,7 +126,7 @@ For now, we'll just measure width of the characters.
                                              (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
 
   (· descendantFont end)
-  (report (· descendantFont toString) 'descendantFont)
+  #;(report (· descendantFont toString) 'descendantFont)
   (hash-set*! (· this dictionary payload)
               'Type "Font"
               'Subtype "Type0"
@@ -170,7 +172,7 @@ For now, we'll just measure width of the characters.
                                          end
                                          end
                                          })
-  (report (· cmap toString) 'cmap-id)
+  #;(report (· cmap toString) 'cmap-id)
   cmap)
 
 (define/contract (toHex . codePoints)

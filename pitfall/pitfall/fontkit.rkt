@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt")
+(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt")
 (provide (all-defined-out))
 
 (define-runtime-path charter-path "test/assets/charter.ttf")
@@ -7,25 +7,31 @@
 ;; approximates
 ;; https://github.com/devongovett/fontkit/blob/master/src/TTFFont.js
 
-(define-subclass object% (TTFFont filename)
+;; This is the base class for all SFNT-based font formats in fontkit.
+;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
+(define-subclass object% (TTFFont [stream (open-input-bytes #"")])
   (super-new)
-  (field [_tables (mhash)]
+  (when stream (unless (input-port? stream)
+                 (raise-argument-error 'TTFFont "input port" stream)))
+  (field [_directoryPos (let-values ([(l c p) (port-next-location stream)])
+                          p)]
+         [_tables (mhash)]
          [_glyphs (mhash)]
          [_layoutEngine #f])
-  
-  (field [buffer (file->bytes filename)])
 
-  (define (buffer->font buffer)
-    'made-ttf-font)
+  (field [directory #f])
+  (send this _decodeDirectory)
 
-  (define (probe buffer)
+  (define/public (_decodeDirectory)
+    (set! directory (directory-decode stream (mhash '_startOffset 0)))
+    directory)
+
+  (define/public (probe buffer)
     (and
      (member (bytes->string/latin-1 (subbytes buffer 0 4))
              (list "true" "OTTO" "\u0\u1\u0\u0"))
      'TTF-format))
   
-  (and (probe buffer) (buffer->font buffer))
-
   (field [ft-library (FT_Init_FreeType)])
   (field [ft-face (FT_New_Face ft-library charter-path 0)])
 
@@ -224,21 +230,24 @@
 ;;fontkit.registerFormat(DFont); ;; todo
 
 
-(define/contract (create filename [postscriptName #f])
-  ((string?) ((or/c string? #f)) . ->* . any/c)
-  (or
-   (for*/first ([format (in-list formats)]
-                [font (in-value (make-object format filename))]
-                #:when font)
-     (if postscriptName
-         (send font getFont postscriptName) ; used to select from collection files like TTC
-         font))
-   (error 'create "unknown font format")))
-
 
 (define/contract (openSync filename [postscriptName #f])
   ((string?) ((or/c string? #f)) . ->* . any/c)
-  (create filename postscriptName))
+  (define buffer (file->bytes filename))
+  (create buffer postscriptName))
+
+
+
+(define/contract (create buffer [postscriptName #f])
+  ((bytes?) ((or/c string? #f)) . ->* . any/c)
+  (or
+   (for*/first ([format (in-list formats)]
+                #:when (send (make-object format) probe buffer))
+     (define font (make-object format (open-input-bytes buffer)))
+     (if postscriptName
+         (send font getFont postscriptName) ; used to select from collection files like TTC
+         font))
+   (error 'fontkit:create "unknown font format")))
 
 
 (module+ test

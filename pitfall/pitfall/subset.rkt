@@ -36,4 +36,11 @@
 
 (define-subclass Subset (TTFSubset)
   (super-new)
+
+  (as-methods
+   encode)
   )
+
+(define/contract (encode this)
+  (->m input-port?)
+  (· this font stream))
