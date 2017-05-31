@@ -157,9 +157,9 @@
   #;(report* (· this _offsets))
 
   (· this _root end)
-  #;(report* (· this _offsets))
+  (report* (· this _offsets))
   (· this _root payload Pages end)
-  #;(report* (· this _offsets))
+  (report* (· this _offsets))
 
   ;; generate xref
   (define xref-offset (· this _offset))

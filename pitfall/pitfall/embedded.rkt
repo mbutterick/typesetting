@@ -1,11 +1,13 @@
 #lang pitfall/racket
-(require "font.rkt" "glyph-position.rkt" "glyphrun.rkt" "subset.rkt")
+(require "font.rkt" "glyph-position.rkt" "glyphrun.rkt" "subset.rkt" "reference.rkt")
 (provide EmbeddedFont)
 
 (define-subclass PDFFont (EmbeddedFont document font id)
   (super-new)
   (field [subset (· this font createSubset)]
-         [unicode (mhash 0 0)] ; always include the missing glyph (gid = 0)
+         ;; we make `unicode` and `width` fields integer-keyed hashes not lists
+         ;; because they offer better random access and growability 
+         [unicode (mhash 0 '(0))] ; always include the missing glyph (gid = 0)
          [widths (mhash 0 (send (send (· this font) getGlyph 0) advanceWidth))]
          ;; always include the width of the missing glyph (gid = 0)
          
@@ -19,7 +21,8 @@
   (as-methods
    widthOfString
    encode
-   embed))
+   embed
+   toUnicodeCmap))
 
 (define/contract (widthOfString this str size [features #f])
   ((string? number?) ((or/c list? #f)) . ->*m . number?)
@@ -46,7 +49,7 @@ For now, we'll just measure width of the characters.
       ([(glyph i) (in-indexed glyphs)]
        [posn (in-list positions)])
       (define gid (send (· this subset) includeGlyph (· glyph id)))
-      (define subset-idx (~r gid #:base 16 #:min-width 4 #:pad-string "0"))
+      (define subset-idx (toHex gid))
       (set-field! advanceWidth posn (· glyph advanceWidth))
 
       (hash-ref! (· this widths) gid (λ () (· posn advanceWidth)))
@@ -87,8 +90,8 @@ For now, we'll just measure width of the characters.
                             'FontName name
                             'Flags flags
                             'FontBBox (map (curry * (· this scale))
-                                          (list (· bbox minX) (· bbox minY)
-                                           (· bbox maxX) (· bbox maxY)))
+                                           (list (· bbox minX) (· bbox minY)
+                                                 (· bbox maxX) (· bbox maxY)))
                             'ItalicAngle (· this font italicAngle)
                             'Ascent (· this ascender)
                             'Descent (· this descender)
@@ -97,6 +100,7 @@ For now, we'll just measure width of the characters.
                             'StemV 0)))
 
   (· descriptor end)
+  (report (· descriptor toString) 'descriptor-id)
 
   (define descendantFont (send (· this document) ref
                                (mhash
@@ -110,10 +114,10 @@ For now, we'll just measure width of the characters.
                                  'Supplement 0)
                                 'FontDescriptor descriptor
                                 'W (cons 0 (for/list ([idx (in-range (length (hash-keys (· this widths))))])
-                                           (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
+                                             (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
 
   (· descendantFont end)
-
+  (report (· descendantFont toString) 'descendantFont-id)
   (hash-set*! (· this dictionary payload)
               'Type "Font"
               'Subtype "Type0"
@@ -122,11 +126,52 @@ For now, we'll just measure width of the characters.
               'DescendantFonts (list descendantFont)
               'ToUnicode (· this toUnicodeCmap))
 
-  (· this dictionary end)
+  (· this dictionary end))
 
-  (error 'embed-unfinished)
-  )
 
+(define/contract (toUnicodeCmap this)
+  (->m (is-a?/c PDFReference))
+  (define cmap (· this document ref))
+  (define entries
+    (for/list ([idx (in-range (length (hash-keys (· this unicode))))])
+      (define codePoints (hash-ref (· this unicode) idx))
+      (define encoded ; encode codePoints to utf16
+        ;; todo: full utf16 support. for now just utf8
+        (for/list ([value (in-list codePoints)])
+          (toHex value)))
+      (format "<~a>" (string-join encoded " "))))
+
+  (send cmap end @string-append{
+                                /CIDInit /ProcSet findresource begin
+                                         12 dict begin
+                                         begincmap
+                                         /CIDSystemInfo <<
+                                         /Registry (Adobe)
+                                         /Ordering (UCS)
+                                         /Supplement 0
+                                         >> def
+                                         /CMapName /Adobe-Identity-UCS def
+                                         /CMapType 2 def
+                                         1 begincodespacerange
+                                         <0000><ffff>
+                                         endcodespacerange
+                                         1 beginbfrange
+                                         <0000> <@(toHex (sub1 (length entries)))> [@(string-join entries " ")]
+                                         endbfrange
+                                         endcmap
+                                         CMapName currentdict /CMap defineresource pop
+                                         end
+                                         end
+                                         })
+  (report (· cmap toString) 'cmap-id)
+  cmap)
+
+(define/contract (toHex . codePoints)
+  (() () #:rest (listof number?) . ->*m . string?)
+  (string-append*
+   (for/list ([code (in-list codePoints)])
+     (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
+                 
 
 (module+ test
   (require rackunit "fontkit.rkt" "bbox.rkt")

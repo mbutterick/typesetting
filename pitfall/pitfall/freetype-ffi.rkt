@@ -227,12 +227,30 @@
 (provide (struct-out FT_TT_Postscript)
          _FT_TT_Postscript _FT_TT_Postscript-pointer)
 
+(define-cstruct _FT_panose
+  ([a _FT_Byte]
+   [b _FT_Byte]
+   [c _FT_Byte]
+   [d _FT_Byte]
+   [e _FT_Byte]
+   [f _FT_Byte]
+   [g _FT_Byte]
+   [h _FT_Byte]
+   [i _FT_Byte]
+   [j _FT_Byte]))
+
+(define-cstruct _FT_VendID
+               ([a _FT_Char]
+                [b _FT_Char]
+                [c _FT_Char]
+                [d _FT_Char]))
+
 (define-cstruct _FT_TT_OS2
   ([version _FT_UShort]
    [xAvgCharWidth _FT_Short]
    [usWeightClass _FT_UShort]
    [usWidthClass _FT_UShort]
-   [fsType _FT_UShort] ; todo: 4 ushorts
+   [fsType _FT_Short] 
    [ySubscriptXSize _FT_Short]
    [ySubscriptYSize _FT_Short]
    [ySubscriptXOffset _FT_Short]
@@ -244,12 +262,12 @@
    [yStrikeoutSize _FT_Short]
    [yStrikeoutPosition _FT_Short]
    [sFamilyClass _FT_Short]
-   [panose _FT_Byte] ; todo: 10 bytes
+   [panose _FT_panose]
    [ulUnicodeRange1 _FT_ULong]
    [ulUnicodeRange2 _FT_ULong]
    [ulUnicodeRange3 _FT_ULong]
    [ulUnicodeRange4 _FT_ULong]
-   [achVendID _FT_Char]
+   [achVendID _FT_VendID]
    [fsSelection _FT_UShort]
    [usFirstCharIndex _FT_UShort]
    [usLastCharIndex _FT_UShort]
@@ -257,7 +275,16 @@
    [sTypoDescender _FT_Short]
    [sTypoLineGap _FT_Short]
    [usWinAscent _FT_UShort]
-   [usWinDescent _FT_UShort]))
+   [usWinDescent _FT_UShort]
+   [ulCodePageRange1 _FT_ULong]
+   [ulCodePageRange2 _FT_ULong]
+   [sxHeight _FT_Short]
+   [sCapHeight _FT_Short]
+   [usDefaultChar _FT_UShort]
+   [usBreakChar _FT_UShort]
+   [usMaxContext _FT_UShort]
+   [usLowerOpticalPointSize _FT_UShort]
+   [usUpperOpticalPointSize _FT_UShort]))
 (provide (struct-out FT_TT_OS2)
          _FT_TT_OS2 _FT_TT_OS2-pointer)
 
@@ -365,6 +392,18 @@
   (check-equal? (FT_TT_Postscript-italicAngle charter-post-table) 0)
   (check-equal? (FT_TT_Postscript-underlinePosition charter-post-table) -178) ; -207 + 1/2 of thickness = -207 + 29
   (check-equal? (FT_TT_Postscript-underlineThickness charter-post-table) 58)
+
+  (define os2-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_os2) _pointer _FT_TT_OS2-pointer))
+  (check-equal? (FT_TT_OS2-fsType os2-table) #b1000)
+  (check-equal? (FT_TT_OS2-yStrikeoutSize os2-table) 61)
+  (check-equal? (FT_TT_OS2-yStrikeoutPosition os2-table) 240)
+
+  (check-equal? (FT_panose->list (FT_TT_OS2-panose os2-table)) '(2 0 5 3 6 0 0 2 0 4))
+
+  (check-equal? (FT_TT_OS2-sTypoAscender os2-table) 762)
+  (check-equal? (FT_TT_OS2-sTypoDescender os2-table) -238)
+  (check-equal? (FT_TT_OS2-sCapHeight os2-table) 671)
+  (check-equal? (FT_TT_OS2-sxHeight os2-table) 481)
 
   (FT_Done_Face face)
   )

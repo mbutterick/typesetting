@@ -108,13 +108,21 @@
 ;; The height of capital letters above the baseline.
 (define/contract (capHeight this)
   (->m number?)
-  (error 'capHeight-unimplemented))
+  (cond
+    [(send this has-table? #"OS/2")
+     (define os2-table (cast (FT_Get_Sfnt_Table (· this ft-face) 'ft_sfnt_os2) _pointer _FT_TT_OS2-pointer))
+     (FT_TT_OS2-sCapHeight os2-table)]
+    [else (· this ascent)]))
 
 
 ;; The height of lower case letters in the font.
 (define/contract (xHeight this)
   (->m number?)
-  (error 'xheight-unimplemented))
+  (cond
+    [(send this has-table? #"OS/2")
+     (define os2-table (cast (FT_Get_Sfnt_Table (· this ft-face) 'ft_sfnt_os2) _pointer _FT_TT_OS2-pointer))
+     (FT_TT_OS2-sxHeight os2-table)]
+    [else 0]))
 
 
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
