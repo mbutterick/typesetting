@@ -214,6 +214,53 @@
 (provide (struct-out FT_HoriHeader)
          _FT_HoriHeader _FT_HoriHeader-pointer)
 
+(define-cstruct _FT_TT_Postscript
+  ([FormatType _FT_Fixed]
+   [italicAngle _FT_Fixed]
+   [underlinePosition _FT_Short]
+   [underlineThickness _FT_Short]
+   [isFixedPitch _FT_ULong]
+   [minMemType42 _FT_ULong]
+   [maxMemType42 _FT_ULong]
+   [minMemType1 _FT_ULong]
+   [maxMemType1 _FT_ULong]))
+(provide (struct-out FT_TT_Postscript)
+         _FT_TT_Postscript _FT_TT_Postscript-pointer)
+
+(define-cstruct _FT_TT_OS2
+  ([version _FT_UShort]
+   [xAvgCharWidth _FT_Short]
+   [usWeightClass _FT_UShort]
+   [usWidthClass _FT_UShort]
+   [fsType _FT_UShort] ; todo: 4 ushorts
+   [ySubscriptXSize _FT_Short]
+   [ySubscriptYSize _FT_Short]
+   [ySubscriptXOffset _FT_Short]
+   [ySubscriptYOffset _FT_Short]
+   [ySuperscriptXSize _FT_Short]
+   [ySuperscriptYSize _FT_Short]
+   [ySuperscriptXOffset _FT_Short]
+   [ySuperscriptYOffset _FT_Short]
+   [yStrikeoutSize _FT_Short]
+   [yStrikeoutPosition _FT_Short]
+   [sFamilyClass _FT_Short]
+   [panose _FT_Byte] ; todo: 10 bytes
+   [ulUnicodeRange1 _FT_ULong]
+   [ulUnicodeRange2 _FT_ULong]
+   [ulUnicodeRange3 _FT_ULong]
+   [ulUnicodeRange4 _FT_ULong]
+   [achVendID _FT_Char]
+   [fsSelection _FT_UShort]
+   [usFirstCharIndex _FT_UShort]
+   [usLastCharIndex _FT_UShort]
+   [sTypoAscender _FT_Short]
+   [sTypoDescender _FT_Short]
+   [sTypoLineGap _FT_Short]
+   [usWinAscent _FT_UShort]
+   [usWinDescent _FT_UShort]))
+(provide (struct-out FT_TT_OS2)
+         _FT_TT_OS2 _FT_TT_OS2-pointer)
+
 (define _full-path
   (make-ctype _path
               path->complete-path
@@ -299,20 +346,25 @@
   (check-equal? (FT_HoriHeader-lineGap charter-hhea-table) 0)
   (check-equal?
    (let ([bbox (FT_FaceRec-bbox face)])
-        (list (FT_BBox-xMin bbox)
-              (FT_BBox-yMin bbox)
-              (FT_BBox-xMax bbox)
-              (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
+     (list (FT_BBox-xMin bbox)
+           (FT_BBox-yMin bbox)
+           (FT_BBox-xMax bbox)
+           (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
 
   (define H-gid 41)
   (FT_Load_Glyph face H-gid FT_LOAD_NO_RECURSE)
-; want bearingX (lsb) and advanceX (advance width)
+  ; want bearingX (lsb) and advanceX (advance width)
   (define g (FT_FaceRec-glyph face))
   (define metrics (FT_GlyphSlotRec-metrics g))
   (define bearingX (FT_Glyph_Metrics-horiBearingX metrics))
   (check-equal? bearingX 33)
   (define advanceX (FT_Glyph_Metrics-horiAdvance metrics))
   (check-equal? advanceX 738)
+
+  (define charter-post-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_post) _pointer _FT_TT_Postscript-pointer))
+  (check-equal? (FT_TT_Postscript-italicAngle charter-post-table) 0)
+  (check-equal? (FT_TT_Postscript-underlinePosition charter-post-table) -178) ; -207 + 1/2 of thickness = -207 + 29
+  (check-equal? (FT_TT_Postscript-underlineThickness charter-post-table) 58)
 
   (FT_Done_Face face)
   )

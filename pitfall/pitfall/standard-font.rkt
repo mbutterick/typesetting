@@ -36,11 +36,7 @@
   (define positions
     (for/list ([glyph (in-list glyphs)]
                [advance (in-list advances)])
-      (hasheq 'xAdvance advance
-              'yAdvance 0
-              'xOffset 0
-              'yOffset 0
-              'advanceWidth (send this-font widthOfGlyph glyph)))) 
+      (make-object GlyphPosition advance 0 0 0 (send this-font widthOfGlyph glyph)))) 
   (list encoded positions))
 
 

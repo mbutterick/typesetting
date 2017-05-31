@@ -11,6 +11,20 @@
 
                           [xOffset 0]
                           ;; The offset from the pen position in the Y direction at which to render this glyph.
-                          [yOffset 0])
+                          [yOffset 0]
+                          [advanceWidth 0])
   (super-new)
+
+  (as-methods
+   scale)
   )
+
+
+(define/contract (scale this factor)
+  (number? . ->m . (is-a?/c GlyphPosition))
+  (set-field! xAdvance this (* factor (· this xAdvance)))
+  (set-field! yAdvance this (* factor (· this yAdvance)))
+  (set-field! xOffset this (* factor (· this xOffset)))
+  (set-field! yOffset this (* factor (· this xAdvance)))
+  (set-field! advanceWidth this (* factor (· this advanceWidth)))
+  this)

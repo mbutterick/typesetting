@@ -36,6 +36,11 @@
    ascent
    descent
    lineGap
+   underlinePosition
+   underlineThickness
+   italicAngle
+   capHeight
+   xHeight
    bbox
    createSubset
    has-table?
@@ -78,6 +83,38 @@
   (->m number?)
   (define hhea-table (cast (FT_Get_Sfnt_Table (· this ft-face) 'ft_sfnt_hhea) _pointer _FT_HoriHeader-pointer))
   (FT_HoriHeader-lineGap hhea-table))
+
+
+(define/contract (underlinePosition this)
+  (->m number?)
+  (define post-table (cast (FT_Get_Sfnt_Table (· this ft-face) 'ft_sfnt_post) _pointer _FT_TT_Postscript-pointer))
+  (FT_TT_Postscript-underlinePosition post-table))
+
+
+
+(define/contract (underlineThickness this)
+  (->m number?)
+  (define post-table (cast (FT_Get_Sfnt_Table (· this ft-face) 'ft_sfnt_post) _pointer _FT_TT_Postscript-pointer))
+  (FT_TT_Postscript-underlineThickness post-table))
+
+
+;; If this is an italic font, the angle the cursor should be drawn at to match the font design
+(define/contract (italicAngle this)
+  (->m number?)
+  (define post-table (cast (FT_Get_Sfnt_Table (· this ft-face) 'ft_sfnt_post) _pointer _FT_TT_Postscript-pointer))
+  (FT_TT_Postscript-italicAngle post-table))
+
+
+;; The height of capital letters above the baseline.
+(define/contract (capHeight this)
+  (->m number?)
+  (error 'capHeight-unimplemented))
+
+
+;; The height of lower case letters in the font.
+(define/contract (xHeight this)
+  (->m number?)
+  (error 'xheight-unimplemented))
 
 
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
