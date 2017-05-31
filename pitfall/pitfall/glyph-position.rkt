@@ -25,6 +25,6 @@
   (set-field! xAdvance this (* factor (· this xAdvance)))
   (set-field! yAdvance this (* factor (· this yAdvance)))
   (set-field! xOffset this (* factor (· this xOffset)))
-  (set-field! yOffset this (* factor (· this xAdvance)))
+  (set-field! yOffset this (* factor (· this yOffset)))
   (set-field! advanceWidth this (* factor (· this advanceWidth)))
   this)

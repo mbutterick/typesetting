@@ -157,18 +157,23 @@
   #;(report* (· this _offsets))
 
   (· this _root end)
-  (report* (· this _offsets))
+  #;(report* (· this _offsets))
   (· this _root payload Pages end)
-  (report* (· this _offsets))
+  #;(report* (· this _offsets))
 
   ;; generate xref
   (define xref-offset (· this _offset))
   (with-method ([this-write (this write)])
-    (define this-offsets (map cdr (sort (hash->list (· this _offsets)) < #:key car))) ; sort by refid
+    (define sorted-offset-records  (sort (hash->list (· this _offsets)) < #:key car)) ; sort by refid
+    (define this-offsets (map cdr sorted-offset-records))
+    (define this-idxs (map car sorted-offset-records))
     (this-write "xref")
     (this-write (format "0 ~a" (add1 (length this-offsets))))
     (this-write "0000000000 65535 f ")
-    (for ([offset (in-list this-offsets)])
+    (for ([offset (in-list this-offsets)]
+          [idx (in-list this-idxs)])
+      (unless (number? offset)
+        (raise-argument-error 'document:end (format "numerical offset for ref ~a" idx) offset))
       (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
     (this-write "trailer") ;; trailer
     (this-write (convert

@@ -253,6 +253,7 @@ module.exports =
     # If we have a word spacing value, we need to encode each word separately
     # since the normal Tw operator only works on character code 32, which isn't
     # used for embedded fonts.
+    #console.log("wordSpacing="+wordSpacing)
     if wordSpacing
       words = text.trim().split(/\s+/)
       wordSpacing += @widthOfString(' ') + characterSpacing
@@ -295,6 +296,7 @@ module.exports =
     for pos, i in positions
       # If we have an x or y offset, we have to break out of the current TJ command
       # so we can move the text position.
+      console.log("pos.xOffset or pos.yOffset=" + (pos.xOffset or pos.yOffset))
       if pos.xOffset or pos.yOffset
         # Flush the current buffer
         flush i

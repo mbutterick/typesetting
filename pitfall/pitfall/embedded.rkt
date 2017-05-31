@@ -70,6 +70,7 @@ For now, we'll just measure width of the characters.
 
   ;; todo
   ;; (send (send (· this subset) encodeStream) pipe fontFile)
+  (send fontFile end) ;; temp
 
   ;; todo
   ;; (define familyClass (send (· this font) has-table? #"OS/2"))
@@ -79,6 +80,7 @@ For now, we'll just measure width of the characters.
   (define flags 0)
 
   ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
+  (when (test-mode) (random-seed 0))
   (define tag (list->string (for/list ([i (in-range 6)])
                               (integer->char (random 65 (+ 65 26))))))
   (define name (string-append tag "+" (· this font postscriptName)))
@@ -99,6 +101,11 @@ For now, we'll just measure width of the characters.
                             'XHeight (* (or (· this font xHeight) 0) (· this scale))
                             'StemV 0)))
 
+
+  (hash-set! (· descriptor payload) (if isCFF
+                                        'FontFile3
+                                        'FontFile2) fontFile)
+
   (· descriptor end)
   (report (· descriptor toString) 'descriptor-id)
 
@@ -113,11 +120,11 @@ For now, we'll just measure width of the characters.
                                  'Ordering (String "Identity")
                                  'Supplement 0)
                                 'FontDescriptor descriptor
-                                'W (cons 0 (for/list ([idx (in-range (length (hash-keys (· this widths))))])
+                                'W (list 0 (for/list ([idx (in-range (length (hash-keys (· this widths))))])
                                              (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
 
   (· descendantFont end)
-  (report (· descendantFont toString) 'descendantFont-id)
+  (report (· descendantFont toString) 'descendantFont)
   (hash-set*! (· this dictionary payload)
               'Type "Font"
               'Subtype "Type0"
@@ -142,13 +149,13 @@ For now, we'll just measure width of the characters.
       (format "<~a>" (string-join encoded " "))))
 
   (send cmap end @string-append{
-                                /CIDInit /ProcSet findresource begin
+                                         /CIDInit /ProcSet findresource begin
                                          12 dict begin
                                          begincmap
                                          /CIDSystemInfo <<
-                                         /Registry (Adobe)
-                                         /Ordering (UCS)
-                                         /Supplement 0
+                                           /Registry (Adobe)
+                                           /Ordering (UCS)
+                                           /Supplement 0
                                          >> def
                                          /CMapName /Adobe-Identity-UCS def
                                          /CMapType 2 def
