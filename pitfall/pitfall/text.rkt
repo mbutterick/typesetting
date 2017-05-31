@@ -186,7 +186,7 @@
     (if (not (zero? wordSpacing))
         (error 'unimplemented-brach) ; todo
         (send (· this _font) encode text (hash-ref options 'features #f))))
-
+  
   (define scale (/ (· this _fontSize) 1000.0))
   (define commands empty)
   (define last 0)

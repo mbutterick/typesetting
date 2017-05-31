@@ -15,10 +15,11 @@ class EmbeddedFont extends PDFFont
     @bbox = @font.bbox
 
   encode: (text, features) ->
+    #console.log(@font.layout text, features + " ")
     {glyphs, positions} = @font.layout text, features
-    for glyph, i in glyphs
-      console.log("glyphid="+glyph.id)
-      console.log("position="+positions[i].toString())
+    #console.log("text=" + text)
+    #for glyph, i in glyphs
+     # console.log("glyphs=" + glyph.id)
 
     res = []
     for glyph, i in glyphs
@@ -32,6 +33,9 @@ class EmbeddedFont extends PDFFont
         positions[i][key] *= @scale
 
       positions[i].advanceWidth = glyph.advanceWidth * @scale
+
+    #for glyph, i in glyphs
+      #console.log("gid:res:width = " + glyph.id + ":" + res[i] +  ":" + positions[i].advanceWidth)
 
     return [res, positions]
 

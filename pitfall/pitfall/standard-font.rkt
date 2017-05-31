@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "afm-font.rkt" "font.rkt")
+(require "afm-font.rkt" "font.rkt" "glyph-position.rkt")
 (require racket/runtime-path (for-syntax racket/base racket/path racket/syntax sugar/debug))
 (provide isStandardFont standard-fonts StandardFont)
 
@@ -28,7 +28,7 @@
 
 
 (define/contract (encode this text [options #f])
-  ((string?) ((or/c hash? #f)) . ->*m . (list/c (listof string?) (listof hash?)))
+  ((string?) ((or/c hash? #f)) . ->*m . (list/c (listof string?) (listof (is-a?/c GlyphPosition))))
   (define this-font (· this font))
   (define encoded (send this-font encodeText text))
   (define glyphs (send this-font glyphsForString text))

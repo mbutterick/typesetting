@@ -1,8 +1,6 @@
 #lang pitfall/racket
 (provide Subset CFFSubset TTFSubset)
 
-(define index? (and/c (not/c negative?) integer?))
-
 ;; approximates
 ;; https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 

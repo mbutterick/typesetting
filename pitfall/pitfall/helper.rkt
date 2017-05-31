@@ -1,5 +1,5 @@
 #lang racket/base
-(require (for-syntax racket/base racket/syntax) racket/class sugar/list racket/list (only-in br/list push! pop!) racket/string racket/format)
+(require (for-syntax racket/base racket/syntax) racket/class sugar/list racket/list (only-in br/list push! pop!) racket/string racket/format racket/contract)
 (provide (all-defined-out) push! pop!)
 
 (define-syntax (· stx)
@@ -181,3 +181,8 @@
 
 (module+ test
   (check-equal? (bytes->hex #"PNG") '(x50 x4e x47)))
+
+(define (layout? x)
+  (and (hash? x) (hash-has-key? x 'glyphs) (hash-has-key? x 'positions)))
+
+(define index? (and/c (not/c negative?) integer?))
