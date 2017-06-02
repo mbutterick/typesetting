@@ -9,7 +9,11 @@
 
 (define-macro-cases :atomic
   [(N COUNT) #'(N COUNT identity)]
-  [(N COUNT PROC) #'(λ () (PROC (read-bytes COUNT)))])
+  [(N COUNT PROC) #'(λ ()
+                      (define bs (read-bytes COUNT))
+                      (when (< (bytes-length bs) COUNT)
+                        (error 'not-enough-bytes (format "~a needs ~a" 'N COUNT)))
+                      (PROC bs))])
 
 (define (seq->hash xs) (make-hasheq xs))
 
@@ -22,12 +26,12 @@
                (PROC (map (λ(f) (f)) (list SEQ ...)))))]
   [(N SEQ ...) #'(N SEQ ... (:bidi identity))])
 
-(define-macro-cases :element
+(struct elem (name val bidi) #:transparent)
+
+(define-macro-cases define-rule
   [(N ID WHAT) #'(N ID WHAT (:bidi identity))]
   [(N ID WHAT (:bidi PROC))
-   #'(define ID (λ () (if (unparse-val)
-                          (PROC (unparse-val))
-                          (PROC (cons 'ID (WHAT))))))])
+   #'(define ID (λ () (elem 'ID (WHAT) PROC)))])
 
 (define-macro (:bidi X) #'X)
 
@@ -49,21 +53,28 @@
 (define (bytes->string bs)
   (bytes->string/latin-1 bs))
 
-(:element gif (:seq signature version logical-screen-descriptor (:bidi seq->hash)) (:bidi val->hash))
-(:element signature (:atomic 3 (:bidi bytes->string)))
-(:element version (:atomic 3 (:bidi bytes->string)))
+(define-rule gif (:seq signature version logical-screen-descriptor (:bidi seq->hash)))
+(define-rule signature (:atomic 3 (:bidi bytes->string)))
+(define-rule version (:atomic 3 (:bidi bytes->string)))
 
 
-(:element logical-screen-descriptor (:seq width height packed bgcolor-idx aspect (:bidi seq->list)))
-(:element width (:atomic 2 (:bidi bytes->int)))
-(:element height (:atomic 2 (:bidi bytes->int)))
-(:element packed (:atomic 1 (:bidi bytes->bitfield)))
-(:element bgcolor-idx (:atomic 1 (:bidi bytes->int)))
-(:element aspect (:atomic 1 (:bidi bytes->int)))
+(define-rule logical-screen-descriptor (:seq width height packed bgcolor-idx aspect (:bidi seq->list)))
+(define-rule width (:atomic 2 (:bidi bytes->int)))
+(define-rule height (:atomic 2 (:bidi bytes->int)))
+(define-rule packed (:atomic 1 (:bidi bytes->bitfield)))
+(define-rule bgcolor-idx (:atomic 1 (:bidi bytes->int)))
+(define-rule aspect (:atomic 1 (:bidi bytes->int)))
+
+(define (make-byte-parser rule)
+  (λ (x) (parse-with-template x rule)))
 
 
-(define (parse-with-template file template)
-  (parameterize ([current-input-port (open-input-file file)])
+(define (parse-with-template in template)
+  (parameterize ([current-input-port (cond
+                                       [(bytes? in) (open-input-bytes in)]
+                                       [(path-string? in) (open-input-file in)]
+                                       [(input-port? in) in]
+                                       [else (error 'unknown-parse-input-type)])])
     (template)))
 
 (define (unparse-with-template val template)
@@ -71,11 +82,14 @@
     (template)))
 
 (require rackunit)
-(check-equal? (parse-with-template "test.gif" gif)
-              (make-hasheq (list
-                            (cons 'gif
-                                  (make-hasheq (list (cons 'logical-screen-descriptor '(162 162 (#f #t #f #f #f #t #f #t) 0 0))
-                                                     '(signature . "GIF")
-                                                     '(version . "87a")))))))
+#;(check-equal? (parse-with-template "test.gif" gif)
+                (cons 'gif
+                      (make-hasheq (list (cons 'logical-screen-descriptor '(162 162 (#f #t #f #f #f #t #f #t) 0 0))
+                                         '(signature . "GIF")
+                                         '(version . "87a")))))
 
-(unparse-with-template (parse-with-template "test.gif" gif) gif)
+#;(define parse-width-bytes (make-byte-parser width))
+(define-rule foo (:atomic 2))
+(define parse-foo-bytes (make-byte-parser foo))
+(define in (open-input-bytes #"12"))
+(parse-foo-bytes in)
