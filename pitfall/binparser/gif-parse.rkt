@@ -3,33 +3,25 @@
 
 ;; http://www.matthewflickinger.com/lab/whatsinagif/bits_and_bytes.asp
 
+(define-rule gif (:seq [signature (:bytes 3 #:type string/ascii?)]
+                       [version (:bytes 3 #:type string/ascii?)]
+                       logical-screen-descriptor
+                       #:type hash?))
 
-(define-rule gif (:seq signature version logical-screen-descriptor #:type hash?))
-(define-rule signature (:atomic 3 #:type string/ascii?))
-(define-rule version (:atomic 3 #:type string/ascii?))
-
-(define-rule logical-screen-descriptor (:seq width height lsd-flags bgcolor-idx aspect #:type hash?))
-(define-rule width (:atomic 2 #:type integer?))
-(define-rule height (:atomic 2 #:type integer?))
-(define-rule lsd-flags (:seq reserved disposal user-input transparent #:type hash?))
-(define-rule reserved (:atomic .3))
-(define-rule disposal (:atomic .3))
-(define-rule user-input (:atomic .1))
-(define-rule transparent (:atomic .1))
-(define-rule bgcolor-idx (:atomic 1 #:type integer?))
-(define-rule aspect (:atomic 1 #:type integer?))
-
-
+(define-rule logical-screen-descriptor (:seq [width (:bytes 2 #:type integer?)]
+                                             [height (:bytes 2 #:type integer?)]
+                                             [lsd-flags (:seq [reserved (:bits 3)]
+                                                              [disposal (:bits 3)]
+                                                              [user-input (:bits 1)]
+                                                              [transparent (:bits 1)]
+                                                              #:type hash?)]
+                                             [bgcolor-idx (:bytes 1 #:type integer?)]
+                                             [aspect (:bytes 1 #:type integer?)]
+                                             #:type hash?))
 
 (gif (open-input-file "test.gif"))
 
-
 #;(check-equal? (gif (gif (open-input-file "test.gif"))) (read-bytes 13 (open-input-file "test.gif")))
-
-
-
-
-
 
 (require rackunit)
 #;(check-equal? (parse-with-template "test.gif" gif)

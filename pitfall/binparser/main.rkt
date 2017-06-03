@@ -2,32 +2,29 @@
 (require sugar/debug)
 (require (for-syntax racket/base br/syntax))
 (require racket/match racket/function racket/port br/define sugar/list racket/list)
-(provide define-rule :atomic :seq :repeat string/utf-8? string/latin-1? string/ascii? bitfield?)
+(provide define-rule define-rules let-rule :bytes :seq :repeat :bits)
+(provide string/utf-8? string/latin-1? string/ascii? bitfield?)
 
 (define string/utf-8? #t)
 (define string/latin-1? 'string/latin-1?)
 (define string/ascii? 'string/ascii?)
-(define bitfield? 'bitfield?)
+(define bitfield? (λ (x) (and (list? x) (andmap boolean? x))))
 
 (struct binary-problem (msg val) #:transparent)
 
 (define bitfield #f)
 (define (read-bits-exact count p)
-  (define bitcount (inexact->exact (* 10 count)))
   (unless (pair? bitfield)
     (set! bitfield (bytes->bitfield (read-bytes 1 p))))
-  (define-values (bits rest) (split-at bitfield bitcount))
+  (define-values (bits rest) (split-at bitfield count))
   (set! bitfield rest)
   bits)
 
 (define (read-bytes-exact count p)
-  (cond
-    [(integer? count)
-     (define bs (read-bytes count p))
-     (unless (and (bytes? bs) (= (bytes-length bs) count))
-       (raise (binary-problem (format "byte string length ~a" count) bs)))
-     bs]
-    [else (read-bits-exact count p)]))
+  (define bs (read-bytes count p))
+  (unless (and (bytes? bs) (= (bytes-length bs) count))
+    (raise (binary-problem (format "byte string length ~a" count) bs)))
+  bs)
 
 (define (bytes->integer len x)
   (when (< (bytes-length x) len) (raise-argument-error 'bytes->integer "too short" x))
@@ -43,18 +40,18 @@
 
 (define (bytes->ascii bs)
   (list->string (for/list ([b (in-bytes bs)])
-                          (if (< b 128)
-                              (integer->char b)
-                              (raise (binary-problem "ascii byte < 128" b))))))
+                  (if (< b 128)
+                      (integer->char b)
+                      (raise (binary-problem "ascii byte < 128" b))))))
 
 (define (ascii->bytes str)
   (apply bytes (for/list ([c (in-string str)])
-                         (char->integer c))))
+                 (char->integer c))))
 
 (define (bytes->bitfield bs)
   (for*/list ([b (in-bytes bs)]
               [idx (in-range 8)])
-             (bitwise-bit-set? b idx)))
+    (bitwise-bit-set? b idx)))
 
 (define (bitfield->bytes bf)
   (unless (zero? (modulo (length bf) 8))
@@ -67,13 +64,30 @@
                  (loop rest (cons (for/sum ([b (in-list bits)]
                                             [pow (in-range 8)]
                                             #:when b)
-                                           (expt 2 pow)) acc)))))))
+                                    (expt 2 pow)) acc)))))))
 
 (module+ test
   (check-equal? (bitfield->bytes (bytes->bitfield #"AB")) #"AB"))
 
+(define bit? boolean?)
 
-(define (:atomic count #:type [type #f])
+(define (:bits count #:type [type #f])
+  (procedure-rename
+   (λ (x)
+     (define-values (input-proc output-proc)
+       (cond
+         [(equal? type bitfield?) (values bytes->bitfield bitfield->bytes)]
+         [else (values identity identity)]))
+     
+     (if (input-port? x)
+         (input-proc (read-bits-exact count x))
+         (let ([result (output-proc x)])
+           (unless (andmap bit? result) (= (length result) count))
+           (raise (binary-problem (format "bit string length ~a" count) result))
+           result))) (gensym 'bits-)))
+
+
+(define (:bytes count #:type [type #f])
   (procedure-rename
    (λ (x)
      (define-values (input-proc output-proc)
@@ -89,14 +103,14 @@
          (let ([result (output-proc x)])
            (unless (and (bytes? result) (= (bytes-length result) count))
              (raise (binary-problem (format "byte string length ~a" count) result)))
-           result))) (gensym 'atomic-)))
+           result))) (gensym 'bytes-)))
 
 (define (list->hash-with-keys keys vals)
   (make-hash (map cons keys vals)))
 
 (define (hash->list-with-keys keys h)
   (for/list ([k (in-list keys)])
-            (hash-ref h k)))
+    (hash-ref h k)))
 
 (define (procedure-name proc)
   (string->symbol (cadr (regexp-match #rx"^#<procedure:(.*?)>$" (with-output-to-string (λ () (display proc)))))))
@@ -111,9 +125,17 @@
       xs
       (for/list ([x (in-list xs)]
                  [idx (in-naturals 1)])
-                (string->symbol (format "~a-~a" x idx)))))
+        (string->symbol (format "~a-~a" x idx)))))
 
-(define (:seq #:type [type #f] . rule-procs)
+
+(require (for-syntax sugar/debug))
+(define-macro (:seq ARG ...)
+  (with-pattern ([(ARG ...) (pattern-case-filter #'(ARG ...)
+                                                 [(NAME RULE-PROC) #'(let () (define-rule NAME RULE-PROC) NAME)]
+                                                 [ELSE #'ELSE])])
+    #'(seq-inner ARG ...)))
+
+(define (seq-inner #:type [type #f] . rule-procs)
   (procedure-rename
    (λ (x) (define-values (input-proc output-proc output-check)
             (cond
@@ -147,13 +169,19 @@
                                           (binary-problem-val exn)))])
         (RULE-PROC x))))
 
+(define-macro (define-rules [ID RULE-PROC] ...)
+  #'(begin (define-rule ID RULE-PROC) ...))
+
+(define-macro (let-rule ([ID RULE-PROC] ...)
+                        . BODY)
+  #'(let () (define ID RULE-PROC) ... . BODY))
 
 (module+ test
   (require rackunit)
   
   (define-rule foo (:seq bar zam #:type hash?))
-  (define-rule bar (:atomic 1 #:type integer?))
-  (define-rule zam (:atomic 2 #:type integer?))
+  (define-rule bar (:bytes 1 #:type integer?))
+  (define-rule zam (:bytes 2 #:type integer?))
 
   (check-equal? #"AB" (zam (zam (open-input-bytes #"AB"))) (zam 16961))
   (check-equal?  #"123" (foo (foo (open-input-bytes #"123"))) (foo '#hash((bar . 49) (zam . 13106))))
@@ -167,6 +195,6 @@
                 (hashrule '#hash((zam-4 . 13877) (bar-3 . 52) (zam-2 . 13106) (bar-1 . 49) (bar-5 . 55))))
 
 
-  (define-rule flag (:atomic .4))
+  (define-rule flag (:bits 4))
   (check-equal? (flag (open-input-bytes #"A")) '(#t #f #f #f))
   )
