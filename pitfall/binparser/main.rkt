@@ -158,7 +158,10 @@
 (define-seq-style-rule :bitfield bitfield-inner)
 
 (define (bitfield-inner #:type [type list?] . rule-procs)
-  ((make-inner-proc (λ (xs) (bitfield->bytes (append* xs))) 'bitfield) type rule-procs))
+  ((make-inner-proc (λ (xs) (let ([bf (append* xs)])
+                              (unless (zero? (modulo (length bf) 8))
+                                (raise-result-error ':bitfield (format "total field length is multiple of 8, got length ~a" (length bf)) bf))
+                              (bitfield->bytes bf))) 'bitfield) type rule-procs))
 
 (define-seq-style-rule :seq seq-inner)
 
@@ -170,18 +173,18 @@
     (procedure-rename
      (λ (x) (define-values (input-proc output-proc output-check)
               (case-proc type
-                [hash?
-                 (define rule-proc-names (resolve-duplicates (map procedure-name rule-procs)))
-                 (values (curry list->hash-with-keys rule-proc-names)
-                         (curry hash->list-with-keys rule-proc-names)
-                         (λ (x)
-                           (unless (and (hash? x) (hash-has-keys? x rule-proc-names))
-                             (raise (binary-problem (format "hash with ~a keys, namely ~a" (length rule-procs) rule-proc-names) x)))))]
-                [list? (values identity identity
-                              (λ (x)
-                                (unless (and (list? x) (= (length rule-procs) (length x)))
-                                  (raise (binary-problem (format "list of ~a values" (length rule-procs)) x)))))]
-                [else (raise-argument-error sym "not a supported type" type)]))
+                         [hash?
+                          (define rule-proc-names (resolve-duplicates (map procedure-name rule-procs)))
+                          (values (curry list->hash-with-keys rule-proc-names)
+                                  (curry hash->list-with-keys rule-proc-names)
+                                  (λ (x)
+                                    (unless (and (hash? x) (hash-has-keys? x rule-proc-names))
+                                      (raise (binary-problem (format "hash with ~a keys, namely ~a" (length rule-procs) rule-proc-names) x)))))]
+                         [list? (values identity identity
+                                        (λ (x)
+                                          (unless (and (list? x) (= (length rule-procs) (length x)))
+                                            (raise (binary-problem (format "list of ~a values" (length rule-procs)) x)))))]
+                         [else (raise-argument-error sym "not a supported type" type)]))
        (match x
          [(? input-port? p) (input-proc (map (λ (rule-proc) (rule-proc p)) rule-procs))]
          [else

@@ -29,3 +29,9 @@
                       (make-hasheq (list (cons 'logical-screen-descriptor '(162 162 (#f #t #f #f #f #t #f #t) 0 0))
                                          '(signature . "GIF")
                                          '(version . "87a")))))
+
+
+(define-rule bad-bitfield (:bitfield [reserved (:bits 3)]
+                                     [disposal (:bits 3 #:type integer?)]))
+
+(bad-bitfield (bad-bitfield (open-input-bytes #"A")))
