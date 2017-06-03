@@ -1,9 +1,8 @@
 #lang sugar/debug racket/base
 (require sugar/debug)
 (require (for-syntax racket/base br/syntax))
-(require racket/match racket/function racket/port br/define sugar/list racket/list)
-(provide define-rule define-rules let-rule :bytes :seq :repeat :bits)
-(provide string/utf-8? string/latin-1? string/ascii? bitfield?)
+(require racket/match racket/function racket/port br/define sugar/list racket/list racket/bytes)
+(provide (all-defined-out))
 
 (define string/utf-8? #t)
 (define string/latin-1? 'string/latin-1?)
@@ -13,6 +12,7 @@
 (struct binary-problem (msg val) #:transparent)
 
 (define bitfield #f)
+(define (reset-bitfield!) (set! bitfield #f))
 (define (read-bits-exact count p)
   (unless (pair? bitfield)
     (set! bitfield (bytes->bitfield (read-bytes 1 p))))
@@ -40,18 +40,18 @@
 
 (define (bytes->ascii bs)
   (list->string (for/list ([b (in-bytes bs)])
-                  (if (< b 128)
-                      (integer->char b)
-                      (raise (binary-problem "ascii byte < 128" b))))))
+                          (if (< b 128)
+                              (integer->char b)
+                              (raise (binary-problem "ascii byte < 128" b))))))
 
 (define (ascii->bytes str)
   (apply bytes (for/list ([c (in-string str)])
-                 (char->integer c))))
+                         (char->integer c))))
 
 (define (bytes->bitfield bs)
   (for*/list ([b (in-bytes bs)]
               [idx (in-range 8)])
-    (bitwise-bit-set? b idx)))
+             (bitwise-bit-set? b idx)))
 
 (define (bitfield->bytes bf)
   (unless (zero? (modulo (length bf) 8))
@@ -61,29 +61,49 @@
            (if (null? bf)
                (reverse acc)
                (let-values ([(bits rest) (split-at bf 8)])
-                 (loop rest (cons (for/sum ([b (in-list bits)]
-                                            [pow (in-range 8)]
-                                            #:when b)
-                                    (expt 2 pow)) acc)))))))
+                 (loop rest (cons (bitfield->integer bits) acc)))))))
 
 (module+ test
   (check-equal? (bitfield->bytes (bytes->bitfield #"AB")) #"AB"))
 
+(define (bitfield->integer bits)
+  (for/sum ([b (in-list bits)]
+            [pow (in-range 8)]
+            #:when b)
+           (expt 2 pow)))
+
+(define (integer->bitfield len int)
+  (define digits (reverse (string->list (number->string int 2))))
+  (append (map (curry char=? #\1) digits) (make-list (- len (length digits)) #f)))
+             
+
 (define bit? boolean?)
 
-(define (:bits count #:type [type #f])
+(define-macro-cases case-proc
+  [(N PROC [TEST-PROC . EXPRS] ... [else . ELSE-EXPRS])
+   #'(cond [(equal? PROC TEST-PROC) . EXPRS] ... [else . ELSE-EXPRS])]
+  [(N ARG ...) #'(N ARG ... [else (void)])])
+
+
+(define (:bits count #:type [type list?])
   (procedure-rename
    (λ (x)
      (define-values (input-proc output-proc)
-       (cond
-         [(equal? type bitfield?) (values bytes->bitfield bitfield->bytes)]
-         [else (values identity identity)]))
+       (case-proc type
+                  [integer? (values bitfield->integer (curry integer->bitfield count))]
+                  [bitfield? (values bytes->bitfield bitfield->bytes)]
+                  [boolean?
+                   (unless (= 1 count)
+                     (raise-argument-error ':bits "boolean type only supported for 1-bit" count))
+                   (values (λ (bitfield) (car bitfield)) (λ (boolean) (list boolean)))]
+                  [list? (values identity identity)]
+                  [else (raise-argument-error ':bits "not a supported type" type)]))
      
      (if (input-port? x)
          (input-proc (read-bits-exact count x))
          (let ([result (output-proc x)])
-           (unless (andmap bit? result) (= (length result) count))
-           (raise (binary-problem (format "bit string length ~a" count) result))
+           (unless (and (andmap bit? result) (= (length result) count))
+             (raise (binary-problem (format "bit string length ~a" count) result)))
            result))) (gensym 'bits-)))
 
 
@@ -91,12 +111,13 @@
   (procedure-rename
    (λ (x)
      (define-values (input-proc output-proc)
-       (cond
-         [(equal? type integer?) (values (curry bytes->integer count)
-                                         (curry integer->bytes count))]
-         [(equal? type string/ascii?) (values bytes->ascii ascii->bytes)]
-         [(equal? type bitfield?) (values bytes->bitfield bitfield->bytes)]
-         [else (values identity identity)]))
+       (case-proc type
+                  [integer? (values (curry bytes->integer count)
+                                    (curry integer->bytes count))]
+                  [string/ascii? (values bytes->ascii ascii->bytes)]
+                  [bitfield? (values bytes->bitfield bitfield->bytes)]
+                  [list? (values identity identity)]
+                  [else (raise-argument-error ':bytes "not a supported type" type)]))
      
      (if (input-port? x)
          (input-proc (read-bytes-exact count x))
@@ -110,7 +131,7 @@
 
 (define (hash->list-with-keys keys h)
   (for/list ([k (in-list keys)])
-    (hash-ref h k)))
+            (hash-ref h k)))
 
 (define (procedure-name proc)
   (string->symbol (cadr (regexp-match #rx"^#<procedure:(.*?)>$" (with-output-to-string (λ () (display proc)))))))
@@ -125,36 +146,47 @@
       xs
       (for/list ([x (in-list xs)]
                  [idx (in-naturals 1)])
-        (string->symbol (format "~a-~a" x idx)))))
+                (string->symbol (format "~a-~a" x idx)))))
 
+(define-macro (define-seq-style-rule ID ID-INNER)
+  #'(define-macro (ID ARG (... ...))
+      (with-pattern ([(ARG (... ...)) (pattern-case-filter #'(ARG (... ...))
+                                                           [(NAME RULE-PROC) #'(let () (define-rule NAME RULE-PROC) NAME)]
+                                                           [ELSE #'ELSE])])
+                    #'(ID-INNER ARG (... ...)))))
 
-(require (for-syntax sugar/debug))
-(define-macro (:seq ARG ...)
-  (with-pattern ([(ARG ...) (pattern-case-filter #'(ARG ...)
-                                                 [(NAME RULE-PROC) #'(let () (define-rule NAME RULE-PROC) NAME)]
-                                                 [ELSE #'ELSE])])
-    #'(seq-inner ARG ...)))
+(define-seq-style-rule :bitfield bitfield-inner)
 
-(define (seq-inner #:type [type #f] . rule-procs)
-  (procedure-rename
-   (λ (x) (define-values (input-proc output-proc output-check)
-            (cond
-              [(equal? type hash?)
-               (define rule-proc-names (resolve-duplicates (map procedure-name rule-procs)))
-               (values (curry list->hash-with-keys rule-proc-names)
-                       (curry hash->list-with-keys rule-proc-names)
-                       (λ (x)
-                         (unless (and (hash? x) (hash-has-keys? x rule-proc-names))
-                           (raise (binary-problem (format "hash with ~a keys, namely ~a" (length rule-procs) rule-proc-names) x)))))]
-              [else (values identity identity
-                            (λ (x)
-                              (unless (and (list? x) (= (length rule-procs) (length x)))
-                                (raise (binary-problem (format "list of ~a values" (length rule-procs)) x)))))]))
-     (match x
-       [(? input-port? p) (input-proc (map (λ (rule-proc) (rule-proc p)) rule-procs))]
-       [else
-        (output-check x)
-        (apply bytes-append (map (λ (rp xi) (rp xi)) rule-procs (output-proc x)))])) (gensym 'seq)))
+(define (bitfield-inner #:type [type list?] . rule-procs)
+  ((make-inner-proc (λ (xs) (bitfield->bytes (append* xs))) 'bitfield) type rule-procs))
+
+(define-seq-style-rule :seq seq-inner)
+
+(define (seq-inner #:type [type list?] . rule-procs)
+  ((make-inner-proc bytes-append* 'seq) type rule-procs))
+
+(define (make-inner-proc post-proc sym)
+  (λ (type rule-procs)
+    (procedure-rename
+     (λ (x) (define-values (input-proc output-proc output-check)
+              (case-proc type
+                [hash?
+                 (define rule-proc-names (resolve-duplicates (map procedure-name rule-procs)))
+                 (values (curry list->hash-with-keys rule-proc-names)
+                         (curry hash->list-with-keys rule-proc-names)
+                         (λ (x)
+                           (unless (and (hash? x) (hash-has-keys? x rule-proc-names))
+                             (raise (binary-problem (format "hash with ~a keys, namely ~a" (length rule-procs) rule-proc-names) x)))))]
+                [list? (values identity identity
+                              (λ (x)
+                                (unless (and (list? x) (= (length rule-procs) (length x)))
+                                  (raise (binary-problem (format "list of ~a values" (length rule-procs)) x)))))]
+                [else (raise-argument-error sym "not a supported type" type)]))
+       (match x
+         [(? input-port? p) (input-proc (map (λ (rule-proc) (rule-proc p)) rule-procs))]
+         [else
+          (output-check x)
+          (post-proc (map (λ (rp xi) (rp xi)) rule-procs (output-proc x)))])) (gensym sym))))
 
 
 (define (:repeat count . rule-procs)
@@ -195,6 +227,14 @@
                 (hashrule '#hash((zam-4 . 13877) (bar-3 . 52) (zam-2 . 13106) (bar-1 . 49) (bar-5 . 55))))
 
 
-  (define-rule flag (:bits 4))
-  (check-equal? (flag (open-input-bytes #"A")) '(#t #f #f #f))
+  (define-rule flag8 (:bits 8))
+  (check-equal? (flag8 (open-input-bytes #"A")) '(#t #f #f #f #f #f #t #f))
+
+  (define-rule flag4 (:bits 4))
+  (check-equal? (flag4 (open-input-bytes #"A")) '(#t #f #f #f))
+
+  (reset-bitfield!)
+  (define-rule bitint (:bits 8 #:type integer?))
+  (check-equal? (bitint (open-input-bytes #"A")) 65)
+  (check-equal? (bitint 65) '(#t #f #f #f #f #f #t #f))
   )

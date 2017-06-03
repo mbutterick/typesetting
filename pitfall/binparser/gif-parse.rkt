@@ -10,18 +10,18 @@
 
 (define-rule logical-screen-descriptor (:seq [width (:bytes 2 #:type integer?)]
                                              [height (:bytes 2 #:type integer?)]
-                                             [lsd-flags (:seq [reserved (:bits 3)]
-                                                              [disposal (:bits 3)]
-                                                              [user-input (:bits 1)]
-                                                              [transparent (:bits 1)]
-                                                              #:type hash?)]
+                                             [lsd-flags (:bitfield [reserved (:bits 3)]
+                                                                   [disposal (:bits 3 #:type integer?)]
+                                                                   [user-input (:bits 1 #:type boolean?)]
+                                                                   [transparent (:bits 1 #:type boolean?)]
+                                                                   #:type hash?)]
                                              [bgcolor-idx (:bytes 1 #:type integer?)]
                                              [aspect (:bytes 1 #:type integer?)]
                                              #:type hash?))
 
 (gif (open-input-file "test.gif"))
 
-#;(check-equal? (gif (gif (open-input-file "test.gif"))) (read-bytes 13 (open-input-file "test.gif")))
+(check-equal? (gif (gif (open-input-file "test.gif"))) (read-bytes 13 (open-input-file "test.gif")))
 
 (require rackunit)
 #;(check-equal? (parse-with-template "test.gif" gif)
