@@ -1,8 +1,11 @@
 #lang sugar/debug racket/base
 (require sugar/debug)
 (require (for-syntax racket/base br/syntax))
-(require racket/match racket/function racket/port br/define sugar/list racket/list racket/bytes racket/string)
+(require racket/match racket/function racket/port br/define sugar/list racket/list racket/bytes racket/string racket/dict)
 (provide (all-defined-out))
+
+(define (dict-ref* d . keys)
+  (foldl (λ (key d) (dict-ref d key)) d keys))
 
 (define string/utf-8? #t)
 (define string/latin-1? 'string/latin-1?)
@@ -134,6 +137,8 @@
                   [integer? (values (curry bytes->integer count)
                                     (curry integer->bytes count))]
                   [string/ascii? (values bytes->ascii ascii->bytes)]
+                  [string/utf-8? (values bytes->string/utf-8 string->bytes/utf-8)]
+                  [string/latin-1? (values bytes->string/latin-1 string->bytes/latin-1)]
                   [bitfield? (values bytes->bitfield bitfield->bytes)]
                   [bytes? (values identity identity)]
                   [hex? (values bytes->hexline hexline->bytes)]
@@ -168,15 +173,17 @@
   (if (members-unique? xs)
       xs
       (for/list ([x (in-list xs)]
-                 [idx (in-naturals 1)])
+                 [idx (in-naturals)])
         (string->symbol (format "~a-~a" x idx)))))
 
+(define-for-syntax (process-rule-proc-args args)
+  (pattern-case-filter args
+                       [(NAME RULE-PROC) #'(let () (define-rule NAME RULE-PROC) NAME)]
+                       [ELSE #'ELSE]))
+
 (define-macro (define-seq-style-rule ID ID-INNER)
-  #'(define-macro (ID ARG (... ...))
-      (with-pattern ([(ARG (... ...)) (pattern-case-filter #'(ARG (... ...))
-                                                           [(NAME RULE-PROC) #'(let () (define-rule NAME RULE-PROC) NAME)]
-                                                           [ELSE #'ELSE])])
-        #'(ID-INNER ARG (... ...)))))
+  #'(define-macro (ID . ARGS)
+      #`(ID-INNER #,@(process-rule-proc-args #'ARGS))))
 
 (define-seq-style-rule :bitfield bitfield-inner)
 
@@ -191,7 +198,8 @@
 (define (seq-inner #:type [type list?] . rule-procs)
   ((make-inner-proc bytes-append* ':seq) type rule-procs))
 
-(define-seq-style-rule :repeat repeat-inner)
+(define-macro (:repeat COUNT-EXPR . ARGS)
+  #`(repeat-inner COUNT-EXPR #,@(process-rule-proc-args #'ARGS)))
 
 (define (repeat-inner #:type [type list?] count . rule-procs)
   ((make-inner-proc bytes-append* ':repeat) type (append* (make-list count rule-procs))))
@@ -262,15 +270,16 @@
   (define-rule foolist (:seq bar zam bar zam))
   (check-equal? #"123456" (foolist (foolist (open-input-bytes #"123456"))) (foolist '(49 13106 52 13877)))
 
+  #|
   (define-rule bam (:bytes 1))
   (define-rule bams (:seq bam bam bam))
   (define-rule rebams (:seq (:bytes 1) (:bytes 1) (:bytes 1)))
   (check-equal? (bams (open-input-bytes #"ABC")) (rebams (open-input-bytes #"ABC")))
-
+|#
 
   (define-rule hashrule (:seq bar zam bar zam bar #:type hash?))
   (check-equal? #"1234567" (hashrule (hashrule (open-input-bytes #"1234567")))
-                (hashrule '#hash((zam-4 . 13877) (bar-3 . 52) (zam-2 . 13106) (bar-1 . 49) (bar-5 . 55))))
+                (hashrule '#hash((zam-3 . 13877) (bar-2 . 52) (zam-1 . 13106) (bar-0 . 49) (bar-4 . 55))))
 
 
   (define-rule flag8 (:bits 8))
@@ -284,10 +293,10 @@
   (check-equal? (bitint (open-input-bytes #"A")) 65)
   (check-equal? (bitint 65) '(#t #f #f #f #f #f #t #f))
 
-  #|
+  
   (reset-bitfield!)
-  (define-rule rpt (:repeat 3 (:bytes 1)))
-  (rpt (open-input-bytes #"ABC"))
-  (rpt (rpt (open-input-bytes #"ABC")))
-|#
+  (define-rule thing (:bytes 1))
+  (define-rule rpt (:repeat 3 thing)) ; repeat has to use other identifier names, not direct rule procs
+  (check-equal? (rpt (rpt (open-input-bytes #"ABC"))) #"ABC")
+
   )
