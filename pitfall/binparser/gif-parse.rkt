@@ -3,6 +3,9 @@
 
 ;; http://www.matthewflickinger.com/lab/whatsinagif/bits_and_bytes.asp
 
+(define ip (open-input-file "sample.gif"))
+
+
 (define-rule gif-header (:seq [signature (:bytes 3 #:type string/ascii?)]
                               [version (:bytes 3 #:type string/ascii?)]
                               logical-screen-descriptor
@@ -10,29 +13,33 @@
 
 (define-rule logical-screen-descriptor (:seq [width (:bytes 2 #:type integer?)]
                                              [height (:bytes 2 #:type integer?)]
-                                             [lsd-flags (:seq [global-color-table-size (:bits 3 #:type integer?)]
-                                                              [sort (:bits 1 #:type boolean?)]
-                                                              [resolution (:bits 3 #:type integer?)]
-                                                              [global-color-table (:bits 1 #:type integer?)]
-                                                              #:type assoc?)]
+                                             [lsd-flags (:bitfield [global-color-table-size (:bits 3 #:type integer?)]
+                                                                   [sort (:bits 1 #:type boolean?)]
+                                                                   [resolution (:bits 3 #:type integer?)]
+                                                                   [global-color-table (:bits 1 #:type integer?)]
+                                                                   #:type assoc?)]
                                              [bgcolor-idx (:bytes 1 #:type integer?)]
                                              [aspect (:bytes 1 #:type integer?)]
                                              #:type assoc?))
 
 
-(define ip (open-input-file "sample.gif"))
 
 (define gh (gif-header ip))
 gh
 
-(define (global-color-quantity gh)
-  (expt 2 (add1 (dict-ref* gh 'logical-screen-descriptor 'lsd-flags 'global-color-table))))
+(define (color-quantity table-size)
+  (expt 2 (add1 table-size)))
 
-(define-rule color (:bytes 1 #:type hex?))
-(define-rule red color)
-(define-rule green color)
-(define-rule blue color)
-(define-rule global-color-table (:repeat (global-color-quantity gh) (:seq red green blue #:type assoc?)))
+
+
+(define-rule hex-color (:bytes 1 #:type hex?))
+(define-rule red hex-color)
+(define-rule green hex-color)
+(define-rule blue hex-color)
+(define-rule color (:seq red green blue))
+(define (global-color-quantity gh)
+  (color-quantity (dict-ref* gh 'logical-screen-descriptor 'lsd-flags 'global-color-table)))
+(define-rule global-color-table (:repeat (global-color-quantity gh) color #:type assoc?))
 (define gct (global-color-table ip))
 
 gct
@@ -41,11 +48,11 @@ gct
   (:seq [extension-introducer (:bytes 1 #:type hex?)]
         [graphic-control-label (:bytes 1 #:type hex?)]
         [byte-size (:bytes 1 #:type integer?)]
-        [gce-flags (:seq [transparent-color-flag (:bits 1 #:type boolean?)]
-                         [user-input-flag (:bits 1 #:type boolean?)]
-                         [disposal-method (:bits 3)]
-                         [reserved (:bits 3)]
-                         #:type assoc?)]
+        [gce-flags (:bitfield [transparent-color-flag (:bits 1 #:type boolean?)]
+                              [user-input-flag (:bits 1 #:type boolean?)]
+                              [disposal-method (:bits 3)]
+                              [reserved (:bits 3)]
+                              #:type assoc?)]
         [delay-time (:bytes 2 #:type integer?)]
         [transparent-color-idx (:bytes 1 #:type integer?)]
         [block-terminator (:bytes 1 #:type hex?)]
@@ -61,20 +68,31 @@ gct
         [width (:bytes 2 #:type integer?)]
         [height (:bytes 2 #:type integer?)]
         [id-flags (:seq [local-color-table-size (:bits 3 #:type integer?)]
-                         [reserved (:bits 2)]
-                         [sort-flag (:bits 1)]
-                         [interlace-flag (:bits 1)]
-                         [local-color-table-flag (:bits 1)]
-                         #:type assoc?)]
+                        [reserved (:bits 2)]
+                        [sort-flag (:bits 1)]
+                        [interlace-flag (:bits 1)]
+                        [local-color-table-flag (:bits 1 #:type integer?)]
+                        #:type assoc?)]
         #:type assoc?))
 
-(image-descriptor ip)
+(define img-descriptor (image-descriptor ip))
 
-#;(check-equal? (gif (gif (open-input-file "sample.gif"))) (read-bytes 13 (open-input-file "sample.gif")))
+(define (local-color-quantity gh)
+  (* (dict-ref* img-descriptor 'id-flags 'local-color-table-flag)
+     (color-quantity (dict-ref* img-descriptor 'id-flags 'local-color-table-size))))
+(define-rule local-color-table (:repeat (local-color-quantity gh) color #:type assoc?))
+(define lct (local-color-table ip))
 
-(require rackunit)
-#;(check-equal? (parse-with-template "test.gif" gif)
-                (cons 'gif
-                      (make-hasheq (list (cons 'logical-screen-descriptor '(162 162 (#f #t #f #f #f #t #f #t) 0 0))
-                                         '(signature . "GIF")
-                                         '(version . "87a")))))
+lct
+
+(define-rule lzw-minimum-code-size (:bytes 1 #:type integer?))
+
+(lzw-minimum-code-size ip)
+
+(for/list ([block-len (in-port read-byte ip)]
+           #:break (zero? block-len))
+  ((:bytes block-len #:type hex?) ip))
+
+(define-rule trailer (:bytes 1 #:type hex?))
+
+(trailer ip)
