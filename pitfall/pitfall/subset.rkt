@@ -1,4 +1,5 @@
 #lang pitfall/racket
+(require "clone.rkt" "ttfglyphencoder.rkt")
 (provide Subset CFFSubset TTFSubset)
 
 ;; approximates
@@ -6,7 +7,7 @@
 
 (define-subclass object% (Subset font)
   (super-new)
-  (field [glyphs empty] ; list of glyphs in the subset
+  (field [glyphs empty] ; list of glyph ids in the subset
          [mapping (mhash)] ; mapping of glyph ids to indexes in `glyphs`
          )
 
@@ -36,11 +37,39 @@
 
 (define-subclass Subset (TTFSubset)
   (super-new)
+  (field [glyphEncoder (make-object TTFGlyphEncoder)])
+  (field [glyf #f]
+         [offset #f]
+         [loca #f]
+         [hmtx #f])
 
   (as-methods
+   _addGlyph
    encode)
+
+  
   )
+
+(define-stub-go _addGlyph)
+
+;; tables required by PDF spec:
+;; head, hhea, loca, maxp, cvt, prep, glyf, hmtx, fpgm
+;; additional tables required for standalone fonts:
+;; name, cmap, OS/2, post
 
 (define/contract (encode this)
   (->m input-port?)
-  (· this font stream))
+  (set-field! glyf this empty)
+  (set-field! offset this 0)
+  (set-field! loca this (mhash 'offsets empty))
+  (set-field! hmtx this (mhash 'metrics empty 'bearings empty))
+
+  ;; include all the glyphs used in the document
+  (for ([gid (in-list (· this glyphs))])
+       (send this _addGlyph gid))
+
+  (define maxp (cloneDeep (· this font maxp)))
+
+  (unfinished)
+  )
+

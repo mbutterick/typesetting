@@ -13,6 +13,8 @@
   (super-new)
   (when stream (unless (input-port? stream)
                  (raise-argument-error 'TTFFont "input port" stream)))
+  (port-count-lines! stream)
+  ;; skip variationCoords
   (field [_directoryPos (let-values ([(l c p) (port-next-location stream)])
                           p)]
          [_tables (mhash)]
@@ -21,6 +23,16 @@
 
   (field [directory #f])
   (send this _decodeDirectory)
+
+  #;(define/public (_getTable tag)
+    (unless (member (· directory  tag) _tables)
+      (raise-argument-error '_getTable "table that exists" (· table tag)))
+    (hash-set! _tables (· table tag) (_decodeTable table)))
+
+  (define/public (_decodeTable table)
+    (define-values (l c p) (port-next-location stream))
+    (displayln 'whee)
+    (set-port-next-location! stream l c p))
 
   (define/public (_decodeDirectory)
     (set! directory (directory-decode stream (mhash '_startOffset 0)))
@@ -264,6 +276,8 @@
   (check-false (· f has-gpos-table?))
   (check-true (send f has-table? #"cmap"))
   (check-equal? (· f lineGap) 0)
+  f
+  #;(send f _getTable 'maxp)
   #;(· f createSubset)
   
 

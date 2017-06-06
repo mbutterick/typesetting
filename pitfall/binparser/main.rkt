@@ -31,17 +31,23 @@
     (raise (binary-problem (format "byte string length ~a" count) bs)))
   bs)
 
-(define (bytes->integer len x)
+(define (bytes->integer len x #:endian [big-endian? #f])
   (when (< (bytes-length x) len) (raise-argument-error 'bytes->integer "too short" x))
   (cond
     [(= len 1) (bytes-ref x 0)]
-    [else (integer-bytes->integer x #f #f)]))
+    [else (define signed #f)
+          (integer-bytes->integer x signed big-endian?)]))
 
-(define (integer->bytes len x)
+(define (integer->bytes len x #:endian [big-endian? #f])
   (case len
     [(1) (bytes x)]
-    [(2 4 8) (integer->integer-bytes x len #f #f)]
+    [(2 4 8) (define signed #f)
+          (integer->integer-bytes x len signed big-endian?)]
     [else (raise-argument-error 'integer->bytes "byte length 1 2 4 8" len)]))
+
+(define integer/be? #t)
+(define (integer/be->bytes len x) (integer->bytes len x #:endian #t))
+(define (bytes->integer/be len x) (bytes->integer len x #:endian #t))
 
 (require racket/format)
 (define (hex? x) (and (list? x) (andmap string? x)))
@@ -134,6 +140,8 @@
    (λ (x)
      (define-values (input-proc output-proc)
        (case-proc type
+                  [integer/be? (values (curry bytes->integer/be count)
+                                    (curry integer/be->bytes count))]
                   [integer? (values (curry bytes->integer count)
                                     (curry integer->bytes count))]
                   [string/ascii? (values bytes->ascii ascii->bytes)]

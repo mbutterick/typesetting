@@ -1,4 +1,6 @@
 #lang racket/base
+(require (for-syntax racket/base br/syntax))
+(provide (for-syntax (all-from-out racket/base br/syntax)))
 (provide (all-from-out racket/base) r+p)
 
 (define-syntax-rule (r+p id ...) (begin (require id ...) (provide (all-from-out id ...))))
@@ -15,7 +17,8 @@
      racket/contract
      racket/list
      racket/port
-     racket/function)
+     racket/function
+     br/define)
 
 (module reader syntax/module-reader
   #:language 'pitfall/racket
