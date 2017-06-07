@@ -6,26 +6,30 @@
 (define uint32be (:bytes 4 #:type integer/be?))
 (define uint16be (:bytes 2 #:type integer/be?))
 (define hexbytes (:bytes 4 #:type hex?))
-(define (string-rule count) (:bytes count #:type string/ascii?))
+(define (:make-string count) (:bytes count #:type string/ascii?))
 
-(define-macro (:seq ([ID BINDING] ...) . BODY)
-  #'(λ (p) (let* ([ID (BINDING p)] ...) (begin . BODY) (list (cons 'ID ID) ...))))
+(require (for-syntax sugar/debug))
+(define-macro (:seq ([ID BINDING . MAYBE-GUARD] ...) . BODY)
+  (with-pattern ([(GUARD ...) (pattern-case-filter #'(MAYBE-GUARD ...)
+                                                   [(#:assert PRED) #'(λ (x) (unless (PRED x) (error 'assert-failed)))]
+                                                   [ELSE #'void])])
+                #'(λ (p) (let* ([ID (let ([ID (BINDING p)])
+                                      (GUARD ID)
+                                      ID)] ...)
+                           (begin . BODY)
+                           (list (cons 'ID ID) ...)))))
 
-(define TableEntry (:seq
-                    ([tag (string-rule 4)]
-                     [checkSum uint32be]
-                     [offset uint32be]
-                     [length uint32be])))
+(define TableEntry (:seq ([tag (:make-string 4)]
+                          [checkSum uint32be]
+                          [offset uint32be]
+                          [length uint32be])))
 
-(define Directory (:seq
-                   ([tag hexbytes]
-                    [numTables uint16be]
-                    [searchRange uint16be]
-                    [entrySelector uint16be]
-                    [rangeShift uint16be]
-                    [tables (:repeat numTables TableEntry)])
-                   (unless (equal? tag "00 01 00 00")
-                     (error 'epic-fail))))
+(define Directory (:seq ([tag hexbytes #:assert (curry equal? "00 01 00 00")]
+                         [numTables uint16be #:assert ]
+                         [searchRange uint16be]
+                         [entrySelector uint16be]
+                         [rangeShift uint16be]
+                         [tables (:repeat numTables TableEntry)])))
 
 (define (directory-decode ip [options (mhash)])
   (Directory ip))
