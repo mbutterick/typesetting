@@ -8,23 +8,27 @@
     (raise-argument-error 'read-bytes-exact (format "byte string length ~a" count) bs))
   bs)
 
-(define BinaryIO%
+(define RestructureBase%
   (class object%
     (super-new)    
     (abstract decode)
     (abstract encode)
-    (abstract size)))
+    #;(abstract size)))
 
 
 (define-macro (define-subclass SUPERCLASS (ID . INIT-ARGS) . BODY)
   #'(define ID (class SUPERCLASS (super-new) (init-field . INIT-ARGS) . BODY)))
 
+(require (for-syntax sugar/debug))
 (define-macro (getter-field [ID . EXPRS])
   (with-pattern ([_ID (prefix-id "_" #'ID)])
-    #'(begin
+    #`(begin
         (field [(ID _ID)  . EXPRS])
         (public (_ID ID))
-        (define (_ID) ID))))
+        (#,(if (syntax-property caller-stx 'override) #'define/override #'define) (_ID) ID))))
+
+(define-macro (getter-field/override [ID . EXPRS])
+  (syntax-property #'(getter-field [ID . EXPRS]) 'override #t))
 
 (define-macro (test-module . EXPRS)
   #`(module+ test

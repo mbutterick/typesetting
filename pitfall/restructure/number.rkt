@@ -14,7 +14,7 @@
  (check-true (unsigned-type? 'UInt16))
  (check-false (unsigned-type? 'Int16)))
 
-(define-subclass object% (NumberT type [endian (if (system-big-endian?) 'BE 'LE)])
+(define-subclass RestructureBase% (NumberT type [endian (if (system-big-endian?) 'BE 'LE)])
   (getter-field [fn (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
 
   (unless (hash-has-key? type-sizes fn)
@@ -22,7 +22,7 @@
   
   (getter-field [size (hash-ref type-sizes fn)])
 
-  (define/public (decode stream)
+  (define/override (decode stream)
     (unless (input-port? stream)
       (raise-argument-error 'decode "input port" stream))
     (define bstr (read-bytes-exact size stream))
@@ -30,22 +30,30 @@
         (bytes-ref bstr 0)
         (integer-bytes->integer bstr (unsigned-type? type) (eq? endian 'BE))))
 
-  (define/public (encode stream val)
+  (define/override (encode stream val)
     (unless (output-port? stream)
       (raise-argument-error 'encode "output port" stream))
-    (unfinished)))
+    (if (= 1 size)
+        (bytes val)
+        (integer->integer-bytes val size (unsigned-type? type) (eq? endian 'BE)))))
     
 
 (test-module
  (let ([o (make-object NumberT 'UInt16 'LE)]
-       [ip (open-input-bytes (bytes 1 2 3 4))])
+       [ip (open-input-bytes (bytes 1 2 3 4))]
+       [op (open-output-bytes)])
    (check-equal? (send o decode ip) 513) ;; 1000 0000  0100 0000
-   (check-equal? (send o decode ip) 1027)) ;; 1100 0000 0010 0000
+   (check-equal? (send o decode ip) 1027)  ;; 1100 0000 0010 0000
+   (check-equal? (send o encode op 513) (bytes 1 2))
+   (check-equal? (send o encode op 1027) (bytes 3 4)))
 
  (let ([o (make-object NumberT 'UInt16 'BE)]
-       [ip (open-input-bytes (bytes 1 2 3 4))])
+       [ip (open-input-bytes (bytes 1 2 3 4))]
+       [op (open-output-bytes)])
    (check-equal? (send o decode ip) 258) ;; 0100 0000 1000 0000 
-   (check-equal? (send o decode ip) 772))) ;; 0010 0000 1100 0000 
+   (check-equal? (send o decode ip) 772) ;; 0010 0000 1100 0000 
+   (check-equal? (send o encode op 258) (bytes 1 2))
+   (check-equal? (send o encode op 772) (bytes 3 4))))
 
 
 (test-module
