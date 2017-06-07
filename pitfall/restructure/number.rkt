@@ -15,7 +15,9 @@
  (check-false (unsigned-type? 'Int16)))
 
 (define-subclass BinaryIO% (NumberT type [endian (if (system-big-endian?) 'BE 'LE)])
-  (getter-field [fn (format "~a~a" type (if (ends-with-8? type) "" endian))])
+  (getter-field [fn (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
+  (unless (hash-has-key? type-sizes fn)
+    (raise-argument-error 'NumberT "valid type and endian" (format "~v ~v" type endian)))
 
   (define/override (decode stream)
     (define bstr (read-bytes-exact (size) stream))
@@ -25,7 +27,7 @@
 
   (define/override (encode op val) 'foo)
 
-  (define/override (size) (hash-ref TYPES type)))
+  (define/override (size) (hash-ref type-sizes fn)))
     
 
 (test-module
