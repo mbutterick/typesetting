@@ -1,23 +1,9 @@
 #lang pitfall/racket
 (provide (all-defined-out))
 
-(require binparser)
+(require binparser/object)
 
-(define uint32be (:bytes 4 #:type integer/be?))
-(define uint16be (:bytes 2 #:type integer/be?))
-(define hexbytes (:bytes 4 #:type hex?))
-(define (:make-string count) (:bytes count #:type string/ascii?))
 
-(require (for-syntax sugar/debug))
-(define-macro (:seq ([ID BINDING . MAYBE-GUARD] ...) . BODY)
-  (with-pattern ([(GUARD ...) (pattern-case-filter #'(MAYBE-GUARD ...)
-                                                   [(#:assert PRED) #'(λ (x) (unless (PRED x) (error 'assert-failed)))]
-                                                   [ELSE #'void])])
-                #'(λ (p) (let* ([ID (let ([ID (BINDING p)])
-                                      (GUARD ID)
-                                      ID)] ...)
-                           (begin . BODY)
-                           (list (cons 'ID ID) ...)))))
 
 (define TableEntry (:seq ([tag (:make-string 4)]
                           [checkSum uint32be]
