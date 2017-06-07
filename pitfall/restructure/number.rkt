@@ -14,20 +14,26 @@
  (check-true (unsigned-type? 'UInt16))
  (check-false (unsigned-type? 'Int16)))
 
-(define-subclass BinaryIO% (NumberT type [endian (if (system-big-endian?) 'BE 'LE)])
+(define-subclass object% (NumberT type [endian (if (system-big-endian?) 'BE 'LE)])
   (getter-field [fn (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
+
   (unless (hash-has-key? type-sizes fn)
     (raise-argument-error 'NumberT "valid type and endian" (format "~v ~v" type endian)))
+  
+  (getter-field [size (hash-ref type-sizes fn)])
 
-  (define/override (decode stream)
-    (define bstr (read-bytes-exact (size) stream))
-    (if (= 1 (size))
+  (define/public (decode stream)
+    (unless (input-port? stream)
+      (raise-argument-error 'decode "input port" stream))
+    (define bstr (read-bytes-exact size stream))
+    (if (= 1 size)
         (bytes-ref bstr 0)
         (integer-bytes->integer bstr (unsigned-type? type) (eq? endian 'BE))))
 
-  (define/override (encode op val) 'foo)
-
-  (define/override (size) (hash-ref type-sizes fn)))
+  (define/public (encode stream val)
+    (unless (output-port? stream)
+      (raise-argument-error 'encode "output port" stream))
+    (unfinished)))
     
 
 (test-module
