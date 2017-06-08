@@ -8,6 +8,7 @@
 (r+p "helper.rkt"
      sugar/debug
      racket/class
+     racket/string
      br/define)
 
 (module reader syntax/module-reader

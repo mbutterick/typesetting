@@ -8,7 +8,7 @@
     (raise-argument-error 'read-bytes-exact (format "byte string length ~a" count) bs))
   bs)
 
-(define RestructureBase%
+(define RBase
   (class object%
     (super-new)    
     (abstract decode)
@@ -57,3 +57,17 @@
 (define-macro (unfinished)
   (with-pattern ([ID-UNFINISHED (prefix-id (syntax-source caller-stx) ":" (syntax-line caller-stx) ":" #'unfinished)])
                 #'(error 'ID-UNFINISHED)))
+
+(define-macro (define+provide ID . EXPRS)
+  #'(begin
+      (provide ID)
+      (define ID . EXPRS)))
+
+(require sugar/list)
+(define (listify kvs)
+  (for/list ([slice (in-list (slice-at kvs 2))])
+            (cons (car slice) (cadr slice))))
+(define-syntax-rule (define-hashifier id hasher) (define (id . kvs) (hasher (listify kvs))))
+(define-hashifier mhash make-hash)
+(define-hashifier mhasheq make-hasheq)
+(define-hashifier mhasheqv make-hasheqv)
