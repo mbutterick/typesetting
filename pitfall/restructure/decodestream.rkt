@@ -20,7 +20,7 @@
 
 
 
-(define-subclass object% (DecodeStream [buffer #""])
+(define-subclass object% (RDecodeStream [buffer #""])
   (field [pos 0]
          [length (bytes-length buffer)]
          )

@@ -22,7 +22,7 @@
   
   (getter-field [size (hash-ref type-sizes fn)])
 
-  (define/override (decode stream)
+  (define/override (decode stream [res #f])
     (unless (input-port? stream)
       (raise-argument-error 'decode "input port" stream))
     (define bstr (read-bytes-exact size stream))
@@ -31,11 +31,14 @@
         (integer-bytes->integer bstr (unsigned-type? type) (eq? endian 'BE))))
 
   (define/override (encode stream val)
-    (unless (output-port? stream)
-      (raise-argument-error 'encode "output port" stream))
-    (if (= 1 size)
-        (bytes val)
-        (integer->integer-bytes val size (unsigned-type? type) (eq? endian 'BE)))))
+    (when stream
+      (unless (output-port? stream)
+        (raise-argument-error 'encode "output port" stream)))
+    (define bstr
+      (if (= 1 size)
+          (bytes val)
+          (integer->integer-bytes val size (unsigned-type? type) (eq? endian 'BE))))
+    (if stream (write-bytes bstr stream) bstr)))
     
 
 (test-module
@@ -44,16 +47,16 @@
        [op (open-output-bytes)])
    (check-equal? (send o decode ip) 513) ;; 1000 0000  0100 0000
    (check-equal? (send o decode ip) 1027)  ;; 1100 0000 0010 0000
-   (check-equal? (send o encode op 513) (bytes 1 2))
-   (check-equal? (send o encode op 1027) (bytes 3 4)))
+   (check-equal? (send o encode #f 513) (bytes 1 2))
+   (check-equal? (send o encode #f 1027) (bytes 3 4)))
 
  (let ([o (make-object Number 'UInt16 'BE)]
        [ip (open-input-bytes (bytes 1 2 3 4))]
        [op (open-output-bytes)])
    (check-equal? (send o decode ip) 258) ;; 0100 0000 1000 0000 
    (check-equal? (send o decode ip) 772) ;; 0010 0000 1100 0000 
-   (check-equal? (send o encode op 258) (bytes 1 2))
-   (check-equal? (send o encode op 772) (bytes 3 4))))
+   (check-equal? (send o encode #f 258) (bytes 1 2))
+   (check-equal? (send o encode #f 772) (bytes 3 4))))
 
 
 (test-module
@@ -68,17 +71,17 @@
 ;; use keys of type-sizes hash to generate corresponding number definitions
 (define-macro (make-int-types)
   (with-pattern ([((ID BASE ENDIAN) ...) (for/list ([k (in-hash-keys type-sizes)])
-                                                   (define kstr (format "~a" k))
-                                                   (match-define (list* prefix suffix _)
-                                                     (regexp-split #rx"(?=[BL]E|$)" kstr))
-                                                   (map string->symbol
-                                                        (list (string-downcase kstr)
-                                                              prefix
-                                                              (if (positive? (string-length suffix))
-                                                                  suffix
-                                                                  (if (system-big-endian?) "BE" "LE")))))]
+                                           (define kstr (format "~a" k))
+                                           (match-define (list* prefix suffix _)
+                                             (regexp-split #rx"(?=[BL]E|$)" kstr))
+                                           (map string->symbol
+                                                (list (string-downcase kstr)
+                                                      prefix
+                                                      (if (positive? (string-length suffix))
+                                                          suffix
+                                                          (if (system-big-endian?) "BE" "LE")))))]
                  [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)])
-                #'(begin (define+provide ID (make-object Number 'BASE 'ENDIAN)) ...)))
+    #'(begin (define+provide ID (make-object Number 'BASE 'ENDIAN)) ...)))
                                                             
 
 (make-int-types)
