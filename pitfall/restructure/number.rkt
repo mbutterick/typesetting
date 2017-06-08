@@ -1,7 +1,11 @@
 #lang restructure/racket
-(require "decodestream.rkt" "encodestream.rkt")
+(require "decodestream.rkt" "encodestream.rkt" "streamcoder.rkt")
+(provide Number)
 
-;; approximates https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
+#|
+approximates
+https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
+|#
 
 (define (ends-with-8? type)
   (define str (symbol->string type))
@@ -14,7 +18,7 @@
  (check-true (unsigned-type? 'UInt16))
  (check-false (unsigned-type? 'Int16)))
 
-(define-subclass RBase (Number [type 'UInt16] [endian (if (system-big-endian?) 'BE 'LE)])
+(define-subclass RStreamcoder (Number [type 'UInt16] [endian (if (system-big-endian?) 'BE 'LE)])
   (getter-field [fn (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
 
   (unless (hash-has-key? type-sizes fn)
@@ -22,18 +26,13 @@
   
   (getter-field [size (hash-ref type-sizes fn)])
 
-  (define/override (decode stream [res #f])
-    (unless (is-a? stream RDecodeStream)
-      (raise-argument-error 'decode "RDecodeStream" stream))
-    (define bstr (send stream read-bytes size))
+  (define/augment (decode stream [res #f])
+    (define bstr (send stream read size))
     (if (= 1 size)
         (bytes-ref bstr 0)
         (integer-bytes->integer bstr (unsigned-type? type) (eq? endian 'BE))))
 
-  (define/override (encode stream val)
-    (when stream
-      (unless (is-a? stream REncodeStream)
-        (raise-argument-error 'encode "REncodeStream" stream)))
+  (define/augment (encode stream val)
     (define bstr
       (if (= 1 size)
           (bytes val)

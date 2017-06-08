@@ -15,5 +15,5 @@ https://github.com/mbutterick/restructure/blob/master/src/EncodeStream.coffee
 
   (define/public (write val)
     (cond
-      [(bytes? val) (write-bytes val _port)]
+      [(bytes? val) (write-bytes val _port) (void)]
       [else (error 'REncodeStream:write:unknown-type)])))

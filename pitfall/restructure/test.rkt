@@ -3,20 +3,20 @@
 
 (define Person
   (make-object RStruct
-    (mhash 'name uint16
+    (mhash 'name (make-object RString uint8 'utf8)
            'age uint8)))
 
 ;; decode a person from a buffer
-(define stream (make-object RDecodeStream #"ABC"))
-(define x (send Person decode stream))
+(define stream-in (make-object RDecodeStream #"\4MikeA"))
+(define x (send Person decode stream-in))
 
 (test-module
- (check-equal? (hash-ref x 'name) 16961)
- (check-equal? (hash-ref x 'age) 67))
+ (check-equal? (hash-ref x 'name) "Mike")
+ (check-equal? (hash-ref x 'age) 65))
 
 ;; encode a person from a hash
-(define out (make-object REncodeStream))
-(send Person encode out (hasheq 'name 16961 'age 67))
+(define stream-out (make-object REncodeStream))
+(send Person encode stream-out (hasheq 'name "Mike" 'age 65))
 
 (test-module
- (check-equal? (send out dump) #"ABC"))
+ (check-equal? (send stream-out dump) #"\4MikeA"))

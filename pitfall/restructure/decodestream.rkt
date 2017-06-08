@@ -25,5 +25,5 @@
          [_port (open-input-bytes buffer)])
   (getter-field [pos (port-position _port)])
 
-  (define/public (read-bytes count)
+  (define/public (read count)
     (read-bytes-exact count _port)))
