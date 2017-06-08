@@ -3,8 +3,8 @@
 
 (define Person
   (make-object RStruct
-    (mhash 'name (make-object RString uint8 'utf8)
-           'age uint8)))
+    (list (cons 'name (make-object RString uint8 'utf8))
+          (cons 'age uint8))))
 
 ;; decode a person from a buffer
 (define stream-in (make-object RDecodeStream #"\4MikeA"))

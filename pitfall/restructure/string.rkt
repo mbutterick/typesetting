@@ -9,8 +9,8 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 
 (define-subclass RStreamcoder (RString [length #f] [encoding 'ascii])
   (field [_codec (caseq encoding
-                        [(latin-1) (cons string->bytes/latin-1 bytes->string/latin-1)]
-                        [(ascii utf-8 utf8)(cons string->bytes/utf-8 bytes->string/utf-8)])])
+                        [(latin-1 ascii) (cons string->bytes/latin-1 bytes->string/latin-1)]
+                        [(utf-8 utf8)(cons string->bytes/utf-8 bytes->string/utf-8)])])
          
   (define/augment (decode stream [parent #f])
     (define count (if length

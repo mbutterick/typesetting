@@ -18,10 +18,13 @@
                                 [endian '("" BE LE)])
                                (values (string->symbol (format "~a~a" key endian)) value))))
 
-
+(require racket/port)
 ;; basically just a wrapper for a Racket port
-(define-subclass object% (RDecodeStream [buffer #""])
-  (field [length (bytes-length buffer)]
+(define-subclass object% (RDecodeStream [buffer-in #""])
+  (field [buffer (if (input-port? buffer-in)
+                   (port->bytes buffer-in)
+                   buffer-in)]
+         [length (bytes-length buffer)]
          [_port (open-input-bytes buffer)])
   (getter-field [pos (port-position _port)])
 

@@ -1,14 +1,32 @@
 #lang pitfall/racket
-(provide (all-defined-out))
-
 (require restructure)
 
+(provide (all-defined-out))
+
+
+
+
+(define TableEntry (make-object RStruct
+                     (list (cons 'tag (make-object RString 4))
+                           (cons 'checkSum uint32be)
+                           (cons 'offset uint32be)
+                           (cons 'length uint32be))))
 
 #;(define TableEntry (new RStruct
-                     'tag (RString 4)
-                     'checkSum uint32be
-                     'offset uint32be
-                     'length uint32be))
+                          (list (cons 'tag (RString 4))
+                                (cons 'checkSum uint32be)
+                                (cons 'offset uint32be)
+                                (cons 'length uint32be))))
+
+(define Directory (make-object RStruct
+                    (list (cons 'tag (make-object RString 4))
+                          (cons 'numTables uint16be)
+                          (cons 'searchRange uint16be)
+                          (cons 'entrySelector uint16be)
+                          (cons 'rangeShift uint16be)
+                          ;(cons 'tables (make-object RArray TableEntry 'numTables))
+                          )))
+
 
 #;(define Directory (:seq ([tag hexbytes #:assert (curry equal? "/00 01 00 00")]
                            [numTables uint16be #:assert ]
@@ -21,12 +39,12 @@
     (Directory ip))
 
 
-#;(define ip (open-input-file "test/assets/Charter.ttf"))
-#;(directory-decode ip (mhash '_startOffset 0))
-#;(module+ test
-    (require rackunit)
-    (define ip (open-input-file "test/assets/Charter.ttf"))
-    (check-equal?
+(module+ test
+  (require rackunit)
+  (define ip (open-input-file "test/assets/Charter.ttf"))
+  (define is (make-object RDecodeStream ip))
+  (send Directory decode is)
+  #;(check-equal?
      (directory-decode ip (mhash '_startOffset 0))
      '((tag . "00 01 00 00")
        (numTables . 14)
