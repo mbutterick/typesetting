@@ -25,7 +25,9 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     (when (is-a? length Number) ;; length-prefixed string
       (send length encode stream (bytes-length bytes)))
     
-    (send stream write bytes)))
+    (send stream write bytes))
+
+  (define/public (size) (unfinished)))
 
 
 (test-module

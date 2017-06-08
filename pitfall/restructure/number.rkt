@@ -11,12 +11,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define str (symbol->string type))
   (equal? (substring str (sub1 (string-length str))) "8"))
 
-(define (unsigned-type? type)
-  (equal? "U" (substring (symbol->string type) 0 1)))
+(define (signed-type? type)
+  (not (equal? "U" (substring (symbol->string type) 0 1))))
 
 (test-module
- (check-true (unsigned-type? 'UInt16))
- (check-false (unsigned-type? 'Int16)))
+ (check-false (signed-type? 'UInt16))
+ (check-true (signed-type? 'Int16)))
 
 (define-subclass RStreamcoder (Number [type 'UInt16] [endian (if (system-big-endian?) 'BE 'LE)])
   (getter-field [fn (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
@@ -30,13 +30,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define bstr (send stream read size))
     (if (= 1 size)
         (bytes-ref bstr 0)
-        (integer-bytes->integer bstr (unsigned-type? type) (eq? endian 'BE))))
+        (integer-bytes->integer bstr (signed-type? type) (eq? endian 'BE))))
 
   (define/augment (encode stream val)
     (define bstr
       (if (= 1 size)
           (bytes val)
-          (integer->integer-bytes val size (unsigned-type? type) (eq? endian 'BE))))
+          (integer->integer-bytes val size (signed-type? type) (eq? endian 'BE))))
     (if stream (send stream write bstr) bstr)))
     
 
@@ -90,3 +90,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-equal? (send uint32 size) 4)
  (check-equal? (send double size) 8))
 
+
+(require "encodestream.rkt")
+(define n (make-object Number 'UInt32))
+(send n encode (make-object REncodeStream) 2351070438)
