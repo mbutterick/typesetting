@@ -11,7 +11,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define/override (decode stream [parent #f] [length 0])
     (define res (_setup stream parent length))
     (_parseFields stream res fields)
-    (hash-set! (hash-ref res '_props) '_currentOffset (port-position stream))
+    (hash-set! (hash-ref res '_props) '_currentOffset (· stream pos))
     res)
 
   (define/override (encode stream val [parent #f])
@@ -24,7 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     ;; define hidden properties
     (hash-set! res '_props
                (mhasheq 'parent (mhasheq 'value parent)
-                      '_startOffset (mhasheq 'value (port-position stream))
+                      '_startOffset (mhasheq 'value (· stream pos))
                       '_currentOffset (mhasheq 'value 0 'writable #t)
                       '_length (mhasheq 'value length)))
     res)

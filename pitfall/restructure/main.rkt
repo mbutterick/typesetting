@@ -2,4 +2,5 @@
 
 (r+p "number.rkt"
      "struct.rkt"
-     "decodestream.rkt")
+     "decodestream.rkt"
+     "encodestream.rkt")

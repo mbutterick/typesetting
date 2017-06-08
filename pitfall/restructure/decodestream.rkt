@@ -19,9 +19,11 @@
                                (values (string->symbol (format "~a~a" key endian)) value))))
 
 
-
+;; basically just a wrapper for a Racket port
 (define-subclass object% (RDecodeStream [buffer #""])
-  (field [pos 0]
-         [length (bytes-length buffer)]
-         )
-  )
+  (field [length (bytes-length buffer)]
+         [_port (open-input-bytes buffer)])
+  (getter-field [pos (port-position _port)])
+
+  (define/public (read-bytes count)
+    (read-bytes-exact count _port)))
