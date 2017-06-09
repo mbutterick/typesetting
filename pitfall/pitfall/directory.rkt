@@ -14,7 +14,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                               'length uint32be)))
 
 (define-subclass RStruct (RDirectory)
-  (super-new)
   (define/public (process)
     'boom))
 
@@ -26,12 +25,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                              'rangeShift uint16be
                              'tables (make-object RArray TableEntry 'numTables))))
 
+(define (directory-decode ip [options (mhash)])
+  (define is (make-object RDecodeStream ip))
+  (send Directory decode is))
+
 (module+ test
   (require rackunit)
   (define ip (open-input-file "test/assets/Charter.ttf"))
-  (define is (make-object RDecodeStream ip))
   (check-equal?
-   (send Directory decode is)
+   (directory-decode ip)
    (make-hasheq
     (list (cons 'tables
                 (list (make-hasheq '((length . 96) (checkSum . 2351070438) (offset . 360) (tag . "OS/2")))

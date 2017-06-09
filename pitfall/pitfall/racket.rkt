@@ -18,7 +18,11 @@
      racket/list
      racket/port
      racket/function
-     br/define)
+     br/define
+     sugar/class
+     sugar/js
+     sugar/dict
+     sugar/stub)
 
 (module reader syntax/module-reader
   #:language 'pitfall/racket

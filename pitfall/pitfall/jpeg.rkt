@@ -5,7 +5,6 @@
                          #xffc8 #xffc9 #xffca #xffcb #xffcc #xffcd #xffce #xffcf))
 
 (define-subclass object% (JPEG data [label #f])
-  (super-new)
   (define last-ip (current-input-port))
   (current-input-port (if (input-port? data)
                           data

@@ -3,6 +3,12 @@
 
 ;; approximates https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
 
+(define (read-bytes-exact count p)
+  (define bs (read-bytes count p))
+  (unless (and (bytes? bs) (= (bytes-length bs) count))
+    (raise-argument-error 'read-bytes-exact (format "byte string length ~a" count) bs))
+  bs)
+
 (provide (rename-out [type-sizes TYPES]))
 
 (define type-sizes (let-values ([(intkeys intvalues)

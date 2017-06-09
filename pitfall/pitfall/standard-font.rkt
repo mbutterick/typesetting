@@ -4,7 +4,6 @@
 (provide isStandardFont standard-fonts StandardFont)
 
 (define-subclass PDFFont (StandardFont document name id)
-  (super-new)
   (field [font (make-object AFMFont ((hash-ref standard-fonts name
                                                (λ () (raise-argument-error 'PDFFont "valid font name" name)))))]
          [ascender (· font ascender)]

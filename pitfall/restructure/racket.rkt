@@ -9,7 +9,13 @@
      sugar/debug
      racket/class
      racket/string
-     br/define)
+     br/define
+     sugar/define
+     sugar/class
+     sugar/js
+     sugar/dict
+     sugar/stub
+     sugar/case)
 
 (module reader syntax/module-reader
   #:language 'restructure/racket

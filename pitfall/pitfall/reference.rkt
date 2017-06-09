@@ -3,7 +3,6 @@
 (provide PDFReference)
 
 (define-subclass object% (PDFReference document id [payload (mhash)])
-  (super-new)
   (field [byte-strings empty]
          [offset #f])
 

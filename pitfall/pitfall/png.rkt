@@ -3,7 +3,6 @@
 (provide PNG)
 
 (define-subclass object% (PNG data [label #f])
-  (super-new)
   
   (field [image (read-png data)]
          [pixelBitlength (· image pixelBitlength)]

@@ -38,21 +38,21 @@
       [(and (string? color) (regexp-match #px"^#(?i:[0-9A-F]){3}$" color))
        (loop (list->string (cdr (apply append
                                        (for/list ([c (in-string color)])
-                                         (list c c))))))] ; change #abc to ##aabbcc then drop the first char
+                                                 (list c c))))))] ; change #abc to ##aabbcc then drop the first char
       ;; 6-digit hexish string becomes list of hex numbers and maybe #f vals
       [(and (string? color) (= 7 (string-length color)) (string-prefix? color "#"))
        (loop (for/list ([str (in-list (regexp-match* #rx".." (string-trim color "#")))])
-               (string->number str 16)))] ; match two at a time and convert to hex
+                       (string->number str 16)))] ; match two at a time and convert to hex
       ;; named color
       [(and (string? color) (hash-ref namedColors color #f)) => loop]
       ;; array of numbers
       [(and (list? color) (andmap number? color))
        (for/list ([i (in-list color)])
-         (define x (/ i (case (length color)
-                          [(3) 255.0] ; RGB
-                          [(4) 100.0] ; CMYK
-                          [else 1.0])))
-         (if (integer? x) (inexact->exact x) x))]
+                 (define x (/ i (case (length color)
+                                  [(3) 255.0] ; RGB
+                                  [(4) 100.0] ; CMYK
+                                  [else 1.0])))
+                 (if (integer? x) (inexact->exact x) x))]
       [else #f])))
 
 
@@ -112,6 +112,22 @@
   ((or/c number? #f) . ->m . object?)
   (_doOpacity this #f opacity)
   this)
+
+(define (bounded low x high)
+  (if (high . < . low)
+      (bounded high x low)
+      (max low (min high x))))
+
+(module+ test
+  (require rackunit)
+  (check-equal? (bounded 0 2 1) 1)
+  (check-equal? (bounded 1 2 0) 1)
+  (check-equal? (bounded 0 -2 1) 0)
+  (check-equal? (bounded 1 -2 0) 0)
+  (check-equal? (bounded 0 .5 1) 0.5)
+  (check-equal? (bounded 0 0 1) 0)
+  (check-equal? (bounded 0 1 1) 1))
+
 
 
 (define/contract (_doOpacity this [fill-arg #f] [stroke-arg #f])

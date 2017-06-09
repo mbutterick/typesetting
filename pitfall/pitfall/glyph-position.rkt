@@ -13,7 +13,6 @@
                           ;; The offset from the pen position in the Y direction at which to render this glyph.
                           [yOffset 0]
                           [advanceWidth 0])
-  (super-new)
 
   (as-methods
    scale)

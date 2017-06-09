@@ -6,8 +6,6 @@
 (define mixed% (annotation-mixin (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%)))))))
 
 (define-subclass mixed% (PDFDocument [options (mhash)])
-  (super-new)
-
   (compress-streams? (hash-ref options 'compress #t))
   
   (field [byte-strings empty]

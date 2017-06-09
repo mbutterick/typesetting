@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class rackunit "document.rkt" "page.rkt" "reference.rkt" "helper.rkt")
+(require racket/class rackunit "document.rkt" "page.rkt" "reference.rkt" "helper.rkt" sugar/js)
 (define p (make-object PDFPage (make-object PDFDocument)))
 (check-equal? (· p size) "letter")
 (check-equal? (· p layout) "portrait")
