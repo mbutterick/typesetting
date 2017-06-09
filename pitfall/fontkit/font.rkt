@@ -2,7 +2,7 @@
 (require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt")
 (provide (all-defined-out))
 
-(define-runtime-path charter-path "test/assets/charter.ttf")
+(define-runtime-path charter-path "../pitfall/test/assets/charter.ttf")
 
 #|
 approximates

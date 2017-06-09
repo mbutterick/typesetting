@@ -1,6 +1,6 @@
 #lang pitfall/racket
-(require "afm-font.rkt" "font.rkt" "glyph-position.rkt")
-(require racket/runtime-path (for-syntax racket/base racket/path racket/syntax sugar/debug))
+(require "afm-font.rkt" "font.rkt" fontkit)
+(require racket/runtime-path)
 (provide isStandardFont standard-fonts StandardFont)
 
 (define-subclass PDFFont (StandardFont document name id)

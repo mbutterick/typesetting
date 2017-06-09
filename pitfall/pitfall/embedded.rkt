@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "font.rkt" "glyph-position.rkt" "glyphrun.rkt" "subset.rkt" "reference.rkt")
+(require "font.rkt" fontkit "reference.rkt")
 (provide EmbeddedFont)
 
 (define-subclass PDFFont (EmbeddedFont document font id)
@@ -182,7 +182,7 @@ For now, we'll just measure width of the characters.
                  
 
 (module+ test
-  (require rackunit "fontkit.rkt" "bbox.rkt")
+  (require rackunit fontkit)
   (define f (openSync "test/assets/Charter.ttf" #f))
   (define ef (make-object EmbeddedFont #f f #f))
   (check-equal? (send ef widthOfString "f" 1000) 321.0)
