@@ -22,7 +22,8 @@
      sugar/class
      sugar/js
      sugar/dict
-     sugar/stub)
+     sugar/stub
+     sugar/port)
 
 (module reader syntax/module-reader
   #:language 'pitfall/racket

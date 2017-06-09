@@ -4,19 +4,22 @@
 
 (define-runtime-path charter-path "test/assets/charter.ttf")
 
-;; approximates
-;; https://github.com/devongovett/fontkit/blob/master/src/TTFFont.js
+#|
+approximates
+https://github.com/devongovett/fontkit/blob/master/src/TTFFont.js
+|#
 
 ;; This is the base class for all SFNT-based font formats in fontkit.
 ;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
-(define-subclass object% (TTFFont [stream (open-input-bytes #"")])
-  (super-new)
+(define-subclass object% (TTFFont stream)
   (when stream (unless (input-port? stream)
                  (raise-argument-error 'TTFFont "input port" stream)))
+  (unless (member (bytes->string/latin-1 (peek-bytes 4 0 stream))
+                  (list "true" "OTTO" "\u0\u1\u0\u0"))
+    (raise 'probe-fail))
   (port-count-lines! stream)
   ;; skip variationCoords
-  (field [_directoryPos (let-values ([(l c p) (port-next-location stream)])
-                          p)]
+  (field [_directoryPos (port-position stream)]
          [_tables (mhash)]
          [_glyphs (mhash)]
          [_layoutEngine #f])
@@ -25,9 +28,9 @@
   (send this _decodeDirectory)
 
   #;(define/public (_getTable tag)
-    (unless (member (· directory  tag) _tables)
-      (raise-argument-error '_getTable "table that exists" (· table tag)))
-    (hash-set! _tables (· table tag) (_decodeTable table)))
+      (unless (member (· directory  tag) _tables)
+        (raise-argument-error '_getTable "table that exists" (· table tag)))
+      (hash-set! _tables (· table tag) (_decodeTable table)))
 
   (define/public (_decodeTable table)
     (define-values (l c p) (port-next-location stream))
@@ -37,13 +40,6 @@
   (define/public (_decodeDirectory)
     (set! directory (directory-decode stream (mhash '_startOffset 0)))
     directory)
-
-  (define/public (probe buffer)
-    (and
-     (member (bytes->string/latin-1 (subbytes buffer 0 4))
-             (list "true" "OTTO" "\u0\u1\u0\u0"))
-     'TTF-format))
-  
   (field [ft-library (FT_Init_FreeType)])
   (field [ft-face (FT_New_Face ft-library charter-path 0)])
 
@@ -208,7 +204,7 @@
   ;; for now, just use UTF-8
   (define codepoints (map char->integer (string->list string)))
   (for/list ([cp (in-list codepoints)])
-    (send this glyphForCodePoint cp)))
+            (send this glyphForCodePoint cp)))
 
 
 ;; Maps a single unicode code point to a Glyph object.
@@ -231,7 +227,7 @@
   (string? number? . ->m . number?)
   (/ (* size
         (for/sum ([c (in-string str)])
-          (measure-char-width this c))) (· this unitsPerEm)))
+                 (measure-char-width this c))) (· this unitsPerEm)))
 
 
 ;; Register font formats
@@ -254,11 +250,14 @@
   ((bytes?) ((or/c string? #f)) . ->* . any/c)
   (or
    (for*/first ([format (in-list formats)]
-                #:when (send (make-object format) probe buffer))
-     (define font (make-object format (open-input-bytes buffer)))
-     (if postscriptName
-         (send font getFont postscriptName) ; used to select from collection files like TTC
-         font))
+                ;; rather than use a `probe` function,
+                ;; just try making a font with each format and see what happens
+                [font (in-value (with-handlers ([(curry eq? 'probe-fail) (λ (exn) #f)])
+                                  (make-object format (open-input-bytes buffer))))]
+                #:when font)
+               (if postscriptName
+                   (send font getFont postscriptName) ; used to select from collection files like TTC
+                   font))
    (error 'fontkit:create "unknown font format")))
 
 
