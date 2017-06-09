@@ -30,8 +30,10 @@
   (error 'cff-subset-unimplemented))
 
 
-;; approximates
-;; https://github.com/devongovett/fontkit/blob/master/src/subset/TTFSubset.js
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
+|#
 
 (define-subclass Subset (TTFSubset)
   (field [glyphEncoder (make-object TTFGlyphEncoder)])
@@ -65,7 +67,7 @@
   (for ([gid (in-list (· this glyphs))])
        (send this _addGlyph gid))
 
-  #;(define maxp (cloneDeep (· this font maxp)))
+  (define maxp (cloneDeep (send (· this font) _getTable maxp)))
 
   (unfinished)
   )

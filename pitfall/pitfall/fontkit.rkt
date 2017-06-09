@@ -6,7 +6,7 @@
 
 #|
 approximates
-https://github.com/devongovett/fontkit/blob/master/src/TTFFont.js
+https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 |#
 
 ;; This is the base class for all SFNT-based font formats in fontkit.
@@ -27,19 +27,20 @@ https://github.com/devongovett/fontkit/blob/master/src/TTFFont.js
   (field [directory #f])
   (send this _decodeDirectory)
 
-  #;(define/public (_getTable tag)
-      (unless (member (· directory  tag) _tables)
-        (raise-argument-error '_getTable "table that exists" (· table tag)))
-      (hash-set! _tables (· table tag) (_decodeTable table)))
+  (define/public (_getTable table-tag)
+    (unless (hash-has-key? (hash-ref directory 'tables) table-tag)
+      (raise-argument-error '_getTable "table that exists" table-tag))
+    (hash-ref! _tables table-tag (_decodeTable table-tag))) ; load table from cache, decode if necessary
 
   (define/public (_decodeTable table)
+    (report table '_decodeTable:starting)
     (define-values (l c p) (port-next-location stream))
-    (displayln 'whee)
     (set-port-next-location! stream l c p))
 
   (define/public (_decodeDirectory)
     (set! directory (directory-decode stream (mhash '_startOffset 0)))
     directory)
+  
   (field [ft-library (FT_Init_FreeType)])
   (field [ft-face (FT_New_Face ft-library charter-path 0)])
 
@@ -275,8 +276,8 @@ https://github.com/devongovett/fontkit/blob/master/src/TTFFont.js
   (check-false (· f has-gpos-table?))
   (check-true (send f has-table? #"cmap"))
   (check-equal? (· f lineGap) 0)
-  f
-  #;(send f _getTable 'maxp)
+  (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag)))
+  (send f _getTable 'maxp)
   #;(· f createSubset)
   
 
