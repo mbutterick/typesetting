@@ -72,6 +72,9 @@
 (define-hashifier mhasheq make-hasheq)
 (define-hashifier mhasheqv make-hasheqv)
 
+(provide dictify)
+(define (dictify . xs) (listify xs))
+
 (define (port-position port)
   (define-values (l c p) (port-next-location port))
   p)

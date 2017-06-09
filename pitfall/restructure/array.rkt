@@ -8,12 +8,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
 (define-subclass RStreamcoder (RArray type [length #f] [lengthType 'count])
-  
-         
+          
   (define/augment (decode stream [parent #f])
-    (caseq lengthType
-           [(count) (for/list ([i (in-range length)])
-                              (send type decode stream this))]))
+    (let ([length (if length
+                      (resolveLength length stream parent)
+                      (send stream length))])
+    
+      (caseq lengthType
+             [(count) (for/list ([i (in-range length)])
+                                (send type decode stream this))])))
 
   (define/public (size) (unfinished))
 

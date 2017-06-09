@@ -3,21 +3,28 @@
 
 (provide (all-defined-out))
 
+#|
+https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
+|#
 
 (define TableEntry (make-object RStruct
-                     (list (cons 'tag (make-object RString 4))
-                           (cons 'checkSum uint32be)
-                           (cons 'offset uint32be)
-                           (cons 'length uint32be))))
+                     (dictify 'tag (make-object RString 4)
+                              'checkSum uint32be
+                              'offset uint32be
+                              'length uint32be)))
 
-(define Directory (make-object RStruct
-                    (list (cons 'tag (make-object RString 4))
-                          (cons 'numTables uint16be)
-                          (cons 'searchRange uint16be)
-                          (cons 'entrySelector uint16be)
-                          (cons 'rangeShift uint16be)
-                          ;; todo next: derive the `14` from 'numTables
-                          (cons 'tables (make-object RArray TableEntry 14)))))
+(define-subclass RStruct (RDirectory)
+  (super-new)
+  (define/public (process)
+    'boom))
+
+(define Directory (make-object RDirectory
+                    (dictify 'tag (make-object RString 4)
+                             'numTables uint16be
+                             'searchRange uint16be
+                             'entrySelector uint16be
+                             'rangeShift uint16be
+                             'tables (make-object RArray TableEntry 'numTables))))
 
 (module+ test
   (require rackunit)

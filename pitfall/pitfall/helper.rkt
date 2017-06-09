@@ -47,6 +47,7 @@
 (define-hashifier mhash make-hash)
 (define-hashifier mhasheq make-hasheq)
 (define-hashifier mhasheqv make-hasheqv)
+(define (dictify . xs) (listify xs))
 
 (module+ test
   (check-equal? (mhash 'k "v") (make-hash (list (cons 'k "v"))))) 
