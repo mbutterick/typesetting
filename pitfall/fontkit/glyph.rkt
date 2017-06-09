@@ -1,4 +1,4 @@
-#lang pitfall/racket
+#lang fontkit/racket
 (require "freetype-ffi.rkt")
 (provide Glyph CFFGlyph TTFGlyph)
 (module+ test (require rackunit))

@@ -24,14 +24,12 @@
                                 [endian '("" BE LE)])
                                (values (string->symbol (format "~a~a" key endian)) value))))
 
-(require racket/port)
 ;; basically just a wrapper for a Racket port
 (define-subclass object% (RDecodeStream [buffer-in #""])
-  (field [buffer (if (input-port? buffer-in)
-                   (port->bytes buffer-in)
-                   buffer-in)]
-         [length (bytes-length buffer)]
-         [_port (open-input-bytes buffer)])
+  (field [_port (cond
+                  [(bytes? buffer-in) (open-input-bytes buffer-in)]
+                  [(input-port? buffer-in) buffer-in]
+                  [else (raise-argument-error 'RDecodeStream "bytes or input port" buffer-in)])])
   (getter-field [pos (port-position _port)])
 
   (define/public (read count)

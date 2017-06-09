@@ -1,5 +1,5 @@
-#lang pitfall/racket
-(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt")
+#lang fontkit/racket
+(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" restructure/decodestream "tables.rkt")
 (provide (all-defined-out))
 
 (define-runtime-path charter-path "../pitfall/test/assets/charter.ttf")
@@ -14,13 +14,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define-subclass object% (TTFFont stream)
   (when stream (unless (input-port? stream)
                  (raise-argument-error 'TTFFont "input port" stream)))
-  (unless (member (bytes->string/latin-1 (peek-bytes 4 0 stream))
-                  (list "true" "OTTO" "\u0\u1\u0\u0"))
+  (unless (member (peek-bytes 4 0 stream) (list #"true" #"OTTO" (bytes 0 1 0 0)))
     (raise 'probe-fail))
-  (port-count-lines! stream)
+  
   ;; skip variationCoords
   (field [_directoryPos (port-position stream)]
-         [_tables (mhash)]
+         [_tables (mhash)] ; holds decoded tables (loaded lazily)
          [_glyphs (mhash)]
          [_layoutEngine #f])
 
@@ -28,14 +27,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (send this _decodeDirectory)
 
   (define/public (_getTable table-tag)
-    (unless (hash-has-key? (hash-ref directory 'tables) table-tag)
-      (raise-argument-error '_getTable "table that exists" table-tag))
-    (hash-ref! _tables table-tag (_decodeTable table-tag))) ; load table from cache, decode if necessary
+    (unless (has-table? this table-tag)
+      (raise-argument-error '_getTable "table that exists in font" table-tag))
+    (hash-ref! _tables table-tag (_decodeTable table-tag))) ; get table from cache, load if not there
 
-  (define/public (_decodeTable table)
-    (report table '_decodeTable:starting)
-    (define-values (l c p) (port-next-location stream))
-    (set-port-next-location! stream l c p))
+  (define/public (_decodeTable table-tag)
+    (define table-decoder (hash-ref table-decoders table-tag
+                                    (λ () (raise-argument-error '_decodeTable "decodable table" table-tag))))
+    (define offset (· (hash-ref (· directory tables) table-tag) offset))
+    (define length (· (hash-ref (· directory tables) table-tag) length))
+    (set-port-position! stream offset)
+    (send table-decoder decode (make-object RDecodeStream stream) this length))
 
   (define/public (_decodeDirectory)
     (set! directory (directory-decode stream (mhash '_startOffset 0)))
@@ -84,20 +86,19 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The font’s [ascender](https://en.wikipedia.org/wiki/Ascender_(typography))
 (define/contract (ascent this)
   (->m number?)
-  (FT_FaceRec-ascender (· this ft-face)))
+  (hash-ref (send this _getTable 'hhea) 'ascent))
 
 
 ;; The font’s [descender](https://en.wikipedia.org/wiki/Descender)
 (define/contract (descent this)
   (->m number?)
-  (FT_FaceRec-descender (· this ft-face)))
+  (hash-ref (send this _getTable 'hhea) 'descent))
 
 
 ;; The amount of space that should be included between lines
 (define/contract (lineGap this)
   (->m number?)
-  (define hhea-table (cast (FT_Get_Sfnt_Table (· this ft-face) 'ft_sfnt_hhea) _pointer _FT_HoriHeader-pointer))
-  (FT_HoriHeader-lineGap hhea-table))
+  (hash-ref (send this _getTable 'hhea) 'lineGap))
 
 
 (define/contract (underlinePosition this)
@@ -143,11 +144,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
 (define/contract (bbox this)
   (->m (is-a?/c BBox))
-  (let ([bbox (FT_FaceRec-bbox (· this ft-face))])
-    (make-object BBox (FT_BBox-xMin bbox)
-      (FT_BBox-yMin bbox)
-      (FT_BBox-xMax bbox)
-      (FT_BBox-yMax bbox))))
+  (define head-table (send this _getTable 'head))
+  (make-object BBox (· head-table xMin)
+    (· head-table yMin)
+    (· head-table xMax)
+    (· head-table yMax)))
 
 
 (define/contract (_cmapProcessor this)
@@ -164,16 +165,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 
-(define (has-table? this tag)
-  (FT_Load_Sfnt_Table (· this ft-face) (tag->int tag) 0 0 0))
+(define/contract (has-table? this tag)
+  ((or/c bytes? symbol?) . ->m . boolean?)
+  (hash-has-key? (· this directory tables) (if (bytes? tag)
+                                               (string->symbol (bytes->string/latin-1 tag))
+                                               tag)))
   
-(define (has-cff-table? this) (has-table? this #"CFF "))
-
-(define (has-morx-table? this) (has-table? this #"morx"))
-
-(define (has-gpos-table? this) (has-table? this #"GPOS"))
-
-(define (has-gsub-table? this) (has-table? this #"GSUB"))
+(define has-cff-table? (curryr has-table? '|CFF |))
+(define has-morx-table? (curryr has-table? 'morx))
+(define has-gpos-table? (curryr has-table? 'GPOS))
+(define has-gsub-table? (curryr has-table? 'GSUB))
 
 
 ;; Returns a glyph object for the given glyph id.
@@ -262,23 +263,23 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
    (error 'fontkit:create "unknown font format")))
 
 
-(module+ test
-  (require rackunit)
-  (define f (openSync (path->string charter-path)))
-  (check-equal? (postscriptName f) "Charter")
-  (check-equal? (· f unitsPerEm) 1000)
-  (check-equal? (· f ascent) 980)
-  (check-equal? (· f descent) -238)
-  (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0)
-  (check-false (· f has-cff-table?))
-  (check-false (· f has-morx-table?))
-  (check-false (· f has-gsub-table?))
-  (check-false (· f has-gpos-table?))
-  (check-true (send f has-table? #"cmap"))
-  (check-equal? (· f lineGap) 0)
-  (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag)))
-  (send f _getTable 'maxp)
-  #;(· f createSubset)
-  
+(test-module
+ (define f (openSync (path->string charter-path)))
+ (check-equal? (postscriptName f) "Charter")
+ (check-equal? (· f unitsPerEm) 1000)
+ (check-equal? (· f ascent) 980)
+ (check-equal? (· f descent) -238)
+ (check-equal? (bbox->list (· f bbox)) '(-161 -236 1193 963))
+ (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0)
+ (check-false (· f has-cff-table?))
+ (check-false (· f has-morx-table?))
+ (check-false (· f has-gsub-table?))
+ (check-false (· f has-gpos-table?))
+ (check-true (send f has-table? #"cmap"))
+ (check-equal? (· f lineGap) 0)
+ (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag)))
+ #;(send f _getTable 'maxp)
+ (define subset (make-object TTFSubset f))
+ (send subset encode)
 
-  )
+ )

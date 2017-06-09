@@ -25,7 +25,7 @@
 (define (layout? x)
   (and (hash? x) (hash-has-key? x 'glyphs) (hash-has-key? x 'positions)))
 
-(define index? (and/c (not/c negative?) integer?))
+(define index? (and/c number? integer? (not/c negative?)))
 
 
   
