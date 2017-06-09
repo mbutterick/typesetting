@@ -10,7 +10,6 @@
                           [maxX -inf.0]
                           ; The maxmimum Y position in the bounding box
                           [maxY -inf.0])
-  (super-new)
 
   (as-methods
    width

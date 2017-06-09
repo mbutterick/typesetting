@@ -3,7 +3,6 @@
 (provide LayoutEngine)
 
 (define-subclass object% (LayoutEngine font)
-  (super-new)
   (field [unicodeLayoutEngine #f]
          [kernProcessor #f]
          [engine

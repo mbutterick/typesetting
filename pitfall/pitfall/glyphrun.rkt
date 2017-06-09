@@ -10,7 +10,6 @@
                           script ; The script that was requested for shaping. This was either passed in or detected automatically.
                           language) ; The language requested for shaping, as passed in. If `null`, the default language for the script was used.
 
-  (super-new)
   
   ;; An array of GlyphPosition objects for each glyph in the run
   (field [positions #f])

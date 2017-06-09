@@ -3,7 +3,6 @@
 (provide EmbeddedFont)
 
 (define-subclass PDFFont (EmbeddedFont document font id)
-  (super-new)
   (field [subset (· this font createSubset)]
          ;; we make `unicode` and `width` fields integer-keyed hashes not lists
          ;; because they offer better random access and growability 

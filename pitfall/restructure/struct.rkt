@@ -13,10 +13,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (for ([(k v) (in-dict assocs)])
        (hash-set! fields k v))
 
-  (define/override (decode stream [parent #f] [length 0])
+  (define/overment (decode stream [parent #f] [length 0])
     (define res (_setup stream parent length))
     (_parseFields stream res fields)
     #;(hash-set! (hash-ref res '_props) '_currentOffset (· stream pos))
+    (send this process res stream)
     res)
 
   (define/override (encode stream val [parent #f])

@@ -7,6 +7,8 @@
     (super-new)    
     (abstract decode)
     (abstract encode)
+    (define/public (process . args)
+      (void))
     #;(abstract size)))
 
 

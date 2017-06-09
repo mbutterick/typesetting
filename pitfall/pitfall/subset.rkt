@@ -6,7 +6,6 @@
 ;; https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 
 (define-subclass object% (Subset font)
-  (super-new)
   (field [glyphs empty] ; list of glyph ids in the subset
          [mapping (mhash)] ; mapping of glyph ids to indexes in `glyphs`
          )
@@ -28,7 +27,6 @@
 
 
 (define-subclass Subset (CFFSubset)
-  (super-new)
   (error 'cff-subset-unimplemented))
 
 
@@ -36,7 +34,6 @@
 ;; https://github.com/devongovett/fontkit/blob/master/src/subset/TTFSubset.js
 
 (define-subclass Subset (TTFSubset)
-  (super-new)
   (field [glyphEncoder (make-object TTFGlyphEncoder)])
   (field [glyf #f]
          [offset #f]
@@ -68,7 +65,7 @@
   (for ([gid (in-list (· this glyphs))])
        (send this _addGlyph gid))
 
-  (define maxp (cloneDeep (· this font maxp)))
+  #;(define maxp (cloneDeep (· this font maxp)))
 
   (unfinished)
   )

@@ -2,8 +2,6 @@
 (provide TTFGlyphEncoder)
 
 (define-subclass object% (TTFGlyphEncoder)
-  (super-new)
-
   (as-methods
    encodeSimple
    _encodePoint))

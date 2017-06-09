@@ -27,7 +27,6 @@
   (check-false (and (is-mark? #x2ee) #t)))
 
 (define-subclass object% (Glyph id codePoints font)
-  (super-new)
   (field [_font font]
          [isMark (andmap is-mark? codePoints)]
          [isLigature (> (length codePoints) 1)]
@@ -58,11 +57,9 @@
 
 
 (define-subclass Glyph (CFFGlyph)
-  (super-new)
   (error 'cff-glyph-unimplemented))
 
 
 (define-subclass Glyph (TTFGlyph)
-  (super-new)
 
   )
