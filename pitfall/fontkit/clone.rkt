@@ -1,6 +1,7 @@
 #lang fontkit/racket
+(require racket/serialize)
 (provide cloneDeep)
 
 (define (cloneDeep val)
-  (parameterize ([print-graph #t])
-    (read (open-input-string (~s val)))))
+  (deserialize (serialize val)))
+

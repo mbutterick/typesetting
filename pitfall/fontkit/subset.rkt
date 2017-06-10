@@ -70,10 +70,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
        (send this _addGlyph gid))
 
   (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))
-  ;; (hash-set! maxp 'numGlyphs (length (· this glyf))) ; todo
+  (hash-set! maxp 'numGlyphs (length (· this glyf))) ; todo
 
   ;; todo
-  ;;     this.loca.offsets.push(this.offset);
+  (hash-update! (send (· this font) _getTable 'loca) 'offsets (λ (val) (push-end! val (· this offset))))
   ;; Tables.loca.preEncode.call(this.loca);
 
   (define head (cloneDeep (send (· this font) _getTable 'head)))

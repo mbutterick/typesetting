@@ -8,4 +8,4 @@
                     (r+p . TABLE-ID-STRINGS)
                     (define ID (make-hasheq (map cons (list 'TABLE-ID ...) (list TABLE-ID ...)))))))
 
-(define-table-decoders table-decoders maxp hhea head)
+(define-table-decoders table-decoders maxp hhea head loca)

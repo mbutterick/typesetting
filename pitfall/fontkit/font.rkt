@@ -80,7 +80,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The size of the font’s internal coordinate grid
 (define/contract (unitsPerEm this)
   (->m number?)
-  (FT_FaceRec-units_per_EM (· this ft-face)))
+  (hash-ref (send this _getTable 'head) 'unitsPerEm))
 
 
 ;; The font’s [ascender](https://en.wikipedia.org/wiki/Ascender_(typography))
