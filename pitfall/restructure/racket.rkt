@@ -8,6 +8,7 @@
 (r+p "helper.rkt"
      sugar/debug
      racket/class
+     racket/list
      racket/string
      br/define
      sugar/define

@@ -4,5 +4,6 @@
      "struct.rkt"
      "string.rkt"
      "array.rkt"
+     "bitfield.rkt"
      "decodestream.rkt"
      "encodestream.rkt")

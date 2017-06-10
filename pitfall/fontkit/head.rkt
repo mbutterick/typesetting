@@ -2,6 +2,11 @@
 (require restructure)
 (provide (all-defined-out))
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
+|#
+
 (define-subclass RStruct (Rhead))
 
 (define head (make-object Rhead
@@ -18,17 +23,11 @@
                 'yMin               int16be                   ;; for all glyph bounding boxes
                 'xMax               int16be                   ;; for all glyph bounding boxes
                 'yMax               int16be                   ;; for all glyph bounding boxes
-                'macStyle           uint16be
-                #|
-new Bitfield(uint16be [
-                                                           '  'bold' 'italic' 'underline' 'outline'
-                                                                   '  'shadow' 'condensed' 'extended'
-                                                                   '])
-|#
+                'macStyle           (make-object RBitfield uint16be '(bold italic underline outline shadow condensed extended))
                 'lowestRecPPEM      uint16be                  ;; smallest readable size in pixels
-                'fontDirectionHint int16be
+                'fontDirectionHint  int16be
                 'indexToLocFormat   int16be                   ;; 0 for short offsets 1 for long
-                'glyphDataFormat    int16be                    ;; 0 for current format
+                'glyphDataFormat    int16be                   ;; 0 for current format
                 )))
 
 (test-module
@@ -48,5 +47,12 @@ new Bitfield(uint16be [
  (check-equal? (· table-data yMax) 963)
  (check-equal? (· table-data xMax) 1193)
  (check-equal? (· table-data xMin) -161)
+ (check-equal? (· table-data macStyle) (make-hash '((shadow . #f)
+                                                    (extended . #f)
+                                                    (condensed . #f)
+                                                    (underline . #f)
+                                                    (outline . #f)
+                                                    (bold . #f)
+                                                    (italic . #f))))
  (check-equal? (· table-data magicNumber) #x5F0F3CF5))
 
