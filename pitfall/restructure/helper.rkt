@@ -9,6 +9,8 @@
     (abstract encode)
     (define/public (process . args)
       (void))
+    (define/public (preEncode . args)
+      (void))
     #;(abstract size)))
 
 

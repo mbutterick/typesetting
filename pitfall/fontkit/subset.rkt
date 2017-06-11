@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require "clone.rkt" "ttfglyphencoder.rkt")
+(require "clone.rkt" "ttfglyphencoder.rkt" "loca.rkt")
 (provide Subset CFFSubset TTFSubset)
 
 #|
@@ -70,20 +70,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
        (send this _addGlyph gid))
 
   (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))
-  (hash-set! maxp 'numGlyphs (length (· this glyf))) ; todo
+  (hash-set! maxp 'numGlyphs (length (· this glyf)))
 
-  ;; todo
-  (report 'boing)
-  (report (send (· this font) _getTable 'loca) 'offsets)
-  #;(hash-update! (report (send (· this font) _getTable 'loca)) 'offsets (λ (val) (push-end! val (· this offset))))
-  ;; Tables.loca.preEncode.call(this.loca);
+  ;; populate the new loca table
+  (hash-update! (· this loca) 'offsets (λ (vals) (append vals (list (· this offset)))))
+  (loca-preEncode (· this loca))
 
-  #;(define head (cloneDeep (send (· this font) _getTable 'head)))
-  ;;    head.indexToLocFormat = this.loca.version; ; todo
+  (define head (cloneDeep (send (· this font) _getTable 'head)))
+  (hash-set! head 'indexToLocFormat (· this loca version))
+  
+  (define hhea (cloneDeep (send (· this font) _getTable 'hhea)))
+  (hash-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
-  #;(define hhea (cloneDeep (send (· this font) _getTable 'hhea)))
-  ;; hhea.numberOfMetrics = this.hmtx.metrics.length;
-
+  ;; todo: final encoding of directory, with all tables.
+  
   (unfinished)
   )
 

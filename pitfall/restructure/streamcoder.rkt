@@ -8,7 +8,6 @@
     (let loop ([x x])
       (cond
         [(bytes? x) (loop (open-input-bytes x))]
-        [(input-port? x) (loop (make-object RDecodeStream x))]
         [(is-a? x RDecodeStream) (inner (void) decode x . args)]
         [else (raise-argument-error 'decode "item that can become RDecodeStream" x)])))
 

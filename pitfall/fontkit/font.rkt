@@ -35,9 +35,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (define table-decoder (hash-ref table-decoders table-tag
                                     (λ () (raise-argument-error '_decodeTable "decodable table" table-tag))))
     (define offset (· (hash-ref (· directory tables) table-tag) offset))
-    (define length (· (hash-ref (· directory tables) table-tag) length))
-    (set-port-position! stream offset)
-    (send table-decoder decode (make-object RDecodeStream stream) this length))
+    (define len (· (hash-ref (· directory tables) table-tag) length))
+    (set-port-position! stream 0)
+    (send table-decoder decode (make-object RDecodeStream (peek-bytes len offset stream)) this length))
 
   (define/public (_decodeDirectory)
     (set! directory (directory-decode stream (mhash '_startOffset 0)))

@@ -13,7 +13,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (for ([(k v) (in-dict assocs)])
        (hash-set! fields k v))
 
-  (define/public (make-key-index! [fields assocs])
+  (define/public-final (make-key-index! [fields assocs])
     (set! key-index (map car fields)))
   (make-key-index!)
   
@@ -25,6 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     res)
 
   (define/override (encode stream val [parent #f])
+    (send this preEncode val stream)
     (for ([key (in-list key-index)])
          (send (hash-ref fields key) encode stream (hash-ref val key))))
 

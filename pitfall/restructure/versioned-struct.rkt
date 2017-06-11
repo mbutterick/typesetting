@@ -1,4 +1,4 @@
-#lang restructure/racket
+ #lang restructure/racket
 (require racket/dict "struct.rkt")
 (provide (all-defined-out))
 
@@ -8,11 +8,10 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
 (define-subclass RStruct (RVersionedStruct type [versions (dictify)])
-
   (define/override (decode stream [parent #f] [length 0] #:version [maybe-version #f])
     (define res (send this _setup stream parent length))
     (define version (cond
-                      [maybe-version]
+                      [maybe-version] ; for testing purposes: pass an explicit version
                       [(procedure? type) (type parent)]
                       [(is-a? type RBase) (send type decode stream)]
                       [else (raise-argument-error 'decode "way of finding version" type)]))
@@ -24,6 +23,4 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       [else
        (send this _parseFields stream res fields)
        (send this process res stream)
-       res]))
-
- )
+       res])))

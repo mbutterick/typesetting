@@ -10,10 +10,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 (define-subclass RStreamcoder (RArray type [length #f] [lengthType 'count])
           
   (define/augment (decode stream [parent #f])
-    (let ([length (if length
-                      (resolveLength length stream parent)
+    (let ([length (cond
+                    [length
+                      (resolveLength length stream parent)]
+                    [else
+                     (define num (send stream length))
+                     (define denom (send type size))
+                     (unless (andmap (λ (x) (and x (number? x))) (list num denom))
+                       (raise-argument-error 'RArray:decode "valid length and size" (list num denom)))
                       ;; implied length: length of stream divided by size of item
-                      (report* (send stream length) (send type size) (floor (/ (send stream length) (send type size)))))])
+                      (floor (/ (send stream length) (send type size)))])])
     
       (caseq lengthType
              [(count) (for/list ([i (in-range length)])
