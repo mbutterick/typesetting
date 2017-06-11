@@ -7,12 +7,16 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
-(define-subclass RBase (RStruct assocs)
-  (field [key-index (map car assocs)]
+(define-subclass RBase (RStruct [assocs (dictify)])
+  (field [key-index #f]
          [fields (mhash)])
   (for ([(k v) (in-dict assocs)])
        (hash-set! fields k v))
 
+  (define/public (make-key-index! [fields assocs])
+    (set! key-index (map car fields)))
+  (make-key-index!)
+  
   (define/override (decode stream [parent #f] [length 0])
     (define res (_setup stream parent length))
     (_parseFields stream res fields)
@@ -24,7 +28,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (for ([key (in-list key-index)])
          (send (hash-ref fields key) encode stream (hash-ref val key))))
 
-  (define/private (_setup stream parent length)
+  (define/public-final (_setup stream parent length)
     (define res (mhasheq))
 
     ;; define hidden properties
@@ -35,13 +39,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                           '_length (mhasheq 'value length)))
     res)
 
-  (define/private (_parseFields stream res field)
+  (define/public-final (_parseFields stream res fields)
     (for ([key (in-list key-index)])         
-         (define hashvalue (hash-ref fields key))      
+         (define dictvalue (dict-ref fields key))
          (define val
-           (if (procedure? hashvalue)
-               (hashvalue res)
-               (send hashvalue decode stream res)))
+           (if (procedure? dictvalue)
+               (dictvalue res)
+               (send dictvalue decode stream res)))
          (hash-set! res key val)))
 
   )

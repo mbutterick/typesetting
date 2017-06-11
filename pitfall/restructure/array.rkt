@@ -12,7 +12,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   (define/augment (decode stream [parent #f])
     (let ([length (if length
                       (resolveLength length stream parent)
-                      (send stream length))])
+                      ;; implied length: length of stream divided by size of item
+                      (report* (send stream length) (send type size) (floor (/ (send stream length) (send type size)))))])
     
       (caseq lengthType
              [(count) (for/list ([i (in-range length)])

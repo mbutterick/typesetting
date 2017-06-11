@@ -4,7 +4,8 @@
 
 (define index? (λ (x) (and (number? x) (integer? x) (not (negative? x)))))
 
-(define-runtime-path charter-path "../pitfall/test/assets/Charter.ttf")
+(define-runtime-path charter-path "../pitfall/test/assets/charter.ttf")
+(define-runtime-path charter-italic-path "../pitfall/test/assets/charter-italic.ttf")
 
 (define-macro (test-module . EXPRS)
   #`(module+ test

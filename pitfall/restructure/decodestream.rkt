@@ -1,7 +1,9 @@
 #lang restructure/racket
 (provide (all-defined-out))
 
-;; approximates https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
+#| approximates
+https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
+|#
 
 (define (read-bytes-exact count p)
   (define bs (read-bytes count p))
@@ -25,12 +27,14 @@
                                (values (string->symbol (format "~a~a" key endian)) value))))
 
 ;; basically just a wrapper for a Racket port
-(define-subclass object% (RDecodeStream [buffer-in #""])
+(define-subclass object% (RDecodeStream [buffer-in #f])
   (field [_port (cond
+                  [(not buffer-in) (open-input-bytes (bytes))]
                   [(bytes? buffer-in) (open-input-bytes buffer-in)]
                   [(input-port? buffer-in) buffer-in]
                   [else (raise-argument-error 'RDecodeStream "bytes or input port" buffer-in)])])
   (getter-field [pos (port-position _port)])
+  (getter-field [length (and (bytes? buffer-in) (bytes-length buffer-in))])
 
   (define/public (read count)
     (read-bytes-exact count _port)))

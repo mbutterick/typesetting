@@ -73,13 +73,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (hash-set! maxp 'numGlyphs (length (· this glyf))) ; todo
 
   ;; todo
-  (hash-update! (send (· this font) _getTable 'loca) 'offsets (λ (val) (push-end! val (· this offset))))
+  (report 'boing)
+  (report (send (· this font) _getTable 'loca) 'offsets)
+  #;(hash-update! (report (send (· this font) _getTable 'loca)) 'offsets (λ (val) (push-end! val (· this offset))))
   ;; Tables.loca.preEncode.call(this.loca);
 
-  (define head (cloneDeep (send (· this font) _getTable 'head)))
+  #;(define head (cloneDeep (send (· this font) _getTable 'head)))
   ;;    head.indexToLocFormat = this.loca.version; ; todo
 
-  (define hhea (cloneDeep (send (· this font) _getTable 'hhea)))
+  #;(define hhea (cloneDeep (send (· this font) _getTable 'hhea)))
   ;; hhea.numberOfMetrics = this.hmtx.metrics.length;
 
   (unfinished)
