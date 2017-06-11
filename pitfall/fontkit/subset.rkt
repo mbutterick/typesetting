@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require "clone.rkt" "ttfglyphencoder.rkt" "loca.rkt")
+(require "clone.rkt" "ttfglyphencoder.rkt" "loca.rkt" "directory.rkt" restructure)
 (provide Subset CFFSubset TTFSubset)
 
 #|
@@ -58,8 +58,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 ;; additional tables required for standalone fonts:
 ;; name, cmap, OS/2, post
 
-(define/contract (encode this)
-  (->m input-port?)
+(define/contract (encode this stream)
+  ((is-a?/c REncodeStream) . ->m . void?)
   (set-field! glyf this empty)
   (set-field! offset this 0)
   (set-field! loca this (mhash 'offsets empty))
@@ -67,7 +67,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   ;; include all the glyphs used in the document
   (for ([gid (in-list (· this glyphs))])
-       (send this _addGlyph gid))
+    (send this _addGlyph gid))
 
   (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))
   (hash-set! maxp 'numGlyphs (length (· this glyf)))
@@ -83,6 +83,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (hash-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
   ;; todo: final encoding of directory, with all tables.
+  (send Directory encode stream
+        (mhash 'tables
+               (mhash
+                'head head
+                'hhea hhea
+                'loca (· this loca)
+                'maxp maxp
+                ;; todo: cvt
+                'prep (send (· this font) _getTable 'prep)
+                'glyf (· this glyf)
+                'hmtx (· this hmtx)
+                'fpgm (send (· this font) _getTable 'fpgm))))
   
   (unfinished)
   )

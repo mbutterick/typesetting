@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" restructure/decodestream "tables.rkt")
+(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" restructure "tables.rkt")
 (provide (all-defined-out))
 
 (define-runtime-path charter-path "../pitfall/test/assets/charter.ttf")
@@ -280,6 +280,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag)))
  #;(send f _getTable 'maxp)
  (define subset (make-object TTFSubset f))
- (send subset encode)
+ (send subset encode (make-object REncodeStream))
 
  )
