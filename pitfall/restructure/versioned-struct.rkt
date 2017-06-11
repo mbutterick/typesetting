@@ -1,4 +1,4 @@
- #lang restructure/racket
+#lang restructure/racket
 (require racket/dict "struct.rkt")
 (provide (all-defined-out))
 
@@ -16,11 +16,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                       [(is-a? type RBase) (send type decode stream)]
                       [else (raise-argument-error 'decode "way of finding version" type)]))
     (hash-set! res 'version version)
-    (define fields (dict-ref versions version (λ () (raise-argument-error 'RVersionedStruct:decode "valid version key" version))))
-    (send this make-key-index! fields)
+    (set-field! fields this (dict-ref versions version (λ () (raise-argument-error 'RVersionedStruct:decode "valid version key" version))))
+    (send this make-key-index! (· this fields))
     (cond
-      [(is-a? fields RVersionedStruct) (send fields decode stream parent)]
+      [(is-a? (· this fields) RVersionedStruct) (send (· this fields) decode stream parent)]
       [else
-       (send this _parseFields stream res fields)
+       (send this _parseFields stream res (· this fields))
        (send this process res stream)
-       res])))
+       res]))
+  )

@@ -16,7 +16,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
       (hash-set! res flag (bitwise-bit-set? val i))
       res))
 
-  (define/public (size) (send type size))
+  (define/override (size . args) (send type size))
 
   (define/augment (encode stream flag-hash)
     (send type encode stream (for/sum ([(flag i) (in-indexed flags)]
@@ -27,7 +27,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 (test-module
  (require "number.rkt" "decodestream.rkt" "encodestream.rkt")
  (define bfer (make-object RBitfield uint16be '(bold italic underline outline shadow condensed extended)))
- (define bf (send bfer decode #"\0\25"))
+ (define bf (send bfer decode (make-object RDecodeStream #"\0\25")))
  (check-true (hash-ref bf 'bold))
  (check-true (hash-ref bf 'underline))
  (check-true (hash-ref bf 'shadow))

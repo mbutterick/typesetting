@@ -26,8 +26,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                                 (send type decode stream this))])))
 
   (define/override (size array)
+    (report array)
     (for/sum ([item (in-list array)])
-      (send type size)))
+      (report item)
+      (send item size)))
 
   (define/augment (encode stream array [parent #f])
     (for ([item (in-list array)])
@@ -42,7 +44,4 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
  (check-equal? (send A decode stream) '(16706 17220 17734))
  (define os (make-object REncodeStream))
  (send A encode os '(16706 17220 17734))
- (check-equal? (send os dump) #"ABCDEF")
-
- (check-equal? (send (make-object RArray uint16be) size '(1 2 3)) 6)
- (check-equal? (send (make-object RArray doublebe) size '(1 2 3 4 5)) 40))
+ (check-equal? (send os dump) #"ABCDEF"))

@@ -24,19 +24,22 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (unless (hash-has-key? type-sizes fn)
     (raise-argument-error 'Number "valid type and endian" (format "~v ~v" type endian)))
   
-  (getter-field [size (hash-ref type-sizes fn)])
+  (define/override (size . args) (hash-ref type-sizes fn))
 
   (define/augment (decode stream [res #f])
-    (define bstr (send stream read size))
-    (if (= 1 size)
+    (define bstr (send stream read (size)))
+    (if (= 1 (size))
         (bytes-ref bstr 0)
         (integer-bytes->integer bstr (signed-type? type) (eq? endian 'BE))))
 
-  (define/augment (encode stream val)
+  (define/augment (encode stream val-in)
+    (define val (if (and (integer? val-in) (inexact? val-in))
+                    (inexact->exact val-in)
+                    val-in))
     (define bstr
-      (if (= 1 size)
+      (if (= 1 (size))
           (bytes val)
-          (integer->integer-bytes val size (signed-type? type) (eq? endian 'BE))))
+          (integer->integer-bytes val (size) (signed-type? type) (eq? endian 'BE))))
     (if stream (send stream write bstr) bstr)))
     
 

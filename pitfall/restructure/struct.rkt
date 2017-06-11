@@ -11,7 +11,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (field [key-index #f]
          [fields (mhash)])
   (for ([(k v) (in-dict assocs)])
-       (hash-set! fields k v))
+    (hash-set! fields k v))
 
   (define/public-final (make-key-index! [fields assocs])
     (set! key-index (map car fields)))
@@ -27,7 +27,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define/override (encode stream val [parent #f])
     (send this preEncode val stream)
     (for ([key (in-list key-index)])
-         (send (hash-ref fields key) encode stream (hash-ref val key))))
+      (send (hash-ref fields key) encode stream (hash-ref val key))))
 
   (define/public-final (_setup stream parent length)
     (define res (mhasheq))
@@ -42,11 +42,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
   (define/public-final (_parseFields stream res fields)
     (for ([key (in-list key-index)])         
-         (define dictvalue (dict-ref fields key))
-         (define val
-           (if (procedure? dictvalue)
-               (dictvalue res)
-               (send dictvalue decode stream res)))
-         (hash-set! res key val)))
+      (define dictvalue (dict-ref fields key))
+      (define val
+        (if (procedure? dictvalue)
+            (dictvalue res)
+            (send dictvalue decode stream res)))
+      (hash-set! res key val)))
 
-  )
+  (define/override (size [val (mhash)] [parent #f] [includePointers #t])
+    (for/sum ([(key type) (in-hash fields)]
+              #:when (hash-has-key? val key))
+      (send type size (hash-ref val key)))))

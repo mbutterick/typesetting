@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require restructure)
+(require restructure "tables.rkt")
 
 (provide (all-defined-out))
 
@@ -14,12 +14,35 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                               'length uint32be)))
 
 (define-subclass RStruct (RDirectory)
-  (define/override (process res stream)
+  (define/override (process this-res stream)
     ;; in `restructure` `process` method, `res` is aliased as `this`
     (define new-tables-val (mhash))
-    (for ([table (in-list (· res tables))])
-         (hash-set! new-tables-val (string->symbol (· table tag)) table))
-    (hash-set! res 'tables new-tables-val)))
+    (for ([table (in-list (· this-res tables))])
+      (hash-set! new-tables-val (string->symbol (· table tag)) table))
+    (hash-set! this-res 'tables new-tables-val))
+
+  (define/override (preEncode this-val stream)
+    (define tables empty)
+    (for ([(tag table) (in-hash (· this-val tables))])
+      (when table
+        (push-end! tables
+                   (mhash
+                    'tag tag
+                    'checkSum 0
+                    'offset #xdeadbeef ; todo
+                    'length (send (hash-ref table-decoders tag (λ () (raise-argument-error 'directory:preEncode "valid table tag" tag))) size table)))))
+    (define numTables (length tables))
+    (define searchRange (* (floor (log (/ numTables (log 2)))) 16))
+    (define entrySelector (floor (/ searchRange (log 2))))
+    (define rangeShift (- (* numTables 16) searchRange))
+    (hash-set*! this-val
+                'tag "true"
+                'numTables numTables
+                'tables tables
+                'searchRange searchRange
+                'entrySelector rangeShift
+                'rangeShift rangeShift)))
+      
 
 (define Directory (make-object RDirectory
                     (dictify 'tag (make-object RString 4)

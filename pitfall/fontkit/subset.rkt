@@ -92,9 +92,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'maxp maxp
                 ;; todo: cvt
                 'prep (send (· this font) _getTable 'prep)
-                'glyf (· this glyf)
+                ;; 'glyf (· this glyf)
                 'hmtx (· this hmtx)
                 'fpgm (send (· this font) _getTable 'fpgm))))
+
+  (report* stream (send stream dump))
   
   (unfinished)
   )

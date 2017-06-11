@@ -7,11 +7,9 @@
     (super-new)    
     (abstract decode)
     (abstract encode)
-    (define/public (process . args)
-      (void))
-    (define/public (preEncode . args)
-      (void))
-    #;(abstract size)))
+    (abstract size)
+    (define/public (process . args) (void))
+    (define/public (preEncode . args) (void))))
 
 
 (define-macro (test-module . EXPRS)

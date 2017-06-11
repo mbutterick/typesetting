@@ -20,14 +20,14 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     ((cdr _codec) bytes))
 
   (define/augment (encode stream val [parent #f])
-    (define bytes ((car _codec) val))
+    (define bytes ((car _codec) (format "~a" val)))
     
     (when (is-a? length Number) ;; length-prefixed string
       (send length encode stream (bytes-length bytes)))
     
     (send stream write bytes))
 
-  (define/public (size) (unfinished)))
+  (define/override (size) (unfinished)))
 
 
 (test-module

@@ -22,18 +22,5 @@
                 'numberOfMetrics      uint16be   ;; Number of advance widths in 'hmtx' table
                 )))
 
-(test-module
- (require "directory.rkt")
- (define ip (open-input-file charter-path))
- (define dir (directory-decode ip))
- (define offset (· dir tables hhea offset))
- (define length (· dir tables hhea length))
- (check-equal? offset 292)
- (check-equal? length 36)
- (define table-bytes #"\0\1\0\0\3\324\377\22\0\0\4\311\377_\377`\4\251\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\345")
- (set-port-position! ip 0)
- (check-equal? (peek-bytes length offset ip) table-bytes)
- (define table-data (send hhea decode (make-object RDecodeStream table-bytes)))
- (check-equal? (· table-data ascent) 980)
- (check-equal? (· table-data descent) -238))
+
 
