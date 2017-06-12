@@ -37,7 +37,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (define offset (· (hash-ref (· directory tables) table-tag) offset))
     (define len (· (hash-ref (· directory tables) table-tag) length))
     (set-port-position! stream 0)
-    (send table-decoder decode (make-object RDecodeStream (peek-bytes len offset stream)) this length))
+    (send table-decoder decode (+DecodeStream (peek-bytes len offset stream)) this length))
 
   (define/public (_decodeDirectory)
     (set! directory (directory-decode stream (mhash '_startOffset 0)))
@@ -280,6 +280,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag)))
  #;(send f _getTable 'maxp)
  (define subset (make-object TTFSubset f))
- (send subset encode (make-object REncodeStream))
+ (send subset encode (+EncodeStream))
 
  )

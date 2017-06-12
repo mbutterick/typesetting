@@ -9,13 +9,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 (define-subclass Streamcoder (Struct [assocs (dictify)])
   (field [key-index (map car assocs)] ; store the original key order
-         [struct-types (mhash)])
+         [fields (mhash)])
   (for ([(k v) (in-dict assocs)])
-    (hash-set! struct-types k v))
+    (hash-set! fields k v))
   
   (define/augride (decode stream [parent #f] [length 0])
     (define res (_setup stream parent length))
-    (_parseFields stream res struct-types)
+    (_parseFields stream res fields)
     #;(hash-set! (hash-ref res '_props) '_currentOffset (· stream pos))
     (send this process res stream)
     res)
@@ -30,7 +30,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     
     (send this preEncode input-hash stream)
     (for* ([key (in-list key-index)] ; iterate over original keys in order
-           [struct-type (in-value (hash-ref struct-types key))]
+           [struct-type (in-value (hash-ref fields key))]
            [value-to-encode (in-value (hash-ref input-hash key))])
       (send struct-type encode stream value-to-encode)))
 
@@ -55,7 +55,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (hash-set! res key val)))
 
   (define/override (size [val (mhash)] [parent #f] [includePointers #t])
-    (for/sum ([(key type) (in-hash struct-types)]
+    (for/sum ([(key type) (in-hash fields)]
               #:when (hash-has-key? val key))
       (send type size (hash-ref val key)))))
 
@@ -67,16 +67,22 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
 (define-subclass Struct (VersionedStruct type [versions (dictify)])
-  (define/override (decode stream [parent #f] [length 0] #:version [maybe-version #f])
+  (inherit-field fields key-index)
+  (field [forced-version #f])
+  
+  (define/public (force-version! version)
+    (set! forced-version version))
+  
+  (define/override (decode stream [parent #f] [length 0])
     (define res (send this _setup stream parent length))
     (define version (cond
-                      [maybe-version] ; for testing purposes: pass an explicit version
+                      [forced-version] ; for testing purposes: pass an explicit version
                       [(procedure? type) (type parent)]
                       [(RestructureBase? type) (send type decode stream)]
                       [else (raise-argument-error 'decode "way of finding version" type)]))
     (hash-set! res 'version version)
     (set-field! fields this (dict-ref versions version (λ () (raise-argument-error 'RVersionedStruct:decode "valid version key" version))))
-    (send this make-key-index! (· this fields))
+    (set-field! key-index this (map car (· this fields)))
     (cond
       [(VersionedStruct? (· this fields)) (send (· this fields) decode stream parent)]
       [else

@@ -59,7 +59,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 ;; name, cmap, OS/2, post
 
 (define/contract (encode this stream)
-  ((is-a?/c REncodeStream) . ->m . void?)
+  (EncodeStream? . ->m . void?)
   (set-field! glyf this empty)
   (set-field! offset this 0)
   (set-field! loca this (mhash 'offsets empty))
