@@ -33,11 +33,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define/override (size . args) _size)
 
   (define-values (bound-min bound-max)
-    (let* ([unsigned-max (sub1 (expt 2 (sub1 (* _size 8))))]
-           [unsigned-min (sub1 (- unsigned-max))])
+    (let* ([signed-max (sub1 (expt 2 (sub1 (* _size 8))))]
+           [signed-min (sub1 (- signed-max))])
       (if _signed?
-          (values unsigned-min unsigned-max)
-          (values (- unsigned-min unsigned-min) (- unsigned-max unsigned-min)))))
+          (values signed-min signed-max)
+          (values (- signed-min signed-min) (- signed-max signed-min)))))
 
   (define/augment (decode stream . args)
     (define bstr (send stream read _size))
