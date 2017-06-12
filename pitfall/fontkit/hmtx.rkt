@@ -6,9 +6,9 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
 |#
 
-(define-subclass RStruct (Rhmtx))
+(define-subclass Struct (Rhmtx))
 
-(define HmtxEntry (make-object RStruct
+(define HmtxEntry (make-object Struct
                (dictify
                 'advance uint16be
                 'bearing uint16be)))

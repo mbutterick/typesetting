@@ -7,13 +7,13 @@
 https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 |#
 
-(define TableEntry (make-object RStruct
-                     (dictify 'tag (make-object RString 4)
+(define TableEntry (make-object Struct
+                     (dictify 'tag (+String 4)
                               'checkSum uint32be
                               'offset uint32be
                               'length uint32be)))
 
-(define-subclass RStruct (RDirectory)
+(define-subclass Struct (RDirectory)
   (define/override (process this-res stream)
     ;; in `restructure` `process` method, `res` is aliased as `this`
     (define new-tables-val (mhash))
@@ -45,15 +45,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
       
 
 (define Directory (make-object RDirectory
-                    (dictify 'tag (make-object RString 4)
+                    (dictify 'tag (+String 4)
                              'numTables uint16be
                              'searchRange uint16be
                              'entrySelector uint16be
                              'rangeShift uint16be
-                             'tables (make-object RArray TableEntry 'numTables))))
+                             'tables (+Array TableEntry 'numTables))))
 
 (define (directory-decode ip [options (mhash)])
-  (define is (make-object RDecodeStream (port->bytes ip)))
+  (define is (+DecodeStream (port->bytes ip)))
   (send Directory decode is))
 
 

@@ -2,7 +2,7 @@
 (require restructure)
 (provide (all-defined-out))
 
-(define-subclass RStruct (Rhhea))
+(define-subclass Struct (Rhhea))
 
 (define hhea (make-object Rhhea
                (dictify
@@ -17,7 +17,7 @@
                 'caretSlopeRise       int16be   ;; Used to calculate the slope of the cursor (rise/run); 1 for vertical
                 'caretSlopeRun        int16be   ;; 0 for vertical
                 'caretOffset          int16be   ;; Set to 0 for non-slanted fonts
-                'reserved             (make-object RArray int16be 4)
+                'reserved             (+Array int16be 4)
                 'metricDataFormat     int16be   ;; 0 for current format
                 'numberOfMetrics      uint16be   ;; Number of advance widths in 'hmtx' table
                 )))

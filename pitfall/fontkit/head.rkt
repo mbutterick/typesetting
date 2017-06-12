@@ -7,7 +7,7 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
 |#
 
-(define-subclass RStruct (Rhead))
+(define-subclass Struct (Rhead))
 
 (define head (make-object Rhead
                (dictify
@@ -17,13 +17,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
                 'magicNumber        uint32be                  ;; set to 0x5F0F3CF5
                 'flags              uint16be
                 'unitsPerEm         uint16be                  ;; range from 64 to 16384
-                'created            (make-object RArray int32be 2)
-                'modified           (make-object RArray int32be 2)
+                'created            (+Array int32be 2)
+                'modified           (+Array int32be 2)
                 'xMin               int16be                   ;; for all glyph bounding boxes
                 'yMin               int16be                   ;; for all glyph bounding boxes
                 'xMax               int16be                   ;; for all glyph bounding boxes
                 'yMax               int16be                   ;; for all glyph bounding boxes
-                'macStyle           (make-object RBitfield uint16be '(bold italic underline outline shadow condensed extended))
+                'macStyle           (+Bitfield uint16be '(bold italic underline outline shadow condensed extended))
                 'lowestRecPPEM      uint16be                  ;; smallest readable size in pixels
                 'fontDirectionHint  int16be
                 'indexToLocFormat   int16be                   ;; 0 for short offsets 1 for long

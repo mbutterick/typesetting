@@ -1,33 +1,34 @@
 #lang restructure/racket
-(require "streamcoder.rkt")
-(provide RBitfield)
+(require "stream.rkt")
+(provide (all-defined-out))
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 |#
 
-(define-subclass RStreamcoder (RBitfield type [flags empty])
+(define-subclass Streamcoder (Bitfield type [flags empty])
           
-  (define/augment (decode stream [parent #f])
-    (for*/fold ([res (mhash)])
+  (define/augment (decode stream . args)
+    (for*/fold ([flag-hash (mhash)])
                ([val (in-value (send type decode stream))]
                 [(flag i) (in-indexed flags)])
-      (hash-set! res flag (bitwise-bit-set? val i))
-      res))
+      (hash-set! flag-hash flag (bitwise-bit-set? val i))
+      flag-hash))
 
   (define/override (size . args) (send type size))
 
   (define/augment (encode stream flag-hash)
-    (send type encode stream (for/sum ([(flag i) (in-indexed flags)]
-                                       #:when (hash-ref flag-hash flag))
-                               (expt 2 i)))))
+    (define bitfield-int (for/sum ([(flag i) (in-indexed flags)]
+                                   #:when (hash-ref flag-hash flag))
+                           (expt 2 i)))
+    (send type encode stream bitfield-int)))
 
 
 (test-module
- (require "number.rkt" "decodestream.rkt" "encodestream.rkt")
- (define bfer (make-object RBitfield uint16be '(bold italic underline outline shadow condensed extended)))
- (define bf (send bfer decode (make-object RDecodeStream #"\0\25")))
+ (require "number.rkt" "stream.rkt")
+ (define bfer (+Bitfield uint16be '(bold italic underline outline shadow condensed extended)))
+ (define bf (send bfer decode (+DecodeStream #"\0\25")))
  (check-true (hash-ref bf 'bold))
  (check-true (hash-ref bf 'underline))
  (check-true (hash-ref bf 'shadow))
@@ -36,6 +37,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
  (check-false (hash-ref bf 'condensed))
  (check-false (hash-ref bf 'extended))
 
- (define os (make-object REncodeStream))
+ (define os (+EncodeStream))
  (send bfer encode os bf)
  (check-equal? (send os dump) #"\0\25"))

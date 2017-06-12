@@ -16,7 +16,7 @@
   (define maxp-bytes #"\0\1\0\0\0\345\0f\0\a\0O\0\4\0\1\0\0\0\0\0\n\0\0\2\0\1s\0\2\0\1")
   (set-port-position! ip 0)
   (check-equal? (peek-bytes maxp-length maxp-offset ip) maxp-bytes)
-  (define maxp-data (send maxp decode (make-object RDecodeStream maxp-bytes)))
+  (define maxp-data (send maxp decode (+DecodeStream maxp-bytes)))
   (check-equal? (· maxp-data numGlyphs) 229)
   (check-equal? (· maxp-data version) 65536))
 
@@ -30,7 +30,7 @@
   (define table-bytes #"\0\1\0\0\3\324\377\22\0\0\4\311\377_\377`\4\251\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\345")
   (set-port-position! ip 0)
   (check-equal? (peek-bytes length offset ip) table-bytes)
-  (define table-data (send hhea decode (make-object RDecodeStream table-bytes)))
+  (define table-data (send hhea decode (+DecodeStream table-bytes)))
   (check-equal? (· table-data ascent) 980)
   (check-equal? (· table-data descent) -238))
 
@@ -46,7 +46,7 @@
   (define table-bytes #"\0\1\0\0\0\2\0\0.\252t<_\17<\365\0\t\3\350\0\0\0\0\316\3\301\261\0\0\0\0\316\3\304\364\377\36\377\24\4\226\3\324\0\2\0\t\0\2\0\0\0\0")
   (set-port-position! ip 0)
   (check-equal? (peek-bytes length offset ip) table-bytes)
-  (define table-data (send head decode (make-object RDecodeStream table-bytes)))
+  (define table-data (send head decode (+DecodeStream table-bytes)))
   (check-equal? (· table-data unitsPerEm) 1000)
   (check-equal? (· table-data yMin) -236)
   (check-equal? (· table-data yMax) 980)
@@ -73,7 +73,7 @@
   (set-port-position! ip 0)
   (define table-bytes #"\270\0\0+\0\272\0\1\0\1\0\2+\1\272\0\2\0\1\0\2+\1\277\0\2\0C\0007\0+\0\37\0\23\0\0\0\b+\0\277\0\1\0\200\0i\0R\0;\0#\0\0\0\b+\0\272\0\3\0\5\0\a+\270\0\0 E}i\30D")
   (check-equal? table-bytes (peek-bytes len offset ip))
-  (define ds (make-object RDecodeStream (peek-bytes len offset ip)))
+  (define ds (+DecodeStream (peek-bytes len offset ip)))
   (check-equal? (hash-ref (send prep decode ds) 'controlValueProgram) '(184
                                                                         0
                                                                         0
@@ -160,7 +160,7 @@
   (check-equal? offset 4140)
   (check-equal? len 371)
   (set-port-position! ip 0)
-  (define ds (make-object RDecodeStream (peek-bytes len offset ip)))
+  (define ds (+DecodeStream (peek-bytes len offset ip)))
   (check-equal? (hash-ref (send fpgm decode ds) 'instructions) '(184
                                                                  0
                                                                  0
@@ -540,7 +540,7 @@
   (check-equal? offset 38692)
   (check-equal? len 460)
   (set-port-position! ip 0)
-  (define ds (make-object RDecodeStream (peek-bytes len offset ip)))
+  (define ds (+DecodeStream (peek-bytes len offset ip)))
   (define table-data (send loca decode ds #:version 0))
   (check-equal? (length (· table-data offsets)) 230)
   (check-equal? (· table-data offsets) '(0

@@ -11,7 +11,7 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 |#
 
-(define-subclass RVersionedStruct (Rloca)
+(define-subclass VersionedStruct (Rloca)
   (define/override (process res stream)
     ;; in `restructure` `process` method, `res` is aliased as `this`
     ;; 
@@ -37,8 +37,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 (define loca (make-object Rloca
                (λ (parent) (hash-ref (send parent _getTable 'head) 'indexToLocFormat)) 
                (dictify
-                0 (dictify 'offsets (make-object RArray uint16be))
-                1 (dictify 'offsets (make-object RArray uint32be))
+                0 (dictify 'offsets (+Array uint16be))
+                1 (dictify 'offsets (+Array uint32be))
                 )))
 
 

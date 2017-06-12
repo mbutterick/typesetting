@@ -11,11 +11,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/fpgm.js
 ;; is for the definition of functions that are used in many different glyph programs.
 
 
-(define-subclass RStruct (Rfpgm))
+(define-subclass Struct (fpgm%))
 
-(define fpgm (make-object Rfpgm
+(define fpgm (make-object fpgm%
                (dictify
-                'instructions (make-object RArray uint8))))
+                'instructions (make-object Array uint8))))
 
 
 

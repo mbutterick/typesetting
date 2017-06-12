@@ -2,7 +2,7 @@
 (require restructure)
 (provide (all-defined-out))
 
-(define-subclass RStruct (Rmaxp))
+(define-subclass Struct (Rmaxp))
 
 (define maxp (make-object Rmaxp
                (dictify 'version                int32be

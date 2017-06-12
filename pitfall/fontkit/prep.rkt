@@ -6,11 +6,11 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/prep.js
 |#
 
-(define-subclass RStruct (Rprep))
+(define-subclass Struct (Rprep))
 
 (define prep (make-object Rprep
                (dictify
-                'controlValueProgram (make-object RArray uint8))))
+                'controlValueProgram (+Array uint8))))
 
 
 

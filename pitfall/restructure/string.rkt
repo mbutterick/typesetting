@@ -1,40 +1,46 @@
 #lang restructure/racket
-(require "number.rkt" "utils.rkt" "streamcoder.rkt")
-(provide RString)
+(require "number.rkt" "utils.rkt" "stream.rkt")
+(provide (all-defined-out))
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 |#
 
-(define-subclass RStreamcoder (RString [length #f] [encoding 'ascii])
-  (field [_codec (caseq encoding
-                        [(latin-1 ascii) (cons string->bytes/latin-1 bytes->string/latin-1)]
-                        [(utf-8 utf8)(cons string->bytes/utf-8 bytes->string/utf-8)])])
+(struct $codec (encoder decoder) #:transparent)
+
+(define-subclass Streamcoder (String [strlen #f] [encoding 'ascii])
+  (field [codec (caseq encoding
+                       [(latin-1 ascii) ($codec string->bytes/latin-1 bytes->string/latin-1)]
+                       [(utf-8 utf8) ($codec string->bytes/utf-8 bytes->string/utf-8)])])
          
   (define/augment (decode stream [parent #f])
-    (define count (if length
-                      (resolveLength length stream parent)
+    (define count (if strlen
+                      (resolveLength strlen stream parent)
                       (send stream length)))
     (define bytes (send stream read count))
-    ((cdr _codec) bytes))
+    (($codec-decoder codec) bytes))
 
   (define/augment (encode stream val [parent #f])
-    (define bytes ((car _codec) (format "~a" val)))
+    (define bytes (($codec-encoder codec) (format "~a" val)))
     
-    (when (is-a? length Number) ;; length-prefixed string
-      (send length encode stream (bytes-length bytes)))
+    (when (Number? strlen) ;; length-prefixed string
+      (send strlen encode stream (bytes-length bytes)))
     
     (send stream write bytes))
 
-  (define/override (size) (unfinished)))
+  (define/override (size str)
+    (define es (+EncodeStream))
+    (encode es str)
+    (bytes-length (send es dump))))
 
 
 (test-module
- (require "decodestream.rkt" "encodestream.rkt")
- (define stream (make-object RDecodeStream #"\2BCDEF"))
- (define S (make-object RString uint8 'utf8))
+ (require "stream.rkt")
+ (define stream (+DecodeStream #"\2BCDEF"))
+ (define S (+String uint8 'utf8))
  (check-equal? (send S decode stream) "BC")
- (define os (make-object REncodeStream))
+ (define os (+EncodeStream))
  (send S encode os "Mike")
- (check-equal? (send os dump) #"\4Mike"))
+ (check-equal? (send os dump) #"\4Mike")
+ (check-equal? (send (+String) size "foobar") 6))

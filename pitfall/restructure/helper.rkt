@@ -11,6 +11,8 @@
     (define/public (process . args) (void))
     (define/public (preEncode . args) (void))))
 
+(define (RestructureBase? x) (is-a? x RestructureBase))
+
 
 (define-macro (test-module . EXPRS)
   #`(module+ test
