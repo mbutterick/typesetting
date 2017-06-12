@@ -38,8 +38,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
                (λ (parent) (hash-ref (send parent _getTable 'head) 'indexToLocFormat)) 
                (dictify
                 0 (dictify 'offsets (+Array uint16be))
-                1 (dictify 'offsets (+Array uint32be))
-                )))
+                1 (dictify 'offsets (+Array uint32be)))))
 
 
 (test-module

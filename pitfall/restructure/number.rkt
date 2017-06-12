@@ -12,13 +12,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (equal? (substring str (sub1 (string-length str))) "8"))
 
 (define (signed-type? type)
-  (not (equal? "U" (substring (symbol->string type) 0 1))))
+  (not (equal? "u" (substring (symbol->string type) 0 1))))
 
 (test-module
- (check-false (signed-type? 'UInt16))
- (check-true (signed-type? 'Int16)))
+ (check-false (signed-type? 'uint16))
+ (check-true (signed-type? 'int16)))
 
-(define-subclass Streamcoder (Number [type 'UInt16] [endian (if (system-big-endian?) 'BE 'LE)])
+(define-subclass Streamcoder (Number [type 'uint16] [endian (if (system-big-endian?) 'be 'le)])
   
   (getter-field [number-type (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
 
@@ -35,7 +35,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define bstr (send stream read _size))
     (if (= 1 _size)
         (bytes-ref bstr 0)
-        (integer-bytes->integer bstr (signed-type? type) (eq? endian 'BE))))
+        (integer-bytes->integer bstr (signed-type? type) (eq? endian 'be))))
 
   (define/augment (encode stream val-in)
     (define val (if (integer? val-in) (inexact->exact val-in) val-in))
@@ -44,7 +44,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
       (raise-argument-error 'Number:encode (format "integer that fits in ~a byte(s)" _size) val))
     (define bstr (if (= 1 _size)
                      (bytes val)
-                     (integer->integer-bytes val _size (signed-type? type) (eq? endian 'BE))))
+                     (integer->integer-bytes val _size (signed-type? type) (eq? endian 'be))))
     (send stream write bstr)))
     
 
@@ -55,7 +55,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-exn exn:fail:contract? (λ () (send uint16 encode (+EncodeStream) (add1 #xffff))))
  (check-not-exn (λ () (send uint16 encode (+EncodeStream) #xffff)))
  
- (let ([o (+Number 'UInt16 'LE)]
+ (let ([o (+Number 'uint16 'le)]
        [ip (+DecodeStream (bytes 1 2 3 4))]
        [op (open-output-bytes)])
    (check-equal? (send o decode ip) 513) ;; 1000 0000  0100 0000
@@ -65,7 +65,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
    (send o encode op 1027)
    (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
 
- (let ([o (+Number 'UInt16 'BE)]
+ (let ([o (+Number 'uint16 'be)]
        [ip (+DecodeStream (bytes 1 2 3 4))]
        [op (open-output-bytes)])
    (check-equal? (send o decode ip) 258) ;; 0100 0000 1000 0000 
@@ -77,10 +77,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 
 (test-module
- (check-equal? (send (+Number 'UInt8) size) 1)
+ (check-equal? (send (+Number 'uint8) size) 1)
  (check-equal? (send (+Number) size) 2)
- (check-equal? (send (+Number 'UInt32) size) 4)
- (check-equal? (send (+Number 'Double) size) 8))
+ (check-equal? (send (+Number 'uint32) size) 4)
+ (check-equal? (send (+Number 'double) size) 8))
 
 
 ;; use keys of type-sizes hash to generate corresponding number definitions
@@ -88,13 +88,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (with-pattern ([((ID BASE ENDIAN) ...) (for/list ([k (in-hash-keys type-sizes)])
                                            (define kstr (format "~a" k))
                                            (match-define (list* prefix suffix _)
-                                             (regexp-split #rx"(?=[BL]E|$)" kstr))
+                                             (regexp-split #rx"(?=[bl]e|$)" kstr))
                                            (map string->symbol
                                                 (list (string-downcase kstr)
                                                       prefix
                                                       (if (positive? (string-length suffix))
                                                           suffix
-                                                          (if (system-big-endian?) "BE" "LE")))))]
+                                                          (if (system-big-endian?) "be" "le")))))]
                  [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)])
     #'(begin (define+provide ID (make-object Number 'BASE 'ENDIAN)) ...)))
                                                             

@@ -53,12 +53,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                              'tables (+Array TableEntry 'numTables))))
 
 (define (directory-decode ip [options (mhash)])
-  (define is (+DecodeStream (port->bytes ip)))
-  (send Directory decode is))
+  (send Directory decode (+DecodeStream (port->bytes ip))))
 
 
 (test-module
- (require racket/serialize)
  (define ip (open-input-file charter-path))
  (check-equal?
   (directory-decode ip)
