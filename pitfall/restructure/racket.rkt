@@ -1,9 +1,10 @@
 #lang racket/base
-(require (for-syntax racket/base br/syntax))
+(require (for-syntax racket/base br/syntax) br/define)
 (provide (for-syntax (all-from-out racket/base br/syntax)))
 (provide (all-from-out racket/base) r+p)
 
-(define-syntax-rule (r+p id ...) (begin (require id ...) (provide (all-from-out id ...))))
+(define-macro (r+p ID ...)
+  #'(begin (require ID ...) (provide (all-from-out ID ...))))
 
 (r+p "helper.rkt"
      sugar/debug
@@ -16,6 +17,7 @@
      sugar/js
      sugar/dict
      sugar/stub
+     sugar/port
      sugar/case)
 
 (module reader syntax/module-reader

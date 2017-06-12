@@ -2,7 +2,7 @@
 (require (for-syntax racket/base br/syntax) racket/class br/define)
 (provide (all-defined-out))
 
-(define RBase
+(define RestructureBase
   (class object%
     (super-new)    
     (abstract decode)
@@ -17,9 +17,4 @@
       (require #,(datum->syntax caller-stx 'rackunit))
       . EXPRS))
 
-
-(define (port-position port)
-  (define-values (l c p) (port-next-location port))
-  p)
-
-
+(define index? (λ (x) (and (number? x) (integer? x) (not (negative? x)))))
