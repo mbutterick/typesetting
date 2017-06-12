@@ -8,6 +8,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
 (define-subclass Streamcoder (Struct [assocs (dictify)])
+  (unless (dict? assocs)
+    (raise-argument-error 'Struct "dictionary" assocs))
   (field [key-index (map car assocs)] ; store the original key order
          [fields (mhash)])
   (for ([(k v) (in-dict assocs)])
@@ -26,10 +28,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
     (send this preEncode input-hash stream) ; might bring input hash into compliance
 
-    (define sorted-input-keys (sort (hash-keys input-hash) #:key symbol->string string<?))
-    (define sorted-struct-keys (sort key-index #:key symbol->string string<?))
-    (unless (equal? sorted-input-keys sorted-struct-keys)
-      (raise-argument-error 'Struct:encode (format "hash with same keys as Struct: ~a" sorted-struct-keys) sorted-input-keys))
+    (unless (andmap (λ (key) (member key (hash-keys input-hash))) key-index)
+      (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" key-index) (hash-keys input-hash)))
     
     (for* ([key (in-list key-index)] ; iterate over original keys in order
            [struct-type (in-value (hash-ref fields key))]
@@ -62,33 +62,87 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (send type size (hash-ref val key)))))
 
 
+(test-module
+ (require "number.rkt")
+ (define (random-pick xs) (list-ref xs (random (length xs))))
+ (check-exn exn:fail:contract? (λ () (+Struct 42)))
+
+ ;; make random structs and make sure we can round trip
+ (for ([i (in-range 100)])
+   (define field-types (for/list ([i (in-range 200)])
+                         (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+   (define size-num-types (for/sum ([num-type (in-list field-types)])
+                            (send num-type size)))
+   (define s (+Struct (for/list ([num-type (in-list field-types)])
+                        (cons (gensym) num-type))))
+   (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                             (random 256))))
+   (define es (+EncodeStream))
+   (send s encode es (send s decode bs))
+   (check-equal? (send es dump) bs)))
+                   
+ 
+
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
-(define-subclass Struct (VersionedStruct type [versions (dictify)])
+(define-subclass Struct (VersionedStruct version-resolver [versions (dictify)])
+  (unless ((disjoin integer? procedure? RestructureBase?) version-resolver)
+    (raise-argument-error 'VersionedStruct "integer, function, or Restructure object" version-resolver))
+  (unless (and (dict? versions) (andmap dict? (map cdr versions)))
+    (raise-argument-error 'VersionedStruct "dict of dicts" versions))
   (inherit-field fields key-index)
   (field [forced-version #f])
   
-  (define/public (force-version! version)
+  (define/public-final (force-version! version)
     (set! forced-version version))
   
   (define/override (decode stream [parent #f] [length 0])
     (define res (send this _setup stream parent length))
     (define version (cond
                       [forced-version] ; for testing purposes: pass an explicit version
-                      [(procedure? type) (type parent)]
-                      [(RestructureBase? type) (send type decode stream)]
-                      [else (raise-argument-error 'decode "way of finding version" type)]))
+                      [(integer? version-resolver) version-resolver] 
+                      [(procedure? version-resolver) (version-resolver parent)]
+                      [(RestructureBase? version-resolver) (send version-resolver decode stream)]
+                      [else (raise-argument-error 'VersionedStruct:decode "way of finding version" version-resolver)]))
     (hash-set! res 'version version)
-    (set-field! fields this (dict-ref versions version (λ () (raise-argument-error 'RVersionedStruct:decode "valid version key" version))))
-    (set-field! key-index this (map car (· this fields)))
+    (set! fields (dict-ref versions version (λ () (raise-argument-error 'VersionedStruct:decode "valid version key" version))))
+    (set! key-index (map car fields))
     (cond
-      [(VersionedStruct? (· this fields)) (send (· this fields) decode stream parent)]
+      [(VersionedStruct? fields) (send fields decode stream parent)]
       [else
-       (send this _parseFields stream res (· this fields))
+       (send this _parseFields stream res fields)
        (send this process res stream)
-       res]))
-  )
+       res])))
+
+(test-module
+ (require "number.rkt")
+ (check-exn exn:fail:contract? (λ () (+VersionedStruct 42 42)))
+
+ ;; make random versioned structs and make sure we can round trip
+ (for ([i (in-range 1)])
+   (define field-types (for/list ([i (in-range 2)])
+                         (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+   (define num-versions 2)
+   (define selector (random num-versions))
+   (define versions (for/list ([v (in-range num-versions)])
+                      (cons v (for/list ([num-type (in-list field-types)])
+                                (cons (gensym) num-type)))))
+   (define vs (+VersionedStruct selector versions))
+   (define size-num-types (for/sum ([num-type (in-list (map cdr (dict-ref versions selector)))])
+                            (send num-type size)))
+   (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                             (random 256))))
+   (define es (+EncodeStream))
+   
+   
+   (send vs encode es (send vs decode bs))
+   #|
+(check-equal? (send es dump) bs)
+
+   |#
+   42
+   ))

@@ -11,6 +11,7 @@
      racket/class
      racket/list
      racket/string
+     racket/function
      br/define
      sugar/define
      sugar/class
