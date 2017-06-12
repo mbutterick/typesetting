@@ -22,3 +22,18 @@
                         'maxComponentDepth      uint16be  ;; Maximum levels of recursion; 1 for simple components
                         )))
 
+
+(test-module
+ (require racket/serialize)
+ (define ip (open-input-file charter-path))
+ (define dir (deserialize (read (open-input-file charter-directory-path))))
+ (define maxp-offset (· dir tables maxp offset))
+ (define maxp-length (· dir tables maxp length))
+ (check-equal? maxp-offset 328)
+ (check-equal? maxp-length 32)
+ (define maxp-bytes #"\0\1\0\0\0\345\0f\0\a\0O\0\4\0\1\0\0\0\0\0\n\0\0\2\0\1s\0\2\0\1")
+ (set-port-position! ip 0)
+ (check-equal? (peek-bytes maxp-length maxp-offset ip) maxp-bytes)
+ (define maxp-data (send maxp decode (+DecodeStream maxp-bytes)))
+ (check-equal? (· maxp-data numGlyphs) 229)
+ (check-equal? (· maxp-data version) 65536)) 

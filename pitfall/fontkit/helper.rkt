@@ -6,6 +6,8 @@
 
 (define-runtime-path charter-path "../pitfall/test/assets/charter.ttf")
 (define-runtime-path charter-italic-path "../pitfall/test/assets/charter-italic.ttf")
+(define-runtime-path charter-directory-path "charter-directory.rktd")
+(define-runtime-path charter-italic-directory-path "charter-italic-directory.rktd")
 
 (define-macro (test-module . EXPRS)
   #`(module+ test

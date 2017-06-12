@@ -7,20 +7,20 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
-(define-subclass RestructureBase (Struct [assocs (dictify)])
+(define-subclass Streamcoder (Struct [assocs (dictify)])
   (field [key-index (map car assocs)] ; store the original key order
          [struct-types (mhash)])
   (for ([(k v) (in-dict assocs)])
     (hash-set! struct-types k v))
   
-  (define/override (decode stream [parent #f] [length 0])
+  (define/augride (decode stream [parent #f] [length 0])
     (define res (_setup stream parent length))
     (_parseFields stream res struct-types)
     #;(hash-set! (hash-ref res '_props) '_currentOffset (· stream pos))
     (send this process res stream)
     res)
 
-  (define/override (encode stream input-hash [parent #f])
+  (define/augride (encode stream input-hash [parent #f])
     (unless (hash? input-hash)
       (raise-argument-error 'Struct:encode "hash" input-hash))
     (define sorted-input-keys (sort (hash-keys input-hash) #:key symbol->string string<?))
