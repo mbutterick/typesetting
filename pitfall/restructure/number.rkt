@@ -21,6 +21,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define-subclass Streamcoder (Number [type 'uint16] [endian (if (system-big-endian?) 'be 'le)])
   
   (getter-field [number-type (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
+  (define _signed? (signed-type? type))
 
   ;; `get-type-size` will raise error if number-type is invalid: use this as check of input
   ;; size of a number doesn't change, so we can stash it as `_size`
@@ -31,20 +32,27 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   
   (define/override (size . args) _size)
 
+  (define-values (bound-min bound-max)
+    (let* ([unsigned-max (sub1 (expt 2 (sub1 (* _size 8))))]
+           [unsigned-min (sub1 (- unsigned-max))])
+      (if _signed?
+          (values unsigned-min unsigned-max)
+          (values (- unsigned-min unsigned-min) (- unsigned-max unsigned-min)))))
+
   (define/augment (decode stream . args)
     (define bstr (send stream read _size))
     (if (= 1 _size)
-        (bytes-ref bstr 0)
-        (integer-bytes->integer bstr (signed-type? type) (eq? endian 'be))))
+        (+ (bytes-ref bstr 0) (if _signed? bound-min 0))
+        (integer-bytes->integer bstr _signed? (eq? endian 'be))))
 
   (define/augment (encode stream val-in)
     (define val (if (integer? val-in) (inexact->exact val-in) val-in))
     ;; todo: better bounds checking
-    #;(unless (<= (if (negative? val) (abs (* 2 val)) val) (expt 2 (* 8 _size)))
-      (raise-argument-error 'Number:encode (format "integer that fits in ~a byte(s)" _size) val))
+    (unless (<= bound-min val bound-max)
+      (raise-argument-error 'Number:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
     (define bstr (if (= 1 _size)
-                     (bytes val)
-                     (integer->integer-bytes val _size (signed-type? type) (eq? endian 'be))))
+                     (bytes (- val (if _signed? bound-min 0)))
+                     (integer->integer-bytes val _size _signed? (eq? endian 'be))))
     (send stream write bstr)))
     
 
@@ -52,6 +60,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-exn exn:fail:contract? (λ () (+Number 'not-a-valid-type)))
  (check-exn exn:fail:contract? (λ () (send uint8 encode (+EncodeStream) 256)))
  (check-not-exn (λ () (send uint8 encode (+EncodeStream) 255)))
+ (check-exn exn:fail:contract? (λ () (send int8 encode (+EncodeStream) 256)))
+ (check-exn exn:fail:contract? (λ () (send int8 encode (+EncodeStream) 255)))
+ (check-not-exn (λ () (send int8 encode (+EncodeStream) 127)))
+ (check-not-exn (λ () (send int8 encode (+EncodeStream) -128)))
+ (check-exn exn:fail:contract? (λ () (send int8 encode (+EncodeStream) -129)))
  (check-exn exn:fail:contract? (λ () (send uint16 encode (+EncodeStream) (add1 #xffff))))
  (check-not-exn (λ () (send uint16 encode (+EncodeStream) #xffff)))
  
@@ -86,17 +99,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 ;; use keys of type-sizes hash to generate corresponding number definitions
 (define-macro (make-int-types)
   (with-pattern ([((ID BASE ENDIAN) ...) (for/list ([k (in-hash-keys type-sizes)])
-                                           (define kstr (format "~a" k))
-                                           (match-define (list* prefix suffix _)
-                                             (regexp-split #rx"(?=[bl]e|$)" kstr))
-                                           (map string->symbol
-                                                (list (string-downcase kstr)
-                                                      prefix
-                                                      (if (positive? (string-length suffix))
-                                                          suffix
-                                                          (if (system-big-endian?) "be" "le")))))]
+                                                   (define kstr (format "~a" k))
+                                                   (match-define (list* prefix suffix _)
+                                                     (regexp-split #rx"(?=[bl]e|$)" kstr))
+                                                   (map string->symbol
+                                                        (list (string-downcase kstr)
+                                                              prefix
+                                                              (if (positive? (string-length suffix))
+                                                                  suffix
+                                                                  (if (system-big-endian?) "be" "le")))))]
                  [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)])
-    #'(begin (define+provide ID (make-object Number 'BASE 'ENDIAN)) ...)))
+                #'(begin (define+provide ID (make-object Number 'BASE 'ENDIAN)) ...)))
                                                             
 (make-int-types)
 
