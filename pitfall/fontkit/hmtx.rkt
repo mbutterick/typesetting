@@ -19,4 +19,5 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
                 'bearing uint16be)))
 
 
-
+(test-module
+ )

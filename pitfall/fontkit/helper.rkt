@@ -11,5 +11,5 @@
 
 (define-macro (test-module . EXPRS)
   #`(module+ test
-      (require #,(datum->syntax caller-stx 'rackunit))
+      (require #,(datum->syntax caller-stx 'rackunit) #,(datum->syntax caller-stx 'racket/serialize)) 
       . EXPRS))

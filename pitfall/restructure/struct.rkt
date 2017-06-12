@@ -23,12 +23,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define/augride (encode stream input-hash [parent #f])
     (unless (hash? input-hash)
       (raise-argument-error 'Struct:encode "hash" input-hash))
+
+    (send this preEncode input-hash stream) ; might bring input hash into compliance
+
     (define sorted-input-keys (sort (hash-keys input-hash) #:key symbol->string string<?))
     (define sorted-struct-keys (sort key-index #:key symbol->string string<?))
     (unless (equal? sorted-input-keys sorted-struct-keys)
       (raise-argument-error 'Struct:encode (format "hash with same keys as Struct: ~a" sorted-struct-keys) sorted-input-keys))
     
-    (send this preEncode input-hash stream)
     (for* ([key (in-list key-index)] ; iterate over original keys in order
            [struct-type (in-value (hash-ref fields key))]
            [value-to-encode (in-value (hash-ref input-hash key))])

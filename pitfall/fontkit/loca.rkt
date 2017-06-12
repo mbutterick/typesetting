@@ -43,7 +43,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 
 
 (test-module
- (require racket/serialize)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define offset (· dir tables loca offset))
