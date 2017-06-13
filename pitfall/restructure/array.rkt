@@ -25,7 +25,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                         (send type decode stream this))])))
 
   (define/override (size [array #f])
-    (report* _length array)
     (when (and array (not (list? array)))
       (raise-argument-error 'Array:size "list" array))
     (cond
@@ -88,9 +87,9 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
                     val)))
 
   (define/override (encode stream val)
-    (super encode (if (InnerLazyArray? val)
-                      (send val toArray)
-                      val))))    
+    (super encode stream (if (InnerLazyArray? val)
+                             (send val toArray)
+                             val))))    
 
 (test-module
  (define bstr #"ABCD1234")
@@ -101,4 +100,14 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
  (check-equal? (send ila get 1) 66)
  (check-equal? (send ila get 3) 68)
  (check-equal? (send ds pos) 4)
- (check-equal? (send ila toArray) '(65 66 67 68)))
+ (check-equal? (send ila toArray) '(65 66 67 68))
+
+ (define la2 (+LazyArray int16be (λ (t) 4)))
+ (define es (+EncodeStream))
+ (send la2 encode es '(1 2 3 4))
+ (check-equal? (send es dump) #"\0\1\0\2\0\3\0\4")
+ (check-equal? (send (send la2 decode (+DecodeStream #"\0\1\0\2\0\3\0\4")) toArray) '(1 2 3 4))
+
+ )
+
+

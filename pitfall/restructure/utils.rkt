@@ -3,7 +3,6 @@
 (require "number.rkt")
 
 (define (resolveLength len stream parent)
-  (report* len stream parent)
   (cond
     [(number? len) len]
     [(procedure? len) (len parent)]

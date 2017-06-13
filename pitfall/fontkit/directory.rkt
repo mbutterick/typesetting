@@ -22,7 +22,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
     (hash-set! this-res 'tables new-tables-val))
 
   (define/override (preEncode this-val stream)
-    (report 'start-directory-preEncode)
+    
     (define tables empty)
     (for ([(tag table) (in-hash (· this-val tables))])
       (when table
@@ -32,7 +32,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                     'checkSum 0
                     'offset #xdeadbeef ; todo
                     'length (let ([tag (hash-ref table-decoders tag (λ () (raise-argument-error 'directory:preEncode "valid table tag" tag)))])
-                              (report* tag table (send tag size table)))))))
+                              (send tag size table))))))
     (define numTables (length tables))
     (define searchRange (* (floor (log (/ numTables (log 2)))) 16))
     (define entrySelector (floor (/ searchRange (log 2))))
@@ -45,7 +45,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                 'searchRange searchRange
                 'entrySelector rangeShift
                 'rangeShift rangeShift)
-    (report 'end-directory-preEncode)))
+    ))
       
 
 (define Directory (make-object RDirectory

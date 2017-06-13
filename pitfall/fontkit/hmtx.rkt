@@ -15,9 +15,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
 
 (define hmtx (+Rhmtx
               (dictify
-               'metrics (+LazyArray HmtxEntry (λ (t) (· (send (· t parent) _getTable 'hhea) numberOfMetrics)))
-               'bearing (+LazyArray int16be (λ (t) (- (· (send (· t parent) _getTable 'maxp) numGlyphs)
-                                                      (· (send (· t parent) _getTable 'hhea) numberOfMetrics)))))))
+               'metrics (+LazyArray HmtxEntry (λ (this-array) (· (send (· this-array parent) _getTable 'hhea) numberOfMetrics)))
+               'bearings (+LazyArray int16be (λ (this-array) (- (· (send (· this-array parent) _getTable 'maxp) numGlyphs)
+                                                                (· (send (· this-array parent) _getTable 'hhea) numberOfMetrics)))))))
 
 
 
@@ -38,4 +38,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
  (check-equal? (send hmtx-test size) (* 229 (send HmtxEntry size)))
  (define H-gid 41) (define OE-gid 142)
  (check-equal? (send (· hmtx-data metrics) get H-gid) (mhasheq 'advance 738 'bearing 33))
- (check-equal? (send (· hmtx-data metrics) get OE-gid) (mhasheq 'advance 993 'bearing 43)))
+ (check-equal? (send (· hmtx-data metrics) get OE-gid) (mhasheq 'advance 993 'bearing 43))
+
+
+ )

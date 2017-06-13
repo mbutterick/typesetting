@@ -93,7 +93,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 ;; todo: cvt
                 'prep (send (· this font) _getTable 'prep)
                 ;; 'glyf (· this glyf)
-                ;; 'hmtx (· this hmtx)
+                'hmtx (· this hmtx)
                 'fpgm (send (· this font) _getTable 'fpgm)
                 )))
 
