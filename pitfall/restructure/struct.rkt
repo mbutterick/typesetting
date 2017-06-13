@@ -37,10 +37,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     res)
 
   (define/augride (encode stream input-hash [parent #f])
+    
     (unless (hash? input-hash)
       (raise-argument-error 'Struct:encode "hash" input-hash))
 
-    (send this preEncode input-hash stream) ; might bring input hash into compliance
+    (send this preEncode input-hash stream) ; preEncode goes first, because it might bring input hash into compliance
 
     (unless (andmap (λ (key) (member key (hash-keys input-hash))) key-index)
       (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" key-index) (hash-keys input-hash)))
@@ -71,9 +72,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (hash-set! res key val)))
 
   (define/override (size [val (mhash)] [parent #f] [includePointers #t])
-    (for/sum ([(key type) (in-hash fields)]
-              #:when (hash-has-key? val key))
-      (send type size (hash-ref val key)))))
+    (for/sum ([(key type) (in-hash fields)])
+      (send type size (hash-ref val key #f)))))
 
 
 (test-module
@@ -143,11 +143,11 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
    (define num-versions 20)
    (define which-struct (random num-versions))
    (define struct-versions (for/list ([v (in-range num-versions)])
-                      (cons v (for/list ([num-type (in-list field-types)])
-                                (cons (gensym) num-type)))))
+                             (cons v (for/list ([num-type (in-list field-types)])
+                                       (cons (gensym) num-type)))))
    (define vs (+VersionedStruct which-struct struct-versions))
    (define struct-size (for/sum ([num-type (in-list (map cdr (dict-ref struct-versions which-struct)))])
-                            (send num-type size)))
+                         (send num-type size)))
    (define bs (apply bytes (for/list ([i (in-range struct-size)])
                              (random 256))))
    (define es (+EncodeStream))

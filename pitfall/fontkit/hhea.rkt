@@ -34,5 +34,9 @@
  (check-equal? (peek-bytes length offset ip) table-bytes)
  (define table-data (send hhea decode (+DecodeStream table-bytes)))
  (check-equal? (· table-data ascent) 980)
- (check-equal? (· table-data descent) -238))
+ (check-equal? (· table-data descent) -238)
+ (check-equal? (· table-data numberOfMetrics) 229)
+
+
+ )
 

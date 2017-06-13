@@ -56,4 +56,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
                                                     (bold . #f)
                                                     (italic . #t))))
  (check-equal? (· table-data magicNumber) #x5F0F3CF5)
- (check-equal? (· table-data indexToLocFormat) 0)) ; used in loca table
+ (check-equal? (· table-data indexToLocFormat) 0) ; used in loca table
+ 
+ (define es (+EncodeStream))
+ (send head encode es table-data)
+ (check-equal? (send es dump) table-bytes))

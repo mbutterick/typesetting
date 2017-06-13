@@ -22,6 +22,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
     (hash-set! this-res 'tables new-tables-val))
 
   (define/override (preEncode this-val stream)
+    (report 'start-directory-preEncode)
     (define tables empty)
     (for ([(tag table) (in-hash (· this-val tables))])
       (when table
@@ -30,18 +31,21 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                     'tag tag
                     'checkSum 0
                     'offset #xdeadbeef ; todo
-                    'length (send (hash-ref table-decoders tag (λ () (raise-argument-error 'directory:preEncode "valid table tag" tag))) size table)))))
+                    'length (let ([tag (hash-ref table-decoders tag (λ () (raise-argument-error 'directory:preEncode "valid table tag" tag)))])
+                              (report* tag table (send tag size table)))))))
     (define numTables (length tables))
     (define searchRange (* (floor (log (/ numTables (log 2)))) 16))
     (define entrySelector (floor (/ searchRange (log 2))))
     (define rangeShift (- (* numTables 16) searchRange))
+    
     (hash-set*! this-val
                 'tag "true"
                 'numTables numTables
                 'tables tables
                 'searchRange searchRange
                 'entrySelector rangeShift
-                'rangeShift rangeShift)))
+                'rangeShift rangeShift)
+    (report 'end-directory-preEncode)))
       
 
 (define Directory (make-object RDirectory
@@ -58,37 +62,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 
 (test-module
  (define ip (open-input-file charter-path))
- (check-equal?
-  (directory-decode ip)
-  (deserialize '((3)
-                 0
-                 ()
-                 0
-                 ()
-                 ()
-                 (h
-                  !
-                  ()
-                  (tag u . "\u0000\u0001\u0000\u0000")
-                  (rangeShift . 96)
-                  (searchRange . 128)
-                  (numTables . 14)
-                  (entrySelector . 3)
-                  (tables
-                   h
-                   !
-                   (equal)
-                   (loca h ! () (tag u . "loca") (offset . 38692) (checkSum . 2795817194) (length . 460))
-                   (glyf h ! () (tag u . "glyf") (offset . 4620) (checkSum . 1143629849) (length . 34072))
-                   (OS/2 h ! () (tag u . "OS/2") (offset . 360) (checkSum . 2351070438) (length . 96))
-                   (hhea h ! () (tag u . "hhea") (offset . 292) (checkSum . 132056097) (length . 36))
-                   (post h ! () (tag u . "post") (offset . 41520) (checkSum . 1670855689) (length . 514))
-                   (|cvt | h ! () (tag u . "cvt ") (offset . 4592) (checkSum . 10290865) (length . 26))
-                   (VDMX h ! () (tag u . "VDMX") (offset . 1372) (checkSum . 1887795202) (length . 1504))
-                   (prep h ! () (tag u . "prep") (offset . 4512) (checkSum . 490862356) (length . 78))
-                   (maxp h ! () (tag u . "maxp") (offset . 328) (checkSum . 50135594) (length . 32))
-                   (hmtx h ! () (tag u . "hmtx") (offset . 456) (checkSum . 3982043058) (length . 916))
-                   (cmap h ! () (tag u . "cmap") (offset . 2876) (checkSum . 1723761408) (length . 1262))
-                   (name h ! () (tag u . "name") (offset . 39152) (checkSum . 2629707307) (length . 2367))
-                   (head h ! () (tag u . "head") (offset . 236) (checkSum . 4281190895) (length . 54))
-                   (fpgm h ! () (tag u . "fpgm") (offset . 4140) (checkSum . 106535991) (length . 371))))))))
+ (define decoded-dir (deserialize (read (open-input-file charter-directory-path))))
+ (check-equal? (directory-decode ip) decoded-dir)
+ (define es (+EncodeStream))
+ ;(send Directory encode es decoded-dir)
+ )
