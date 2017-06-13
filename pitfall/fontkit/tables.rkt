@@ -9,4 +9,4 @@
                     (test-module (require (submod TABLE-ID-STRING test) ...))
                     (define ID (make-hasheq (map cons (list 'TABLE-ID ...) (list TABLE-ID ...)))))))
 
-(define-table-decoders table-decoders maxp hhea head loca prep fpgm hmtx)
+(define-table-decoders table-decoders maxp hhea head loca prep fpgm hmtx cvt)

@@ -21,7 +21,7 @@
                    (OS/2 h ! () (tag u . "OS/2") (offset . 360) (checkSum . 2351070438) (length . 96))
                    (hhea h ! () (tag u . "hhea") (offset . 292) (checkSum . 132056097) (length . 36))
                    (post h ! () (tag u . "post") (offset . 41520) (checkSum . 1670855689) (length . 514))
-                   (|cvt | h ! () (tag u . "cvt ") (offset . 4592) (checkSum . 10290865) (length . 26))
+                   (cvt h ! () (tag u . "cvt ") (offset . 4592) (checkSum . 10290865) (length . 26))
                    (VDMX h ! () (tag u . "VDMX") (offset . 1372) (checkSum . 1887795202) (length . 1504))
                    (prep h ! () (tag u . "prep") (offset . 4512) (checkSum . 490862356) (length . 78))
                    (maxp h ! () (tag u . "maxp") (offset . 328) (checkSum . 50135594) (length . 32))

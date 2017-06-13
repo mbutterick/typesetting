@@ -18,7 +18,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
     ;; in `restructure` `process` method, `res` is aliased as `this`
     (define new-tables-val (mhash))
     (for ([table (in-list (· this-res tables))])
-      (hash-set! new-tables-val (string->symbol (· table tag)) table))
+      (hash-set! new-tables-val (string->symbol (string-trim (· table tag))) table))
     (hash-set! this-res 'tables new-tables-val))
 
   (define/override (preEncode this-val stream)
