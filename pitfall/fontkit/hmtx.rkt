@@ -28,9 +28,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
  (check-equal? hmtx-length 916)
  (define hmtx-bytes (peek-bytes hmtx-length hmtx-offset ip))
  (define hmtx-data (send hmtx decode (+DecodeStream hmtx-bytes)))
- (check-equal? (· maxp-data numGlyphs) 229)
- (check-equal? (· maxp-data version) 65536))
-
-
-(test-module
- )
+ (check-equal? (send (· hmtx-data bearing) get 42) 412))
