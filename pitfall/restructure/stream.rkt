@@ -34,7 +34,10 @@ https://github.com/mbutterick/restructure/blob/master/src/EncodeStream.coffee
   (define/public-final (write val)
     (unless (bytes? val)
       (raise-argument-error 'EncodeStream:write "bytes" val))
-    (void (write-bytes val (· this _port)))))
+    (void (write-bytes val (· this _port))))
+
+  (define/public-final (writeBuffer buffer)
+    (write buffer)))
 
 (test-module
  (define es (+EncodeStream))
@@ -83,7 +86,10 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
     (define bytes-remaining (- length (port-position _port)))
     (when (> count bytes-remaining)
       (raise-argument-error 'DecodeStream:read (format "byte count not more than bytes remaining = ~a" bytes-remaining) count))
-    (read-bytes count _port)))
+    (read-bytes count _port))
+
+  (define/public-final (readBuffer count)
+    (read count)))
 
 (test-module
  (define ds (+DecodeStream #"ABCD"))

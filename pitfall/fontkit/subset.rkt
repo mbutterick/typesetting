@@ -91,9 +91,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'loca (· this loca)
                 'maxp maxp
                 'cvt (send (· this font) _getTable 'cvt)
-                ;; todo: cvt
                 'prep (send (· this font) _getTable 'prep)
-                ;; 'glyf (· this glyf)
+                'glyf (· this glyf)
                 'hmtx (· this hmtx)
                 'fpgm (send (· this font) _getTable 'fpgm)
                 )))

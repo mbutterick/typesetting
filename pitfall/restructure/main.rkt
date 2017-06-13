@@ -5,4 +5,5 @@
      "string.rkt"
      "array.rkt"
      "bitfield.rkt"
-     "stream.rkt")
+     "stream.rkt"
+     "buffer.rkt")
