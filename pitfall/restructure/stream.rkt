@@ -5,7 +5,10 @@
 (define-subclass object% (PortWrapper _port)
   (unless (port? _port)
     (raise-argument-error 'PortWrapper:constructor "port" _port))
-  (define/public-final (pos) (port-position _port))
+  (define/public-final (pos [where #f])
+    (when where
+      (set-port-position! _port where))
+    (port-position _port))
   (define/public (dump) (void)))
 
 (test-module
