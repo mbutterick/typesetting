@@ -29,7 +29,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                    (mhash
                     'tag tag
                     'checkSum 0
-                    'offset #xdeadbeef ; todo
+                    'offset 16909060 ; todo \1\2\3\4 octal-be
                     'length (let ([tag (hash-ref table-decoders tag (λ () (raise-argument-error 'directory:preEncode "valid table tag" tag)))])
                               (send tag size table))))))
     (define numTables (length tables))

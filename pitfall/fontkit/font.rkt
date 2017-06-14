@@ -281,5 +281,5 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  #;(send f _getTable 'maxp)
  (define subset (make-object TTFSubset f))
  (send subset encode (+EncodeStream))
-
+(file->bytes "../pitfall/test/out.bin")
  )

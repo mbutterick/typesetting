@@ -87,6 +87,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
         (mhash 'tables
                (mhash
                 'head head
+                #|
                 'hhea hhea
                 'loca (· this loca)
                 'maxp maxp
@@ -95,9 +96,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'glyf (· this glyf)
                 'hmtx (· this hmtx)
                 'fpgm (send (· this font) _getTable 'fpgm)
+|#
                 )))
 
-  (report* (send stream dump))
+  (report* (bytes-length (send stream dump)) (send stream dump))
   
   (unfinished)
   )
