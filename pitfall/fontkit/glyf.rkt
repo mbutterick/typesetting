@@ -20,4 +20,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/glyf.js
  (set-port-position! ip 0)
  (define table-bytes (peek-bytes len offset ip))
  (define ds (+DecodeStream table-bytes))
+ (define es (+EncodeStream))
+ (send glyf encode es empty)
+ #;(send es dump)
  )

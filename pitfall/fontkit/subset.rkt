@@ -97,7 +97,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'fpgm (send (· this font) _getTable 'fpgm)
                 )))
 
-  (report* stream (send stream dump))
+  (report* (send stream dump))
   
   (unfinished)
   )

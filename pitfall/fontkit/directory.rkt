@@ -22,7 +22,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
     (hash-set! this-res 'tables new-tables-val))
 
   (define/override (preEncode this-val stream)
-    
     (define tables empty)
     (for ([(tag table) (in-hash (· this-val tables))])
       (when table

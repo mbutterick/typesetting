@@ -7,7 +7,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 |#
 
-(define-subclass RestructureBase (Buffer [_length #f])
+(define-subclass RestructureBase (Buffer [_length #xffff])
   (define/override (decode stream [parent #f])
     (define len (resolveLength _length stream parent))
     (send stream readBuffer len))
