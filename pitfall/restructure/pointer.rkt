@@ -1,20 +1,22 @@
 #lang br
 
-(define the-ks (make-hash))
-(define xs (make-hash))
+(define pointer-ks (make-hash))
+(define results (make-hash))
 
-(define is '(a b (c . h) d e f g h i j))
-(for ([(v i) (in-indexed is)]
-      #:unless (hash-has-key? xs i))
-  (report* xs i)
-  (hash-set! xs i
-             (let/cc k
-               (let ([v (cond
-                         [(pair? v) (hash-set! the-ks (cdr v) k) (car v)]
-                         [else v])])
-                 (define tk (hash-ref the-ks v #f))
-                 (cond
-                   [tk 
-                    (hash-remove! the-ks v)
-                    (tk (format "~a xref" v))]
-                   [else (format "just ~a" v)])))))
+(define vals '(a b (h) d e f g h i j))
+
+(for ([(val i) (in-indexed vals)])
+  (hash-ref! results i (λ ()
+                    (report* results i)
+                    (let/cc pointer-k
+                      (let ([v (cond
+                                 [(pair? val) (hash-set! pointer-ks (car val) pointer-k) (car val)]
+                                 [else val])])
+                        (define pointer (hash-ref pointer-ks v #f))
+                        (cond
+                          [pointer (hash-remove! pointer-ks v)
+                                   (pointer (format "~a xref" v))]
+                          [else v]))))))
+
+(for/list ([i (in-range (length (hash-keys results)))])
+  (hash-ref results i))
