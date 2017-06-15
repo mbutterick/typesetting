@@ -282,6 +282,5 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (define subset (make-object TTFSubset f))
  (define es (+EncodeStream))
  (send subset encode es)
- (define ds (+DecodeStream (send es dump)))
- (send Directory decode ds)
+ (check-equal? (send es dump) (file->bytes "subsetfont.rktd"))
  )

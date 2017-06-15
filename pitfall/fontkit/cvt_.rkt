@@ -6,9 +6,9 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/cvt.js
 |#
 
-(define-subclass Struct (Rcvt))
+(define-subclass Struct (Rcvt_))
 
-(define cvt (make-object Rcvt
+(define cvt_ (make-object Rcvt_
                (dictify
                 'controlValues (+Array int16be))))
 
@@ -25,8 +25,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/cvt.js
  (check-equal? table-bytes (peek-bytes len offset ip))
  (define ds (+DecodeStream (peek-bytes len offset ip)))
  (define cvt-array '(20 43 83 0 16 -218 0 481 11 671 18 736 8))
- (check-equal? (hash-ref (send cvt decode ds) 'controlValues) cvt-array)
+ (check-equal? (hash-ref (send cvt_ decode ds) 'controlValues) cvt-array)
  (define es (+EncodeStream))
- (send cvt encode es (mhash 'controlValues cvt-array))
+ (send cvt_ encode es (mhash 'controlValues cvt-array))
  (check-equal? (send es dump) table-bytes)
  )

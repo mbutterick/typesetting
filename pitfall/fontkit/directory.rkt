@@ -10,9 +10,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define-subclass Struct (RTableEntry)
   (define/override (preEncode this-val stream)
     (when (eq? (hash-ref this-val 'tag) 'cvt)
-        (hash-set! this-val 'tag '|cvt |))))
+      (hash-set! this-val 'tag '|cvt |))))
 
-(define TableEntry (+RTableEntry
+(define TableEntry (+Struct
                     (dictify 'tag (+String 4)
                              'checkSum uint32be
                              'offset uint32be
@@ -24,12 +24,21 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
       (bytes-append bstr (make-bytes (- 4 mod) 0))
       bstr))
 
+(define (symbol-replace sym this that)
+  (string->symbol (string-replace (symbol->string sym) this that)))
+
+(define (escape-tag tag)
+  (symbol-replace (if (string? tag) (string->symbol tag) tag) " " "_"))
+
+(define (unescape-tag tag)
+  (symbol-replace (if (string? tag) (string->symbol tag) tag) "_" " "))
+
 (define-subclass Struct (RDirectory)
   (define/override (process this-res stream)
     ;; in `restructure` `process` method, `res` is aliased as `this`
     (define new-tables-val (mhash))
     (for ([table (in-list (· this-res tables))])
-         (hash-set! new-tables-val (string->symbol (string-trim (· table tag))) table))
+         (hash-set! new-tables-val (escape-tag (· table tag)) table))
     (hash-set! this-res 'tables new-tables-val))
 
   (define/override (preEncode this-val stream)
@@ -41,9 +50,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
           #:unless (hash-has-key? table-header-hash i))
          (hash-set! table-header-hash i
                     (let/cc k
-                              (hash-set! offset-ks i k)
-                              (mhash
-                               'tag tag))))
+                      (hash-set! offset-ks i k)
+                      (mhash
+                       'tag (unescape-tag tag)))))
 
     (define table-headers (for/list ([i (in-range (length (hash-keys table-header-hash)))])
                                     (hash-ref table-header-hash i)))
@@ -52,7 +61,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
     (define data-hash (mhash))
     (for/fold ([current-offset table-header-size])
               ([(table-header i) (in-indexed table-headers)])
-      (define tag (· table-header tag))
+      (define tag (escape-tag (· table-header tag)))
       (define bstr (hash-ref! data-hash i
                               (λ ()
                                 (define es (+EncodeStream))
@@ -64,7 +73,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
       (cond
         [(hash-ref offset-ks i #f) => (λ (k) (hash-remove! offset-ks i)
                                         (k (mhash
-                                            'tag (· table-header tag)
+                                            'tag (unescape-tag (· table-header tag))
                                             'checkSum 0
                                             'offset current-offset
                                             'length (bytes-length bstr))))]
