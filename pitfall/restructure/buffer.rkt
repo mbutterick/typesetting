@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require "number.rkt" "utils.rkt")
+(require "number.rkt" "utils.rkt" "stream.rkt")
 (provide (all-defined-out))
 
 #|
@@ -19,10 +19,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
         (bytes-length val)
         (resolveLength _length val parent)))
 
-  (define/override (encode stream buf parent)
+  (define/override (encode stream buf [parent #f])
     (when (Number? _length)
       (send _length encode stream (bytes-length buf)))
     (send stream writeBuffer buf)))
+
+(define (bytes->Buffer bstr)
+  (define b (+Buffer (bytes-length bstr)))
+  (send b decode (+DecodeStream bstr))
+  b)
 
 
 #;(test-module

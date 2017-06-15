@@ -32,7 +32,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (hash-ref! _tables table-tag (_decodeTable table-tag))) ; get table from cache, load if not there
 
   (define/public (_decodeTable table-tag)
-    (define table-decoder (hash-ref table-decoders table-tag
+    (define table-decoder (hash-ref table-codecs table-tag
                                     (λ () (raise-argument-error '_decodeTable "decodable table" table-tag))))
     (define offset (· (hash-ref (· directory tables) table-tag) offset))
     (define len (· (hash-ref (· directory tables) table-tag) length))
@@ -280,6 +280,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag)))
  #;(send f _getTable 'maxp)
  (define subset (make-object TTFSubset f))
- (send subset encode (+EncodeStream))
-(file->bytes "../pitfall/test/out.bin")
+ (define es (+EncodeStream))
+ (send subset encode es)
+ (define ds (+DecodeStream (send es dump)))
+ (send Directory decode ds)
  )

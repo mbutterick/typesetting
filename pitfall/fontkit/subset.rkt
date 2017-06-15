@@ -67,7 +67,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   ;; include all the glyphs used in the document
   (for ([gid (in-list (· this glyphs))])
-    (send this _addGlyph gid))
+       (send this _addGlyph gid))
 
   (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))
   (hash-set! maxp 'numGlyphs (length (· this glyf)))
@@ -87,7 +87,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
         (mhash 'tables
                (mhash
                 'head head
-                #|
                 'hhea hhea
                 'loca (· this loca)
                 'maxp maxp
@@ -96,12 +95,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'glyf (· this glyf)
                 'hmtx (· this hmtx)
                 'fpgm (send (· this font) _getTable 'fpgm)
-|#
                 )))
 
-  (report* (bytes-length (send stream dump)) (send stream dump))
+  #;(report* (bytes-length (send stream dump)) (send stream dump))
   
-  (unfinished)
+  (void)
   )
 
 

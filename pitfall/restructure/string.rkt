@@ -29,7 +29,8 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     
     (send stream write bytes))
 
-  (define/override (size str)
+  (define/override (size [str-in #f])
+    (define str (or str-in (make-string strlen #\x)))
     (define es (+EncodeStream))
     (encode es str)
     (bytes-length (send es dump))))
