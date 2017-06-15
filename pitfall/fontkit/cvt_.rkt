@@ -16,8 +16,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/cvt.js
 (test-module
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
- (define offset (· dir tables cvt offset))
- (define len (· dir tables cvt length))
+ (define offset (· dir tables cvt_ offset))
+ (define len (· dir tables cvt_ length))
  (check-equal? offset 4592)
  (check-equal? len 26)
  (set-port-position! ip 0)

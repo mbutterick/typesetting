@@ -51,7 +51,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   
   )
 
-(define-stub-go _addGlyph)
+(define (_addGlyph . xs)
+  (void))
 
 ;; tables required by PDF spec:
 ;; head, hhea, loca, maxp, cvt, prep, glyf, hmtx, fpgm
@@ -97,7 +98,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'fpgm (send (· this font) _getTable 'fpgm)
                 )))
 
-  #;(report* (bytes-length (send stream dump)) (send stream dump))
+  (report* (bytes-length (send stream dump)))
   
   (void)
   )
