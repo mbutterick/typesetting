@@ -12,26 +12,28 @@
                              'yMax int16be)))
 
 ;; Flags for simple glyphs
-(define ON_CURVE (expt 2 0))
-(define X_SHORT_VECTOR (expt 2 1))
-(define Y_SHORT_VECTOR (expt 2 2))
-(define REPEAT (expt 2 3))
-(define SAME_X (expt 2 4))
-(define SAME_Y (expt 2 5))
+(match-define (list ON_CURVE
+                    X_SHORT_VECTOR
+                    Y_SHORT_VECTOR
+                    REPEAT
+                    SAME_X
+                    SAME_Y)
+  (map (curry expt 2) (range 6)))
 
 ;; Flags for composite glyphs
-(define ARG_1_AND_2_ARE_WORDS     (expt 2 0))
-(define ARGS_ARE_XY_VALUES        (expt 2 1))
-(define ROUND_XY_TO_GRID          (expt 2 2))
-(define WE_HAVE_A_SCALE           (expt 2 3))
-(define MORE_COMPONENTS           (expt 2 5))
-(define WE_HAVE_AN_X_AND_Y_SCALE  (expt 2 6))
-(define WE_HAVE_A_TWO_BY_TWO      (expt 2 7))
-(define WE_HAVE_INSTRUCTIONS      (expt 2 8))
-(define USE_MY_METRICS            (expt 2 9))
-(define OVERLAP_COMPOUND          (expt 2 10))
-(define SCALED_COMPONENT_OFFSET   (expt 2 11))
-(define UNSCALED_COMPONENT_OFFSET (expt 2 12))
+(match-define (list ARG_1_AND_2_ARE_WORDS    
+                    ARGS_ARE_XY_VALUES       
+                    ROUND_XY_TO_GRID         
+                    WE_HAVE_A_SCALE          
+                    MORE_COMPONENTS          
+                    WE_HAVE_AN_X_AND_Y_SCALE 
+                    WE_HAVE_A_TWO_BY_TWO     
+                    WE_HAVE_INSTRUCTIONS     
+                    USE_MY_METRICS           
+                    OVERLAP_COMPOUND         
+                    SCALED_COMPONENT_OFFSET  
+                    UNSCALED_COMPONENT_OFFSET)
+  (map (curry expt 2) (range 12)))
 
 ;; Represents a point in a simple glyph
 (define-subclass object% (Point onCurve endContour [x 0] [y 0])
