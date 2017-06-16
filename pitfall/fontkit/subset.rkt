@@ -14,6 +14,11 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 
   (send this includeGlyph 0) ; always include the missing glyph in subset
 
+  (define/public (encodeStream)
+    (define s (+EncodeStream))
+    (send this encode s)
+    s)
+  
   (as-methods
    includeGlyph))
 
@@ -38,6 +43,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 |#
 
 (define-subclass Subset (TTFSubset)
+  (report 'in-ttf-subset)
   (field [glyphEncoder (make-object TTFGlyphEncoder)])
   (field [glyf #f]
          [offset #f]
@@ -48,12 +54,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
    _addGlyph
    encode)
 
-  
+  (report 'in-ttf-subset-end)
   )
 
 (define/contract (_addGlyph this gid)
   (index? . ->m . index?)
 
+  (report 'in-ttf-subset-addglyph)
   (define glyph (send (· this font) getGlyph gid))
   (define glyf (send glyph _decode))
 
@@ -76,11 +83,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; skip variation shit
 
   (push-end-field! glyf this buffer)
-  (hash-update! (get-field loca this) 'offsets (λ (os) (append os (list (get-field offset this)))))
+  (report 'updating-loca)
+  (hash-update! (get-field loca this) 'offsets (λ (os) (report* os (list (get-field offset this)))
+                                                 (append os (list (get-field offset this)))))
 
+  
+  (report 'updating-hmtx)
   (hash-update! (get-field hmtx this) 'metrics (λ (ms) (append ms
-                                                               (mhash 'advance (· glyph advanceWidth)
-                                                                      'bearing (· (send glyph _getMetrics) leftBearing)))))
+                                                               (list (mhash 'advance (· glyph advanceWidth)
+                                                                      'bearing (· (send glyph _getMetrics) leftBearing))))))
 
   (increment-field! offset this (bytes-length buffer))
   (sub1 (length (· this glyf))))
@@ -92,6 +103,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
 (define/contract (encode this stream)
   (EncodeStream? . ->m . void?)
+  (report 'in-subset-encode)
   (set-field! glyf this empty)
   (set-field! offset this 0)
   (set-field! loca this (mhash 'offsets empty))
@@ -99,13 +111,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   ;; include all the glyphs used in the document
   (for ([gid (in-list (· this glyphs))])
+    (report gid 'adding-gid)
     (send this _addGlyph gid))
+
+  (report 'all-glyphs-added)
 
   (report (· this glyphs) 'glyphs-added)
   (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))
   (hash-set! maxp 'numGlyphs (length (· this glyf)))
 
   ;; populate the new loca table
+  (report 'doing-loca)
   (hash-update! (· this loca) 'offsets (λ (vals) (append vals (list (· this offset)))))
   (loca-preEncode (· this loca))
 
@@ -116,7 +132,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (report (· this hmtx metrics))
   (hash-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
-  ;; todo: final encoding of directory, with all tables.
+  (report 'encoding-directory)
   (send Directory encode stream
         (mhash 'tables
                (mhash

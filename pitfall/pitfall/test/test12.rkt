@@ -15,10 +15,10 @@
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test12rkt.pdf")
-(make-doc this #f proc #:pdfkit #f)
+(make-doc this #f proc #:test #f #:pdfkit #f)
 
-(define-runtime-path that "test12crkt.pdf")
-(make-doc that #t proc #:pdfkit #f)
+#;(define-runtime-path that "test12crkt.pdf")
+#;(make-doc that #t proc #:pdfkit #f)
 
 #;(module+ test
   (define doc (make-object PDFDocument))

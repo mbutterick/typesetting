@@ -11,7 +11,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
 (define HmtxEntry (+Struct
                    (dictify
                     'advance uint16be
-                    'bearing uint16be)))
+                    'bearing int16be)))
 
 (define hmtx (+Rhmtx
               (dictify

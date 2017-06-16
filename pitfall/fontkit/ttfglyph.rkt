@@ -1,6 +1,10 @@
 #lang fontkit/racket
 (require "glyph.rkt" restructure)
 (provide (all-defined-out))
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
+|#
 
 ;; The header for both simple and composite glyphs
 (define-subclass Struct (RGlyfHeader))
@@ -59,8 +63,11 @@
     (unfinished))
 
   ;; Parses a single glyph coordinate
-  (define/public (_parseGlyphCoord steam prev short same)
-    (unfinished))
+  (define/public (_parseGlyphCoord stream prev short same)
+    (+ prev (if short 
+                ((if (not same) - +) (send uint8 decode stream))
+                (if same 0 (send int16be decode stream)))))
+                 
 
   ;; Decodes the glyph data into points for simple glyphs,
   ;; or components for composite glyphs
@@ -76,7 +83,7 @@
       [(= glyfPos nextPos) #f]
       [else
        (define stream (send _font _getTableStream 'glyf))
-       (increment-field! pos stream glyfPos)
+       (send stream pos (+ (send stream pos) glyfPos))
        (define startPos (· stream pos))
 
        (define glyph (send GlyfHeader decode stream))
@@ -91,8 +98,8 @@
        glyph]))
 
   (define/public (_decodeSimple glyph stream)
-    (unless (RGlyfHeader? glyph)
-      (raise-argument-error 'TTFGlyph-_decodeSimple "RGlyfHeader" glyph))
+    (unless (hash? glyph)
+      (raise-argument-error 'TTFGlyph-_decodeSimple "decoded RGlyfHeader" glyph))
 
     (unless (DecodeStream? stream)
       (raise-argument-error 'TTFGlyph-_decodeSimple "DecodeStream" stream))
@@ -101,46 +108,50 @@
     (hash-set! glyph 'points empty)
 
     (define endPtsOfContours (send (+Array uint16be (· glyph numberOfContours)) decode stream))
+    (report* (· glyph numberOfContours) endPtsOfContours)
     (hash-set! glyph 'instructions (send (+Array uint8be uint16be) decode stream))
 
     (define numCoords (add1 (list-ref endPtsOfContours (sub1 (length endPtsOfContours)))))
 
+    (report numCoords)
     (define flags
       (reverse
        (for/fold ([flags empty])
                  ([i (in-naturals)]
-                  #:when (< (length flags) numCoords))
-         (define flag (send stream readUInt8))
-
+                  #:break (= (length flags) numCoords))
+         (define flag (send uint8 decode stream))
+         
          ;; check for repeat flag
          (define repeated-flags
            (cond
              [(not (zero? (bitwise-and flag REPEAT)))
-              (define count (send stream readUInt8))
+              (define count (send uint8 decode stream))
               (make-list count flag)]
              [else empty]))
         
          (append repeated-flags (cons flag flags)))))
 
+    (report flags 'my-flags-homey)
+    (report endPtsOfContours)
+
     (define glyph-points (mhash))
     (for ([(flag i) (in-indexed flags)])
-      (define point (+Point (zero? (bitwise-and flag ON_CURVE)) (>= (index-of endPtsOfContours i) 0) 0 0))
+      (define point (+Point (zero? (bitwise-and flag ON_CURVE)) (and (index-of endPtsOfContours i) #t) 0 0))
       (hash-set! glyph-points i point))
 
     (for/fold ([px 0])
               ([(flag i) (in-indexed flags)])
-      (define px (_parseGlyphCoord stream px (bitwise-and flag X_SHORT_VECTOR) (bitwise-and flag SAME_X)))
-      (hash-set! (hash-ref glyph-points i) 'x px)
-      px)
+      (define next-px (_parseGlyphCoord stream px (bitwise-and flag X_SHORT_VECTOR) (bitwise-and flag SAME_X)))
+      (set-field! x (hash-ref glyph-points i) next-px)
+      next-px)
 
     (for/fold ([py 0])
               ([(flag i) (in-indexed flags)])
-      (define py (_parseGlyphCoord stream py (bitwise-and flag Y_SHORT_VECTOR) (bitwise-and flag SAME_Y)))
-      (hash-set! (hash-ref glyph-points i) 'y py)
-      py)
+      (define next-py (_parseGlyphCoord stream py (bitwise-and flag Y_SHORT_VECTOR) (bitwise-and flag SAME_Y)))
+      (set-field! y (hash-ref glyph-points i) next-py)
+      next-py)
 
     ;; skip variations shit
-    (error 'kabomm)
     )
 
   (define/public (_decodeComposite glyph stream [offset 0])

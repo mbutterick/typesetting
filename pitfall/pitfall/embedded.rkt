@@ -2,7 +2,13 @@
 (require "font.rkt" fontkit "reference.rkt")
 (provide EmbeddedFont)
 
+#|
+approximates
+https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
+|#
+
 (define-subclass PDFFont (EmbeddedFont document font id)
+  (report 'embedded-font)
   (field [subset (· this font createSubset)]
          ;; we make `unicode` and `width` fields integer-keyed hashes not lists
          ;; because they offer better random access and growability 
@@ -40,6 +46,7 @@ For now, we'll just measure width of the characters.
 (define/contract (encode this text [features #f])
   ((string?) ((or/c list? #f)) . ->*m .
              (list/c (listof string?) (listof (is-a?/c GlyphPosition))))
+  (report 'in-embedded-encode)
   (define glyphRun (send (· this font) layout text features))
   (define glyphs (· glyphRun glyphs))
   (define positions (· glyphRun positions))
@@ -69,9 +76,8 @@ For now, we'll just measure width of the characters.
   (when isCFF
     (hash-set! (· fontFile payload) 'Subtype "CIDFontType0C"))
 
-  ;; todo
-  ;; (send (send (· this subset) encodeStream) pipe fontFile)
-  (send fontFile end (send (· this subset) encode)) ;; temp
+  #;(send (send (· this subset) encodeStream) pipe fontFile)
+  (send fontFile end (send (send (· this subset) encodeStream) dump))
 
   ;; todo
   ;; (define familyClass (send (· this font) has-table? #"OS/2"))

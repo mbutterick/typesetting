@@ -80,6 +80,9 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
     (set-port-position! _port current-position)
     bs)
 
+  (define/public-final (readUInt8)
+    (read 1))
+
   (define/public-final (read count)
     (unless (index? count)
       (raise-argument-error 'DecodeStream:read "positive integer" count))
