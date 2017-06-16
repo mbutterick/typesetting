@@ -76,8 +76,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
     (define glyfPos (list-ref offsets id))
     (define nextPos (list-ref offsets (add1 id)))
 
-    (report* glyfPos nextPos)
-
     ;; Nothing to do if there is no data for this glyph
     (cond
       [(= glyfPos nextPos) #f]
@@ -108,12 +106,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
     (hash-set! glyph 'points empty)
 
     (define endPtsOfContours (send (+Array uint16be (· glyph numberOfContours)) decode stream))
-    (report* (· glyph numberOfContours) endPtsOfContours)
+    
     (hash-set! glyph 'instructions (send (+Array uint8be uint16be) decode stream))
 
     (define numCoords (add1 (list-ref endPtsOfContours (sub1 (length endPtsOfContours)))))
 
-    (report numCoords)
     (define flags
       (reverse
        (for/fold ([flags empty])
@@ -130,9 +127,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
              [else empty]))
         
          (append repeated-flags (cons flag flags)))))
-
-    (report flags 'my-flags-homey)
-    (report endPtsOfContours)
 
     (define glyph-points (mhash))
     (for ([(flag i) (in-indexed flags)])

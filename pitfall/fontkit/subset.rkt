@@ -43,7 +43,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 |#
 
 (define-subclass Subset (TTFSubset)
-  (report 'in-ttf-subset)
   (field [glyphEncoder (make-object TTFGlyphEncoder)])
   (field [glyf #f]
          [offset #f]
@@ -52,15 +51,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   (as-methods
    _addGlyph
-   encode)
-
-  (report 'in-ttf-subset-end)
-  )
+   encode))
 
 (define/contract (_addGlyph this gid)
   (index? . ->m . index?)
 
-  (report 'in-ttf-subset-addglyph)
   (define glyph (send (· this font) getGlyph gid))
   (define glyf (send glyph _decode))
 
@@ -83,12 +78,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; skip variation shit
 
   (push-end-field! glyf this buffer)
-  (report 'updating-loca)
-  (hash-update! (get-field loca this) 'offsets (λ (os) (report* os (list (get-field offset this)))
+  (hash-update! (get-field loca this) 'offsets (λ (os)
                                                  (append os (list (get-field offset this)))))
 
-  
-  (report 'updating-hmtx)
   (hash-update! (get-field hmtx this) 'metrics (λ (ms) (append ms
                                                                (list (mhash 'advance (· glyph advanceWidth)
                                                                       'bearing (· (send glyph _getMetrics) leftBearing))))))
@@ -103,7 +95,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
 (define/contract (encode this stream)
   (EncodeStream? . ->m . void?)
-  (report 'in-subset-encode)
   (set-field! glyf this empty)
   (set-field! offset this 0)
   (set-field! loca this (mhash 'offsets empty))
@@ -111,17 +102,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   ;; include all the glyphs used in the document
   (for ([gid (in-list (· this glyphs))])
-    (report gid 'adding-gid)
     (send this _addGlyph gid))
 
-  (report 'all-glyphs-added)
-
-  (report (· this glyphs) 'glyphs-added)
   (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))
   (hash-set! maxp 'numGlyphs (length (· this glyf)))
 
   ;; populate the new loca table
-  (report 'doing-loca)
   (hash-update! (· this loca) 'offsets (λ (vals) (append vals (list (· this offset)))))
   (loca-preEncode (· this loca))
 
@@ -129,10 +115,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (hash-set! head 'indexToLocFormat (· this loca version))
   
   (define hhea (cloneDeep (send (· this font) _getTable 'hhea)))
-  (report (· this hmtx metrics))
   (hash-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
-  (report 'encoding-directory)
   (send Directory encode stream
         (mhash 'tables
                (mhash
@@ -147,7 +131,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'fpgm (send (· this font) _getTable 'fpgm)
                 )))
 
-  (report* (bytes-length (send stream dump)))
+  #;(report* (bytes-length (send stream dump)))
   
   (void)
   )
