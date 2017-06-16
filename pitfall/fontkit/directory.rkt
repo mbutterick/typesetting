@@ -65,7 +65,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 
 
     (define numTables (length table-headers))
-    (define searchRange (* (floor (/ (log numTables) (log 2))) 16))
+    (define searchRange (* (floor (log numTables 2)) 16))
     
     (hash-set*! this-val
                 'tag "true"
