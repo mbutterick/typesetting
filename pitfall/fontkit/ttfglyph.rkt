@@ -86,10 +86,10 @@
 
   (define/public (_decodeSimple glyph stream)
     (unless (RGlyfHeader? glyph)
-      (raise-argument-error 'TTFGlyph-_decodeSimple "glyph" glyph))
+      (raise-argument-error 'TTFGlyph-_decodeSimple "RGlyfHeader" glyph))
 
     (unless (DecodeStream? stream)
-      (raise-argument-error 'TTFGlyph-_decodeSimple "stream" stream))
+      (raise-argument-error 'TTFGlyph-_decodeSimple "DecodeStream" stream))
 
     ;; this is a simple glyph
     (hash-set! glyph 'points empty)
