@@ -57,7 +57,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                  (define table-header (mhash
                                        'tag (unescape-tag tag)
                                        'checkSum 0
-                                       'offset (+ table-header-size (apply + (map bytes-length tds)))
+                                       'offset (apply + (cons table-header-size (map bytes-length tds)))
                                        'length (bytes-length table-data)))
 
                  (define table-data-padded (pad-to-32bit table-data))
