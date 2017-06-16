@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" restructure "tables.rkt")
+(require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" restructure "tables.rkt" "ttfglyph.rkt")
 (provide (all-defined-out))
 
 (define-runtime-path charter-path "../pitfall/test/assets/charter.ttf")

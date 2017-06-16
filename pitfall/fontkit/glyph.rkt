@@ -1,6 +1,6 @@
 #lang fontkit/racket
 (require "freetype-ffi.rkt")
-(provide Glyph CFFGlyph TTFGlyph)
+(provide Glyph CFFGlyph)
 (module+ test (require rackunit))
 
 #|
@@ -33,9 +33,17 @@
          [_metrics #f])
 
   (as-methods
+   _getPath
+   _getCBox
+   _getBBox
+   _getTableMetrics
    advanceWidth
    _getMetrics))
 
+(define-stub-stop _getPath)
+(define-stub-stop _getCBox)
+(define-stub-stop _getBBox)
+(define-stub-stop _getTableMetrics)
 
 (define/contract (advanceWidth this)
   (->m number?)
@@ -58,8 +66,3 @@
 
 (define-subclass Glyph (CFFGlyph)
   (error 'cff-glyph-unimplemented))
-
-
-(define-subclass Glyph (TTFGlyph)
-
-  )

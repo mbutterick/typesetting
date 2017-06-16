@@ -51,8 +51,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   
   )
 
-(define (_addGlyph . xs)
-  (void))
+(define/contract (_addGlyph this gid)
+  (index? . ->m . void?)
+
+  (define glyph (send (· this font) getGlyph gid))
+  (report glyph)
+  (define glyf (send glyph _decode))
+
+  ;; get the offset to the glyph from the loca table
+  (define curOffset (list-ref (hash-ref (send (· this font) _getTable 'loca) 'offsets) gid))
+  (unfinished))
 
 ;; tables required by PDF spec:
 ;; head, hhea, loca, maxp, cvt, prep, glyf, hmtx, fpgm

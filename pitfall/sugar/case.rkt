@@ -15,3 +15,5 @@
 
 ;; like case but strictly uses `eq?` comparison (as opposed to `equal?`)
 (define-case-macro caseq memq)
+(define-case-macro casev memv)
+
