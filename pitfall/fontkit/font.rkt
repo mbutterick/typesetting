@@ -284,4 +284,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (send subset encode es)
  #;(with-output-to-file "subsetfont.rktd" (λ () (display (send es dump)) ))
  (check-equal? (send es dump) (file->bytes "subsetfont.rktd"))
+
+ (file-directory-decode "subsetfont.rktd")
+ (file-directory-decode "../pitfall/test/out.bin")
  )

@@ -65,7 +65,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 
 
     (define numTables (length table-headers))
-    (define searchRange (* (floor (log (/ numTables (log 2)))) 16))
+    (define searchRange (* (floor (/ (log numTables) (log 2))) 16))
     
     (hash-set*! this-val
                 'tag "true"
@@ -93,8 +93,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define (directory-decode ip [options (mhash)])
   (send Directory decode (+DecodeStream (port->bytes ip))))
 
+(define (file-directory-decode ps)
+  (directory-decode (open-input-file ps)))
+
 (test-module
  (define ip (open-input-file charter-path))
  (define decoded-dir (deserialize (read (open-input-file charter-directory-path))))
  (check-equal? (directory-decode ip) decoded-dir)
+ 
  )
