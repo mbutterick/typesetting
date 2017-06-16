@@ -14,19 +14,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                              'offset uint32be
                              'length uint32be)))
 
-(define (pad-to-32bit bstr)
-  (define op (open-output-bytes))
-  (write-bytes bstr op)
-  (file-position op (* (ceiling (/ (file-position op) 4)) 4))
-  (get-output-bytes op))
-
-(test-module
- (check-equal? (pad-to-32bit #"") #"")
- (check-equal? (pad-to-32bit #"1") #"1\0\0\0")
- (check-equal? (pad-to-32bit #"12") #"12\0\0")
- (check-equal? (pad-to-32bit #"123") #"123\0")
- (check-equal? (pad-to-32bit #"1234") #"1234"))
-
 ;; for stupid tags like 'cvt '
 (define (symbol-replace sym this that)
   (string->symbol (string-replace (if (string? sym) sym (symbol->string sym)) this that)))
@@ -45,8 +32,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
     (define table-header-size (+ preamble-length
                                  (* (length (hash-keys (· this-val tables))) (send TableEntry size))))
 
-    (define-values (table-headers table-datas)
-      (for/lists (ths tds)
+    (define-values (table-headers table-datas _)
+      (for/lists (ths tds lens)
                  ([(tag table) (in-hash (· this-val tables))])
 
                  (define table-data
@@ -57,11 +44,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                  (define table-header (mhash
                                        'tag (unescape-tag tag)
                                        'checkSum 0
-                                       'offset (apply + (cons table-header-size (map bytes-length tds)))
+                                       'offset (apply + (cons table-header-size lens))
                                        'length (bytes-length table-data)))
-
-                 (define table-data-padded (pad-to-32bit table-data))
-                 (values table-header table-data-padded)))
+        
+                 (values table-header table-data (bytes-length table-data))))
 
 
     (define numTables (length table-headers))
