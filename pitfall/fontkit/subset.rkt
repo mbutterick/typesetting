@@ -52,15 +52,38 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   )
 
 (define/contract (_addGlyph this gid)
-  (index? . ->m . void?)
+  (index? . ->m . index?)
 
   (define glyph (send (· this font) getGlyph gid))
-  (report glyph)
   (define glyf (send glyph _decode))
 
   ;; get the offset to the glyph from the loca table
-  (define curOffset (list-ref (hash-ref (send (· this font) _getTable 'loca) 'offsets) gid))
-  (unfinished))
+  (define loca (send (· this font) _getTable 'loca))
+  (define curOffset (list-ref (· loca offsets) gid))
+  (define nextOffset (list-ref (· loca offsets) (add1 gid)))
+
+  (define stream (send (· this font) _getTableStream 'glyf))
+  (send stream pos (+ (send stream pos) curOffset))
+
+  (define buffer (send stream readBuffer (- nextOffset curOffset)))
+
+  ;; if it is a compound glyph, include its components
+  (when (and glyf (negative? (· glyf numberOfContours)))
+    (set! buffer (+Buffer buffer))
+    (for ([component (in-list (· glyf components))])
+      (define gid (includeGlyph (· component glyphID)))
+      (send buffer writUInt16BE gid (send component pos))))
+  ;; skip variation shit
+
+  (push-end-field! glyf this buffer)
+  (hash-update! (get-field loca this) 'offsets (λ (os) (append os (list (get-field offset this)))))
+
+  (hash-update! (get-field hmtx this) 'metrics (λ (ms) (append ms
+                                                               (mhash 'advance (· glyph advanceWidth)
+                                                                      'bearing (· (send glyph _getMetrics) leftBearing)))))
+
+  (increment-field! offset this (bytes-length buffer))
+  (sub1 (length (· this glyf))))
 
 ;; tables required by PDF spec:
 ;; head, hhea, loca, maxp, cvt, prep, glyf, hmtx, fpgm
@@ -76,8 +99,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   ;; include all the glyphs used in the document
   (for ([gid (in-list (· this glyphs))])
-       (send this _addGlyph gid))
+    (send this _addGlyph gid))
 
+  (report (· this glyphs) 'glyphs-added)
   (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))
   (hash-set! maxp 'numGlyphs (length (· this glyf)))
 
@@ -89,6 +113,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (hash-set! head 'indexToLocFormat (· this loca version))
   
   (define hhea (cloneDeep (send (· this font) _getTable 'hhea)))
+  (report (· this hmtx metrics))
   (hash-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
   ;; todo: final encoding of directory, with all tables.

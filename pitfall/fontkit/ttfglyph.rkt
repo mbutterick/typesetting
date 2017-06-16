@@ -69,22 +69,26 @@
     (define glyfPos (list-ref offsets id))
     (define nextPos (list-ref offsets (add1 id)))
 
+    (report* glyfPos nextPos)
+
     ;; Nothing to do if there is no data for this glyph
-    (unless (= glyfPos nextPos)
-      (define stream (send _font _getTableStream 'glyf))
-      (increment-field! pos stream glyfPos)
-      (define startPos (· stream pos))
+    (cond
+      [(= glyfPos nextPos) #f]
+      [else
+       (define stream (send _font _getTableStream 'glyf))
+       (increment-field! pos stream glyfPos)
+       (define startPos (· stream pos))
 
-      (define glyph (send GlyfHeader decode stream))
+       (define glyph (send GlyfHeader decode stream))
 
-      (let ([contour-count (· glyph numberOfContours)])
-        (cond
-          [(positive? contour-count)
-           (_decodeSimple glyph stream)]
-          [(negative? contour-count)
-           (_decodeComposite glyph stream startPos)]))
+       (let ([contour-count (· glyph numberOfContours)])
+         (cond
+           [(positive? contour-count)
+            (_decodeSimple glyph stream)]
+           [(negative? contour-count)
+            (_decodeComposite glyph stream startPos)]))
 
-      glyph))
+       glyph]))
 
   (define/public (_decodeSimple glyph stream)
     (unless (RGlyfHeader? glyph)
@@ -118,7 +122,26 @@
         
          (append repeated-flags (cons flag flags)))))
 
-    (unfinished))
+    (define glyph-points (mhash))
+    (for ([(flag i) (in-indexed flags)])
+      (define point (+Point (zero? (bitwise-and flag ON_CURVE)) (>= (index-of endPtsOfContours i) 0) 0 0))
+      (hash-set! glyph-points i point))
+
+    (for/fold ([px 0])
+              ([(flag i) (in-indexed flags)])
+      (define px (_parseGlyphCoord stream px (bitwise-and flag X_SHORT_VECTOR) (bitwise-and flag SAME_X)))
+      (hash-set! (hash-ref glyph-points i) 'x px)
+      px)
+
+    (for/fold ([py 0])
+              ([(flag i) (in-indexed flags)])
+      (define py (_parseGlyphCoord stream py (bitwise-and flag Y_SHORT_VECTOR) (bitwise-and flag SAME_Y)))
+      (hash-set! (hash-ref glyph-points i) 'y py)
+      py)
+
+    ;; skip variations shit
+    (error 'kabomm)
+    )
 
   (define/public (_decodeComposite glyph stream [offset 0])
     (unfinished)))
