@@ -77,12 +77,17 @@ For now, we'll just measure width of the characters.
   #;(send (send (· this subset) encodeStream) pipe fontFile)
   (send fontFile end (send (send (· this subset) encodeStream) dump))
 
-  ;; todo
-  ;; (define familyClass (send (· this font) has-table? #"OS/2"))
-  (define familyClass 0)
+  (define familyClass (let ([val (if (send (· this font) has-table? 'OS/2)
+                          (· (send (· this font) _getTable 'OS/2) sFamilyClass)
+                          0)])
+                        (floor (/ val 256)))) ; equivalent to >> 8
 
-  ;; todo: flags
-  (define flags 0)
+  (define flags (+
+                 (if (not (zero? (· (send (· this font) _getTable 'post) isFixedPitch))) (expt 2 0) 0)
+                 (if (<= 1 familyClass 7) (expt 2 1) 0)
+                 (expt 2 2) ; assume the font uses non-latin characters
+                 (if (= familyClass 10) (expt 2 3) 0)
+                 (if (· (send (· this font) _getTable 'head) macStyle italic) (expt 2 6) 0)))
 
   ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
   (when (test-mode) (random-seed 0))

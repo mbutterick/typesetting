@@ -19,10 +19,3 @@
 
 (define-runtime-path that "test12crkt.pdf")
 (make-doc that #t proc #:pdfkit #f)
-
-#;(module+ test
-  (define doc (make-object PDFDocument))
-  (send doc registerFont "Charter" (path->string charter-path))
-  (send* doc [font "Charter"])
-  (send doc pipe (open-output-string))
-  (send doc end))
