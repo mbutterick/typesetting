@@ -12,7 +12,7 @@
            pitfall/test/test09
            pitfall/test/test10
            pitfall/test/test11
-           pitfall/test/test12
-           pitfall/test/test13
+           pitfall/test/test12 ; ttf subset
+           pitfall/test/test13 ; subset with composites
            pitfall/page-test
            (submod pitfall/zlib test)))

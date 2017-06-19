@@ -209,6 +209,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; provides a much more advanced mapping supporting AAT and OpenType shaping.
 (define/contract (glyphsForString this string)
   (string? . ->m . (listof (is-a?/c Glyph)))
+  (report string 'glyphs-for-string)
 
   ;; todo: make this handle UTF-16 with surrogate bytes
   ;; for now, just use UTF-8
@@ -221,7 +222,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; Does not perform any advanced substitutions (there is no context to do so).
 (define/contract (glyphForCodePoint this codePoint)
   (index? . ->m . (is-a?/c Glyph))
+  (report codePoint 'glyphs-for-codepoint-cp)
   (define glyph-idx (FT_Get_Char_Index (· this ft-face) codePoint))
+  (report glyph-idx 'glyphs-for-codepoint-idx)
   (send this getGlyph glyph-idx (list codePoint)))
 
 

@@ -2,6 +2,11 @@
 (require "script.rkt" "glyph.rkt" "glyphrun.rkt" "glyph-position.rkt")
 (provide LayoutEngine)
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
+|#
+
 (define-subclass object% (LayoutEngine font)
   (field [unicodeLayoutEngine #f]
          [kernProcessor #f]
@@ -13,7 +18,7 @@
           (cond
             [(· this font has-morx-table?) (error 'morx-layout-unimplemented)]
             [(or (· this font has-gsub-table?) (· this font has-gpos-table?))
-             (error 'ot-layout-unimplemented)]
+             (displayln 'warning:ot-layout-unimplemented) #f]
             [else #f])])
 
   (as-methods

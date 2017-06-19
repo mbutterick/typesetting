@@ -25,6 +25,7 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 (define/contract (includeGlyph this glyph)
   ((or/c object? index?) . ->m . index?)
   (let ([glyph (if (object? glyph) (· glyph id) glyph)])
+    (report* glyph (· this mapping))
     (hash-ref! (· this mapping) glyph
                (λ ()
                  ;; put the new glyph at the end of `glyphs`,

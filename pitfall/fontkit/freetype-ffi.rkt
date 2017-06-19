@@ -352,6 +352,11 @@
 (define-freetype FT_Get_Sfnt_Table (_fun _FT_Face _FT_Gettable_Sfnt_Tag
                                          -> (p : (_cpointer/null 'table-ptr))
                                          -> (or p (error 'sfnt-table-not-loaded))))
+
+(define-freetype FT_Select_Charmap (_fun _FT_Face _FT_Encoding
+                                          -> (err : _FT_Error)
+                                          -> (and (zero? err) #t)))
+
 (provide tag->int)
 (define (tag->int tag)
   (define signed? #f)
@@ -361,7 +366,7 @@
 (module+ test
   (require rackunit)
   (define ft-library (FT_Init_FreeType))
-  (define face (FT_New_Face ft-library "test/assets/charter.ttf" 0))
+  (define face (FT_New_Face ft-library "../pitfall/test/assets/charter.ttf" 0))
   (check-equal? (FT_Get_Postscript_Name face) "Charter")
   (check-equal? (FT_FaceRec-units_per_EM face) 1000)
   (check-true (FT_Load_Sfnt_Table face (tag->int #"cmap") 0 0 0))
