@@ -71,10 +71,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   ;; if it is a compound glyph, include its components
   (when (and glyf (negative? (· glyf numberOfContours)))
-    (set! buffer (+Buffer buffer))
     (for ([component (in-list (· glyf components))])
-      (define gid (includeGlyph (· component glyphID)))
-      (send buffer writUInt16BE gid (send component pos))))
+      (define gid (send this includeGlyph (· component glyphID)))
+      (define es (+EncodeStream))
+      (send uint16be encode es gid)
+      (bytes-copy! buffer (· component pos) (send es dump))))
+  
   ;; skip variation shit
 
   (push-end-field! glyf this buffer)
@@ -83,7 +85,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   (hash-update! (get-field hmtx this) 'metrics (λ (ms) (append ms
                                                                (list (mhash 'advance (· glyph advanceWidth)
-                                                                      'bearing (· (send glyph _getMetrics) leftBearing))))))
+                                                                            'bearing (· (send glyph _getMetrics) leftBearing))))))
 
   (increment-field! offset this (bytes-length buffer))
   (sub1 (length (· this glyf))))
@@ -101,7 +103,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (set-field! hmtx this (mhash 'metrics empty 'bearings empty))
 
   ;; include all the glyphs used in the document
-  (for ([gid (in-list (· this glyphs))])
+  ;; not using `in-list` because we need to support adding more
+  ;; glyphs to the array as component glyphs are discovered & enqueued
+  (for ([idx (in-naturals)]
+        #:break (= idx (length (· this glyphs))))
+    (define gid (list-ref (· this glyphs) idx))
     (send this _addGlyph gid))
 
   (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))

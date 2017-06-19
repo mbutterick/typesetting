@@ -28,7 +28,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 (match-define (list ARG_1_AND_2_ARE_WORDS    
                     ARGS_ARE_XY_VALUES       
                     ROUND_XY_TO_GRID         
-                    WE_HAVE_A_SCALE          
+                    WE_HAVE_A_SCALE
+                    ___NO-FLAG___
                     MORE_COMPONENTS          
                     WE_HAVE_AN_X_AND_Y_SCALE 
                     WE_HAVE_A_TWO_BY_TWO     
@@ -37,7 +38,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
                     OVERLAP_COMPOUND         
                     SCALED_COMPONENT_OFFSET  
                     UNSCALED_COMPONENT_OFFSET)
-  (map (curry expt 2) (range 12)))
+  (map (curry expt 2) (range 13)))
 
 ;; Represents a point in a simple glyph
 (define-subclass object% (Point onCurve endContour [x 0] [y 0])
@@ -149,6 +150,52 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
     )
 
   (define/public (_decodeComposite glyph stream [offset 0])
-    (unfinished)))
+    ;; this is a composite glyph
+    (hash-set! glyph 'components empty)
+    (define haveInstructions #f)
+    (define flags MORE_COMPONENTS)
+
+    (hash-set! glyph 'components
+               (for/list ([i (in-naturals)]
+                          #:break (zero? (bitwise-and flags MORE_COMPONENTS)))
+                 (set! flags (send uint16be decode stream))
+                 (define gPos (- (send stream pos) offset))
+                 (define glyphID (send uint16be decode stream))
+                 (unless haveInstructions
+                   (set! haveInstructions (not (zero? (bitwise-and flags WE_HAVE_INSTRUCTIONS)))))
+
+                 (match-define
+                   (list dx dy)
+                   (let ([decoder (if (not (zero? (bitwise-and flags ARG_1_AND_2_ARE_WORDS))) int16be int8)])
+                     (list (send decoder decode stream) (send decoder decode stream))))
+
+                 (define component (+Component glyphID dx dy))
+                 (set-field! pos component gPos)
+
+                 (cond
+                   [(not (zero? (bitwise-and flags WE_HAVE_A_SCALE)))
+                    (define scale (read-fixed14 stream))
+                    (set-field! scaleX component scale)
+                    (set-field! scaleY component scale)]
+                   [(not (zero? (bitwise-and flags WE_HAVE_AN_X_AND_Y_SCALE)))
+                    (set-field! scaleX component (read-fixed14 stream))
+                    (set-field! scaleY component (read-fixed14 stream))]
+                   [(not (zero? (bitwise-and flags WE_HAVE_A_TWO_BY_TWO)))
+                    (set-field! scaleX component (read-fixed14 stream))
+                    (set-field! scale01 component (read-fixed14 stream))
+                    (set-field! scale10 component (read-fixed14 stream))
+                    (set-field! scaleY component (read-fixed14 stream))])
+                 
+                 component))
+
+    haveInstructions
+    ))
         
-    
+
+(define (bytes->fixed14 b1 b2)
+  (/ (+ (* b1 (expt 2 8)) b2) (expt 2 14) 1.0))
+  
+(define (read-fixed14 stream)
+  (define b1 (send uint8 decode stream))
+  (define b2 (send uint8 decode stream))
+  (bytes->fixed14 b1 b2))
