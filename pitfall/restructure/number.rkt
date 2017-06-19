@@ -39,13 +39,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
           (values signed-min signed-max)
           (values (- signed-min signed-min) (- signed-max signed-min)))))
 
-  (define/augment (decode stream . args)
+  (define/augride (decode stream . args)
     (define bstr (send stream read _size))
     (if (= 1 _size)
         (+ (bytes-ref bstr 0) (if _signed? bound-min 0))
         (integer-bytes->integer bstr _signed? (eq? endian 'be))))
 
-  (define/augment (encode stream val-in)
+  (define/augride (encode stream val-in)
     (define val (if (integer? val-in) (inexact->exact val-in) val-in))
     ;; todo: better bounds checking
     (unless (<= bound-min val bound-max)
@@ -54,7 +54,25 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                      (bytes (- val (if _signed? bound-min 0)))
                      (integer->integer-bytes val _size _signed? (eq? endian 'be))))
     (send stream write bstr)))
-    
+
+(define-subclass* Number (Fixed size [fixed-endian (if (system-big-endian?) 'be 'le)] [fracBits (floor (/ size 2))])
+  (super-make-object (string->symbol (format "int~a" size)) fixed-endian)
+  (field [_point (expt 2 fracBits)])
+
+  (define/override (decode stream . args)
+    (define result (/ (super decode stream args) _point 1.0))
+    (if (integer? result) (inexact->exact result) result))
+
+  (define/override (encode stream val)
+    (super encode stream (floor (* val _point)))))
+
+(define fixed16 (+Fixed 16))
+(define fixed16be (+Fixed 16 'be))
+(define fixed16le (+Fixed 16 'le))
+(define fixed32 (+Fixed 32))
+(define fixed32be (+Fixed 32 'be))
+(define fixed32le (+Fixed 32 'le))
+
 
 (test-module
  (check-exn exn:fail:contract? (λ () (+Number 'not-a-valid-type)))
@@ -117,5 +135,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-equal? (send uint8 size) 1)
  (check-equal? (send uint16 size) 2)
  (check-equal? (send uint32 size) 4)
- (check-equal? (send double size) 8))
+ (check-equal? (send double size) 8)
+
+ (define es (+EncodeStream))
+ (send fixed16be encode es 123.45)
+ (check-equal? (send es dump) #"{s")
+ (define ds (+DecodeStream (send es dump)))
+ (check-equal? (ceiling (* (send fixed16be decode ds) 100)) 12345.0))
 
