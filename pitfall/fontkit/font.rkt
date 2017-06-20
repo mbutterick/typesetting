@@ -7,6 +7,12 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 |#
 
+(require (for-syntax "tables.rkt"))
+(define-macro (define-table-getters)
+  (with-pattern ([(TABLE-TAG ...) (hash-keys table-codecs)])
+    #'(begin
+        (define/public (TABLE-TAG) (_getTable 'TABLE-TAG)) ...)))
+
 ;; This is the base class for all SFNT-based font formats in fontkit.
 ;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
 (define-subclass object% (TTFFont stream [_src #f])
@@ -28,6 +34,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (unless (has-table? this table-tag)
       (raise-argument-error '_getTable "table that exists in font" table-tag))
     (hash-ref! _tables table-tag (_decodeTable table-tag))) ; get table from cache, load if not there
+
+  (define-table-getters)
 
   (define/public (_getTableStream tag)
     (define table (hash-ref (· this directory tables) tag))
@@ -86,25 +94,25 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The size of the font’s internal coordinate grid
 (define/contract (unitsPerEm this)
   (->m number?)
-  (hash-ref (send this _getTable 'head) 'unitsPerEm))
+  (· this head unitsPerEm))
 
 
 ;; The font’s [ascender](https://en.wikipedia.org/wiki/Ascender_(typography))
 (define/contract (ascent this)
   (->m number?)
-  (hash-ref (send this _getTable 'hhea) 'ascent))
+  (· this hhea ascent))
 
 
 ;; The font’s [descender](https://en.wikipedia.org/wiki/Descender)
 (define/contract (descent this)
   (->m number?)
-  (hash-ref (send this _getTable 'hhea) 'descent))
+  (· this hhea descent))
 
 
 ;; The amount of space that should be included between lines
 (define/contract (lineGap this)
   (->m number?)
-  (hash-ref (send this _getTable 'hhea) 'lineGap))
+  (· this hhea lineGap))
 
 
 (define/contract (underlinePosition this)
@@ -150,11 +158,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
 (define/contract (bbox this)
   (->m (is-a?/c BBox))
-  (define head-table (send this _getTable 'head))
-  (make-object BBox (· head-table xMin)
-    (· head-table yMin)
-    (· head-table xMax)
-    (· head-table yMax)))
+  (make-object BBox (· this head xMin)
+    (· this head yMin)
+    (· this head xMax)
+    (· this head yMax)))
 
 
 (define/contract (_cmapProcessor this)

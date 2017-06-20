@@ -35,7 +35,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
                   2.5 (append header-fields (dictify 'numberOfGlyphs uint16be
                                                      'offsets (+Array uint8)))
                   3 (append header-fields null)
-                  4 (append header-fields (dictify 'map (+Array uint32be (λ (t) (· (send (· t parent) _getTable 'maxp) numGlyphs)))))))))
+                  4 (append header-fields (dictify 'map (+Array uint32be (λ (t) (· t parent maxp numGlyphs)))))))))
 
 (test-module
  (define ip (open-input-file charter-path))

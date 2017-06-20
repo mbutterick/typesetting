@@ -80,7 +80,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
   ;; Decodes the glyph data into points for simple glyphs,
   ;; or components for composite glyphs
   (define/public (_decode)
-    (define offsets (· (send _font _getTable 'loca) offsets))
+    (define offsets (· _font loca offsets))
     (match-define (list glyfPos nextPos) (take (drop offsets id) 2))
 
     ;; Nothing to do if there is no data for this glyph

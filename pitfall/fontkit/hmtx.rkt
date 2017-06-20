@@ -15,9 +15,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
 
 (define hmtx (+Rhmtx
               (dictify
-               'metrics (+LazyArray HmtxEntry (λ (this-array) (· (send (· this-array parent) _getTable 'hhea) numberOfMetrics)))
-               'bearings (+LazyArray int16be (λ (this-array) (- (· (send (· this-array parent) _getTable 'maxp) numGlyphs)
-                                                                (· (send (· this-array parent) _getTable 'hhea) numberOfMetrics)))))))
+               'metrics (+LazyArray HmtxEntry (λ (this-array) (· this-array parent hhea numberOfMetrics)))
+               'bearings (+LazyArray int16be (λ (this-array) (- (· this-array parent maxp numGlyphs)
+                                                                (· this-array parent hhea numberOfMetrics)))))))
 
 
 

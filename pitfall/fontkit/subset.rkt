@@ -65,9 +65,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define glyf (send glyph _decode))
 
   ;; get the offset to the glyph from the loca table
-  (define loca (send (· this font) _getTable 'loca))
-  (define curOffset (list-ref (· loca offsets) gid))
-  (define nextOffset (list-ref (· loca offsets) (add1 gid)))
+  (match-define (list curOffset nextOffset) (take (drop (· this font loca offsets) gid) 2))
 
   (define stream (send (· this font) _getTableStream 'glyf))
   (send stream pos (+ (send stream pos) curOffset))
@@ -113,17 +111,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
     (define gid (list-ref (· this glyphs) idx))
     (send this _addGlyph gid))
 
-  (define maxp (cloneDeep (send (· this font) _getTable 'maxp)))
+  (define maxp (cloneDeep (· this font maxp)))
   (hash-set! maxp 'numGlyphs (length (· this glyf)))
 
   ;; populate the new loca table
   (hash-update! (· this loca) 'offsets (λ (vals) (append vals (list (· this offset)))))
   (loca-preEncode (· this loca))
 
-  (define head (cloneDeep (send (· this font) _getTable 'head)))
+  (define head (cloneDeep (· this font head)))
   (hash-set! head 'indexToLocFormat (· this loca version))
   
-  (define hhea (cloneDeep (send (· this font) _getTable 'hhea)))
+  (define hhea (cloneDeep (· this font hhea)))
   (hash-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
   (send Directory encode stream
@@ -133,11 +131,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'hhea hhea
                 'loca (· this loca)
                 'maxp maxp
-                'cvt_ (send (· this font) _getTable 'cvt_)
-                'prep (send (· this font) _getTable 'prep)
+                'cvt_ (· this font cvt_)
+                'prep (· this font prep)
                 'glyf (· this glyf)
                 'hmtx (· this hmtx)
-                'fpgm (send (· this font) _getTable 'fpgm)
+                'fpgm (· this font fpgm)
                 )))
 
   #;(report* (bytes-length (send stream dump)) (send stream dump))

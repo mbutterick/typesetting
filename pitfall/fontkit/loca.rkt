@@ -35,7 +35,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
       (hash-update! this-val 'offsets (λ (offsets) (map (curryr / 2) offsets))))))
 
 (define loca (make-object Rloca
-               (λ (parent) (hash-ref (send parent _getTable 'head) 'indexToLocFormat)) 
+               (λ (parent) (· parent head indexToLocFormat)) 
                (dictify
                 0 (dictify 'offsets (+Array uint16be))
                 1 (dictify 'offsets (+Array uint32be)))))
