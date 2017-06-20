@@ -9,12 +9,12 @@ make = (doc) ->
   # Set the font, draw some text
   doc.font('the-font')
      .fontSize(25)
-     .text('Hola Hola', 100, 100, {width: false})
+     .text('ATAVATA', 100, 100, {width: false})
                  
   doc.end()
 
 
 doc = new PDFDocument({compress: no})
-doc.pipe(fs.createWriteStream('test14.pdf'))
+doc.pipe(fs.createWriteStream('test15.pdf'))
 make doc
 
