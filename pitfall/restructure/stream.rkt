@@ -121,10 +121,14 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
     (inner (void) decode stream . args))
 
   (define/overment (encode x . args)
-    (define stream (if (output-port? x) (+EncodeStream x) x))
+    (define stream (cond
+                     [(output-port? x) (+EncodeStream x)]
+                     [(not x) (+EncodeStream)]
+                     [else x]))
     (unless (EncodeStream? stream)
       (raise-argument-error 'Streamcoder:encode "output port or EncodeStream" x))
-    (inner (void) encode stream . args)))
+    (inner (void) encode stream . args)
+    (when (not x) (send stream dump))))
 
 (test-module
  (define-subclass Streamcoder (Dummy)

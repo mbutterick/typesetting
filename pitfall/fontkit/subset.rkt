@@ -78,9 +78,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (when (and glyf (negative? (· glyf numberOfContours)))
     (for ([component (in-list (· glyf components))])
       (define gid (send this includeGlyph (· component glyphID)))
-      (define es (+EncodeStream))
-      (send uint16be encode es gid)
-      (bytes-copy! buffer (· component pos) (send es dump))))
+      (bytes-copy! buffer (· component pos) (send uint16be encode #f gid))))
   
   ;; skip variation shit
 

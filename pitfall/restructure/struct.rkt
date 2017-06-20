@@ -156,6 +156,4 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                                    (send num-type size)))
       (define bs (apply bytes (for/list ([i (in-range struct-size)])
                                         (random 256))))
-      (define es (+EncodeStream))
-      (send vs encode es (send vs decode bs))
-      (check-equal? (send es dump) bs)))
+      (check-equal? (send vs encode #f (send vs decode bs)) bs)))
