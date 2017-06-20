@@ -2,8 +2,6 @@
 (require "freetype-ffi.rkt" ffi/unsafe racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" restructure "tables.rkt" "ttfglyph.rkt")
 (provide (all-defined-out))
 
-(define-runtime-path charter-path "../pitfall/test/assets/charter.ttf")
-
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
@@ -11,7 +9,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 ;; This is the base class for all SFNT-based font formats in fontkit.
 ;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
-(define-subclass object% (TTFFont stream)
+(define-subclass object% (TTFFont stream [_src #f])
   (when stream (unless (DecodeStream? stream)
                  (raise-argument-error 'TTFFont "DecodeStream" stream)))
   (unless (member (peek-bytes 4 0 (get-field _port  stream)) (list #"true" #"OTTO" (bytes 0 1 0 0)))
@@ -50,9 +48,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define/public (_decodeDirectory)
     (set! directory (send Directory decode stream (mhash '_startOffset 0)))
     directory)
-  
-  (field [ft-library (FT_Init_FreeType)])
-  (field [ft-face (FT_New_Face ft-library charter-path 0)])
+
+  (field [ft-library (FT_Init_FreeType)]
+         [ft-face (and _src (FT_New_Face ft-library _src 0))])
 
   (as-methods
    postscriptName
@@ -209,22 +207,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; provides a much more advanced mapping supporting AAT and OpenType shaping.
 (define/contract (glyphsForString this string)
   (string? . ->m . (listof (is-a?/c Glyph)))
-  (report string 'glyphs-for-string)
 
   ;; todo: make this handle UTF-16 with surrogate bytes
   ;; for now, just use UTF-8
   (define codepoints (map char->integer (string->list string)))
   (for/list ([cp (in-list codepoints)])
-    (send this glyphForCodePoint cp)))
+            (send this glyphForCodePoint cp)))
 
 
 ;; Maps a single unicode code point to a Glyph object.
 ;; Does not perform any advanced substitutions (there is no context to do so).
 (define/contract (glyphForCodePoint this codePoint)
   (index? . ->m . (is-a?/c Glyph))
-  (report codePoint 'glyphs-for-codepoint-cp)
+  #;(FT_Select_Charmap (· this ft-face) (tag->int #"unic"))
   (define glyph-idx (FT_Get_Char_Index (· this ft-face) codePoint))
-  (report glyph-idx 'glyphs-for-codepoint-idx)
   (send this getGlyph glyph-idx (list codePoint)))
 
 
@@ -240,7 +236,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (string? number? . ->m . number?)
   (/ (* size
         (for/sum ([c (in-string str)])
-          (measure-char-width this c))) (· this unitsPerEm)))
+                 (measure-char-width this c))) (· this unitsPerEm)))
 
 
 ;; Register font formats
@@ -253,24 +249,24 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 (define/contract (openSync filename [postscriptName #f])
-  ((string?) ((or/c string? #f)) . ->* . any/c)
+  ((string?) ((or/c string? #f)) . ->* . TTFFont?)
   (define buffer (file->bytes filename))
-  (create buffer postscriptName))
+  (create buffer filename postscriptName))
 
 
 
-(define/contract (create buffer [postscriptName #f])
-  ((bytes?) ((or/c string? #f)) . ->* . any/c)
+(define/contract (create buffer [filename #f] [postscriptName #f])
+  ((bytes?) ((or/c path-string? #f) (or/c string? #f)) . ->* . TTFFont?)
   (or
    (for*/first ([format (in-list formats)]
                 ;; rather than use a `probe` function,
                 ;; just try making a font with each format and see what happens
                 [font (in-value (with-handlers ([(curry eq? 'probe-fail) (λ (exn) #f)])
-                                  (make-object format (+DecodeStream buffer))))]
+                                  (make-object format (+DecodeStream buffer) filename)))]
                 #:when font)
-     (if postscriptName
-         (send font getFont postscriptName) ; used to select from collection files like TTC
-         font))
+               (if postscriptName
+                   (send font getFont postscriptName) ; used to select from collection files like TTC
+                   font))
    (error 'fontkit:create "unknown font format")))
 
 
@@ -294,7 +290,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (define es (+EncodeStream))
  (send subset encode es)
  #;(with-output-to-file "subsetfont.rktd" (λ () (display (send es dump)) ))
- (check-equal? (send es dump) (file->bytes "subsetfont.rktd"))
+ #;(check-equal? (send es dump) (file->bytes "subsetfont.rktd"))
 
  (file-directory-decode "subsetfont.rktd")
  (file-directory-decode "../pitfall/test/out.bin")

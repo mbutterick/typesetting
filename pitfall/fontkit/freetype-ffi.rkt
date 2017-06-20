@@ -67,7 +67,7 @@
    [platform_id _FT_UShort]
    [encoding_id _FT_UShort]))
 
-(define _FT_Charmap _FT_CharMapRec-pointer)
+(define _FT_CharMap _FT_CharMapRec-pointer)
 (define _FT_CharMap-pointer (_cpointer 'FT_CharMap-pointer))
 
 (define-cstruct _FT_Generic
@@ -190,7 +190,7 @@
    [underline_thickness _FT_Short]
    [glyph _FT_GlyphSlot]
    [size _FT_Size]
-   [charmap _FT_Charmap]
+   [charmap _FT_CharMap]
    [driver _void-pointer]
    [memory _void-pointer]
    [stream _void-pointer]
@@ -203,6 +203,7 @@
 (define _FT_Face _FT_FaceRec-pointer)
 (provide (struct-out FT_FaceRec)
          _FT_FaceRec _FT_FaceRec-pointer)
+
 
 (define _FT_Sfnt_Tag _FT_ULong)
 
@@ -240,10 +241,10 @@
    [j _FT_Byte]))
 
 (define-cstruct _FT_VendID
-               ([a _FT_Char]
-                [b _FT_Char]
-                [c _FT_Char]
-                [d _FT_Char]))
+  ([a _FT_Char]
+   [b _FT_Char]
+   [c _FT_Char]
+   [d _FT_Char]))
 
 (define-cstruct _FT_TT_OS2
   ([version _FT_UShort]
@@ -354,8 +355,12 @@
                                          -> (or p (error 'sfnt-table-not-loaded))))
 
 (define-freetype FT_Select_Charmap (_fun _FT_Face _FT_Encoding
-                                          -> (err : _FT_Error)
-                                          -> (and (zero? err) #t)))
+                                         -> (err : _FT_Error)
+                                         -> (unless (zero? err) (error 'FT_Select_Charmap-failed))))
+
+(define-freetype FT_Set_Charmap (_fun _FT_Face _FT_CharMapRec
+                                      -> (err : _FT_Error)
+                                      -> (unless (zero? err) (error 'FT_Set_Charmap-failed))))
 
 (provide tag->int)
 (define (tag->int tag)
@@ -363,10 +368,15 @@
   (define big-endian? #t)
   (integer-bytes->integer tag signed? big-endian?))
 
+(define (int->tag int)
+  (define signed? #f)
+  (define big-endian? #t)
+  (integer->integer-bytes int 4 signed? big-endian?))
+
 (module+ test
   (require rackunit)
   (define ft-library (FT_Init_FreeType))
-  (define face (FT_New_Face ft-library "../pitfall/test/assets/charter.ttf" 0))
+  (define face (FT_New_Face ft-library "../pitfall/test/assets/Charter.ttf" 0))
   (check-equal? (FT_Get_Postscript_Name face) "Charter")
   (check-equal? (FT_FaceRec-units_per_EM face) 1000)
   (check-true (FT_Load_Sfnt_Table face (tag->int #"cmap") 0 0 0))
@@ -383,7 +393,7 @@
            (FT_BBox-xMax bbox)
            (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
 
-  (define H-gid 41)
+  (define H-gid (FT_Get_Char_Index face 72))
   (FT_Load_Glyph face H-gid FT_LOAD_NO_RECURSE)
   ; want bearingX (lsb) and advanceX (advance width)
   (define g (FT_FaceRec-glyph face))

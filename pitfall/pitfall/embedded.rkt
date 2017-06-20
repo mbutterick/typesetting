@@ -45,10 +45,10 @@ For now, we'll just measure width of the characters.
 (define/contract (encode this text [features #f])
   ((string?) ((or/c list? #f)) . ->*m .
              (list/c (listof string?) (listof (is-a?/c GlyphPosition))))
-  (define glyphRun (send (· this font) layout (report text) features))
+  (define glyphRun (send (· this font) layout text features))
   (define glyphs (· glyphRun glyphs))
   (for ([g (in-list glyphs)])
-    (report (· g id)))
+    (· g id))
   (define positions (· glyphRun positions))
   (define-values (subset-idxs new-positions)
     (for/lists (idxs posns)
