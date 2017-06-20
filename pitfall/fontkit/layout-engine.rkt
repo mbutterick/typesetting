@@ -1,6 +1,6 @@
 #lang fontkit/racket
-(require "script.rkt" "glyph.rkt" "glyphrun.rkt" "glyph-position.rkt")
-(provide LayoutEngine)
+(require (prefix-in Script- "script.rkt") "glyph.rkt" "glyphrun.rkt" "glyph-position.rkt" "ot-layout-engine.rkt")
+(provide (all-defined-out))
 
 #|
 approximates
@@ -18,7 +18,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
           (cond
             [(· this font has-morx-table?) (error 'morx-layout-unimplemented)]
             [(or (· this font has-gsub-table?) (· this font has-gpos-table?))
-             (displayln 'warning:ot-layout-unimplemented) #f]
+             (+OTLayoutEngine (· this font))]
             [else #f])])
 
   (as-methods
@@ -30,11 +30,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
 
 (define/contract (layout this str-or-glyphs [features #f]
                          ;; Attempt to detect the script if not provided.
-                         [script (if (string? str-or-glyphs)
-                                     (script-for-string str-or-glyphs)
-                                     (script-for-codepoints (append-map (λ (g) (· g codePoints)) str-or-glyphs)))]
+                         [script (report (if (string? str-or-glyphs)
+                                     (Script-forString str-or-glyphs)
+                                     (Script-forCodePoints (append-map (λ (g) (· g codePoints)) str-or-glyphs))))]
                          [language #f])
-  (((or/c string? (listof (is-a?/c Glyph)))) ((or/c list? #f) (or/c symbol? #f) (or/c symbol? #f)) . ->*m . (is-a?/c GlyphRun))
+  (((or/c string? (listof Glyph?))) ((option/c list?) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
   
   (define glyphs
     (if (string? str-or-glyphs)

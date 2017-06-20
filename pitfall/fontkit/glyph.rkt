@@ -1,6 +1,6 @@
 #lang fontkit/racket
 (require "freetype-ffi.rkt")
-(provide Glyph CFFGlyph)
+(provide (all-defined-out))
 (module+ test (require rackunit))
 
 #|

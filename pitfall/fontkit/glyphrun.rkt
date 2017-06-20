@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require "bbox.rkt" "script.rkt")
+(require "bbox.rkt" (prefix-in Script- "script.rkt"))
 (provide (all-defined-out))
 
 ;; Represents a run of Glyph and GlyphPosition objects.
@@ -15,7 +15,7 @@
   (field [positions #f])
   
   ;; The directionality of the requested script (either ltr or rtl).
-  (field [direction (script-direction script)])
+  (field [direction (Script-direction script)])
   
   ;; The features requested during shaping. This is a combination of user
   ;; specified features and features chosen by the shaper.

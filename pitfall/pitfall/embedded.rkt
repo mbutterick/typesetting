@@ -32,7 +32,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   ((string? number?) ((option/c list?)) . ->*m . number?)
   (cond
     [features
-     (define run (send (· this font) layout string features)) ; todo: features would be passed here
+     (define run (send (· this font) layout string features))
      (define width (· run advanceWidth))
      (define scale (/ size (· this font unitsPerEm)))
      (* width scale)]

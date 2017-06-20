@@ -44,11 +44,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
   (define/public (_getTableStream tag)
     (define table (hash-ref (· this directory tables) tag))
-    (cond
-      [table
-       (send stream pos (· table offset))
-       stream]
-      [else #f]))
+    (and table (send stream pos (· table offset)) stream))
 
   (define/public (_decodeTable table-tag)
     (define table-decoder (hash-ref table-codecs table-tag
@@ -233,7 +229,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
 (define/contract (layout this string [userFeatures #f] [script #f] [language #f])
-  ((string?) ((or/c (listof symbol?) #f) (or/c symbol? #f) (or/c symbol? #f)) . ->*m . GlyphRun?)
+  ((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
   (unless (· this _layoutEngine)
     (set-field! _layoutEngine this (make-object LayoutEngine this)))
   (report 'in-layout)
@@ -257,7 +253,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; Maps a single unicode code point to a Glyph object.
 ;; Does not perform any advanced substitutions (there is no context to do so).
 (define/contract (glyphForCodePoint this codePoint)
-  (index? . ->m . (is-a?/c Glyph))
+  (index? . ->m . Glyph?)
   (define glyph-idx (FT_Get_Char_Index (· this ft-face) codePoint))
   (send this getGlyph glyph-idx (list codePoint)))
 
@@ -287,14 +283,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 (define/contract (openSync filename [postscriptName #f])
-  ((string?) ((or/c string? #f)) . ->* . TTFFont?)
+  ((string?) ((option/c string?)) . ->* . TTFFont?)
   (define buffer (file->bytes filename))
   (create buffer filename postscriptName))
 
 
 
 (define/contract (create buffer [filename #f] [postscriptName #f])
-  ((bytes?) ((or/c path-string? #f) (or/c string? #f)) . ->* . TTFFont?)
+  ((bytes?) ((option/c path-string?) (option/c string?)) . ->* . TTFFont?)
   (or
    (for*/first ([format (in-list formats)]
                 ;; rather than use a `probe` function,
