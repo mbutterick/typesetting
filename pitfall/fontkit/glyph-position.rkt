@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(provide GlyphPosition)
+(provide (all-defined-out))
 
 ;; Represents positioning information for a glyph in a GlyphRun.
 (define-subclass object% (GlyphPosition

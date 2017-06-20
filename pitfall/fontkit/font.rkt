@@ -233,7 +233,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
 (define/contract (layout this string [userFeatures #f] [script #f] [language #f])
-  ((string?) ((or/c (listof symbol?) #f) (or/c symbol? #f) (or/c symbol? #f)) . ->*m . (is-a?/c GlyphRun))
+  ((string?) ((or/c (listof symbol?) #f) (or/c symbol? #f) (or/c symbol? #f)) . ->*m . GlyphRun?)
   (unless (· this _layoutEngine)
     (set-field! _layoutEngine this (make-object LayoutEngine this)))
   (report 'in-layout)

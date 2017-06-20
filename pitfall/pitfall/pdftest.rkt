@@ -16,10 +16,10 @@
   (check-equal? (this->pdfkit-control (string->path "test1crkt.pdf")) (string->path "test1c.pdf")))
 
 
-(define-syntax-rule (check-copy-equal? this)
-  (check-true (for/and ([b1 (in-input-port-bytes (open-input-file this))]
-                        [b2 (in-input-port-bytes (open-input-file (this->control this)))])
-                (equal? b1 b2))))
+(define-macro (check-copy-equal? THIS)
+  (syntax/loc caller-stx (check-true (for/and ([b1 (in-input-port-bytes (open-input-file THIS))]
+                                               [b2 (in-input-port-bytes (open-input-file (this->control THIS)))])
+                                              (equal? b1 b2)))))
 
 
 (define-syntax-rule (check-pdfkit? this)

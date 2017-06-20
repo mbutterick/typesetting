@@ -28,45 +28,47 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
    embed
    toUnicodeCmap))
 
-(define/contract (widthOfString this str size [features #f])
-  ((string? number?) ((or/c list? #f)) . ->*m . number?)
-  #|
-PDFKit makes a whole layout here and measures that.
-For now, we'll just measure width of the characters.
-|#
-  #;(define run (send (· this font) layout string)) ; todo: features would be passed here
-  #;(define width (· run advanceWidth))
-  #;(define scale (/ size (· this font unitsPerEm)))
-  #;(* width scale)
-  (send (· this font) measure-string str size))
+(define/contract (widthOfString this string size [features #f])
+  ((string? number?) ((option/c list?)) . ->*m . number?)
+  (cond
+    [features
+     (define run (send (· this font) layout string features)) ; todo: features would be passed here
+     (define width (· run advanceWidth))
+     (define scale (/ size (· this font unitsPerEm)))
+     (* width scale)]
+    [else (send (· this font) measure-string string size)]))
 
 
 ;; called from text.rkt
 (define/contract (encode this text [features #f])
-  ((string?) ((or/c list? #f)) . ->*m .
-             (list/c (listof string?) (listof (is-a?/c GlyphPosition))))
+  ((string?) ((option/c list?)) . ->*m .
+             (list/c (listof string?) (listof GlyphPosition?)))
   (define glyphRun (send (· this font) layout text features))
   (define glyphs (· glyphRun glyphs))
   (for ([g (in-list glyphs)])
-    (· g id))
+       (· g id))
   (define positions (· glyphRun positions))
   (define-values (subset-idxs new-positions)
     (for/lists (idxs posns)
-      ([(glyph i) (in-indexed glyphs)]
-       [posn (in-list positions)])
-      (define gid (send (· this subset) includeGlyph (· glyph id)))
-      (define subset-idx (toHex gid))
-      (set-field! advanceWidth posn (· glyph advanceWidth))
+               ([(glyph i) (in-indexed glyphs)]
+                [posn (in-list positions)])
+               (define gid (send (· this subset) includeGlyph (· glyph id)))
+               (define subset-idx (toHex gid))
+               (set-field! advanceWidth posn (· glyph advanceWidth))
 
-      (hash-ref! (· this widths) gid (λ () (· posn advanceWidth)))
-      (hash-ref! (· this unicode) gid (λ () (· glyph codePoints)))
+               (hash-ref! (· this widths) gid (λ () (· posn advanceWidth)))
+               (hash-ref! (· this unicode) gid (λ () (· glyph codePoints)))
 
-      (send posn scale (· this scale))
-      (values subset-idx posn)))
+               (send posn scale (· this scale))
+               (values subset-idx posn)))
   (list subset-idxs new-positions))
 
-(require racket/runtime-path)
-(define-runtime-path charter-path "test/assets/charter.ttf")
+
+(define-macro (sum-flags [COND VAL] ...)
+  #'(for/sum ([c (in-list (list COND ...))]
+              [v (in-list (list VAL ...))]
+              #:when c)
+             v))
 
 (define/contract (embed this)
   (->m void?)
@@ -79,21 +81,25 @@ For now, we'll just measure width of the characters.
   (send fontFile end (send (send (· this subset) encodeStream) dump))
 
   (define familyClass (let ([val (if (send (· this font) has-table? 'OS/2)
-                          (· this font OS/2 sFamilyClass)
-                          0)])
+                                     (· this font OS/2 sFamilyClass)
+                                     0)])
                         (floor (/ val 256)))) ; equivalent to >> 8
 
-  (define flags (+
-                 (if (not (zero? (· this font post isFixedPitch))) (expt 2 0) 0)
-                 (if (<= 1 familyClass 7) (expt 2 1) 0)
-                 (expt 2 2) ; assume the font uses non-latin characters
-                 (if (= familyClass 10) (expt 2 3) 0)
-                 (if (· this font head macStyle italic) (expt 2 6) 0)))
+  ;; font descriptor flags
+  (match-define (list FIXED_PITCH SERIF SYMBOLIC SCRIPT _UNUSED NONSYMBOLIC ITALIC)
+    (map (curry expt 2) (range 7)))
+  
+  (define flags (sum-flags
+                 [(not (zero? (· this font post isFixedPitch))) FIXED_PITCH]
+                 [(<= 1 familyClass 7) SERIF]
+                 [#t SYMBOLIC] ; assume the font uses non-latin characters
+                 [(= familyClass 10) SCRIPT]
+                 [(· this font head macStyle italic) ITALIC]))
 
   ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
   (when (test-mode) (random-seed 0))
   (define tag (list->string (for/list ([i (in-range 6)])
-                              (integer->char (random 65 (+ 65 26))))))
+                                      (integer->char (random 65 (+ 65 26))))))
   (define name (string-append tag "+" (· this font postscriptName)))
 
   (define bbox (· this font bbox))
@@ -132,7 +138,7 @@ For now, we'll just measure width of the characters.
                                  'Supplement 0)
                                 'FontDescriptor descriptor
                                 'W (list 0 (for/list ([idx (in-range (length (hash-keys (· this widths))))])
-                                             (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
+                                                     (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
 
   (· descendantFont end)
   #;(report (· descendantFont toString) 'descendantFont)
@@ -152,35 +158,39 @@ For now, we'll just measure width of the characters.
   (define cmap (· this document ref))
   (define entries
     (for/list ([idx (in-range (length (hash-keys (· this unicode))))])
-      (define codePoints (hash-ref (· this unicode) idx))
-      (define encoded ; encode codePoints to utf16
-        ;; todo: full utf16 support. for now just utf8
-        (for/list ([value (in-list codePoints)])
-          (toHex value)))
-      (format "<~a>" (string-join encoded " "))))
+              (define codePoints (hash-ref (· this unicode) idx))
+              (define encoded ; encode codePoints to utf16
+                ;; todo: full utf16 support. for now just utf8
+                (for/list ([value (in-list codePoints)])
+                          (toHex value)))
+              (format "<~a>" (string-join encoded " "))))
 
-  (send cmap end @string-append{
-                                         /CIDInit /ProcSet findresource begin
-                                         12 dict begin
-                                         begincmap
-                                         /CIDSystemInfo <<
-                                           /Registry (Adobe)
-                                           /Ordering (UCS)
-                                           /Supplement 0
-                                         >> def
-                                         /CMapName /Adobe-Identity-UCS def
-                                         /CMapType 2 def
-                                         1 begincodespacerange
-                                         <0000><ffff>
-                                         endcodespacerange
-                                         1 beginbfrange
-                                         <0000> <@(toHex (sub1 (length entries)))> [@(string-join entries " ")]
-                                         endbfrange
-                                         endcmap
-                                         CMapName currentdict /CMap defineresource pop
-                                         end
-                                         end
-                                         })
+  (define unicode-cmap-str #<<HERE
+/CIDInit /ProcSet findresource begin
+12 dict begin
+begincmap
+/CIDSystemInfo <<
+  /Registry (Adobe)
+  /Ordering (UCS)
+  /Supplement 0
+>> def
+/CMapName /Adobe-Identity-UCS def
+/CMapType 2 def
+1 begincodespacerange
+<0000><ffff>
+endcodespacerange
+1 beginbfrange
+<0000> <~a> [~a]
+endbfrange
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+HERE
+    )
+  
+  (send cmap end (format unicode-cmap-str (toHex (sub1 (length entries))) (string-join entries " ")))
+                                         
   #;(report (· cmap toString) 'cmap-id)
   cmap)
 
@@ -188,7 +198,7 @@ For now, we'll just measure width of the characters.
   (() () #:rest (listof number?) . ->*m . string?)
   (string-append*
    (for/list ([code (in-list codePoints)])
-     (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
+             (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
                  
 
 (module+ test

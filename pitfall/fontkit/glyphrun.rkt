@@ -1,6 +1,6 @@
 #lang fontkit/racket
 (require "bbox.rkt" "script.rkt")
-(provide GlyphRun)
+(provide (all-defined-out))
 
 ;; Represents a run of Glyph and GlyphPosition objects.
 ;; Returned by the font layout method.
