@@ -3,4 +3,5 @@
 (r+p "font.rkt"
      "glyph-position.rkt"
      "subset.rkt"
-     "bbox.rkt")
+     "bbox.rkt"
+     "tables.rkt")

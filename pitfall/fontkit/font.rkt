@@ -44,7 +44,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
   (define/public (_getTableStream tag)
     (define table (hash-ref (· this directory tables) tag))
-    (and table (send stream pos (· table offset)) stream))
+    (cond
+      [table
+       (send stream pos (· table offset))
+       stream]
+      [else #f]))
 
   (define/public (_decodeTable table-tag)
     (define table-decoder (hash-ref table-codecs table-tag

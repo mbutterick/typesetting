@@ -2,6 +2,36 @@
 (require restructure)
 (provide (all-defined-out))
 
+;;########################
+;; Scripts and Languages #
+;;########################
+
+(define LangSysTable (+Struct
+                      (dictify 'reserved uint16be
+                               'reqFeatureIndex uint16be
+                               'featureCount uint16be
+                               'featureIndexes (+Array uint16be 'featureCount))))
+
+(define LangSysRecord (+Struct
+                       (dictify 'tag (+String 4)
+                                'langSys (+Pointer uint16be LangSysTable (mhash 'type 'parent)))))
+
+(define Script (+Struct
+                (dictify 'defaultLangSys (+Pointer uint16be LangSysTable)
+                         'count uint16be
+                         'langSysRecords (+Array LangSysRecord 'count))))
+
+(define-subclass Struct (ScriptRecord-Struct))
+(define ScriptRecord (+ScriptRecord-Struct
+                      (dictify 'tag (+String 4)
+                               'script uint16be #;(+Pointer uint16be Script (mhash 'type 'parent)))))
+(define-subclass Array (ScriptRecordArray)
+  (define/override (decode stream ctx)
+    (define val (super decode stream ctx))
+    (report (· this _len))
+    val))
+(define ScriptList (+ScriptRecordArray ScriptRecord uint16be))
+
 (define LookupRecord (+Struct
                       (dictify
                        'sequenceIndex uint16be

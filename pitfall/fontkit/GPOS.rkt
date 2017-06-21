@@ -184,12 +184,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 ;; Fix circular reference
 ;; GPOSLookup.versions[9].extension.type = GPOSLookup;
 
-(define gpos-common-dict (dictify 'scriptList uint16be ; pointer
-                                  'featureList uint16be ; pointer
-                                  'lookupList uint16be)) ; pointer
+(define gpos-common-dict (dictify 'scriptList (+Pointer uint16be ScriptList) ; pointer
+                                  ;'featureList (+Pointer uint16be FeatureList) ; pointer
+                                  ;'lookupList (+Pointer uint16be (+LookupList GPOSLookup))
+                                  )) ; pointer
 
 (define-subclass VersionedStruct (GPOS-VersionedStruct))
 (define GPOS (+GPOS-VersionedStruct uint32be
                                (dictify
                                 #x00010000 gpos-common-dict
                                 #x00010001 (append gpos-common-dict (dictify 'featureVariations uint32be))))) ; pointer
+
+(test-module)

@@ -7,4 +7,5 @@
      "array.rkt"
      "bitfield.rkt"
      "stream.rkt"
-     "buffer.rkt")
+     "buffer.rkt"
+     "pointer.rkt")
