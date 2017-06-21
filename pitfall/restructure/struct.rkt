@@ -108,8 +108,8 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 (define-subclass Struct (VersionedStruct version-resolver [versions (dictify)])
   (unless ((disjoin integer? procedure? RestructureBase?) version-resolver)
     (raise-argument-error 'VersionedStruct "integer, function, or Restructure object" version-resolver))
-  (unless (and (dict? versions) (andmap dict? (map cdr versions)))
-    (raise-argument-error 'VersionedStruct "dict of dicts" versions))
+  (unless (and (dict? versions) (andmap (λ (val) (or (dict? val) (Struct? val))) (map cdr versions)))
+    (raise-argument-error 'VersionedStruct "dict of dicts or Structs" versions))
   (inherit-field fields key-index)
   (field [forced-version #f])
   

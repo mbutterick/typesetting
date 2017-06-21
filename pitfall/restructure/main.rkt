@@ -1,6 +1,7 @@
 #lang restructure/racket
 
-(r+p "number.rkt"
+(r+p "base.rkt"
+     "number.rkt"
      "struct.rkt"
      "string.rkt"
      "array.rkt"

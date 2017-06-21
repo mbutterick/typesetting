@@ -282,8 +282,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 
-(define/contract (openSync filename [postscriptName #f])
-  ((string?) ((option/c string?)) . ->* . TTFFont?)
+(define/contract (openSync str-or-path [postscriptName #f])
+  (((or/c path? string?)) ((option/c string?)) . ->* . TTFFont?)
+  (define filename (if (path? str-or-path) (path->string str-or-path) str-or-path))
   (define buffer (file->bytes filename))
   (create buffer filename postscriptName))
 
