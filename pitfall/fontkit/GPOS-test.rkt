@@ -5,14 +5,24 @@
 (define f (openSync fira-path))
 (define ds (send f _getTableStream 'GPOS))
 
+#|
 (file-position (· ds _port))
-(peek-bytes 4 0 (· ds _port)) ; version
-(peek-bytes 2 4 (· ds _port)) ; scriptList pointer
-(peek-bytes 2 10 (· ds _port)) ; number of Scriptrecords
+(send uint32be decode (peek-bytes 4 0 (· ds _port))) ; version
+(define ptr (send uint16be decode (peek-bytes 2 4 (· ds _port))))
+ptr ; scriptList pointer
+(send uint16be decode (peek-bytes 2 ptr (· ds _port))) ; number of Scriptrecords
 
-(send uint16be decode #"\0\n")
+(file-position (· ds _port) 0)
+(define offset 692)
+(send uint32be decode (peek-bytes 4 offset (· ds _port))) ; version
+(define ptr2 (send uint16be decode (peek-bytes 2 (+ 4 offset) (· ds _port))))
+ptr2 ; scriptList pointer
+(send uint16be decode (peek-bytes 2 (+ ptr2 offset) (· ds _port))) ; number of Scriptrecords
+|#
 
-(define h (send GPOS decode ds))
+(report 'start-decode)
+(define h (send GPOS decode (send f _getTableStream 'GPOS)))
+h
 
 
 

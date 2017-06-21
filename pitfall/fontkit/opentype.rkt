@@ -14,7 +14,7 @@
 
 (define LangSysRecord (+Struct
                        (dictify 'tag (+String 4)
-                                'langSys (+Pointer uint16be LangSysTable (mhash 'type 'parent)))))
+                                'langSys (+Pointer uint16be LangSysTable 'parent))))
 
 (define Script (+Struct
                 (dictify 'defaultLangSys (+Pointer uint16be LangSysTable)
@@ -24,13 +24,42 @@
 (define-subclass Struct (ScriptRecord-Struct))
 (define ScriptRecord (+ScriptRecord-Struct
                       (dictify 'tag (+String 4)
-                               'script uint16be #;(+Pointer uint16be Script (mhash 'type 'parent)))))
-(define-subclass Array (ScriptRecordArray)
-  (define/override (decode stream ctx)
-    (define val (super decode stream ctx))
-    (report (· this _len))
-    val))
-(define ScriptList (+ScriptRecordArray ScriptRecord uint16be))
+                               'script (+Pointer uint16be Script 'parent))))
+
+(define ScriptList (+Array ScriptRecord uint16be))
+
+;;#######################
+;; Features and Lookups #
+;;#######################
+
+
+(define Feature (+Struct (dictify
+                                'featureParams uint16be ; pointer
+                                'lookupCount uint16be
+                                'lookupListIndexes (+Array uint16be 'lookupCount))))
+
+(define FeatureRecord (+Struct (dictify
+                                'tag (+String 4)
+                                'feature (+Pointer uint16be Feature 'parent))))
+
+(define FeatureList (+Array FeatureRecord uint16be))
+
+(define LookupFlags (+Bitfield uint16be '(rightToLeft ignoreBaseGlyphs ignoreLigatures ignoreMarks useMarkFilteringSet #f markAttachmentType)))
+
+(define (LookupList SubTable)
+  (define Lookup (+Struct
+                  (dictify
+                   'lookupType uint16be
+                   'flags LookupFlags
+                   'subTableCount uint16be
+                   'subTables (+Array (+Pointer uint16be SubTable) 'subTableCount)
+                   'markFilteringSet uint16be))) ; TODO: only present when flags says so ...
+  (+LazyArray (+Pointer uint16be Lookup) uint16be))
+
+;;#############################################
+;; Contextual Substitution/Positioning Tables #
+;;#############################################
+
 
 (define LookupRecord (+Struct
                       (dictify
@@ -60,6 +89,10 @@
        'coverages (+Array uint16be 'glyphCount) ; pointer
        'lookupRecords (+Array LookupRecord 'lookupCount)))))
 
+
+;;######################################################
+;; Chaining Contextual Substitution/Positioning Tables #
+;;######################################################
 
 (define ChainingContext
   (+VersionedStruct

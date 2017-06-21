@@ -8,7 +8,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
 (define-subclass Streamcoder (Array type [_length #f] [lengthType 'count])
-  (field [_len #f])
           
   (define/augride (decode stream [parent #f])
     (let ([len (cond
@@ -20,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                   (unless (andmap (λ (x) (and x (number? x))) (list num denom))
                     (raise-argument-error 'Array:decode "valid length and size" (list num denom)))
                   (floor (/ (send stream length) (send type size)))])])
-    (set! _len len)
+    
       (caseq lengthType
              [(count) (for/list ([i (in-range len)])
                         (send type decode stream this))])))

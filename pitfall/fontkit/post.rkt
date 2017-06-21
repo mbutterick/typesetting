@@ -45,7 +45,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
  (check-equal? offset 41520)
  (check-equal? len 514)
  (define ds (+DecodeStream (peek-bytes len offset ip)))
- (define version (send fixed32be decode ds))
+ (define version (send fixed32be decode ds)) ; version = 2
  (send post force-version! version)
  (define table-data (send post decode ds))
  (check-equal? (· table-data underlineThickness) 58)

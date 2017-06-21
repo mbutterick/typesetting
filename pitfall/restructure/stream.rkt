@@ -113,8 +113,7 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
 ;; Streamcoder is a helper class that checks / converts stream arguments before decode / encode
 ;; not a subclass of DecodeStream or EncodeStream, however.
 (define-subclass RestructureBase (Streamcoder)
-  
-  (define/overment (decode x . args)
+  (define/augment (decode x . args)
     (define stream (if (bytes? x) (+DecodeStream x) x))
     (unless (DecodeStream? stream)
       (raise-argument-error 'Streamcoder:decode "bytes or DecodeStream" x))
@@ -132,7 +131,7 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
 
 (test-module
  (define-subclass Streamcoder (Dummy)
-   (define/augment (decode stream) "foo")
+   (define/augment (decode stream . args) "foo")
    (define/augment (encode stream val) "bar")
    (define/override (size) 42))
 

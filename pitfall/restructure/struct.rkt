@@ -8,6 +8,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
 (define-subclass Streamcoder (Struct [assocs (dictify)])
+  (field [res #f])
+  
   (unless (assocs? assocs)
     (raise-argument-error 'Struct "assocs" assocs))
   (field [key-index #f] ; store the original key order
@@ -30,9 +32,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (update-fields! assocs)
   
   (define/augride (decode stream [parent #f] [length 0])
-    (define res (_setup stream parent length))
-    (_parseFields stream res fields)
-    #;(hash-set! (hash-ref res '_props) '_currentOffset (· stream pos))
+    (set! res (_setup stream parent length))
+    (_parseFields stream fields)
     (send this process res stream)
     res)
 
@@ -54,23 +55,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
           (send struct-type encode stream value-to-encode)))
 
   (define/public-final (_setup stream parent length)
-    (define res (mhasheq))
+    (mhasheq))
 
-    ;; define hidden properties
-    #;(hash-set! res '_props
-                 (mhasheq 'parent (mhasheq 'value parent)
-                          '_startOffset (mhasheq 'value (· stream pos))
-                          '_currentOffset (mhasheq 'value 0 'writable #t)
-                          '_length (mhasheq 'value length)))
-    res)
-
-  (define/public-final (_parseFields stream res fields)
+  (define/public-final (_parseFields stream fields)
     (for ([key (in-list key-index)])         
          (define dictvalue (dict-ref fields key))
          (define val
            (if (procedure? dictvalue)
                (dictvalue res)
-               (send dictvalue decode stream res)))
+               (send dictvalue decode stream this)))
          (hash-set! res key val)))
 
   (define/override (size [val (mhash)] [parent #f] [includePointers #t])
@@ -106,6 +99,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
 (define-subclass Struct (VersionedStruct version-resolver [versions (dictify)])
+  (inherit-field res)
   (unless ((disjoin integer? procedure? RestructureBase?) version-resolver)
     (raise-argument-error 'VersionedStruct "integer, function, or Restructure object" version-resolver))
   (unless (and (dict? versions) (andmap (λ (val) (or (dict? val) (Struct? val))) (map cdr versions)))
@@ -117,7 +111,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (set! forced-version version))
   
   (define/override (decode stream [parent #f] [length 0])
-    (define res (send this _setup stream parent length))
+    (set! res (send this _setup stream parent length))
     (define version (cond
                       [forced-version] ; for testing purposes: pass an explicit version
                       [(integer? version-resolver) version-resolver] 
@@ -130,7 +124,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (cond
       [(VersionedStruct? fields) (send fields decode stream parent)]
       [else
-       (send this _parseFields stream res fields)
+       (send this _parseFields stream fields)
        (send this process res stream)
        res]))
 
@@ -157,3 +151,4 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define bs (apply bytes (for/list ([i (in-range struct-size)])
                                         (random 256))))
       (check-equal? (send vs encode #f (send vs decode bs)) bs)))
+

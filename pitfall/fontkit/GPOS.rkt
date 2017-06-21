@@ -42,7 +42,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
     (send (buildStruct ctx) size val ctx))
 
   
-  (define/override (decode stream parent)
+  (define/augride (decode stream parent)
     (define res (send (buildStruct parent) decode stream parent))
     (hash-remove! res 'rel)
     res)
@@ -185,8 +185,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 ;; GPOSLookup.versions[9].extension.type = GPOSLookup;
 
 (define gpos-common-dict (dictify 'scriptList (+Pointer uint16be ScriptList) ; pointer
-                                  ;'featureList (+Pointer uint16be FeatureList) ; pointer
-                                  ;'lookupList (+Pointer uint16be (+LookupList GPOSLookup))
+                                  'featureList (+Pointer uint16be FeatureList) ; pointer
+                                  ;'lookupList (+Pointer uint16be (LookupList GPOSLookup))
                                   )) ; pointer
 
 (define-subclass VersionedStruct (GPOS-VersionedStruct))
