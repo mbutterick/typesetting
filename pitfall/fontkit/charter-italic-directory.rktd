@@ -9,7 +9,6 @@
    ()
    (tag u . "\u0000\u0001\u0000\u0000")
    (rangeShift . 96)
-   (data)
    (searchRange . 128)
    (numTables . 14)
    (tables

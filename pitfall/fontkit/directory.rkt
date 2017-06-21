@@ -61,20 +61,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                 'entrySelector (floor (/ searchRange (log 2)))
                 'rangeShift (- (* numTables 16) searchRange)
                 'data table-datas)))
-      
 
-(define Directory (+RDirectory
-                   (dictify 'tag (+String 4)
-                            'numTables uint16be
-                            'searchRange uint16be
-                            'entrySelector uint16be
-                            'rangeShift uint16be
-                            'tables (+Array TableEntry 'numTables)
+(define directory-common-dict (dictify 'tag (+String 4)
+                                       'numTables uint16be
+                                       'searchRange uint16be
+                                       'entrySelector uint16be
+                                       'rangeShift uint16be
+                                       'tables (+Array TableEntry 'numTables)))
+
+(define Directory (+RDirectory directory-common-dict))
                             
-                            ;; we don't know what tables we might get
-                            ;; so we represent as generic Buffer type,
-                            ;; and convert the tables to bytes manually in preEncode
-                            'data (+Array (+Buffer)))))
+;; we don't know what tables we might get
+;; so we represent as generic Buffer type,
+;; and convert the tables to bytes manually in preEncode
+(define EncodableDirectory (+RDirectory (append directory-common-dict (list (cons 'data (+Array (+Buffer)))))))
 
 (define (directory-decode ip [options (mhash)])
   (send Directory decode (+DecodeStream (port->bytes ip))))
@@ -85,6 +85,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (test-module
  (define ip (open-input-file charter-path))
  (define decoded-dir (deserialize (read (open-input-file charter-directory-path))))
- (check-equal? (directory-decode ip) decoded-dir)
- 
- )
+ (check-equal? (directory-decode ip) decoded-dir))
