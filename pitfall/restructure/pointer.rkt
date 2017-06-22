@@ -32,8 +32,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 
   (define/override (size [val #f] [ctx #f])
     
-    (report* this offsetType type)
-    (report (send type size)))
+    (report* this offsetType type (send type size)))
 
   
 

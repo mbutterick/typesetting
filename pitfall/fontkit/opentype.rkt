@@ -34,9 +34,9 @@
 
 
 (define Feature (+Struct (dictify
-                                'featureParams uint16be ; pointer
-                                'lookupCount uint16be
-                                'lookupListIndexes (+Array uint16be 'lookupCount))))
+                          'featureParams uint16be ; pointer
+                          'lookupCount uint16be
+                          'lookupListIndexes (+Array uint16be 'lookupCount))))
 
 (define FeatureRecord (+Struct (dictify
                                 'tag (+String 4)
@@ -47,14 +47,16 @@
 (define LookupFlags (+Bitfield uint16be '(rightToLeft ignoreBaseGlyphs ignoreLigatures ignoreMarks useMarkFilteringSet #f markAttachmentType)))
 
 (define (LookupList SubTable)
-  (define Lookup (+Struct
-                  (dictify
-                   'lookupType uint16be
-                   'flags LookupFlags
-                   'subTableCount uint16be
-                   'subTables (+Array (+Pointer uint16be SubTable) 'subTableCount)
-                   'markFilteringSet uint16be))) ; TODO: only present when flags says so ...
-  (+LazyArray (+Pointer uint16be Lookup) uint16be))
+  (+Array ; originally LazyArray
+   (+Pointer uint16be (+Struct
+                       (dictify
+                        'lookupType uint16be
+                        'flags LookupFlags
+                        'subTableCount uint16be
+                        ;; 'subTables (+Array (+Pointer uint16be SubTable) 'subTableCount)
+                        'subTables (+Array uint16be 'subTableCount)
+                        'markFilteringSet uint16be)))
+   uint16be))
 
 ;;#############################################
 ;; Contextual Substitution/Positioning Tables #

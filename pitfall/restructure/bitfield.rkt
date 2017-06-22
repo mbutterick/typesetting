@@ -12,7 +12,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
   (define/augment (decode stream . args)
     (for*/fold ([flag-hash (mhash)])
                ([val (in-value (send type decode stream))]
-                [(flag i) (in-indexed flags)])
+                [(flag i) (in-indexed flags)]
+                #:when flag)
       (hash-set! flag-hash flag (bitwise-bit-set? val i))
       flag-hash))
 
@@ -20,20 +21,20 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 
   (define/augment (encode stream flag-hash)
     (define bitfield-int (for/sum ([(flag i) (in-indexed flags)]
-                                   #:when (hash-ref flag-hash flag))
+                                   #:when (and flag (hash-ref flag-hash flag)))
                            (expt 2 i)))
     (send type encode stream bitfield-int)))
 
 
 (test-module
  (require "number.rkt" "stream.rkt")
- (define bfer (+Bitfield uint16be '(bold italic underline outline shadow condensed extended)))
+ (define bfer (+Bitfield uint16be '(bold italic underline #f shadow condensed extended)))
  (define bf (send bfer decode (+DecodeStream #"\0\25")))
+ (check-equal? (length (hash-keys bf)) 6) ; omits #f flag
  (check-true (hash-ref bf 'bold))
  (check-true (hash-ref bf 'underline))
  (check-true (hash-ref bf 'shadow))
  (check-false (hash-ref bf 'italic))
- (check-false (hash-ref bf 'outline))
  (check-false (hash-ref bf 'condensed))
  (check-false (hash-ref bf 'extended))
 

@@ -100,7 +100,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 (define-subclass VersionedStruct (GPOSLookup-VersionedStruct))
 (define GPOSLookup
   (+GPOSLookup-VersionedStruct
-   (λ (parent) (· parent lookupType))
+   'lookupType
    (dictify
     ;; Single Adjustment
     1 (+VersionedStruct uint16be
@@ -186,7 +186,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 
 (define gpos-common-dict (dictify 'scriptList (+Pointer uint16be ScriptList) ; pointer
                                   'featureList (+Pointer uint16be FeatureList) ; pointer
-                                  ;'lookupList (+Pointer uint16be (LookupList GPOSLookup))
+                                  'lookupList (+Pointer uint16be (LookupList GPOSLookup))
                                   )) ; pointer
 
 (define-subclass VersionedStruct (GPOS-VersionedStruct))

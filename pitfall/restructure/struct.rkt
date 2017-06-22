@@ -66,9 +66,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                (send dictvalue decode stream this)))
          (hash-set! res key val)))
 
-  (define/override (size [val (mhash)] [parent #f] [includePointers #t])
+  (define/overment (size [input-hash (mhash)] [parent #f] [includePointers #t])
+    (inner (void) size input-hash parent includePointers)
     (for/sum ([(key type) (in-hash fields)])
-             (send type size (hash-ref val key #f)))))
+             (define val (hash-ref input-hash key #f))
+             (define args (if val (list val) empty))
+             (send type size . args))))
 
 
 (test-module
@@ -100,8 +103,8 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
 (define-subclass Struct (VersionedStruct version-resolver [versions (dictify)])
   (inherit-field res)
-  (unless ((disjoin integer? procedure? RestructureBase?) version-resolver)
-    (raise-argument-error 'VersionedStruct "integer, function, or Restructure object" version-resolver))
+  (unless ((disjoin integer? procedure? RestructureBase? symbol?) version-resolver)
+    (raise-argument-error 'VersionedStruct "integer, function, symbol, or Restructure object" version-resolver))
   (unless (and (dict? versions) (andmap (λ (val) (or (dict? val) (Struct? val))) (map cdr versions)))
     (raise-argument-error 'VersionedStruct "dict of dicts or Structs" versions))
   (inherit-field fields key-index)
@@ -109,15 +112,19 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
   
   (define/public-final (force-version! version)
     (set! forced-version version))
+
+  (define/public (resolve-version [stream #f] [parent #f])
+    (cond
+      [forced-version] ; for testing purposes: pass an explicit version
+      [(integer? version-resolver) version-resolver]
+      [(symbol? version-resolver) (hash-ref (· parent res) version-resolver)]
+      [(and (procedure? version-resolver) (positive? (procedure-arity version-resolver))) (version-resolver parent)]
+      [(RestructureBase? version-resolver) (send version-resolver decode stream)]
+      [else (raise-argument-error 'VersionedStruct:resolve-version "way of finding version" version-resolver)]))
   
   (define/override (decode stream [parent #f] [length 0])
     (set! res (send this _setup stream parent length))
-    (define version (cond
-                      [forced-version] ; for testing purposes: pass an explicit version
-                      [(integer? version-resolver) version-resolver] 
-                      [(procedure? version-resolver) (version-resolver parent)]
-                      [(RestructureBase? version-resolver) (send version-resolver decode stream)]
-                      [else (raise-argument-error 'VersionedStruct:decode "way of finding version" version-resolver)]))
+    (define version (resolve-version stream parent))
     (hash-set! res 'version version)
     (define assocs (dict-ref versions version (λ () (raise-argument-error 'VersionedStruct:decode "valid version key" version))))
     (send this update-fields! assocs)
@@ -130,6 +137,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
   (define/augment (encode stream input-hash [parent #f])
     (define assocs (dict-ref versions (· input-hash version) (λ () (raise-argument-error 'VersionedStruct:encode "valid version key" version))))
+    (send this update-fields! assocs))
+  
+
+  (define/augment (size [val (mhash)] [parent #f] [includePointers #t])
+    (define version (resolve-version #f parent))
+    (define assocs (dict-ref versions version (λ () (raise-argument-error 'VersionedStruct:size "valid version key" version))))
     (send this update-fields! assocs)))
 
 (test-module
@@ -150,5 +163,11 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                                    (send num-type size)))
       (define bs (apply bytes (for/list ([i (in-range struct-size)])
                                         (random 256))))
-      (check-equal? (send vs encode #f (send vs decode bs)) bs)))
+      (check-equal? (send vs encode #f (send vs decode bs)) bs))
+
+ (define s (+Struct (dictify 'a uint8 'b uint8 'c uint8)))
+ (check-equal? (send s size) 3)
+ (define vs (+VersionedStruct (λ (p) 2) (dictify 1 (dictify 'd s) 2 (dictify 'e s 'f s))))
+ (check-equal? (send vs size) 6))
+
 
