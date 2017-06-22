@@ -100,7 +100,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 (define-subclass VersionedStruct (GPOSLookup-VersionedStruct))
 (define GPOSLookup
   (+GPOSLookup-VersionedStruct
-   (λ (parent) (or (· parent parent res lookupType)
+   (λ (parent) (or (· parent parent res )
                    (raise-argument-error 'GPOSLookup "parent object" #f)))
    (dictify
     ;; Single Adjustment
