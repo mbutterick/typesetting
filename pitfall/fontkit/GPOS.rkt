@@ -24,7 +24,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 
   (define/public (buildStruct parent)
     (define struct parent)
-    (while (and (not (hash-ref struct (· this key))) (hash-ref struct parent))
+    (while (and (not (· struct (· this key))) (· struct parent))
            (hash-set! struct (hash-ref struct parent)))
 
     (cond
@@ -100,7 +100,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 (define-subclass VersionedStruct (GPOSLookup-VersionedStruct))
 (define GPOSLookup
   (+GPOSLookup-VersionedStruct
-   (λ (parent) (or (· parent parent res )
+   (λ (parent) (or (· parent parent res lookupType)
                    (raise-argument-error 'GPOSLookup "parent object" #f)))
    (dictify
     ;; Single Adjustment
@@ -108,7 +108,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
                         (dictify
                          ;; Single positioning value
                          1 (dictify
-                            'coverage uint16be ; pointer
+                            'coverage (+Pointer uint16be Coverage)
                             'valueFormat ValueFormat
                             'value (+ValueRecord))
                          2 (dictify

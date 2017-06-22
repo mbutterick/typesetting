@@ -42,6 +42,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (unless (assocs? fields)
       (raise-argument-error '_parseFields "assocs" fields))
     (for ([(key type) (in-dict fields)])
+      (report* key type)
          (define val
            (if (procedure? type)
                (type res)

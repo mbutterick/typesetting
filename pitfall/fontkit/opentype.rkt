@@ -52,10 +52,33 @@
                    'lookupType uint16be
                    'flags LookupFlags
                    'subTableCount uint16be
-                   'subTables (+Array (+Pointer uint16be SubTable) 'subTableCount)
-                   ;'subTables (+Array uint16be 'subTableCount)
+                   'subTables (+Array (+Pointer uint16be SubTable 'parent) 'subTableCount)
                    'markFilteringSet uint16be)))
   (+Array (+Pointer uint16be Lookup) uint16be))
+
+
+;;#################
+;; Coverage Table #
+;;#################
+
+(define RangeRecord
+  (+Struct
+   (dictify
+    'start              uint16be
+    'end                uint16be
+    'startCoverageIndex uint16be)))
+
+(define Coverage
+  (+VersionedStruct uint16be
+                    (dictify
+                     1 (dictify
+                        'glyphCount   uint16be
+                        'glyphs      (+Array uint16be 'glyphCount))
+
+                     2 (dictify
+                        'rangeCount   uint16be
+                        'rangeRecords (+Array RangeRecord 'rangeCount)))))
+
 
 ;;#############################################
 ;; Contextual Substitution/Positioning Tables #
