@@ -7,29 +7,39 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
-(define-subclass Streamcoder (Array type [_length #f] [lengthType 'count])
+(define-subclass Streamcoder (Array type [length_ #f] [lengthType 'count])
           
   (define/augride (decode stream [parent #f])
-    (let ([len (cond
-                 ;; explicit length
-                 [_length (resolveLength _length stream parent)]
-                 [else  ;; implicit length: length of stream divided by size of item
-                  (define num (send stream length))
-                  (define denom (send type size))
-                  (unless (andmap (λ (x) (and x (number? x))) (list num denom))
-                    (raise-argument-error 'Array:decode "valid length and size" (list num denom)))
-                  (floor (/ (send stream length) (send type size)))])])
+    (define pos (· stream pos))
+    (define ctx parent)
+    (define len (cond
+                  ;; explicit length
+                  [length_ (resolveLength length_ stream parent)]
+                  [else  ;; implicit length: length of stream divided by size of item
+                   (define num (send stream length))
+                   (define denom (send type size))
+                   (unless (andmap (λ (x) (and x (number? x))) (list num denom))
+                     (raise-argument-error 'Array:decode "valid length and size" (list num denom)))
+                   (floor (/ (send stream length) (send type size)))]))
+    (report* length_ (Number? length_))
+    (when (Number? length_)
+      (set-field! parent ctx parent)
+      (set-field! _startOffset ctx pos)
+      (set-field! _currentOffset ctx 0)
+      (set-field! _length ctx length_))
     
-      (caseq lengthType
-             [(count) (for/list ([i (in-range len)])
-                        (send type decode stream this))])))
+    (define res (caseq lengthType
+                       [(bytes) (error 'array-decode-bytes-no!)]
+                       [(count) (for/list ([i (in-range len)])
+                                  (send type decode stream ctx))]))
+    res)
 
   (define/override (size [array #f])
     (when (and array (not (list? array)))
       (raise-argument-error 'Array:size "list" array))
     (cond
-      [(not array) (* (send type size) (resolveLength _length (+DecodeStream) #f))]
-      [(Number? _length) (send _length size)]
+      [(not array) (* (send type size) (resolveLength length_ (+DecodeStream) #f))]
+      [(Number? length_) (send length_ size)]
       [else (* (send type size) (length array))]))
 
   (define/augride (encode stream array [parent #f])
@@ -56,7 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 |#
 
 (define-subclass object% (InnerLazyArray type [_length #f] [stream #f] [parent #f])
-  (field [base (· stream pos)]
+  (field [base (and stream (· stream pos))]
          [items (mhash)]) ; implement with hash (random add) rather than array
 
   (define/public-final (get index)
@@ -74,11 +84,13 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
       (get i))))
 
 (define-subclass Array (LazyArray)
-  (inherit-field _length type)
+  (inherit-field length_ type)
   (define/override (decode stream [parent #f])
-    (define len (resolveLength _length stream parent))
+    (define len (resolveLength length_ stream parent))
     (define res (+InnerLazyArray type len stream parent))
-    (send stream pos (+ (· stream pos) (* len (send type size)))) ; skip the bytes that LazyArray would occupy
+    (define lazy-space (* len (send type size)))
+    (report lazy-space)
+    (send stream pos (+ (· stream pos) lazy-space)) ; skip the bytes that LazyArray would occupy
     res)
 
   (define/override (size [val #f])

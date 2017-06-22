@@ -52,7 +52,7 @@
                    'lookupType uint16be
                    'flags LookupFlags
                    'subTableCount uint16be
-                   'subTables (+Array (+Pointer uint16be SubTable 'parent) 'subTableCount)
+                   'subTables (+Array (+Pointer uint16be SubTable) 'subTableCount)
                    'markFilteringSet uint16be)))
   (+Array (+Pointer uint16be Lookup) uint16be))
 

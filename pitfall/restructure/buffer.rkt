@@ -7,9 +7,9 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 |#
 
-(define-subclass RestructureBase (Buffer [_length #xffff])
+(define-subclass RestructureBase (Buffer [length_ #xffff])
   (define/augride (decode stream [parent #f])
-    (define len (resolveLength _length stream parent))
+    (define len (resolveLength length_ stream parent))
     (send stream readBuffer len))
 
   (define/override (size [val #f] [parent #f])
@@ -17,11 +17,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
                 (raise-argument-error 'Buffer:size "bytes" val)))
     (if val
         (bytes-length val)
-        (resolveLength _length val parent)))
+        (resolveLength length_ val parent)))
 
   (define/override (encode stream buf [parent #f])
-    (when (Number? _length)
-      (send _length encode stream (bytes-length buf)))
+    (when (Number? length_)
+      (send length_ encode stream (bytes-length buf)))
     (send stream writeBuffer buf)))
 
 (define (bytes->Buffer bstr)

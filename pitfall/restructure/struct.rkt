@@ -32,7 +32,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (cond
       [(dict? fields)
        (for* ([(key type) (in-dict fields)])
-             (send type encode stream (hash-ref input-hash key)))]
+         (send type encode stream (hash-ref input-hash key)))]
       [else (send fields encode stream input-hash parent)]))
 
   (define/public-final (_setup stream parent length)
@@ -42,18 +42,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (unless (assocs? fields)
       (raise-argument-error '_parseFields "assocs" fields))
     (for ([(key type) (in-dict fields)])
-      (report* key type)
-         (define val
-           (if (procedure? type)
-               (type res)
-               (send type decode stream this)))
-         (hash-set! res key val)))
+      (report key)
+      (define val
+        (if (procedure? type)
+            (type res)
+            (send type decode stream this)))
+      (hash-set! res key val)))
 
   (define/override (size [input-hash (mhash)] [parent #f] [includePointers #t])
     (for/sum ([(key type) (in-dict fields)])
-             (define val (hash-ref input-hash key #f))
-             (define args (if val (list val) empty))
-             (send type size . args))))
+      (define val (hash-ref input-hash key #f))
+      (define args (if val (list val) empty))
+      (send type size . args))))
 
 
 (test-module
@@ -63,17 +63,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
  ;; make random structs and make sure we can round trip
  (for ([i (in-range 10)])
-      (define field-types (for/list ([i (in-range 20)])
-                                    (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-      (define size-num-types (for/sum ([num-type (in-list field-types)])
-                                      (send num-type size)))
-      (define s (+Struct (for/list ([num-type (in-list field-types)])
-                                   (cons (gensym) num-type))))
-      (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                                        (random 256))))
-      (define es (+EncodeStream))
-      (send s encode es (send s decode bs))
-      (check-equal? (send es dump) bs)))
+   (define field-types (for/list ([i (in-range 20)])
+                         (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+   (define size-num-types (for/sum ([num-type (in-list field-types)])
+                            (send num-type size)))
+   (define s (+Struct (for/list ([num-type (in-list field-types)])
+                        (cons (gensym) num-type))))
+   (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                             (random 256))))
+   (define es (+EncodeStream))
+   (send s encode es (send s decode bs))
+   (check-equal? (send es dump) bs)))
                    
  
 
@@ -99,7 +99,14 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (cond
       [forced-version] ; for testing purposes: pass an explicit version
       [(integer? type) type]
-      [(symbol? type) (hash-ref (· parent res version-resolver))]
+      [(symbol? type)
+       ;; find the first Struct in the chain of ancestors
+       ;; with the target key
+       (let loop ([x parent])
+         (cond
+           [(and x (Struct? x) (dict-ref (· x res) type #f))]
+           [(· x parent) => loop]
+           [else #f]))]
       [(and (procedure? type) (positive? (procedure-arity type))) (type parent)]
       [(RestructureBase? type) (send type decode stream)]
       [else (raise-argument-error 'VersionedStruct:resolve-version "way of finding version" type)]))
@@ -130,7 +137,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (cond
       [(dict? fields)
        (for* ([(key type) (in-dict fields)])
-             (send type encode stream (hash-ref input-hash key)))]
+         (send type encode stream (hash-ref input-hash key)))]
       [else (send fields encode stream input-hash parent)]))
 
   
@@ -142,9 +149,9 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (cond
       [(dict? fields)
        (for/sum ([(key type) (in-dict fields)])
-                (define val (hash-ref input-hash key #f))
-                (define args (if val (list val) empty))
-                (send type size . args))]
+         (define val (hash-ref input-hash key #f))
+         (define args (if val (list val) empty))
+         (send type size . args))]
       [else (send fields size input-hash parent includePointers)])))
 
 (test-module
@@ -153,19 +160,19 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
  ;; make random versioned structs and make sure we can round trip
  (for ([i (in-range 20)])
-      (define field-types (for/list ([i (in-range 200)])
-                                    (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-      (define num-versions 20)
-      (define which-struct (random num-versions))
-      (define struct-versions (for/list ([v (in-range num-versions)])
-                                        (cons v (for/list ([num-type (in-list field-types)])
-                                                          (cons (gensym) num-type)))))
-      (define vs (+VersionedStruct which-struct struct-versions))
-      (define struct-size (for/sum ([num-type (in-list (map cdr (dict-ref struct-versions which-struct)))])
-                                   (send num-type size)))
-      (define bs (apply bytes (for/list ([i (in-range struct-size)])
-                                        (random 256))))
-      (check-equal? (send vs encode #f (send vs decode bs)) bs))
+   (define field-types (for/list ([i (in-range 200)])
+                         (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+   (define num-versions 20)
+   (define which-struct (random num-versions))
+   (define struct-versions (for/list ([v (in-range num-versions)])
+                             (cons v (for/list ([num-type (in-list field-types)])
+                                       (cons (gensym) num-type)))))
+   (define vs (+VersionedStruct which-struct struct-versions))
+   (define struct-size (for/sum ([num-type (in-list (map cdr (dict-ref struct-versions which-struct)))])
+                         (send num-type size)))
+   (define bs (apply bytes (for/list ([i (in-range struct-size)])
+                             (random 256))))
+   (check-equal? (send vs encode #f (send vs decode bs)) bs))
 
  (define s (+Struct (dictify 'a uint8 'b uint8 'c uint8)))
  (check-equal? (send s size) 3)

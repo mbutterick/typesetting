@@ -13,6 +13,7 @@
      racket/string
      racket/format
      racket/contract
+     racket/dict
      racket/list
      racket/port
      racket/function

@@ -20,35 +20,29 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
    'xAdvDevice uint16be ;; pointer
    'yAdvDevice uint16be)) ;; pointer
 
-(require racket/dict)
-
 (define-subclass RestructureBase (ValueRecord [key 'valueFormat])
-
   (define/public (buildStruct parent)
-    (define struct parent)
-    (report parent)
-    (while (and (not (with-handlers ([exn:fail:object? (λ (exn) #f)])
-                      (get-field key struct))) (· struct parent))
-           (set! struct (· struct parent)))
-
-    (cond
-      [(report (with-handlers ([exn:fail:object? (λ (exn) #f)])
-                      (get-field key struct))) (void)]
-      [else (report (get-field key struct))
-            (define fields empty)
-            (set! fields (dictify 'rel (λ () (hash-ref struct (error '_startOffset-not-available)))))
-            (define format (get-field key struct))
-            
-(report* format fields)
-            (for ([key (in-list format)])
-                 (when (dict-ref format key)
-                   (set! fields (append fields (list (cons key (dict-ref types key)))))))
-            (+Struct fields)]))
+    ;; set `struct` to the first Struct object in the chain of ancestors
+    ;; with the target key
+    (define struct (let loop ([x parent])
+                     (cond
+                       [(and x (Struct? x) (dict-ref (· x res) key #f)) x]
+                       [(· x parent) => loop]
+                       [else #f])))
+    (and struct
+         (let ()
+           (define format (dict-ref (· struct res) key))
+           (define fields
+             (append
+              (dictify 'rel (λ _ (report (get-field _startOffset struct))))
+              (for/list ([(key val) (in-dict format)]
+                         #:when val)
+                (cons key (dict-ref types key)))))
+           (+Struct fields))))
 
   (define/override (size val ctx)
     (send (buildStruct ctx) size val ctx))
 
-  
   (define/augride (decode stream parent)
     (define res (send (buildStruct parent) decode stream parent))
     (hash-remove! res 'rel)
@@ -107,8 +101,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 (define-subclass VersionedStruct (GPOSLookup-VersionedStruct))
 (define GPOSLookup
   (+GPOSLookup-VersionedStruct
-   (λ (parent) (or (· parent parent res lookupType)
-                   (raise-argument-error 'GPOSLookup "parent object" #f)))
+   'lookupType
    (dictify
     ;; Single Adjustment
     1 (+VersionedStruct uint16be
@@ -194,7 +187,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 
 (define gpos-common-dict (dictify 'scriptList (+Pointer uint16be ScriptList)
                                   'featureList (+Pointer uint16be FeatureList)
-                                  'lookupList (+Pointer uint16be (LookupList GPOSLookup))))
+                                  'lookupList (+Pointer uint16be (LookupList GPOSLookup))
+                                  ))
 
 (define-subclass VersionedStruct (GPOS-VersionedStruct))
 (define GPOS (+GPOS-VersionedStruct uint32be
