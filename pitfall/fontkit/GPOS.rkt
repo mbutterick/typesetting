@@ -100,7 +100,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 (define-subclass VersionedStruct (GPOSLookup-VersionedStruct))
 (define GPOSLookup
   (+GPOSLookup-VersionedStruct
-   'lookupType
+   (λ (parent) (or (· parent parent res lookupType)
+                   (raise-argument-error 'GPOSLookup "parent object" #f)))
    (dictify
     ;; Single Adjustment
     1 (+VersionedStruct uint16be
@@ -184,15 +185,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 ;; Fix circular reference
 ;; GPOSLookup.versions[9].extension.type = GPOSLookup;
 
-(define gpos-common-dict (dictify 'scriptList (+Pointer uint16be ScriptList) ; pointer
-                                  'featureList (+Pointer uint16be FeatureList) ; pointer
-                                  'lookupList (+Pointer uint16be (LookupList GPOSLookup))
-                                  )) ; pointer
+(define gpos-common-dict (dictify 'scriptList (+Pointer uint16be ScriptList)
+                                  'featureList (+Pointer uint16be FeatureList)
+                                  'lookupList (+Pointer uint16be (LookupList GPOSLookup))))
 
 (define-subclass VersionedStruct (GPOS-VersionedStruct))
 (define GPOS (+GPOS-VersionedStruct uint32be
-                               (dictify
-                                #x00010000 gpos-common-dict
-                                #x00010001 (append gpos-common-dict (dictify 'featureVariations uint32be))))) ; pointer
+                                    (dictify
+                                     #x00010000 gpos-common-dict
+                                     ;; ignore variations
+                                     #;#x00010001 #;(append gpos-common-dict (dictify 'featureVariations (+Pointer uint32be FeatureVariations))))))
 
 (test-module)

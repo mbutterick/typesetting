@@ -10,7 +10,6 @@
     (define/pubment (decode stream . args)
       (set! starting-offset (and (object? stream) (send stream pos)))
       (set! parent (and (pair? args) (is-a? (car args) RestructureBase) (car args)))
-      #;(report* starting-offset parent (and parent (get-field starting-offset parent)))
       (inner (void) decode stream . args))
     (abstract encode)
     (abstract size)

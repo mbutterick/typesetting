@@ -47,16 +47,15 @@
 (define LookupFlags (+Bitfield uint16be '(rightToLeft ignoreBaseGlyphs ignoreLigatures ignoreMarks useMarkFilteringSet #f markAttachmentType)))
 
 (define (LookupList SubTable)
-  (+Array ; originally LazyArray
-   (+Pointer uint16be (+Struct
-                       (dictify
-                        'lookupType uint16be
-                        'flags LookupFlags
-                        'subTableCount uint16be
-                        ;; 'subTables (+Array (+Pointer uint16be SubTable) 'subTableCount)
-                        'subTables (+Array uint16be 'subTableCount)
-                        'markFilteringSet uint16be)))
-   uint16be))
+  (define Lookup (+Struct
+                  (dictify
+                   'lookupType uint16be
+                   'flags LookupFlags
+                   'subTableCount uint16be
+                   'subTables (+Array (+Pointer uint16be SubTable) 'subTableCount)
+                   ;'subTables (+Array uint16be 'subTableCount)
+                   'markFilteringSet uint16be)))
+  (+Array (+Pointer uint16be Lookup) uint16be))
 
 ;;#############################################
 ;; Contextual Substitution/Positioning Tables #

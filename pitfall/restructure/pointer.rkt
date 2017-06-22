@@ -12,12 +12,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                               [else (raise-argument-error 'Pointer "local or parent" scope)]))
 
   (define/augride (decode stream ctx)
-    #;(report* (· this starting-offset) (· this parent starting-offset))
     (define offset (send offsetType decode stream ctx))
     (define ptr (+ offset (caseq scope
                                  [(local) (· this parent starting-offset)]
                                  [(parent) (· this parent parent starting-offset)])))
-    #;(report* offset ptr)
     (cond
       [type (define orig-pos (send stream pos))
             (send stream pos ptr)
