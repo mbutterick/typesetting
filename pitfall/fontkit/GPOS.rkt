@@ -20,22 +20,29 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
    'xAdvDevice uint16be ;; pointer
    'yAdvDevice uint16be)) ;; pointer
 
+(require racket/dict)
+
 (define-subclass RestructureBase (ValueRecord [key 'valueFormat])
 
   (define/public (buildStruct parent)
     (define struct parent)
-    (while (and (not (· struct (· this key))) (· struct parent))
-           (hash-set! struct (hash-ref struct parent)))
+    (report parent)
+    (while (and (not (with-handlers ([exn:fail:object? (λ (exn) #f)])
+                      (get-field key struct))) (· struct parent))
+           (set! struct (· struct parent)))
 
     (cond
-      [(not (hash-ref struct (· this key))) (void)]
-      [else (define fields (mhash))
-            (hash-set! fields 'rel (λ () (hash-ref struct (error '_startOffset-not-available))))
-
-            (define format (hash-ref struct (· this key)))
+      [(report (with-handlers ([exn:fail:object? (λ (exn) #f)])
+                      (get-field key struct))) (void)]
+      [else (report (get-field key struct))
+            (define fields empty)
+            (set! fields (dictify 'rel (λ () (hash-ref struct (error '_startOffset-not-available)))))
+            (define format (get-field key struct))
+            
+(report* format fields)
             (for ([key (in-list format)])
-                 (when (hash-ref format key)
-                   (hash-set! fields key (hash-ref types key))))
+                 (when (dict-ref format key)
+                   (set! fields (append fields (list (cons key (dict-ref types key)))))))
             (+Struct fields)]))
 
   (define/override (size val ctx)
