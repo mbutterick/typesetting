@@ -6,25 +6,31 @@
 ;; Scripts and Languages #
 ;;########################
 
+(define-subclass Array (FeatIdxArray))
+
 (define LangSysTable (+Struct
                       (dictify 'reserved uint16be
                                'reqFeatureIndex uint16be
                                'featureCount uint16be
-                               'featureIndexes (+Array uint16be 'featureCount))))
+                               'featureIndexes (+FeatIdxArray uint16be 'featureCount))))
 
+(define-subclass Pointer (LSR-Pointer))
 (define LangSysRecord (+Struct
                        (dictify 'tag (+String 4)
-                                'langSys (+Pointer uint16be LangSysTable 'parent))))
+                                'langSys (+LSR-Pointer uint16be LangSysTable 'parent))))
 
+(define-subclass Pointer (DLS-Pointer))
+(define-subclass Array (DLS-Array))
 (define Script (+Struct
-                (dictify 'defaultLangSys (+Pointer uint16be LangSysTable)
+                (dictify 'defaultLangSys (+DLS-Pointer uint16be LangSysTable)
                          'count uint16be
-                         'langSysRecords (+Array LangSysRecord 'count))))
+                         'langSysRecords (+DLS-Array LangSysRecord 'count))))
 
 (define-subclass Struct (ScriptRecord-Struct))
+(define-subclass Pointer (ScriptRecord-Pointer))
 (define ScriptRecord (+ScriptRecord-Struct
                       (dictify 'tag (+String 4)
-                               'script (+Pointer uint16be Script 'parent))))
+                               'script (+ScriptRecord-Pointer uint16be Script 'parent))))
 
 (define ScriptList (+Array ScriptRecord uint16be))
 
@@ -38,9 +44,11 @@
                           'lookupCount uint16be
                           'lookupListIndexes (+Array uint16be 'lookupCount))))
 
-(define FeatureRecord (+Struct (dictify
+(define-subclass Struct (FeatureRec))
+(define-subclass Pointer (FeatureRec-Pointer))
+(define FeatureRecord (+FeatureRec (dictify
                                 'tag (+String 4)
-                                'feature (+Pointer uint16be Feature 'parent))))
+                                'feature (+FeatureRec-Pointer uint16be Feature 'parent))))
 
 (define FeatureList (+Array FeatureRecord uint16be))
 

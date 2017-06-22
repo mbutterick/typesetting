@@ -9,10 +9,10 @@
            [_currentOffset #f]
            [_length #f]
            [parent #f])
-    (define/pubment (decode stream . args)
+    (define/public (decode stream . args)
       (set! _startOffset (and (object? stream) (send stream pos)))
       (set! parent (and (pair? args) (is-a? (car args) RestructureBase) (car args)))
-      (inner (void) decode stream . args))
+      #;(inner (void) decode stream . args))
     (define/public (encode . xs) (void))
     (define/public (size . xs) (void))
     (define/public (process . args) (void))

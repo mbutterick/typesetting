@@ -21,7 +21,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                    (unless (andmap (λ (x) (and x (number? x))) (list num denom))
                      (raise-argument-error 'Array:decode "valid length and size" (list num denom)))
                    (floor (/ (send stream length) (send type size)))]))
-    (report* length_ (Number? length_))
+    
     (when (Number? length_)
       (set-field! parent ctx parent)
       (set-field! _startOffset ctx pos)

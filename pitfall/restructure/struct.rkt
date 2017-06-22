@@ -36,7 +36,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       [else (send fields encode stream input-hash parent)]))
 
   (define/public-final (_setup stream parent length)
-    (mhasheq))
+    (define res (mhasheq))
+    (hash-set*! res 'parent parent
+                '_startOffset (· stream pos)
+                '_currentOffset 0
+                '_length length)
+    res)
 
   (define/public-final (_parseFields stream res fields)
     (unless (assocs? fields)
@@ -113,12 +118,14 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
   
   (define/override (decode stream [parent #f] [length 0])
     (set! res (send this _setup stream parent length))
+    (report res 'versioned-struct-res)
     (define version (resolve-version stream parent))
     (hash-set! res 'version version)
     (define fields (dict-ref versions version (λ () (raise-argument-error 'VersionedStruct:decode "valid version key" (cons version (· this versions))))))
     (cond
       [(VersionedStruct? fields) (send fields decode stream parent)]
       [else
+       (report res 'whatigot)
        (send this _parseFields stream res fields)
        (send this process res stream)
        res]))

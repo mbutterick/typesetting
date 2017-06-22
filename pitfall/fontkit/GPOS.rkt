@@ -20,7 +20,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
    'xAdvDevice uint16be ;; pointer
    'yAdvDevice uint16be)) ;; pointer
 
-(define-subclass RestructureBase (ValueRecord [key 'valueFormat])
+(define-subclass object% (ValueRecord [key 'valueFormat])
   (define/public (buildStruct parent)
     ;; set `struct` to the first Struct object in the chain of ancestors
     ;; with the target key
@@ -40,15 +40,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
                 (cons key (dict-ref types key)))))
            (+Struct fields))))
 
-  (define/override (size val ctx)
+  (define/public (size val ctx)
     (send (buildStruct ctx) size val ctx))
 
-  (define/augride (decode stream parent)
+  (define/public (decode stream parent)
     (define res (send (buildStruct parent) decode stream parent))
     (hash-remove! res 'rel)
     res)
 
-  (define/override (encode . args)
+  (define/public (encode . args)
     (error 'GPOS-encode-not-implemented)))
 
 (define PairValueRecord (+Struct
@@ -190,8 +190,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
                                   'lookupList (+Pointer uint16be (LookupList GPOSLookup))
                                   ))
 
-(define-subclass VersionedStruct (GPOS-VersionedStruct))
-(define GPOS (+GPOS-VersionedStruct uint32be
+(define-subclass VersionedStruct (GPOS-MainVersionedStruct))
+(define GPOS (+GPOS-MainVersionedStruct uint32be
                                     (dictify
                                      #x00010000 gpos-common-dict
                                      ;; ignore variations

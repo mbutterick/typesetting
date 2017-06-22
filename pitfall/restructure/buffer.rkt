@@ -8,7 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 |#
 
 (define-subclass RestructureBase (Buffer [length_ #xffff])
-  (define/augride (decode stream [parent #f])
+  (define/override (decode stream [parent #f])
     (define len (resolveLength length_ stream parent))
     (send stream readBuffer len))
 
