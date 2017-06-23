@@ -338,8 +338,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 
 ;; modified test: `int24` is the same endianness as the platform
 (check-equal? (send int24 decode (bytes 0 1 2)) (send (if (system-big-endian?)
-                                                       int24be
-                                                        int24le) decode (bytes 0 1 2)))
+                                                          int24be
+                                                          int24le) decode (bytes 0 1 2)))
 
 
 ;
@@ -405,8 +405,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 
 ;; modified test: `int32` is the same endianness as the platform
 (check-equal? (send int32 decode (bytes 0 1 2 3)) (send (if (system-big-endian?)
-                                                       int32be
-                                                        int32le) decode (bytes 0 1 2 3)))
+                                                            int32be
+                                                            int32le) decode (bytes 0 1 2 3)))
 
 
 
@@ -471,9 +471,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 
 ;; modified test: `float` is the same endianness as the platform
 (check-equal? (send float decode (bytes 0 1 2 3)) (send (if (system-big-endian?)
-                                                       floatbe
-                                                        floatle) decode (bytes 0 1 2 3)))
-
+                                                            floatbe
+                                                            floatle) decode (bytes 0 1 2 3)))
 
 ;
 ;  describe 'floatbe', ->

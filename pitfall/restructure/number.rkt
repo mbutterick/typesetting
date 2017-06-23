@@ -43,7 +43,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
           (values (- signed-min signed-min) (- signed-max signed-min)))))
 
   (define (unsigned->signed uint)
-    (define most-significant-bit-mask (arithmetic-shift 1  (sub1 bits)))
+    (define most-significant-bit-mask (arithmetic-shift 1 (sub1 bits)))
     (- (bitwise-xor uint most-significant-bit-mask) most-significant-bit-mask))
 
   (define (signed->unsigned sint)
@@ -78,12 +78,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define/override (encode stream val)
     (super encode stream (floor (* val _point)))))
 
-(define fixed16 (+Fixed 16))
-(define fixed16be (+Fixed 16 'be))
-(define fixed16le (+Fixed 16 'le))
-(define fixed32 (+Fixed 32))
-(define fixed32be (+Fixed 32 'be))
-(define fixed32le (+Fixed 32 'le))
+
+(define-macro (define-subclass+provide ID (BASE-CLASS . ARGS))
+  (with-pattern ([ID-CLASS (prefix-id #'BASE-CLASS ":" #'ID)])
+    #'(define+provide ID (let ([ID-CLASS (class BASE-CLASS (super-new))])
+                           (make-object ID-CLASS . ARGS)))))
+
+(define-subclass+provide fixed16 (Fixed 16))
+(define-subclass+provide fixed16be (Fixed 16 'be))
+(define-subclass+provide fixed16le (Fixed 16 'le))
+(define-subclass+provide fixed32 (Fixed 32))
+(define-subclass+provide fixed32be (Fixed 32 'be))
+(define-subclass+provide fixed32le (Fixed 32 'le))
 
 
 (test-module
@@ -125,7 +131,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-equal? (send (+Number 'uint32) size) 4)
  (check-equal? (send (+Number 'double) size) 8))
 
-
 ;; use keys of type-sizes hash to generate corresponding number definitions
 (define-macro (make-int-types)
   (with-pattern ([((ID BASE ENDIAN) ...) (for/list ([k (in-hash-keys type-sizes)])
@@ -138,10 +143,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                                                       (if (positive? (string-length suffix))
                                                           suffix
                                                           (if (system-big-endian?) "be" "le")))))]
-                 [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)]
-                 [(ID-CLASS ...) (prefix-id "Number:" #'(ID ...))])
-    #'(begin (define+provide ID (let ([ID-CLASS (class Number (super-new))])
-                                  (make-object ID-CLASS 'BASE 'ENDIAN))) ...)))
+                 [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)])
+    #'(begin (define-subclass+provide ID (Number 'BASE 'ENDIAN)) ...)))
                                                             
 (make-int-types)
 
