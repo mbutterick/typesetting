@@ -52,7 +52,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
         (if (procedure? type)
             (type res)
             (send type decode stream this)))
-      (hash-set! res key val)))
+      (hash-set! res key val)
+      (hash-set! res '_currentOffset (- (· stream pos) (· res _startOffset)))))
 
   (define/override (size [input-hash (mhash)] [parent #f] [includePointers #t])
     (for/sum ([(key type) (in-dict fields)])

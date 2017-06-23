@@ -17,7 +17,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     (define offset (send offsetType decode stream ctx))
     (report scope 'pointer-scope)
     (define relative (caseq scope
-                            [(local) (or (· ctx res _startOffset) (· ctx _startOffset))]
+                            [(local) (when (and (· ctx res _startOffset) (· ctx _startOffset)
+                                                (not (= (· ctx res _startOffset) (· ctx _startOffset))))
+                                       (report* ctx (· ctx res _startOffset) (· ctx _startOffset))
+                                       (error 'bazongas))
+                                     (· ctx _startOffset)]
                             [(parent) (· ctx parent _startOffset)]
                             [(immediate) (- (· stream pos) (send offsetType size))]
                             [(global) 
