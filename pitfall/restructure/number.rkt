@@ -19,7 +19,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-true (signed-type? 'int16)))
 
 (define-subclass Streamcoder (Number [type 'uint16] [endian (if (system-big-endian?) 'be 'le)])
-  
   (getter-field [number-type (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
   (define _signed? (signed-type? type))
 
@@ -49,17 +48,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define (signed->unsigned sint)
     (bitwise-and sint (arithmetic-shift 1 bits)))
 
-  (define/augride (decode stream . args)
+  (define/augment (decode stream . args)
     (define bstr (send stream read _size))
     (define system-endian (if (system-big-endian?) 'be 'le))
     (define bs ((if (eq? endian system-endian) identity reverse) (bytes->list bstr)))
     (define unsigned-int (for/sum ([(b i) (in-indexed bs)])
                            (arithmetic-shift b (* 8 i))))
-    ((if _signed? unsigned->signed identity) unsigned-int))
+    (inner ((if _signed? unsigned->signed identity) unsigned-int) decode unsigned-int))
 
-  (define/augride (encode stream val-in)
-    (define val ((if (integer? val-in) inexact->exact identity) val-in))
-    ;; todo: better bounds checking
+  (define/augment (encode stream val-in)
+    (define val (let ([val-in (inner val-in encode val-in)])
+                  ((if (integer? val-in) inexact->exact identity) val-in)))
     (unless (<= bound-min val bound-max)
       (raise-argument-error 'Number:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
     (define-values (bs _) (for/fold ([bs empty] [n val])
@@ -67,29 +66,44 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                             (values (cons (bitwise-and n #xff) bs) (arithmetic-shift n -8))))
     (send stream write (apply bytes ((if (eq? endian 'be) identity reverse) bs)))))
 
+
+(define-subclass Streamcoder (Float _size [endian (if (system-big-endian?) 'be 'le)])
+  
+  (define/augment (decode stream . args) ;  convert int to float
+    (floating-point-bytes->real (send stream read (/ _size 8)) (eq? endian 'be)))
+
+  (define/augment (encode stream val-in) ; convert float to int
+    (define bs (bytes->list (real->floating-point-bytes val-in (/ _size 8) (eq? endian 'be))))
+    (send stream write (apply bytes bs)))
+
+  (define/override (size) (/ _size 8)))
+
+(define-instance float (make-object Float 32))
+(define-instance floatbe (make-object Float 32 'be))
+(define-instance floatle (make-object Float 32 'le))
+
+(define-instance double (make-object Float 64))
+(define-instance doublebe (make-object Float 64 'be))
+(define-instance doublele (make-object Float 64 'le))
+
+
 (define-subclass* Number (Fixed size [fixed-endian (if (system-big-endian?) 'be 'le)] [fracBits (floor (/ size 2))])
   (super-make-object (string->symbol (format "int~a" size)) fixed-endian)
-  (field [_point (expt 2 fracBits)])
+  (define _point (arithmetic-shift 1 fracBits))
 
-  (define/override (decode stream . args)
-    (define result (/ (super decode stream args) _point 1.0))
+  (define/augment (decode int)
+    (define result  (/ int _point 1.0))
     (if (integer? result) (inexact->exact result) result))
 
-  (define/override (encode stream val)
-    (super encode stream (floor (* val _point)))))
+  (define/augment (encode fixed)
+    (floor (* fixed _point))))
 
-
-(define-macro (define-subclass+provide ID (BASE-CLASS . ARGS))
-  (with-pattern ([ID-CLASS (prefix-id #'BASE-CLASS ":" #'ID)])
-    #'(define+provide ID (let ([ID-CLASS (class BASE-CLASS (super-new))])
-                           (make-object ID-CLASS . ARGS)))))
-
-(define-subclass+provide fixed16 (Fixed 16))
-(define-subclass+provide fixed16be (Fixed 16 'be))
-(define-subclass+provide fixed16le (Fixed 16 'le))
-(define-subclass+provide fixed32 (Fixed 32))
-(define-subclass+provide fixed32be (Fixed 32 'be))
-(define-subclass+provide fixed32le (Fixed 32 'le))
+(define-instance fixed16 (make-object Fixed 16))
+(define-instance fixed16be (make-object Fixed 16 'be))
+(define-instance fixed16le (make-object Fixed 16 'le))
+(define-instance fixed32 (make-object Fixed 32))
+(define-instance fixed32be (make-object Fixed 32 'be))
+(define-instance fixed32le (make-object Fixed 32 'le))
 
 
 (test-module
@@ -133,8 +147,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 ;; use keys of type-sizes hash to generate corresponding number definitions
 (define-macro (make-int-types)
-  (with-pattern ([((ID BASE ENDIAN) ...) (for/list ([k (in-hash-keys type-sizes)])
-                                           (define kstr (format "~a" k))
+  (with-pattern ([((ID BASE ENDIAN) ...) (for*/list ([k (in-hash-keys type-sizes)]
+                                                     [kstr (in-value (format "~a" k))]
+                                                     #:unless (regexp-match #rx"^(float|double)" kstr))
                                            (match-define (list* prefix suffix _)
                                              (regexp-split #rx"(?=[bl]e|$)" kstr))
                                            (map string->symbol
@@ -144,7 +159,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                                                           suffix
                                                           (if (system-big-endian?) "be" "le")))))]
                  [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)])
-    #'(begin (define-subclass+provide ID (Number 'BASE 'ENDIAN)) ...)))
+    #'(begin (define-instance ID (make-object Number 'BASE 'ENDIAN)) ...)))
                                                             
 (make-int-types)
 
@@ -154,19 +169,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-equal? (send uint32 size) 4)
  (check-equal? (send double size) 8)
 
- (define es (+EncodeStream))
- (send fixed16be encode es 123.45)
- (check-equal? (send es dump) #"{s")
- (define ds (+DecodeStream (send es dump)))
- #;(check-equal? (ceiling (* (send fixed16be decode ds) 100)) 12345.0)
+ (define bs (send fixed16be encode #f 123.45))
+ (check-equal? bs #"{s")
+ (check-equal? (ceiling (* (send fixed16be decode bs) 100)) 12345.0)
 
  (check-equal? (send int8 decode (bytes 127)) 127)
  (check-equal? (send int8 decode (bytes 255)) -1)
 
  (check-equal? (send int8 encode #f -1) (bytes 255))
- (check-equal? (send int8 encode #f 127) (bytes 127))
-
-
- )
-
-
+ (check-equal? (send int8 encode #f 127) (bytes 127)))

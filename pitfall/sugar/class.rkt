@@ -28,6 +28,11 @@
   #'(begin (as-method ID) ...))
 
 
+(define-macro (define-instance ID (MAKER BASE-CLASS . ARGS))
+  (with-pattern ([ID-CLASS (prefix-id #'BASE-CLASS ":" #'ID)])
+    #'(define ID (let ([ID-CLASS (class BASE-CLASS (super-new))])
+                           (MAKER ID-CLASS . ARGS)))))
+
 (define-macro (define-subclass SUPERCLASS (ID . INIT-ARGS) . BODY)
   #'(define-subclass* SUPERCLASS (ID . INIT-ARGS) (super-new) . BODY))
 
