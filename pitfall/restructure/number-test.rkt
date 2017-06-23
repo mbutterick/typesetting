@@ -436,7 +436,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      floatbe.encode(stream, 250.55)
 ;      stream.end()
 
-(check-true (< (abs (- (send floatbe decode (+DecodeStream (bytes #x43 #x7a #x8c #xcd))) 250.55)) 0.01))
+(check-= (send floatbe decode (+DecodeStream (bytes #x43 #x7a #x8c #xcd))) 250.55 0.01)
 (check-equal? (send floatbe size) 4)
 (check-equal? (send floatbe encode #f 250.55) (bytes #x43 #x7a #x8c #xcd))
 
@@ -459,7 +459,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      stream.end()
 
 
-(check-true (< (abs (- (send floatle decode (+DecodeStream (bytes #xcd #x8c #x7a #x43))) 250.55)) 0.01))
+(check-= (send floatle decode (+DecodeStream (bytes #xcd #x8c #x7a #x43))) 250.55 0.01)
 (check-equal? (send floatle size) 4)
 (check-equal? (send floatle encode #f 250.55) (bytes #xcd #x8c #x7a #x43))
 
@@ -545,7 +545,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      fixed16be.encode(stream, 25.34)
 ;      stream.end()
 
-(check-true (< (abs (- (send fixed16be decode (+DecodeStream (bytes #x19 #x57))) 25.34)) 0.01))
+(check-= (send fixed16be decode (+DecodeStream (bytes #x19 #x57))) 25.34 0.01)
 (check-equal? (send fixed16be size) 2)
 (check-equal? (send fixed16be encode #f 25.34) (bytes #x19 #x57))
 
@@ -567,7 +567,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      fixed16le.encode(stream, 25.34)
 ;      stream.end()
 
-(check-true (< (abs (- (send fixed16le decode (+DecodeStream (bytes #x57 #x19))) 25.34)) 0.01))
+(check-= (send fixed16le decode (+DecodeStream (bytes #x57 #x19))) 25.34 0.01)
 (check-equal? (send fixed16le size) 2)
 (check-equal? (send fixed16le encode #f 25.34) (bytes #x57 #x19))
 
@@ -599,7 +599,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      fixed32be.encode(stream, 250.55)
 ;      stream.end()
 
-(check-true (< (abs (- (send fixed32be decode (+DecodeStream (bytes #x00 #xfa #x8c #xcc))) 250.55)) 0.01))
+(check-= (send fixed32be decode (+DecodeStream (bytes #x00 #xfa #x8c #xcc))) 250.55 0.01)
 (check-equal? (send fixed32be size) 4)
 (check-equal? (send fixed32be encode #f 250.55) (bytes #x00 #xfa #x8c #xcc))
 
@@ -621,6 +621,6 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      fixed32le.encode(stream, 250.55)
 ;      stream.end()
 
-(check-true (< (abs (- (send fixed32le decode (+DecodeStream (bytes #xcc #x8c #xfa #x00))) 250.55)) 0.01))
+(check-= (send fixed32le decode (+DecodeStream (bytes #xcc #x8c #xfa #x00))) 250.55 0.01)
 (check-equal? (send fixed32le size) 4)
 (check-equal? (send fixed32le encode #f 250.55) (bytes #xcc #x8c #xfa #x00))
