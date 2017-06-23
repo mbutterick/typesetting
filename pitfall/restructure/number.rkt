@@ -18,7 +18,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-false (signed-type? 'uint16))
  (check-true (signed-type? 'int16)))
 
-(define-subclass Streamcoder (Number [type 'uint16] [endian (if (system-big-endian?) 'be 'le)])
+(define (exact-if-possible x) (if (integer? x) (inexact->exact x) x))
+(define system-endian (if (system-big-endian?) 'be 'le))
+
+(define-subclass Streamcoder (Integer [type 'uint16] [endian system-endian])
   (getter-field [number-type (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
   (define _signed? (signed-type? type))
 
@@ -36,10 +39,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define-values (bound-min bound-max)
     ;; if a signed integer has n bits, it can contain a number between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
     (let* ([signed-max (sub1 (arithmetic-shift 1 (sub1 bits)))]
-           [signed-min (sub1 (- signed-max))])
-      (if _signed?
-          (values signed-min signed-max)
-          (values (- signed-min signed-min) (- signed-max signed-min)))))
+           [signed-min (sub1 (- signed-max))]
+           [delta (if _signed? 0 signed-min)])
+      (values (- signed-min delta) (- signed-max delta))))
 
   (define (unsigned->signed uint)
     (define most-significant-bit-mask (arithmetic-shift 1 (sub1 bits)))
@@ -50,33 +52,41 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
   (define/augment (decode stream . args)
     (define bstr (send stream read _size))
-    (define system-endian (if (system-big-endian?) 'be 'le))
     (define bs ((if (eq? endian system-endian) identity reverse) (bytes->list bstr)))
     (define unsigned-int (for/sum ([(b i) (in-indexed bs)])
                            (arithmetic-shift b (* 8 i))))
-    (inner ((if _signed? unsigned->signed identity) unsigned-int) decode unsigned-int))
+    (post-decode unsigned-int))
+
+  (define/public (post-decode unsigned-int)
+    ((if _signed? unsigned->signed identity) unsigned-int))
+
+  (define/public (pre-encode val-in)
+    (exact-if-possible val-in))
 
   (define/augment (encode stream val-in)
-    (define val (let ([val-in (inner val-in encode val-in)])
-                  ((if (integer? val-in) inexact->exact identity) val-in)))
+    (define val (pre-encode val-in))
     (unless (<= bound-min val bound-max)
       (raise-argument-error 'Number:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
     (define-values (bs _) (for/fold ([bs empty] [n val])
                                     ([i (in-range _size)])
                             (values (cons (bitwise-and n #xff) bs) (arithmetic-shift n -8))))
-    (send stream write (apply bytes ((if (eq? endian 'be) identity reverse) bs)))))
+    (define bstr (apply bytes ((if (eq? endian 'be) identity reverse) bs)))
+    (send stream write bstr)))
 
+(define-subclass Integer (Number))
 
-(define-subclass Streamcoder (Float _size [endian (if (system-big-endian?) 'be 'le)])
+(define-subclass Streamcoder (Float _size [endian system-endian])
+  (define byte-size (/ _size 8))
   
   (define/augment (decode stream . args) ;  convert int to float
-    (floating-point-bytes->real (send stream read (/ _size 8)) (eq? endian 'be)))
+    (define bs (send stream read byte-size))
+    (floating-point-bytes->real bs (eq? endian 'be)))
 
   (define/augment (encode stream val-in) ; convert float to int
-    (define bs (bytes->list (real->floating-point-bytes val-in (/ _size 8) (eq? endian 'be))))
-    (send stream write (apply bytes bs)))
+    (define bs (real->floating-point-bytes val-in byte-size (eq? endian 'be)))
+    (send stream write bs))
 
-  (define/override (size) (/ _size 8)))
+  (define/override (size) byte-size))
 
 (define-instance float (make-object Float 32))
 (define-instance floatbe (make-object Float 32 'be))
@@ -87,16 +97,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define-instance doublele (make-object Float 64 'le))
 
 
-(define-subclass* Number (Fixed size [fixed-endian (if (system-big-endian?) 'be 'le)] [fracBits (floor (/ size 2))])
+(define-subclass* Integer (Fixed size [fixed-endian system-endian] [fracBits (floor (/ size 2))])
   (super-make-object (string->symbol (format "int~a" size)) fixed-endian)
   (define _point (arithmetic-shift 1 fracBits))
 
-  (define/augment (decode int)
-    (define result  (/ int _point 1.0))
-    (if (integer? result) (inexact->exact result) result))
+  (define/override (post-decode int)
+    (exact-if-possible (/ int _point 1.0)))
 
-  (define/augment (encode fixed)
-    (floor (* fixed _point))))
+  (define/override (pre-encode fixed)
+    (exact-if-possible (floor (* fixed _point)))))
 
 (define-instance fixed16 (make-object Fixed 16))
 (define-instance fixed16be (make-object Fixed 16 'be))
@@ -107,7 +116,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 
 (test-module
- (check-exn exn:fail:contract? (λ () (+Number 'not-a-valid-type)))
+ (check-exn exn:fail:contract? (λ () (+Integer 'not-a-valid-type)))
  (check-exn exn:fail:contract? (λ () (send uint8 encode (+EncodeStream) 256)))
  (check-not-exn (λ () (send uint8 encode (+EncodeStream) 255)))
  (check-exn exn:fail:contract? (λ () (send int8 encode (+EncodeStream) 256)))
@@ -118,7 +127,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-exn exn:fail:contract? (λ () (send uint16 encode (+EncodeStream) (add1 #xffff))))
  (check-not-exn (λ () (send uint16 encode (+EncodeStream) #xffff)))
  
- (let ([o (+Number 'uint16 'le)]
+ (let ([o (+Integer 'uint16 'le)]
        [ip (+DecodeStream (bytes 1 2 3 4))]
        [op (open-output-bytes)])
    (check-equal? (send o decode ip) 513) ;; 1000 0000  0100 0000
@@ -128,7 +137,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
    (send o encode op 1027)
    (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
 
- (let ([o (+Number 'uint16 'be)]
+ (let ([o (+Integer 'uint16 'be)]
        [ip (+DecodeStream (bytes 1 2 3 4))]
        [op (open-output-bytes)])
    (check-equal? (send o decode ip) 258) ;; 0100 0000 1000 0000 
@@ -140,6 +149,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 
 (test-module
+ (check-equal? (send (+Integer 'uint8) size) 1)
+ (check-equal? (send (+Integer) size) 2)
+ (check-equal? (send (+Integer 'uint32) size) 4)
+ (check-equal? (send (+Integer 'double) size) 8)
+
  (check-equal? (send (+Number 'uint8) size) 1)
  (check-equal? (send (+Number) size) 2)
  (check-equal? (send (+Number 'uint32) size) 4)
@@ -159,7 +173,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                                                           suffix
                                                           (if (system-big-endian?) "be" "le")))))]
                  [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)])
-    #'(begin (define-instance ID (make-object Number 'BASE 'ENDIAN)) ...)))
+    #'(begin (define-instance ID (make-object Integer 'BASE 'ENDIAN)) ...)))
                                                             
 (make-int-types)
 
