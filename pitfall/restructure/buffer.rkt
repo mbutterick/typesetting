@@ -9,10 +9,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 
 #|
 A Buffer is a container object for any data object that supports random access
+A Node Buffer object is basically a byte string.
+First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.
+A Restructure RBuffer object is separate.
 |#
 
+(define (+Buffer xs [type #f])
+  (cond
+    [(string? xs) (string->bytes/utf-8 xs)]
+    [else (list->bytes xs)]))
 
-(define-subclass RestructureBase (Buffer [length_ #xffff])
+
+(define-subclass RestructureBase (RBuffer [length_ #xffff])
   
   (define/override (decode stream [parent #f])
     (define length__ (utils-resolveLength length_ stream parent))
@@ -33,7 +41,6 @@ A Buffer is a container object for any data object that supports random access
       (send stream writeBuffer buf))))
 
 
-(define-subclass Buffer (BufferT))
 
 
 #;(test-module

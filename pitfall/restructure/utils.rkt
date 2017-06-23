@@ -2,10 +2,12 @@
 (provide (all-defined-out))
 (require "number.rkt")
 
-(define (resolveLength len stream parent)
-  (cond
-    [(number? len) len]
-    [(procedure? len) (len parent)]
-    [(and parent (symbol? len) (hash-ref (· parent res) len))] ; treat as key into RStruct parent
-    [(and stream (Number? len) (send len decode stream))]
-    [else (raise-argument-error 'resolveLength "not a fixed size" len)]))
+(define (resolveLength length [stream #f] [parent #f])
+  (define res
+    (cond
+    [(number? length) length]
+    [(procedure? length) (length parent)]
+    [(and parent (symbol? length)) (*ref parent length)] ; treat as key into RStruct parent
+    [(and stream (Number? length)) (send length decode stream)]
+    [else (raise-argument-error 'resolveLength "fixed-size argument" length)]))
+  res)

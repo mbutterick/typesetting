@@ -74,7 +74,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 ;; we don't know what tables we might get
 ;; so we represent as generic Buffer type,
 ;; and convert the tables to bytes manually in preEncode
-(define EncodableDirectory (+RDirectory (append directory-common-dict (list (cons 'data (+Array (+Buffer)))))))
+(define EncodableDirectory (+RDirectory (append directory-common-dict (list (cons 'data (+Array (+RBuffer)))))))
 
 (define (directory-decode ip [options (mhash)])
   (send Directory decode (+DecodeStream (port->bytes ip))))

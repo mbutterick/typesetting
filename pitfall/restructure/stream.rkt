@@ -39,23 +39,23 @@ https://github.com/mbutterick/restructure/blob/master/src/EncodeStream.coffee
   (define/public-final (writeBuffer buffer)
     (write buffer)))
 
-(test-module
- (define es (+EncodeStream))
- (check-true (EncodeStream? es))
- (send es write #"AB")
- (check-equal? (· es pos) 2)
- (send es write #"C")
- (check-equal? (· es pos) 3)
- (send es write #"D")
- (check-equal? (· es pos) 4)
- (check-exn exn:fail? (λ () (send es write -42)))
- (check-exn exn:fail? (λ () (send es write 1)))
- (define op (open-output-bytes))
- (define es2 (+EncodeStream op))
- (send es2 write #"FOOBAR")
- (check-equal? (send es2 dump) #"FOOBAR")
- (check-equal? (send es2 dump) #"FOOBAR") ; dump can repeat
- (check-equal? (get-output-bytes op) #"FOOBAR"))
+#;(test-module
+   (define es (+EncodeStream))
+   (check-true (EncodeStream? es))
+   (send es write #"AB")
+   (check-equal? (· es pos) 2)
+   (send es write #"C")
+   (check-equal? (· es pos) 3)
+   (send es write #"D")
+   (check-equal? (· es pos) 4)
+   (check-exn exn:fail? (λ () (send es write -42)))
+   (check-exn exn:fail? (λ () (send es write 1)))
+   (define op (open-output-bytes))
+   (define es2 (+EncodeStream op))
+   (send es2 write #"FOOBAR")
+   (check-equal? (send es2 dump) #"FOOBAR")
+   (check-equal? (send es2 dump) #"FOOBAR") ; dump can repeat
+   (check-equal? (get-output-bytes op) #"FOOBAR"))
 
 
 #| approximates
@@ -64,47 +64,71 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
 
 ;; basically just a wrapper for a Racket port
 ;; but needs to start with a buffer so length can be found
-(define-subclass* PortWrapper (DecodeStream [buffer #""])
-  (unless (bytes? buffer)
-    (raise-argument-error 'DecodeStream:constructor "bytes" buffer))
 
+(require "sizes.rkt")
+(define-macro (define-reader ID)
+  #'(define/public (ID)
+      (define bs (*ref type-sizes (string->symbol (string-downcase (string-replace (symbol->string 'ID) "read" "")))))
+      (readBuffer bs)))
+
+(define-subclass* PortWrapper (DecodeStream [buffer #""])
+  (unless (bytes? buffer) ; corresponds to a Node Buffer, not a restructure BufferT object
+    (raise-argument-error 'DecodeStream:constructor "bytes" buffer))
   (super-make-object (open-input-bytes buffer))
   (inherit-field _port)
-  
-  (getter-field [length (bytes-length buffer)])
 
-  (define/override-final (dump)
-    (define current-position (port-position _port))
-    (set-port-position! _port 0)
-    (define bs (port->bytes _port))
-    (set-port-position! _port current-position)
-    bs)
+  (field [pos 0]
+         [length (*length buffer)])
 
-  (define/public-final (readUInt8) (read 1))
-  (define/public-final (readInt8) (read 1))
+  (define/public (readString length [encoding 'ascii])
+    (define proc (caseq encoding
+                        [(utf16le) (error 'bah)]
+                        [(ucs2) (error 'bleh)]
+                        [(utf8) bytes->string/utf-8]
+                        [(ascii) bytes->string/latin-1]
+                        [else identity]))
+    (proc (subbytes buffer pos (increment-field! pos this length))))
 
-  (define/public-final (read count)
+  (define/public-final (readBuffer count)
     (unless (index? count)
       (raise-argument-error 'DecodeStream:read "positive integer" count))
     (define bytes-remaining (- length (port-position _port)))
     (when (> count bytes-remaining)
       (raise-argument-error 'DecodeStream:read (format "byte count not more than bytes remaining = ~a" bytes-remaining) count))
-    (read-bytes count _port))
+    (increment-field! pos this count)
+    (define bs (read-bytes count _port))
+    (unless (= pos (file-position _port)) (raise-result-error 'DecodeStream "positions askew" (list pos (file-position _port))))
+    bs)
 
-  (define/public-final (readBuffer count)
-    (read count)))
+  (define/public (read count) (readBuffer count))
+
+  (define/public (readUInt8) (bytes-ref (readBuffer 1) 0))
+  (define/public (readUInt16BE) (+ (arithmetic-shift (readUInt8) 8) (readUInt8)))
+  (define/public (readInt16BE) (unsigned->signed (readUInt16BE) 16))
+  (define/public (readUInt16LE) (+ (readUInt8) (arithmetic-shift (readUInt8) 8)))
+  (define/public (readUInt24BE) (+ (arithmetic-shift (readUInt16BE) 8) (readUInt8)))
+  (define/public (readUInt24LE) (+ (readUInt16LE) (arithmetic-shift (readUInt8) 16)))
+  (define/public (readInt24BE) (unsigned->signed (readUInt24BE) 24))
+  (define/public (readInt24LE) (unsigned->signed (readUInt24LE) 24))
+  
+  (define/override-final (dump)
+    (define current-position (port-position _port))
+    (set-port-position! _port 0)
+    (define bs (port->bytes _port))
+    (set-port-position! _port current-position)
+    bs))
 
 (test-module
  (define ds (+DecodeStream #"ABCD"))
  (check-true (DecodeStream? ds))
  (check-equal? (send ds dump) #"ABCD")
  (check-equal? (send ds dump) #"ABCD") ; dump can repeat
- (check-equal? (send ds read 2) #"AB")
+ (check-equal? (send ds readUInt16BE) 16706)
  (check-equal? (send ds dump) #"ABCD")
  (check-equal? (· ds pos) 2)
- (check-equal? (send ds read 1) #"C")
+ (check-equal? (send ds readUInt8) 67)
  (check-equal? (· ds pos) 3)
- (check-equal? (send ds read 1) #"D")
+ (check-equal? (send ds readUInt8) 68)
  (check-equal? (· ds pos) 4)
  (check-exn exn:fail? (λ () (send ds read -42)))
  (check-exn exn:fail? (λ () (send ds read 1))))

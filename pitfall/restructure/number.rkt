@@ -43,22 +43,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
            [delta (if _signed? 0 signed-min)])
       (values (- signed-min delta) (- signed-max delta))))
 
-  (define (unsigned->signed uint)
-    (define most-significant-bit-mask (arithmetic-shift 1 (sub1 bits)))
-    (- (bitwise-xor uint most-significant-bit-mask) most-significant-bit-mask))
-
-  (define (signed->unsigned sint)
-    (bitwise-and sint (arithmetic-shift 1 bits)))
-
   (define/augment (decode stream . args)
-    (define bstr (send stream read _size))
+    (define bstr (send stream readBuffer _size))
     (define bs ((if (eq? endian system-endian) identity reverse) (bytes->list bstr)))
     (define unsigned-int (for/sum ([(b i) (in-indexed bs)])
                            (arithmetic-shift b (* 8 i))))
     (post-decode unsigned-int))
 
   (define/public (post-decode unsigned-int)
-    ((if _signed? unsigned->signed identity) unsigned-int))
+    (if _signed? (unsigned->signed unsigned-int bits) unsigned-int))
 
   (define/public (pre-encode val-in)
     (exact-if-possible val-in))
@@ -80,7 +73,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define byte-size (/ _size 8))
   
   (define/augment (decode stream . args) ;  convert int to float
-    (define bs (send stream read byte-size))
+    (define bs (send stream readBuffer byte-size))
     (floating-point-bytes->real bs (eq? endian 'be)))
 
   (define/augment (encode stream val-in) ; convert float to int
