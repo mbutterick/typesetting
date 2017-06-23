@@ -17,12 +17,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     (define offset (send offsetType decode stream ctx))
     (report scope 'pointer-scope)
     (define relative (caseq scope
-                            [(local) (when (and (· ctx res _startOffset) (· ctx _startOffset)
+                            [(local) #;(when (and (· ctx res _startOffset) (· ctx _startOffset)
                                                 (not (= (· ctx res _startOffset) (· ctx _startOffset))))
                                        (report* ctx (· ctx res _startOffset) (· ctx _startOffset))
                                        (error 'bazongas))
-                                     (· ctx _startOffset)]
-                            [(parent) (· ctx parent _startOffset)]
+                                     (· ctx res _startOffset)]
+                            [(parent) (· ctx res parent res _startOffset)]
                             [(immediate) (- (· stream pos) (send offsetType size))]
                             [(global) 
                              (let loop ([c ctx])
@@ -32,9 +32,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                                  [else 0]))]))
     (report* this (· this _startOffset)
              (and (· this res) (· this res _startOffset))
-             ctx (and ctx (· ctx _startOffset))
+             ctx
              (and (· ctx res) (· ctx res _startOffset))) 
-    (when (and ctx (· ctx _startOffset) (= (· ctx _startOffset) 1012)) (error 'stop))
+    #;(when (and ctx (· ctx res _startOffset) (= (· ctx res _startOffset) 1012)) (error 'stop))
     (report* offset relative)
     (define ptr (+ offset relative))
     (report* ptr)

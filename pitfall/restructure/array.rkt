@@ -8,6 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
 (define-subclass Streamcoder (Array type [length_ #f] [lengthType 'count])
+  (inherit-field res)
           
   (define/augride (decode stream [parent #f])
     (define pos (· stream pos))
@@ -23,10 +24,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                    (floor (/ (send stream length) (send type size)))]))
     
     (when (Number? length_)
-      (set-field! parent ctx parent)
-      (set-field! _startOffset ctx pos)
-      (set-field! _currentOffset ctx 0)
-      (set-field! _length ctx length_))
+      (hash-set! (· ctx res) 'parent parent)
+      (hash-set! (· ctx res) '_startOffset pos)
+      (hash-set! (· ctx res) '_currentOffset 0)
+      (hash-set! (· ctx res) '_length length_))
     
     (define res (caseq lengthType
                        [(bytes) (error 'array-decode-bytes-no!)]

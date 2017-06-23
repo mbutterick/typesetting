@@ -8,7 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
 (define-subclass Streamcoder (Struct [fields (dictify)])
-  (field [res #f])
+  (inherit-field res)
   
   (unless ((disjoin assocs? VersionedStruct?) fields)
     (raise-argument-error 'Struct "assocs or Versioned Struct" fields))

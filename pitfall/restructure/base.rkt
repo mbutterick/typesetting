@@ -4,15 +4,9 @@
 
 (define RestructureBase
   (class object%
-    (super-new)    
-    (field [_startOffset #f]
-           [_currentOffset #f]
-           [_length #f]
-           [parent #f])
-    (define/public (decode stream . args)
-      (set! _startOffset (and (object? stream) (send stream pos)))
-      (set! parent (and (pair? args) (is-a? (car args) RestructureBase) (car args)))
-      #;(inner (void) decode stream . args))
+    (super-new)
+    (field [res (make-hash)])
+    (define/public (decode stream . args) (void))
     (define/public (encode . xs) (void))
     (define/public (size . xs) (void))
     (define/public (process . args) (void))

@@ -186,8 +186,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 ;; GPOSLookup.versions[9].extension.type = GPOSLookup;
 
 (define gpos-common-dict (dictify 'scriptList (+Pointer uint16be ScriptList)
-                                  'featureList (+Pointer uint16be FeatureList)
-                                  'lookupList (+Pointer uint16be (LookupList GPOSLookup))
+                                  ;'featureList (+Pointer uint16be FeatureList)
+                                  ;'lookupList (+Pointer uint16be (LookupList GPOSLookup))
                                   ))
 
 (define-subclass VersionedStruct (GPOS-MainVersionedStruct))

@@ -54,16 +54,16 @@
    #'(let loop ([x X])
        (cond
          [(and (object? x) (or (get-or-false x REF) (send-or-false x REF)))]
-         [(and (object? x) (get-or-false x res)) => loop]
-         [(and (object? x) (send-or-false x res)) => loop]
+         ;[(and (object? x) (get-or-false x res)) => loop]
+         ;[(and (object? x) (send-or-false x res)) => loop]
          [(object? x) #f]
-         [(and (hash? x) (hash-ref x 'res #f)) => loop]
+         ;[(and (hash? x) (hash-ref x 'res #f)) => loop]
          [(and (hash? x) (hash-ref x 'REF #f))]
          [(hash? x) #f]
          [else (raise-argument-error '· (format "~a must be object or hash" 'X) x)]))]
   [(_ X REF0 . REFS) #'(· (· X REF0) . REFS)])
 
-(module+ test
+#;(module+ test
   (define c (class object%
               (super-new)
               (field [a 42])
