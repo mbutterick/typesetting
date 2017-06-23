@@ -29,7 +29,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   ;; size of a number doesn't change, so we can stash it as `_size`
   (define _size (with-handlers ([exn:fail:contract?
                                  (λ (exn) 
-                                   (raise-argument-error 'Number "valid type and endian" (format "~v ~v" type endian)))])
+                                   (raise-argument-error 'Integer "valid type and endian" (format "~v ~v" type endian)))])
                   (get-type-size number-type)))
 
   (define bits (* _size 8))
@@ -66,7 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define/augment (encode stream val-in)
     (define val (pre-encode val-in))
     (unless (<= bound-min val bound-max)
-      (raise-argument-error 'Number:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
+      (raise-argument-error 'Integer:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
     (define-values (bs _) (for/fold ([bs empty] [n val])
                                     ([i (in-range _size)])
                             (values (cons (bitwise-and n #xff) bs) (arithmetic-shift n -8))))
@@ -74,6 +74,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (send stream write bstr)))
 
 (define-subclass Integer (Number))
+(define-subclass Integer (NumberT))
 
 (define-subclass Streamcoder (Float _size [endian system-endian])
   (define byte-size (/ _size 8))

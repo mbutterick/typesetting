@@ -21,6 +21,9 @@
      sugar/port
      sugar/case)
 
+(require (prefix-in * data/collection))
+(provide (all-from-out data/collection))
+
 (module reader syntax/module-reader
   #:language 'restructure/racket
   #:read @-read
