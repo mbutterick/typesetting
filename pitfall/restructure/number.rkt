@@ -41,18 +41,23 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
   (define/augride (decode stream . args)
     (define bstr (send stream read _size))
-    (if (= 1 _size)
-        (+ (bytes-ref bstr 0) (if _signed? bound-min 0))
-        (integer-bytes->integer bstr _signed? (eq? endian 'be))))
+    (let loop ([bstr bstr])
+      (if (odd? (bytes-length bstr))
+          (loop (if (eq? endian 'be) (bytes-append (bytes (if _signed? 255 0)) bstr) (bytes-append bstr (bytes (if _signed? 255 0)))))
+          (integer-bytes->integer bstr _signed? (eq? endian 'be)))))
 
   (define/augride (encode stream val-in)
     (define val (if (integer? val-in) (inexact->exact val-in) val-in))
     ;; todo: better bounds checking
     (unless (<= bound-min val bound-max)
       (raise-argument-error 'Number:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
-    (define bstr (if (= 1 _size)
-                     (bytes (- val (if _signed? bound-min 0)))
-                     (integer->integer-bytes val _size _signed? (eq? endian 'be))))
+    (define bstr (let loop ([_size _size])
+                   (if (odd? _size)
+                       (let ([bstr (loop (add1 _size))])
+                         (if (eq? endian 'be)
+                             (subbytes bstr 1)
+                             (subbytes bstr 0 (sub1 (bytes-length bstr)))))
+                       (integer->integer-bytes val _size _signed? (eq? endian 'be)))))
     (send stream write bstr)))
 
 (define-subclass* Number (Fixed size [fixed-endian (if (system-big-endian?) 'be 'le)] [fracBits (floor (/ size 2))])
@@ -143,3 +148,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (define ds (+DecodeStream (send es dump)))
  (check-equal? (ceiling (* (send fixed16be decode ds) 100)) 12345.0))
 
+(send int8 decode (bytes 255))
+(send int16le decode (bytes 255 255))
+
+(send int8 encode #f -1)
+(send int16le encode #f -1)
+(integer-bytes->integer (bytes 0 255) #t #t)
+(integer->integer-bytes -1 2 #t #t)
