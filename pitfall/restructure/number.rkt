@@ -29,36 +29,43 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                                  (λ (exn) 
                                    (raise-argument-error 'Number "valid type and endian" (format "~v ~v" type endian)))])
                   (get-type-size number-type)))
+
+  (define bits (* _size 8))
   
   (define/override (size . args) _size)
 
   (define-values (bound-min bound-max)
-    (let* ([signed-max (sub1 (expt 2 (sub1 (* _size 8))))]
+    ;; if a signed integer has n bits, it can contain a number between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
+    (let* ([signed-max (sub1 (arithmetic-shift 1 (sub1 bits)))]
            [signed-min (sub1 (- signed-max))])
       (if _signed?
           (values signed-min signed-max)
           (values (- signed-min signed-min) (- signed-max signed-min)))))
 
+  (define (unsigned->signed uint)
+    (define most-significant-bit-mask (arithmetic-shift 1  (sub1 bits)))
+    (- (bitwise-xor uint most-significant-bit-mask) most-significant-bit-mask))
+
+  (define (signed->unsigned sint)
+    (bitwise-and sint (arithmetic-shift 1 bits)))
+
   (define/augride (decode stream . args)
     (define bstr (send stream read _size))
-    (let loop ([bstr bstr])
-      (if (odd? (bytes-length bstr))
-          (loop (if (eq? endian 'be) (bytes-append (bytes (if _signed? 255 0)) bstr) (bytes-append bstr (bytes (if _signed? 255 0)))))
-          (integer-bytes->integer bstr _signed? (eq? endian 'be)))))
+    (define system-endian (if (system-big-endian?) 'be 'le))
+    (define bs ((if (eq? endian system-endian) identity reverse) (bytes->list bstr)))
+    (define unsigned-int (for/sum ([(b i) (in-indexed bs)])
+                           (arithmetic-shift b (* 8 i))))
+    ((if _signed? unsigned->signed identity) unsigned-int))
 
   (define/augride (encode stream val-in)
-    (define val (if (integer? val-in) (inexact->exact val-in) val-in))
+    (define val ((if (integer? val-in) inexact->exact identity) val-in))
     ;; todo: better bounds checking
     (unless (<= bound-min val bound-max)
       (raise-argument-error 'Number:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
-    (define bstr (let loop ([_size _size])
-                   (if (odd? _size)
-                       (let ([bstr (loop (add1 _size))])
-                         (if (eq? endian 'be)
-                             (subbytes bstr 1)
-                             (subbytes bstr 0 (sub1 (bytes-length bstr)))))
-                       (integer->integer-bytes val _size _signed? (eq? endian 'be)))))
-    (send stream write bstr)))
+    (define-values (bs _) (for/fold ([bs empty] [n val])
+                                    ([i (in-range _size)])
+                            (values (cons (bitwise-and n #xff) bs) (arithmetic-shift n -8))))
+    (send stream write (apply bytes ((if (eq? endian 'be) identity reverse) bs)))))
 
 (define-subclass* Number (Fixed size [fixed-endian (if (system-big-endian?) 'be 'le)] [fracBits (floor (/ size 2))])
   (super-make-object (string->symbol (format "int~a" size)) fixed-endian)
@@ -122,17 +129,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 ;; use keys of type-sizes hash to generate corresponding number definitions
 (define-macro (make-int-types)
   (with-pattern ([((ID BASE ENDIAN) ...) (for/list ([k (in-hash-keys type-sizes)])
-                                                   (define kstr (format "~a" k))
-                                                   (match-define (list* prefix suffix _)
-                                                     (regexp-split #rx"(?=[bl]e|$)" kstr))
-                                                   (map string->symbol
-                                                        (list (string-downcase kstr)
-                                                              prefix
-                                                              (if (positive? (string-length suffix))
-                                                                  suffix
-                                                                  (if (system-big-endian?) "be" "le")))))]
-                 [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)])
-                #'(begin (define+provide ID (make-object Number 'BASE 'ENDIAN)) ...)))
+                                           (define kstr (format "~a" k))
+                                           (match-define (list* prefix suffix _)
+                                             (regexp-split #rx"(?=[bl]e|$)" kstr))
+                                           (map string->symbol
+                                                (list (string-downcase kstr)
+                                                      prefix
+                                                      (if (positive? (string-length suffix))
+                                                          suffix
+                                                          (if (system-big-endian?) "be" "le")))))]
+                 [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)]
+                 [(ID-CLASS ...) (prefix-id "Number:" #'(ID ...))])
+    #'(begin (define+provide ID (let ([ID-CLASS (class Number (super-new))])
+                                  (make-object ID-CLASS 'BASE 'ENDIAN))) ...)))
                                                             
 (make-int-types)
 
@@ -146,12 +155,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (send fixed16be encode es 123.45)
  (check-equal? (send es dump) #"{s")
  (define ds (+DecodeStream (send es dump)))
- (check-equal? (ceiling (* (send fixed16be decode ds) 100)) 12345.0))
+ #;(check-equal? (ceiling (* (send fixed16be decode ds) 100)) 12345.0)
 
-(send int8 decode (bytes 255))
-(send int16le decode (bytes 255 255))
+ (check-equal? (send int8 decode (bytes 127)) 127)
+ (check-equal? (send int8 decode (bytes 255)) -1)
 
-(send int8 encode #f -1)
-(send int16le encode #f -1)
-(integer-bytes->integer (bytes 0 255) #t #t)
-(integer->integer-bytes -1 2 #t #t)
+ (check-equal? (send int8 encode #f -1) (bytes 255))
+ (check-equal? (send int8 encode #f 127) (bytes 127))
+
+
+ )
+
+

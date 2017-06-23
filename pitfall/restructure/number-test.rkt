@@ -12,16 +12,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      stream = new DecodeStream new Buffer [0xab, 0xff]
 ;      uint8.decode(stream).should.equal 0xab
 ;      uint8.decode(stream).should.equal 0xff
-
-(let ([stream (+DecodeStream (bytes #xab #xff))])
-  (check-equal? (send uint8 decode stream) #xab)
-  (check-equal? (send uint8 decode stream) #xff))
 ;
 ;    it 'should have a size', ->
 ;      uint8.size().should.equal 1
-
-(check-equal? (send uint8 size) 1)
-
 ;
 ;    it 'should encode', (done) ->
 ;      stream = new EncodeStream
@@ -32,6 +25,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      uint8.encode(stream, 0xab)
 ;      uint8.encode(stream, 0xff)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #xab #xff))])
+  (check-equal? (send uint8 decode stream) #xab)
+  (check-equal? (send uint8 decode stream) #xff))
+
+(check-equal? (send uint8 size) 1)
 
 (let ([stream (+EncodeStream)])
   (send uint8 encode stream #xab)
@@ -46,26 +45,17 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 
 ;; modified test: `uint16` is the same endianness as the platform
 (check-equal? (send uint16 decode (bytes 0 1)) (send (if (system-big-endian?)
-                                                             uint16be
-                                                             uint16le) decode (bytes 0 1)))
+                                                         uint16be
+                                                         uint16le) decode (bytes 0 1)))
 
 ;
 ;  describe 'uint16be', ->
 ;    it 'should decode', ->
 ;      stream = new DecodeStream new Buffer [0xab, 0xff]
 ;      uint16be.decode(stream).should.equal 0xabff
-
-(let ([stream (+DecodeStream (bytes #xab #xff))])
-  (check-equal? (send uint16be decode stream) #xabff))
-
-
 ;
 ;    it 'should have a size', ->
 ;      uint16be.size().should.equal 2
-
-(check-equal? (send uint16be size) 2)
-
-
 ;
 ;    it 'should encode', (done) ->
 ;      stream = new EncodeStream
@@ -75,6 +65,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      uint16be.encode(stream, 0xabff)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #xab #xff))])
+  (check-equal? (send uint16be decode stream) #xabff))
+
+(check-equal? (send uint16be size) 2)
 
 (let ([stream (+EncodeStream)])
   (send uint16be encode stream #xabff)
@@ -86,16 +81,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;    it 'should decode', ->
 ;      stream = new DecodeStream new Buffer [0xff, 0xab]
 ;      uint16le.decode(stream).should.equal 0xabff
-
-(let ([stream (+DecodeStream (bytes #xff #xab))])
-  (check-equal? (send uint16le decode stream) #xabff))
-
 ;
 ;    it 'should have a size', ->
 ;      uint16le.size().should.equal 2
-
-(check-equal? (send uint16le size) 2)
-
 ;
 ;    it 'should encode', (done) ->
 ;      stream = new EncodeStream
@@ -105,6 +93,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      uint16le.encode(stream, 0xabff)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #xff #xab))])
+  (check-equal? (send uint16le decode stream) #xabff))
+
+(check-equal? (send uint16le size) 2)
 
 (let ([stream (+EncodeStream)])
   (send uint16le encode stream #xabff)
@@ -117,24 +110,17 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 
 ;; modified test: `uint24` is the same endianness as the platform
 (check-equal? (send uint24 decode (bytes 0 1 2)) (send (if (system-big-endian?)
-                                                             uint24be
-                                                             uint24le) decode (bytes 0 1 2)))
+                                                           uint24be
+                                                           uint24le) decode (bytes 0 1 2)))
 
 ;
 ;  describe 'uint24be', ->
 ;    it 'should decode', ->
 ;      stream = new DecodeStream new Buffer [0xff, 0xab, 0x24]
 ;      uint24be.decode(stream).should.equal 0xffab24
-
-(let ([stream (+DecodeStream (bytes #xff #xab #x24))])
-  (check-equal? (send uint24be decode stream) #xffab24))
-
 ;
 ;    it 'should have a size', ->
 ;      uint24be.size().should.equal 3
-
-(check-equal? (send uint24be size) 3)
-
 ;
 ;    it 'should encode', (done) ->
 ;      stream = new EncodeStream
@@ -145,6 +131,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      uint24be.encode(stream, 0xffab24)
 ;      stream.end()
 
+(let ([stream (+DecodeStream (bytes #xff #xab #x24))])
+  (check-equal? (send uint24be decode stream) #xffab24))
+
+(check-equal? (send uint24be size) 3)
+
 (let ([stream (+EncodeStream)])
   (send uint24be encode stream #xffab24)
   (check-equal? (send stream dump) (bytes #xff #xab #x24)))
@@ -154,17 +145,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;    it 'should decode', ->
 ;      stream = new DecodeStream new Buffer [0x24, 0xab, 0xff]
 ;      uint24le.decode(stream).should.equal 0xffab24
-
-(let ([stream (+DecodeStream (bytes #x24 #xab #xff))])
-  (check-equal? (send uint24le decode stream) #xffab24))
-
-
 ;
 ;    it 'should have a size', ->
 ;      uint24le.size().should.equal 3
-
-(check-equal? (send uint24le size) 3)
-
 ;
 ;    it 'should encode', (done) ->
 ;      stream = new EncodeStream
@@ -174,6 +157,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      uint24le.encode(stream, 0xffab24)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #x24 #xab #xff))])
+  (check-equal? (send uint24le decode stream) #xffab24))
+
+(check-equal? (send uint24le size) 3)
 
 (let ([stream (+EncodeStream)])
   (send uint24le encode stream #xffab24)
@@ -280,6 +268,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;  describe 'int16', ->
 ;    it 'is an alias for int16be', ->
 ;      int16.should.equal int16be
+
+;; modified test: `int16` is the same endianness as the platform
+(check-equal? (send int16 decode (bytes 0 1)) (send (if (system-big-endian?)
+                                                        int16be
+                                                        int16le) decode (bytes 0 1)))
+
+
 ;
 ;  describe 'int16be', ->
 ;    it 'should decode', ->
@@ -297,6 +292,16 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      int16be.encode(stream, -85)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #xff #xab))])
+  (check-equal? (send int16be decode stream) -85))
+
+(check-equal? (send int16be size) 2)
+
+(let ([stream (+EncodeStream)])
+  (send int16be encode stream -85)
+  (check-equal? (send stream dump) (bytes #xff #xab)))
+
 ;
 ;  describe 'int16le', ->
 ;    it 'should decode', ->
@@ -314,10 +319,29 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      int16le.encode(stream, -85)
 ;      stream.end()
+
+
+(let ([stream (+DecodeStream (bytes #xab #xff))])
+  (check-equal? (send int16le decode stream) -85))
+
+(check-equal? (send int16le size) 2)
+
+(let ([stream (+EncodeStream)])
+  (send int16le encode stream -85)
+  (check-equal? (send stream dump) (bytes #xab #xff)))
+
+
 ;
 ;  describe 'int24', ->
 ;    it 'is an alias for int24be', ->
 ;      int24.should.equal int24be
+
+;; modified test: `int24` is the same endianness as the platform
+(check-equal? (send int24 decode (bytes 0 1 2)) (send (if (system-big-endian?)
+                                                       int24be
+                                                        int24le) decode (bytes 0 1 2)))
+
+
 ;
 ;  describe 'int24be', ->
 ;    it 'should decode', ->
@@ -335,6 +359,16 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      int24be.encode(stream, -21724)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #xff #xab #x24))])
+  (check-equal? (send int24be decode stream) -21724))
+
+(check-equal? (send int24be size) 3)
+
+(let ([stream (+EncodeStream)])
+  (send int24be encode stream -21724)
+  (check-equal? (send stream dump) (bytes #xff #xab #x24)))
+
 ;
 ;  describe 'int24le', ->
 ;    it 'should decode', ->
@@ -353,9 +387,29 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;      int24le.encode(stream, -21724)
 ;      stream.end()
 ;
+
+(let ([stream (+DecodeStream (bytes #x24 #xab #xff))])
+  (check-equal? (send int24le decode stream) -21724))
+
+(check-equal? (send int24le size) 3)
+
+(let ([stream (+EncodeStream)])
+  (send int24le encode stream -21724)
+  (check-equal? (send stream dump) (bytes #x24 #xab #xff)))
+
+
+
 ;  describe 'int32', ->
 ;    it 'is an alias for int32be', ->
 ;      int32.should.equal int32be
+
+;; modified test: `int32` is the same endianness as the platform
+(check-equal? (send int32 decode (bytes 0 1 2 3)) (send (if (system-big-endian?)
+                                                       int32be
+                                                        int32le) decode (bytes 0 1 2 3)))
+
+
+
 ;
 ;  describe 'int32be', ->
 ;    it 'should decode', ->
@@ -373,6 +427,16 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      int32be.encode(stream, -5561153)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #xff #xab #x24 #xbf))])
+  (check-equal? (send int32be decode stream) -5561153))
+
+(check-equal? (send int32be size) 4)
+
+(let ([stream (+EncodeStream)])
+  (send int32be encode stream -5561153)
+  (check-equal? (send stream dump) (bytes #xff #xab #x24 #xbf)))
+
 ;
 ;  describe 'int32le', ->
 ;    it 'should decode', ->
@@ -390,10 +454,27 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      int32le.encode(stream, -5561153)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #xbf #x24 #xab #xff))])
+  (check-equal? (send int32le decode stream) -5561153))
+
+(check-equal? (send int32le size) 4)
+
+(let ([stream (+EncodeStream)])
+  (send int32le encode stream -5561153)
+  (check-equal? (send stream dump) (bytes #xbf #x24 #xab #xff)))
+
 ;
 ;  describe 'float', ->
 ;    it 'is an alias for floatbe', ->
 ;      float.should.equal floatbe
+
+;; modified test: `float` is the same endianness as the platform
+(check-equal? (send float decode (bytes 0 1 2 3)) (send (if (system-big-endian?)
+                                                       floatbe
+                                                        floatle) decode (bytes 0 1 2 3)))
+
+
 ;
 ;  describe 'floatbe', ->
 ;    it 'should decode', ->
@@ -411,6 +492,17 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 ;
 ;      floatbe.encode(stream, 250.55)
 ;      stream.end()
+
+(let ([stream (+DecodeStream (bytes #x43 #x7a #x8c #xcd))])
+  (check-equal? (send floatbe decode stream) 250.55))
+
+(check-equal? (send floatbe size) 4)
+
+(let ([stream (+EncodeStream)])
+  (send floatbe encode stream 250.55)
+  (check-equal? (send stream dump) (bytes #xbf #x24 #xab #xff)))
+
+
 ;
 ;  describe 'floatle', ->
 ;    it 'should decode', ->
