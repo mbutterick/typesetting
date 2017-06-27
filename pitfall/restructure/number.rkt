@@ -66,8 +66,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define bstr (apply bytes ((if (eq? endian 'be) identity reverse) bs)))
     (send stream write bstr)))
 
-(define-subclass Integer (Number))
-(define-subclass Integer (NumberT))
+(define-values (NumberT NumberT? +NumberT) (values Integer Integer? +Integer))
+(define-values (Number Number? +Number) (values Integer Integer? +Integer))
 
 (define-subclass Streamcoder (Float _size [endian system-endian])
   (define byte-size (/ _size 8))

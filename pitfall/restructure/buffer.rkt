@@ -33,14 +33,12 @@ A Restructure RBuffer object is separate.
         (bytes-length val)
         (utils-resolveLength length_ val parent)))
 
-  (define/override (encode stream buf-in [parent #f])
-    (define buf (if (bytes? buf-in) (bytes->list buf-in) buf-in))
-    (unless (and (list? buf) (andmap byte? buf))
-      (raise-argument-error 'Buffer:encode "list of bytes" buf))
-    (report* buf length_)
+  (define/override (encode stream buf [parent #f])
+    (unless (bytes? buf)
+      (raise-argument-error 'Buffer:encode "bytes" buf))
     (when (NumberT? length_)
-      (send length_ encode stream (*length buf))
-      (send stream writeBuffer buf))))
+      (send length_ encode stream (*length buf)))
+    (send stream writeBuffer buf)))
 
 (define-subclass RBuffer (BufferT))
 

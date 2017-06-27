@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require "buffer.rkt" "stream.rkt" rackunit)
+(require "buffer.rkt" "stream.rkt" "number.rkt" rackunit)
 
 #|
 approximates
@@ -65,11 +65,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 ;      stream.end()
 ;
 
-(let ([buf (+BufferT 2)]
-      [stream (+EncodeStream)])
+(let ([stream (+EncodeStream)]
+      [buf (+BufferT 2)])
   (send buf encode stream (+Buffer '(#xab #xff)))
   (send buf encode stream (+Buffer '(#x1f #xb6)))
   (check-equal? (send stream dump) (+Buffer '(#xab #xff #x1f #xb6))))
+
 
 ;    it 'should encode length before buffer', (done) ->
 ;      stream = new EncodeStream
@@ -80,3 +81,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 ;      buf = new BufferT(uint8)
 ;      buf.encode stream, new Buffer [0xab, 0xff]
 ;      stream.end()
+
+(let ([stream (+EncodeStream)]
+      [buf (+BufferT uint8)])
+  (send buf encode stream (+Buffer '(#xab #xff)))
+  (check-equal? (send stream dump) (+Buffer '(2 #xab #xff))))
