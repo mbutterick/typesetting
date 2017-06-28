@@ -80,7 +80,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define bs (real->floating-point-bytes val-in byte-size (eq? endian 'be)))
     (send stream write bs))
 
-  (define/override (size) byte-size))
+  (define/override (size . args) byte-size))
 
 (define-instance float (make-object Float 32))
 (define-instance floatbe (make-object Float 32 'be))

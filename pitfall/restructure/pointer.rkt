@@ -46,14 +46,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
             (send stream pos orig-pos)
             val]
       [else ptr]))
+
+  
+  (define/public (size [val #f] [ctx #f])
+    (error 'Pointer-size-not-done)
+    (report* this offsetType type (send type size)))
             
 
   (define/public (encode stream val)
     (error 'Pointer-encode-not-done))
 
-  (define/public (size [val #f] [ctx #f])
-    (error 'Pointer-size-not-done)
-    (report* this offsetType type (send type size)))
 
   
 
