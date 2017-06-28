@@ -150,7 +150,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 (let ([string (+StringT 7)]
       [stream (+EncodeStream)])
   (send string encode stream "testing")
-  (check-equal? (send stream dump) "testing"))
+  (check-equal? (send stream dump) #"testing"))
 
 
 ;
@@ -163,6 +163,12 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string = new StringT uint8
 ;      string.encode(stream, 'testing')
 ;      stream.end()
+
+(let ([string (+StringT uint8)]
+      [stream (+EncodeStream)])
+  (send string encode stream "testing")
+  (check-equal? (send stream dump) #"\7testing"))
+
 ;
 ;    it 'should encode length as number before string utf8', (done) ->
 ;      stream = new EncodeStream
@@ -173,6 +179,12 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string = new StringT uint8, 'utf8'
 ;      string.encode(stream, 'testing 😜')
 ;      stream.end()
+
+(let ([string (+StringT uint8 'utf8)]
+      [stream (+EncodeStream)])
+  (send string encode stream "testing 😜")
+  (check-equal? (send stream dump) (+Buffer "\14testing 😜" 'utf8)))
+
 ;
 ;    it 'should encode utf8', (done) ->
 ;      stream = new EncodeStream
@@ -183,6 +195,12 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string = new StringT 4, 'utf8'
 ;      string.encode(stream, '🍻')
 ;      stream.end()
+
+(let ([string (+StringT 4 'utf8)]
+      [stream (+EncodeStream)])
+  (send string encode stream "🍻")
+  (check-equal? (send stream dump) (+Buffer "🍻")))
+
 ;
 ;    it 'should encode encoding computed from function', (done) ->
 ;      stream = new EncodeStream
@@ -193,6 +211,12 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string = new StringT 4, -> 'utf8'
 ;      string.encode(stream, '🍻')
 ;      stream.end()
+
+(let ([string (+StringT 4 (λ _ 'utf8))]
+      [stream (+EncodeStream)])
+  (send string encode stream "🍻")
+  (check-equal? (send stream dump) (+Buffer "🍻")))
+
 ;
 ;    it 'should encode null-terminated string', (done) ->
 ;      stream = new EncodeStream
@@ -203,3 +227,9 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string = new StringT null, 'utf8'
 ;      string.encode(stream, '🍻')
 ;      stream.end()
+
+
+(let ([string (+StringT #f 'utf8)]
+      [stream (+EncodeStream)])
+  (send string encode stream "🍻")
+  (check-equal? (send stream dump) (+Buffer "🍻\0")))

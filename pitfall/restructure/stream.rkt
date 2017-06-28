@@ -34,10 +34,22 @@ https://github.com/mbutterick/restructure/blob/master/src/EncodeStream.coffee
   (define/public-final (write val)
     (unless (bytes? val)
       (raise-argument-error 'EncodeStream:write "bytes" val))
-    (void (write-bytes val (· this _port))))
+    (void (write-bytes val _port)))
 
   (define/public-final (writeBuffer buffer)
-    (write buffer)))
+    (write buffer))
+
+  (define/public-final (writeUInt8 int)
+    (write (bytes int)))
+    
+  (define/public (writeString string [encoding 'ascii])
+    ;; todo: handle encodings correctly.
+    ;; right now just utf8 and ascii are correct
+    (caseq encoding
+           [(utf16le ucs2 utf8 ascii) (writeBuffer (string->bytes/utf-8 string))
+                                      (when (eq? encoding 'utf16le)
+                                        (error 'swap-bytes-unimplemented))]
+           [else (error 'unsupported-string-encoding)])))
 
 #;(test-module
    (define es (+EncodeStream))
