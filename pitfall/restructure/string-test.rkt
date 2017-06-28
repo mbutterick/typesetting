@@ -146,6 +146,13 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string = new StringT 7
 ;      string.encode(stream, 'testing')
 ;      stream.end()
+
+(let ([string (+StringT 7)]
+      [stream (+EncodeStream)])
+  (send string encode stream "testing")
+  (check-equal? (send stream dump) "testing"))
+
+
 ;
 ;    it 'should encode length as number before string', (done) ->
 ;      stream = new EncodeStream

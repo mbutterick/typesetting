@@ -30,13 +30,18 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     string)
     
 
-  #;(define/augment (encode stream val [parent #f])
-      (define bytes (($codec-encoder codec) (format "~a" val)))
+  (define/augment (encode stream val [parent #f])
+    (define encoding__
+         (cond
+           [(procedure? encoding_) (or (encoding_ (and parent (· parent val)) 'ascii))]
+           [else encoding_]))
+    (when (NumberT? length_)
+      (send length_ encode stream (byteLength val encoding__)))
+    (send stream writeString val encoding__)
+    (when (not length_)
+      (send stream writeUInt8 #x00)))
     
-      (when (Number? length_) ;; length-prefixed string
-        (send length_ encode stream (bytes-length bytes)))
     
-      (send stream write bytes))
 
   (define/override (size [val #f] [parent #f])
     ;; Use the defined value if no value was given
