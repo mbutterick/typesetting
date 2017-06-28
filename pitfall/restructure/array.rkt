@@ -8,45 +8,58 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
 (define-subclass Streamcoder (Array type [length_ #f] [lengthType 'count])
-  (inherit-field res)
           
   (define/augride (decode stream [parent #f])
-    (when parent
-      (unless (hash? parent)
-                 (raise-argument-error 'Array:decode "hash" parent)))
     
     (define pos (send stream pos))
 
-    (define res empty)
+    (define res (make-object RestructureBase))
     (define ctx parent)
 
     (define length__
-      (or length_ (resolveLength length_ stream parent)))
+      (and length_ (resolveLength length_ stream parent)))
 
     (when (NumberT? length_)
       ;; define hidden properties
-      (hash-set*! (hash-ref ctx 'res) 'parent parent
-                  '_startOffset pos
-                  '_currentOffset 0
-                  '_length length_))
+      (ref-set*! res 'parent parent
+                 '_startOffset pos
+                 '_currentOffset 0
+                 '_length length_)
+      (set! ctx res))
+
+
+    )
+  #|
+    (cond
+      [(or (not length__) (eq? lengthType 'bytes))
+       (define target (cond
+                        [length__ (+ (send stream pos) length__)]
+                        [(and parent (· parent _length))
+                         (+ (· parent _startOffset)
+                            (· parent _length))]
+                        [else
+                         (*length stream)]))
+       (while (< (send stream pos) target)
+              (
           
-    #;(define length__ (cond
-                         ;; explicit length
-                         [length_ (resolveLength length_ stream parent)]
-                         [else  ;; implicit length: length of stream divided by size of item
-                          (define num (send stream length))
-                          (define denom (send type size))
-                          (unless (andmap (λ (x) (and x (number? x))) (list num denom))
-                            (raise-argument-error 'Array:decode "valid length and size" (list num denom)))
-                          (floor (/ (send stream length) (send type size)))]))
+               #;(define length__ (cond
+                                    ;; explicit length
+                                    [length_ (resolveLength length_ stream parent)]
+                                    [else  ;; implicit length: length of stream divided by size of item
+                                     (define num (send stream length))
+                                     (define denom (send type size))
+                                     (unless (andmap (λ (x) (and x (number? x))) (list num denom))
+                                       (raise-argument-error 'Array:decode "valid length and size" (list num denom)))
+                                     (floor (/ (send stream length) (send type size)))]))
     
     
     
-    #;(define res (caseq lengthType
-                         [(bytes) (error 'array-decode-bytes-no!)]
-                         [(count) (for/list ([i (in-range length__)])
-                                    (send type decode stream ctx))]))
-    res)
+               #;(define res (caseq lengthType
+                                    [(bytes) (error 'array-decode-bytes-no!)]
+                                    [(count) (for/list ([i (in-range length__)])
+                                               (send type decode stream ctx))]))
+               res)
+|#
 
   (define/override (size [array #f])
     (when (and array (not (list? array)))
@@ -61,18 +74,22 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
     (for ([item (in-list array)])
       (send type encode stream item))))
 
+(define a (+Array uint8))
+(define stream (+DecodeStream #"ABCDEFG"))
+(send a decode stream)
 
-(test-module
- (define stream (+DecodeStream #"ABCDEFG"))
+
+#;(test-module
+   (define stream (+DecodeStream #"ABCDEFG"))
    
- (define A (+Array uint16be 3))
- (check-equal? (send A decode stream) '(16706 17220 17734))
- (define os (+EncodeStream))
- (send A encode os '(16706 17220 17734))
- (check-equal? (send os dump) #"ABCDEF")
+   (define A (+Array uint16be 3))
+   (check-equal? (send A decode stream) '(16706 17220 17734))
+   (define os (+EncodeStream))
+   (send A encode os '(16706 17220 17734))
+   (check-equal? (send os dump) #"ABCDEF")
 
- (check-equal? (send (+Array uint16be) size '(1 2 3)) 6)
- (check-equal? (send (+Array doublebe) size '(1 2 3 4 5)) 40))
+   (check-equal? (send (+Array uint16be) size '(1 2 3)) 6)
+   (check-equal? (send (+Array doublebe) size '(1 2 3 4 5)) 40))
 
 #|
 approximates

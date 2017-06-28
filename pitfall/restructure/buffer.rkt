@@ -37,7 +37,7 @@ A Restructure RBuffer object is separate.
     (unless (bytes? buf)
       (raise-argument-error 'Buffer:encode "bytes" buf))
     (when (NumberT? length_)
-      (send length_ encode stream (*length buf)))
+      (send length_ encode stream (length buf)))
     (send stream writeBuffer buf)))
 
 (define-subclass RBuffer (BufferT))

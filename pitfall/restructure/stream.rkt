@@ -78,7 +78,7 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
   (inherit-field _port)
 
   (field [pos 0]
-         [length (*length buffer)])
+         [length_ (length buffer)])
 
   (define/public (readString length [encoding 'ascii])
     (define proc (caseq encoding
@@ -92,7 +92,7 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
   (define/public-final (readBuffer count)
     (unless (index? count)
       (raise-argument-error 'DecodeStream:read "positive integer" count))
-    (define bytes-remaining (- length (port-position _port)))
+    (define bytes-remaining (- length_ (port-position _port)))
     (when (> count bytes-remaining)
       (raise-argument-error 'DecodeStream:read (format "byte count not more than bytes remaining = ~a" bytes-remaining) count))
     (increment-field! pos this count)
@@ -137,26 +137,28 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
 ;; Streamcoder is a helper class that checks / converts stream arguments before decode / encode
 ;; not a subclass of DecodeStream or EncodeStream, however.
 (define-subclass RestructureBase (Streamcoder)
-  (define/overment (decode x . args)
+  (define/overment (decode x [parent #f])
+    (when parent (unless (hash? parent)
+                   (raise-argument-error 'Streamcoder:decode "hash" parent)))
     (define stream (if (bytes? x) (+DecodeStream x) x))
     (unless (DecodeStream? stream)
       (raise-argument-error 'Streamcoder:decode "bytes or DecodeStream" x))
-    (inner (void) decode stream . args))
+    (inner (void) decode stream parent))
 
-  (define/overment (encode x . args)
+  (define/overment (encode x [val #f] [parent #f])
     (define stream (cond
                      [(output-port? x) (+EncodeStream x)]
                      [(not x) (+EncodeStream)]
                      [else x]))
     (unless (EncodeStream? stream)
       (raise-argument-error 'Streamcoder:encode "output port or EncodeStream" x))
-    (inner (void) encode stream . args)
+    (inner (void) encode stream val parent)
     (when (not x) (send stream dump))))
 
 (test-module
  (define-subclass Streamcoder (Dummy)
    (define/augment (decode stream . args) "foo")
-   (define/augment (encode stream val) "bar")
+   (define/augment (encode stream val parent) "bar")
    (define/override (size) 42))
 
  (define d (+Dummy))

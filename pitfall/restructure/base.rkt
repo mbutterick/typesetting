@@ -5,7 +5,8 @@
 (define RestructureBase
   (class object%
     (super-new)
-    (field [res (make-hash)])
+    (field [_hash (make-hash)]
+           [_list null])
     (define/public (decode stream . args) (void))
     (define/public (encode . xs) (void))
     (define/public (size . xs) (void))

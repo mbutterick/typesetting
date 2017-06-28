@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/test/DecodeStream.coffee
 (let ()
   (define buf (+Buffer '(1 2 3)))
   (define stream (+DecodeStream buf))
-  (check-equal? (send stream readBuffer (*length buf)) (+Buffer '(1 2 3))))
+  (check-equal? (send stream readBuffer (length buf)) (+Buffer '(1 2 3))))
 
 ;
 ;  it 'should readUInt16BE', ->
@@ -93,7 +93,7 @@ https://github.com/mbutterick/restructure/blob/master/test/DecodeStream.coffee
 (let ()
   (define buf (+Buffer "some text" 'ascii))
   (define stream (+DecodeStream buf))
-  (check-equal? (send stream readString (*length buf)) "some text"))
+  (check-equal? (send stream readString (length buf)) "some text"))
 
 ;
 ;    it 'should decode ascii', ->
@@ -104,7 +104,7 @@ https://github.com/mbutterick/restructure/blob/master/test/DecodeStream.coffee
 (let ()
   (define buf (+Buffer "some text" 'ascii))
   (define stream (+DecodeStream buf))
-  (check-equal? (send stream readString (*length buf) 'ascii) "some text"))
+  (check-equal? (send stream readString (length buf) 'ascii) "some text"))
 
 ;
 ;    it 'should decode utf8', ->
@@ -115,7 +115,7 @@ https://github.com/mbutterick/restructure/blob/master/test/DecodeStream.coffee
 (let ()
   (define buf (+Buffer "unicode! 👍" 'utf8))
   (define stream (+DecodeStream buf))
-  (check-equal? (send stream readString (*length buf) 'utf8) "unicode! 👍"))
+  (check-equal? (send stream readString (length buf) 'utf8) "unicode! 👍"))
 
 #|
 ; todo: support freaky string encodings

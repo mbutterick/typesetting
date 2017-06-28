@@ -7,6 +7,7 @@
   #'(begin (require ID ...) (provide (all-from-out ID ...))))
 
 (r+p "helper.rkt"
+     "generic.rkt"
      sugar/debug
      racket/class
      racket/list
@@ -21,8 +22,6 @@
      sugar/port
      sugar/case)
 
-(require (prefix-in * data/collection))
-(provide (all-from-out data/collection))
 
 (module reader syntax/module-reader
   #:language 'restructure/racket

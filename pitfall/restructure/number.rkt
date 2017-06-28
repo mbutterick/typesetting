@@ -56,7 +56,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define/public (pre-encode val-in)
     (exact-if-possible val-in))
 
-  (define/augment (encode stream val-in)
+  (define/augment (encode stream val-in [parent #f])
     (define val (pre-encode val-in))
     (unless (<= bound-min val bound-max)
       (raise-argument-error 'Integer:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
@@ -76,7 +76,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define bs (send stream readBuffer byte-size))
     (floating-point-bytes->real bs (eq? endian 'be)))
 
-  (define/augment (encode stream val-in) ; convert float to int
+  (define/augment (encode stream val-in [parent #f]) ; convert float to int
     (define bs (real->floating-point-bytes val-in byte-size (eq? endian 'be)))
     (send stream write bs))
 

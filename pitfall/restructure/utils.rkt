@@ -7,7 +7,7 @@
     (cond
     [(number? length) length]
     [(procedure? length) (length parent)]
-    [(and parent (symbol? length)) (*ref parent length)] ; treat as key into RStruct parent
+    [(and parent (symbol? length)) (ref parent length)] ; treat as key into RStruct parent
     [(and stream (Number? length)) (send length decode stream)]
     [else (raise-argument-error 'resolveLength "fixed-size argument" length)]))
   res)
