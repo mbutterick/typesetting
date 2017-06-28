@@ -1,4 +1,5 @@
 #lang restructure/racket
+(require racket/private/generic-methods)
 (provide (all-defined-out))
 
 ;; helper class
@@ -71,56 +72,68 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
       (define bs (*ref type-sizes (string->symbol (string-downcase (string-replace (symbol->string 'ID) "read" "")))))
       (readBuffer bs)))
 
-(define-subclass* PortWrapper (DecodeStream [buffer #""])
-  (unless (bytes? buffer) ; corresponds to a Node Buffer, not a restructure BufferT object
-    (raise-argument-error 'DecodeStream:constructor "bytes" buffer))
-  (super-make-object (open-input-bytes buffer))
-  (inherit-field _port)
+(define countable<%>
+  (interface* ()
+              ([(generic-property gen:countable)
+                (generic-method-table gen:countable
+                                      (define (length o) (get-field length_ o)))])))
 
-  (field [pos 0]
-         [length_ (length buffer)])
+(define DecodeStreamT
+  (class* PortWrapper
+    (countable<%>)
+    (init-field [buffer #""])
+    (unless (bytes? buffer) ; corresponds to a Node Buffer, not a restructure BufferT object
+      (raise-argument-error 'DecodeStream:constructor "bytes" buffer))
+    (super-make-object (open-input-bytes buffer))
+    (inherit-field _port)
 
-  (define/public (readString length [encoding 'ascii])
-    (define proc (caseq encoding
-                        [(utf16le) (error 'bah)]
-                        [(ucs2) (error 'bleh)]
-                        [(utf8) bytes->string/utf-8]
-                        [(ascii) bytes->string/latin-1]
-                        [else identity]))
-    (proc (subbytes buffer pos (increment-field! pos this length))))
+    (field [pos 0]
+           [length_ (length buffer)])
 
-  (define/public-final (readBuffer count)
-    (unless (index? count)
-      (raise-argument-error 'DecodeStream:read "positive integer" count))
-    (define bytes-remaining (- length_ (port-position _port)))
-    (when (> count bytes-remaining)
-      (raise-argument-error 'DecodeStream:read (format "byte count not more than bytes remaining = ~a" bytes-remaining) count))
-    (increment-field! pos this count)
-    (define bs (read-bytes count _port))
-    (unless (= pos (file-position _port)) (raise-result-error 'DecodeStream "positions askew" (list pos (file-position _port))))
-    bs)
+    (define/public (readString length [encoding 'ascii])
+      (define proc (caseq encoding
+                          [(utf16le) (error 'bah)]
+                          [(ucs2) (error 'bleh)]
+                          [(utf8) bytes->string/utf-8]
+                          [(ascii) bytes->string/latin-1]
+                          [else identity]))
+      (proc (subbytes buffer pos (increment-field! pos this length))))
 
-  (define/public (read count) (readBuffer count))
+    (define/public-final (readBuffer count)
+      (unless (index? count)
+        (raise-argument-error 'DecodeStream:read "positive integer" count))
+      (define bytes-remaining (- length_ (port-position _port)))
+      (when (> count bytes-remaining)
+        (raise-argument-error 'DecodeStream:read (format "byte count not more than bytes remaining = ~a" bytes-remaining) count))
+      (increment-field! pos this count)
+      (define bs (read-bytes count _port))
+      (unless (= pos (file-position _port)) (raise-result-error 'DecodeStream "positions askew" (list pos (file-position _port))))
+      bs)
 
-  (define/public (readUInt8) (bytes-ref (readBuffer 1) 0))
-  (define/public (readUInt16BE) (+ (arithmetic-shift (readUInt8) 8) (readUInt8)))
-  (define/public (readInt16BE) (unsigned->signed (readUInt16BE) 16))
-  (define/public (readUInt16LE) (+ (readUInt8) (arithmetic-shift (readUInt8) 8)))
-  (define/public (readUInt24BE) (+ (arithmetic-shift (readUInt16BE) 8) (readUInt8)))
-  (define/public (readUInt24LE) (+ (readUInt16LE) (arithmetic-shift (readUInt8) 16)))
-  (define/public (readInt24BE) (unsigned->signed (readUInt24BE) 24))
-  (define/public (readInt24LE) (unsigned->signed (readUInt24LE) 24))
+    (define/public (read count) (readBuffer count))
+
+    (define/public (readUInt8) (bytes-ref (readBuffer 1) 0))
+    (define/public (readUInt16BE) (+ (arithmetic-shift (readUInt8) 8) (readUInt8)))
+    (define/public (readInt16BE) (unsigned->signed (readUInt16BE) 16))
+    (define/public (readUInt16LE) (+ (readUInt8) (arithmetic-shift (readUInt8) 8)))
+    (define/public (readUInt24BE) (+ (arithmetic-shift (readUInt16BE) 8) (readUInt8)))
+    (define/public (readUInt24LE) (+ (readUInt16LE) (arithmetic-shift (readUInt8) 16)))
+    (define/public (readInt24BE) (unsigned->signed (readUInt24BE) 24))
+    (define/public (readInt24LE) (unsigned->signed (readUInt24LE) 24))
   
-  (define/override-final (dump)
-    (define current-position (port-position _port))
-    (set-port-position! _port 0)
-    (define bs (port->bytes _port))
-    (set-port-position! _port current-position)
-    bs))
+    (define/override-final (dump)
+      (define current-position (port-position _port))
+      (set-port-position! _port 0)
+      (define bs (port->bytes _port))
+      (set-port-position! _port current-position)
+      bs)))
+
+(define-subclass DecodeStreamT (DecodeStream))
 
 (test-module
  (define ds (+DecodeStream #"ABCD"))
  (check-true (DecodeStream? ds))
+ (check-equal? (length ds) 4)
  (check-equal? (send ds dump) #"ABCD")
  (check-equal? (send ds dump) #"ABCD") ; dump can repeat
  (check-equal? (send ds readUInt16BE) 16706)
@@ -138,8 +151,6 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
 ;; not a subclass of DecodeStream or EncodeStream, however.
 (define-subclass RestructureBase (Streamcoder)
   (define/overment (decode x [parent #f])
-    (when parent (unless (hash? parent)
-                   (raise-argument-error 'Streamcoder:decode "hash" parent)))
     (define stream (if (bytes? x) (+DecodeStream x) x))
     (unless (DecodeStream? stream)
       (raise-argument-error 'Streamcoder:decode "bytes or DecodeStream" x))

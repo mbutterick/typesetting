@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require "number.rkt" "utils.rkt" "stream.rkt")
+(require "number.rkt" (prefix-in utils- "utils.rkt") "stream.rkt" br/cond)
 (provide (all-defined-out))
 
 #|
@@ -10,14 +10,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 (define-subclass Streamcoder (Array type [length_ #f] [lengthType 'count])
           
   (define/augride (decode stream [parent #f])
-    
     (define pos (send stream pos))
 
-    (define res (make-object RestructureBase))
+    (define res (make-object RestructureBase)) ; instead of empty list
     (define ctx parent)
 
     (define length__
-      (and length_ (resolveLength length_ stream parent)))
+      (and length_ (utils-resolveLength length_ stream parent)))
 
     (when (NumberT? length_)
       ;; define hidden properties
@@ -28,55 +27,61 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       (set! ctx res))
 
 
-    )
-  #|
     (cond
       [(or (not length__) (eq? lengthType 'bytes))
        (define target (cond
                         [length__ (+ (send stream pos) length__)]
                         [(and parent (· parent _length))
-                         (+ (· parent _startOffset)
-                            (· parent _length))]
-                        [else
-                         (*length stream)]))
-       (while (< (send stream pos) target)
-              (
-          
-               #;(define length__ (cond
-                                    ;; explicit length
-                                    [length_ (resolveLength length_ stream parent)]
-                                    [else  ;; implicit length: length of stream divided by size of item
-                                     (define num (send stream length))
-                                     (define denom (send type size))
-                                     (unless (andmap (λ (x) (and x (number? x))) (list num denom))
-                                       (raise-argument-error 'Array:decode "valid length and size" (list num denom)))
-                                     (floor (/ (send stream length) (send type size)))]))
-    
-    
-    
-               #;(define res (caseq lengthType
-                                    [(bytes) (error 'array-decode-bytes-no!)]
-                                    [(count) (for/list ([i (in-range length__)])
-                                               (send type decode stream ctx))]))
-               res)
-|#
+                         (+ (ref parent '_startOffset)
+                            (ref parent '_length))]
+                        [else (· stream length_)]))
+       (ref-set! res '_list
+                 (push-end res
+                           (for/list ([i (in-naturals)]
+                                      #:break (= (send stream pos) target))
+                             (send type decode stream ctx))))]
+      [else
+       (ref-set! res '_list
+                 (push-end res
+                           (for/list ([i (in-range length__)])
+                             (send type decode stream ctx))))])
 
-  (define/override (size [array #f])
-    (when (and array (not (list? array)))
-      (raise-argument-error 'Array:size "list" array))
+    (countable->list res))
+
+  (define/override (size [array #f] [ctx #f])
+    (when array (unless (countable? array)
+                  (raise-argument-error 'Array:size "list or countable" array)))
     (cond
-      [(not array) (* (send type size) (resolveLength length_ (+DecodeStream) #f))]
-      [(Number? length_) (send length_ size)]
-      [else (* (send type size) (length array))]))
+      [(not array) (* (send type size #f ctx) (utils-resolveLength length_ #f ctx))]
+      [else
+       (define size 0)
+       (when (NumberT? length_)
+         (increment! size (send length_ size))
+         (set! ctx (mhash 'parent ctx)))
+       (for ([item (in-list (countable->list array))])
+         (increment! size (send type size item ctx)))
+       size]))
 
   (define/augride (encode stream array [parent #f])
-    (unless (list? array) (raise-argument-error 'Array:encode "list" array))
-    (for ([item (in-list array)])
-      (send type encode stream item))))
+    (when array (unless (countable? array)
+                  (raise-argument-error 'Array:encode "list or countable" array)))
+    (define ctx parent)
+    (when (NumberT? length_)
+      (set! ctx (mhash 'pointers null
+                       'startOffset (· stream pos)
+                       'parent parent))
+    (ref-set! ctx 'pointerOffset (+ (· stream pos) (size array ctx)))
+      (send length_ encode stream (length array)))
 
-(define a (+Array uint8))
-(define stream (+DecodeStream #"ABCDEFG"))
-(send a decode stream)
+    (for ([item (in-list (countable->list array))])
+      (send type encode stream item ctx))
+
+    (when (NumberT? length_)
+      (define i 0)
+      (define ptr #f)
+      (while (< i (length (· ctx pointers)))
+             (set! ptr (list-ref (· ctx pointers) (increment! i)))
+             (send (· ptr type) encode stream (· ptr val))))))
 
 
 #;(test-module
@@ -117,7 +122,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 (define-subclass Array (LazyArray)
   (inherit-field length_ type)
   (define/override (decode stream [parent #f])
-    (define len (resolveLength length_ stream parent))
+    (define len (utils-resolveLength length_ stream parent))
     (define res (+InnerLazyArray type len stream parent))
     (define lazy-space (* len (send type size)))
     (report lazy-space)

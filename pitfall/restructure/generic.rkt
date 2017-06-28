@@ -60,13 +60,20 @@
 
 (define-generics countable
   (length countable)
+  (countable->list countable)
   #:defaults
-  ([list? (define length b:length)]
-   [vector? (define length vector-length)]
-   [string? (define length string-length)]
-   [bytes? (define length bytes-length)]
-   [dict? (define length dict-count)]
-   [object? (define (length o) (with-handlers ([exn:fail:object? (λ (exn) 0)]) (b:length (get-field _list o))))]))
+  ([list? (define length b:length)
+          (define countable->list (λ (x) x))]
+   [vector? (define length vector-length)
+            (define countable->list vector->list)]
+   [string? (define length string-length)
+            (define countable->list string->list)]
+   [bytes? (define length bytes-length)
+           (define countable->list bytes->list)]
+   [dict? (define length dict-count)
+          (define countable->list (λ (x) x))]
+   [object? (define (length o) (b:length (get-field _list o)))
+            (define (countable->list o) (get-field _list o))]))
 
 (module+ test
   (require racket/list)
@@ -75,5 +82,18 @@
   (check-equal? (length (make-string 42 #\x)) 42)
   (check-equal? (length (make-bytes 42 0)) 42)
   (check-equal? (length (map cons (range 42) (range 42))) 42)
-  (check-equal? (length (make-object (class object% (super-new) (field [_list (make-list 42 #f)])))) 42)
-  (check-equal? (length (make-object (class object% (super-new)))) 0))
+  (check-equal? (length (make-object (class object% (super-new) (field [_list (make-list 42 #f)])))) 42))
+
+(define-generics pushable
+  (push-end pushable xs)
+  #:defaults
+  ([list? (define push-end b:append)]
+   [object? (define (push-end o xs)
+              (append (get-field _list o) xs))]))
+
+(module+ test
+  (check-equal? (push-end (range 3) '(3 4 5)) (range 6))
+  (define o2 (make-object (class object% (super-new) (field [_list (range 3)]))))
+  (ref-set! o2 '_list (push-end o2 '(3 4 5)))
+  (check-equal? (ref o2 '_list) (range 6)))
+
