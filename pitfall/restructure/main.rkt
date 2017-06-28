@@ -5,6 +5,7 @@
      "struct.rkt"
      "string.rkt"
      "array.rkt"
+     "lazy-array.rkt"
      "bitfield.rkt"
      "stream.rkt"
      "buffer.rkt"

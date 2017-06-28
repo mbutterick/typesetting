@@ -6,10 +6,9 @@
 (define-subclass object% (PortWrapper _port)
   (unless (port? _port)
     (raise-argument-error 'PortWrapper:constructor "port" _port))
-  (define/public-final (pos [where #f])
-    (when where
-      (set-port-position! _port where))
-    (port-position _port))
+  (define/public (pos [where #f])
+    (when where (file-position _port where))
+    (file-position _port))
   (define/public (dump) (void)))
 
 (test-module
@@ -87,27 +86,42 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
     (super-make-object (open-input-bytes buffer))
     (inherit-field _port)
 
-    (field [pos 0]
+    (field [_pos 0]
            [length_ (length buffer)])
 
-    (define/public (readString length [encoding 'ascii])
+    (define/override (pos [where #f])
+      (when where
+        (set! _pos (super pos where)))
+      _pos)
+
+    (define/public (count-nonzero-chars)
+      ;; helper function for String
+      ;; counts nonzero chars from current position
+      (length (car (regexp-match-peek "[^\u0]*" _port))))
+
+    (public [-length length])
+    (define (-length) length_)
+
+    (define/public (readString length__ [encoding 'ascii])
       (define proc (caseq encoding
                           [(utf16le) (error 'bah)]
                           [(ucs2) (error 'bleh)]
                           [(utf8) bytes->string/utf-8]
                           [(ascii) bytes->string/latin-1]
                           [else identity]))
-      (proc (subbytes buffer pos (increment-field! pos this length))))
+      (define start (pos))
+      (define stop (+ start length__))
+      (proc (subbytes buffer start (pos stop))))
 
     (define/public-final (readBuffer count)
       (unless (index? count)
         (raise-argument-error 'DecodeStream:read "positive integer" count))
-      (define bytes-remaining (- length_ (port-position _port)))
+      (define bytes-remaining (- length_ (pos)))
       (when (> count bytes-remaining)
         (raise-argument-error 'DecodeStream:read (format "byte count not more than bytes remaining = ~a" bytes-remaining) count))
-      (increment-field! pos this count)
+      (increment-field! _pos this count) ; don't use `pos` method here because `read-bytes` will increment the port position
       (define bs (read-bytes count _port))
-      (unless (= pos (file-position _port)) (raise-result-error 'DecodeStream "positions askew" (list pos (file-position _port))))
+      (unless (= _pos (file-position _port)) (raise-result-error 'DecodeStream "positions askew" (list _pos (file-position _port))))
       bs)
 
     (define/public (read count) (readBuffer count))
