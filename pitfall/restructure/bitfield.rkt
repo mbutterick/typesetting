@@ -19,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 
   (define/override (size . args) (send type size))
 
-  (define/augment (encode stream flag-hash)
+  (define/augment (encode stream flag-hash [ctx #f])
     (define bitfield-int (for/sum ([(flag i) (in-indexed flags)]
                                    #:when (and flag (hash-ref flag-hash flag)))
                            (expt 2 i)))
