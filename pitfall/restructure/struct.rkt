@@ -83,7 +83,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
   (define/override (size [input-hash (mhash)] [parent #f] [includePointers #t])
     (for/sum ([(key type) (in-dict fields)])
-      (define val (hash-ref input-hash key #f))
+      (define val (ref input-hash key))
       (define args (if val (list val) empty))
       (send type size . args))))
 
