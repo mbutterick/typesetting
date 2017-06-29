@@ -35,10 +35,10 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                                 (versionGetter parent)]
                 [else (send type decode stream)]))
 
-    (when (dict-ref versions 'header #f)
+    (when (ref versions 'header)
       (_parseFields stream res (ref versions 'header)))
     
-    (define fields (dict-ref versions (ref res 'version) (λ () (raise-argument-error 'VersionedStruct:decode "valid version key" (cons version (· this versions))))))
+    (define fields (or (ref versions (ref res 'version)) (raise-argument-error 'VersionedStruct:decode "valid version key" (cons version (· this versions)))))
 
     (cond
       [(VersionedStruct? fields) (send fields decode stream parent)]
@@ -50,22 +50,37 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
   (define/public-final (force-version! version)
     (set! forced-version version))  
 
-  (define/override (encode stream input-hash [parent #f])
-    (unless (hash? input-hash)
-      (raise-argument-error 'Struct:encode "hash" input-hash))
+  (define/override (encode stream val [parent #f])
+    (unless (hash? val)
+      (raise-argument-error 'Struct:encode "hash" val))
 
-    (send this preEncode input-hash stream) ; preEncode goes first, because it might bring input hash into compliance
+    (send this preEncode val stream) ; preEncode goes first, because it might bring input hash into compliance
 
-    (define fields (dict-ref versions (· input-hash version) (λ () (raise-argument-error 'VersionedStruct:encode "valid version key" version))))
+    (define ctx (mhash 'pointers empty
+                       'startOffset (· stream pos)
+                       'parent parent
+                       'val val
+                       'pointerSize 0))
 
-    (unless (andmap (λ (key) (member key (hash-keys input-hash))) (dict-keys fields))
-      (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys input-hash)))
+    (ref-set! ctx 'pointerOffset (+ (· stream pos) (size val ctx #f)))
 
-    (cond
-      [(dict? fields)
-       (for* ([(key type) (in-dict fields)])
-         (send type encode stream (hash-ref input-hash key)))]
-      [else (send fields encode stream input-hash parent)]))
+    (when (not (symbol? type))
+      (send type encode stream (· val version)))
+
+    (when (ref versions 'header)
+      (for ([(key type) (in-dict (ref versions 'header))])
+        (send type encode stream (ref val key) ctx)))
+
+    (define fields (or (ref versions (· val version)) (raise-argument-error 'VersionedStruct:encode "valid version key" version)))
+
+    (unless (andmap (λ (key) (member key (ref-keys val))) (ref-keys fields))
+      (raise-argument-error 'VersionedStruct:encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys val)))
+
+    (for ([(key type) (in-dict fields)])
+        (send type encode stream (ref val key) ctx))
+
+    (for ([ptr (in-list (ref ctx 'pointers))])
+      (send (ref ptr 'type) encode stream (ref ptr 'val) (ref ptr 'parent))))
 
   
   (define/override (size [val (mhash)] [parent #f] [includePointers #t])
@@ -77,7 +92,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                        'pointerSize 0))
 
     (define size 0)
-    (when (not (string? type))
+    (when (not (symbol? type))
       (increment! size (send type size (ref val 'version) ctx)))
 
     (when (ref versions 'header)
@@ -85,10 +100,10 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                   (for/sum ([(key type) (in-dict (ref versions 'header))])
                     (send type size (ref val key) ctx))))
     
-    (define fields (dict-ref versions (ref val 'version) (λ () (raise-argument-error 'VersionedStruct:encode "valid version key" version))))
+    (define fields (or (ref versions (ref val 'version)) (raise-argument-error 'VersionedStruct:encode "valid version key" version)))
 
     (increment! size
-                (for/sum ([(key type) (in-dict (ref versions 'header))])
+                (for/sum ([(key type) (in-dict fields)])
                   (send type size (ref val key) ctx)))
 
     (when includePointers
@@ -111,7 +126,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                                (cons v (for/list ([num-type (in-list field-types)])
                                          (cons (gensym) num-type)))))
      (define vs (+VersionedStruct which-struct struct-versions))
-     (define struct-size (for/sum ([num-type (in-list (map cdr (dict-ref struct-versions which-struct)))])
+     (define struct-size (for/sum ([num-type (in-list (map cdr (ref struct-versions which-struct)))])
                            (send num-type size)))
      (define bs (apply bytes (for/list ([i (in-range struct-size)])
                                (random 256))))

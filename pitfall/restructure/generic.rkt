@@ -13,13 +13,13 @@
   (ref-set! indexable i v)
   (ref-keys indexable)
   #:defaults
-  ([hash? (define ref hash-ref)
+  ([hash? (define (ref o i) (hash-ref o i #f))
           (define ref-set! hash-set!)
           (define ref-keys hash-keys)]
-   [dict? (define ref dict-ref)
+   [dict? (define (ref o i) (dict-ref o i #f))
           (define ref-set! dict-set!)
           (define ref-keys dict-keys)]
-   [object? (define (ref o i) (with-handlers ([exn:fail:object? (λ (exn) (hash-ref (get-field _hash o) i))]) (dynamic-get-field i o)))
+   [object? (define (ref o i) (with-handlers ([exn:fail:object? (λ (exn) (hash-ref (get-field _hash o) i #f))]) (dynamic-get-field i o)))
             (define (ref-set! o i v) (with-handlers ([exn:fail:object? (λ (exn) (hash-set! (get-field _hash o) i v))]) (dynamic-set-field! i o v)))
             (define (ref-keys o) (append (remove '_hash (field-names o)) (hash-keys (get-field _hash o))))]))
 

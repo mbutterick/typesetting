@@ -19,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 ;        name: 'devon'
 ;        age: 21
 
-(let ([stream (+DecodeStream (+Buffer (bytes->list (bytes-append (bytes #x05) #"devon" (bytes #x15)))))]
+(let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
   (check-equal? (send (send struct decode stream) ht)
@@ -41,7 +41,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 ;        age: 32
 ;        canDrink: true
 
-(let ([stream (+DecodeStream (+Buffer (bytes->list (bytes-append (bytes #x05) #"devon" (bytes #x20)))))]
+(let ([stream (+DecodeStream (+Buffer "\x05devon\x20"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
   (set-field! process struct (λ (o stream) (ref-set! o 'canDrink (>= (ref o 'age) 21))))
@@ -62,7 +62,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 ;        age: 32
 ;        canDrink: true
 
-(let ([stream (+DecodeStream (+Buffer (bytes->list (bytes-append (bytes #x05) #"devon" (bytes #x20)))))]
+(let ([stream (+DecodeStream (+Buffer "\x05devon\x20"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8
                                 'canDrink (λ (o) (>= (ref o 'age) 21))))])
@@ -148,7 +148,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 ;
 ;      stream.end()
 
-(let ([stream (+DecodeStream (+Buffer (bytes->list (bytes-append (bytes #x05) #"devon" (bytes #x15)))))]
+(let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
   (check-equal? (send (send struct decode stream) ht)
@@ -182,7 +182,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
   (set-field! preEncode struct (λ (val stream) (ref-set! val 'nameLength (length (ref val 'name)))))
   (send struct encode stream (mhasheq 'name "devon" 'age 21))
   (check-equal? (send stream dump)
-                (+Buffer (bytes->list (bytes-append (bytes #x05) #"devon" (bytes #x15))))))
+                (+Buffer "\x05devon\x15")))
 
 
 ; todo: when pointer is ready
