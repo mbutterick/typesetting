@@ -10,3 +10,14 @@
      "stream.rkt"
      "buffer.rkt"
      "pointer.rkt")
+
+(test-module
+ (require "number-test.rkt"
+          "struct-test.rkt"
+          "string-test.rkt"
+          "array-test.rkt"
+          "lazy-array-test.rkt"
+          "bitfield-test.rkt"
+          "stream-test.rkt"
+          "buffer-test.rkt"
+          #;"pointer-test.rkt"))

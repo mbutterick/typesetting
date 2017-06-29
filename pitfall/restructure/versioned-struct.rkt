@@ -2,15 +2,12 @@
 (require racket/dict "struct.rkt")
 (provide (all-defined-out))
 
-
-
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
 (define-subclass Struct (VersionedStruct type [versions (dictify)])
-  (inherit-field res)
   (unless ((disjoin integer? procedure? RestructureBase? symbol?) type)
     (raise-argument-error 'VersionedStruct "integer, function, symbol, or Restructure object" type))
   (unless (and (dict? versions) (andmap (λ (val) (or (dict? val) (Struct? val))) (map cdr versions)))
