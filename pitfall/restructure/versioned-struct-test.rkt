@@ -30,6 +30,28 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
 ;        name: 'devon 👍'
 ;        age: 21
 ;        gender: 0
+
+(let ([struct (+VersionedStruct uint8
+                                (dictify
+                                 0 (dictify 'name (+StringT uint8 'ascii)
+                                            'age uint8)
+                                 1 (dictify 'name (+StringT uint8 'utf8)
+                                            'age uint8
+                                            'gender uint8)))])
+
+  (let ([stream (+DecodeStream (+Buffer "\u0000\u0005devon\u0015"))])
+    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon"
+                                                                 'age 21
+                                                                 'version 0)))
+
+  (let ([stream (+DecodeStream (+Buffer "\u0001\u000adevon 👍\u0015\u0000"))])
+    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon 👍"
+                                                                 'age 21
+                                                                 'version 1
+                                                                 'gender 0))))
+
+
+
 ;
 ;    it 'should throw for unknown version', ->
 ;      struct = new VersionedStruct uint8,
@@ -44,6 +66,19 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
 ;      stream = new DecodeStream new Buffer '\x05\x05devon\x15'
 ;      should.throw ->
 ;        struct.decode(stream)
+
+
+(let ([struct (+VersionedStruct uint8
+                                (dictify
+                                 0 (dictify 'name (+StringT uint8 'ascii)
+                                            'age uint8)
+                                 1 (dictify 'name (+StringT uint8 'utf8)
+                                            'age uint8
+                                            'gender uint8)))])
+
+  (let ([stream (+DecodeStream (+Buffer "\u0005\u0005devon\u0015"))])
+    (check-exn exn:fail:contract? (λ () (send struct decode stream)))))
+
 ;
 ;    it 'should support common header block', ->
 ;      struct = new VersionedStruct uint8,
@@ -70,6 +105,29 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
 ;        alive: 1
 ;        name: 'devon 👍'
 ;        gender: 0
+
+
+(let ([struct (+VersionedStruct uint8
+                                (dictify
+                                 'header (dictify 'age uint8
+                                                  'alive uint8)
+                                 0 (dictify 'name (+StringT uint8 'ascii))
+                                 1 (dictify 'name (+StringT uint8 'utf8)
+                                            'gender uint8)))])
+
+  (let ([stream (+DecodeStream (+Buffer "\u0000\u0015\u0001\u0005devon"))])
+    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon"
+                                                                 'age 21
+                                                                 'alive 1
+                                                                 'version 0)))
+
+  (let ([stream (+DecodeStream (+Buffer "\u0001\u0015\u0001\u000adevon 👍\u0000"))])
+    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon 👍"
+                                                                 'age 21
+                                                                 'version 1
+                                                                 'alive 1
+                                                                 'gender 0))))
+
 ;
 ;    it 'should support parent version key', ->
 ;      struct = new VersionedStruct 'version',
@@ -93,6 +151,26 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
 ;        name: 'devon 👍'
 ;        age: 21
 ;        gender: 0
+
+(let ([struct (+VersionedStruct 'version
+                                (dictify
+                                 0 (dictify 'name (+StringT uint8 'ascii)
+                                            'age uint8)
+                                 1 (dictify 'name (+StringT uint8 'utf8)
+                                            'age uint8
+                                            'gender uint8)))])
+
+  (let ([stream (+DecodeStream (+Buffer "\u0005devon\u0015"))])
+    (check-equal? (send (send struct decode stream (mhash 'version 0)) ht) (mhasheq 'name "devon"
+                                                                                    'age 21
+                                                                                    'version 0)))
+
+  (let ([stream (+DecodeStream (+Buffer "\u000adevon 👍\u0015\u0000" 'utf8))])
+    (check-equal? (send (send struct decode stream (mhash 'version 1)) ht) (mhasheq 'name "devon 👍"
+                                                                                    'age 21
+                                                                                    'version 1
+                                                                                    'gender 0))))
+
 ;
 ;    it 'should support sub versioned structs', ->
 ;      struct = new VersionedStruct uint8,
