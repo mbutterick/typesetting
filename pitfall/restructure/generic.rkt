@@ -11,26 +11,31 @@
 (define-generics indexable
   (ref indexable i)
   (ref-set! indexable i v)
+  (ref-keys indexable)
   #:defaults
   ([hash? (define ref hash-ref)
-          (define ref-set! hash-set!)]
+          (define ref-set! hash-set!)
+          (define ref-keys hash-keys)]
    [object? (define (ref o i) (with-handlers ([exn:fail:object? (λ (exn) (hash-ref (get-field _hash o) i))]) (dynamic-get-field i o)))
-            (define (ref-set! o i v) (with-handlers ([exn:fail:object? (λ (exn) (hash-set! (get-field _hash o) i v))]) (dynamic-set-field! i o v)))]))
+            (define (ref-set! o i v) (with-handlers ([exn:fail:object? (λ (exn) (hash-set! (get-field _hash o) i v))]) (dynamic-set-field! i o v)))
+            (define (ref-keys o) (append (remove '_hash (field-names o)) (hash-keys (get-field _hash o))))]))
 
 (module+ test
-  (require rackunit)
+  (require rackunit racket/set)
   (define h (make-hash '((foo . 42))))
   (check-equal? (ref h 'foo) 42)
   (ref-set! h 'foo 85)
   (check-equal? (ref h 'foo) 85)
   (ref-set! h 'bar 121)
   (check-equal? (ref h 'bar) 121)
+  (check-equal? (apply set (ref-keys h)) (apply set '(foo bar)))
   (define o (make-object (class object% (super-new) (field [_hash (make-hash)][foo 42]))))
   (check-equal? (ref o 'foo) 42)
   (ref-set! o 'foo 100)
   (check-equal? (ref o 'foo) 100)
   (ref-set! o 'bar 121)
-  (check-equal? (ref o 'bar) 121))
+  (check-equal? (ref o 'bar) 121)
+  (check-equal? (apply set (ref-keys o)) (apply set '(foo bar))))
 
 (define (ref* c . is)
   (for/fold ([c c])

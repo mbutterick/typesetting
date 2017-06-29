@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require racket/dict "stream.rkt")
+(require racket/dict "stream.rkt" racket/private/generic-methods racket/struct)
 (provide (all-defined-out))
 
 #|
@@ -7,7 +7,33 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
+(define hashable<%>
+  (interface* ()
+              ([(generic-property gen:indexable)
+                (generic-method-table gen:indexable
+                                      (define (ref o i) (or (hash-ref (get-field kv o) i #f)
+                                                            (hash-ref (get-field _hash o) i #f)))
+                                      (define (ref-set! o i v) (hash-set! (get-field kv o) i v))
+                                      (define (ref-keys o) (hash-keys (get-field kv o))))]
+               [(generic-property gen:custom-write)
+                (generic-method-table gen:custom-write
+                                      (define (write-proc o port mode)
+                                        (define proc (case mode
+                                                       [(#t) write]
+                                                       [(#f) display]
+                                                       [else (λ (p port) (print p port mode))]))
+                                        (proc (get-field kv o) port)))])))
+
+(define StructRes (class* RestructureBase (hashable<%>)
+                    (super-make-object)
+                    (field [kv (mhasheq)])
+                    (define/public (ht) kv)))
+
 (define-subclass Streamcoder (Struct [fields (dictify)])
+  (field [[_process process] void]
+         [[_preEncode preEncode] void]) ; store as field so it can be mutated from outside
+  (define/override (process . args) (apply _process args))
+  (define/override (preEncode . args) (apply _preEncode args))
   
   (unless ((disjoin assocs? Struct?) fields) ; should be Versioned Struct but whatever
     (raise-argument-error 'Struct "assocs or Versioned Struct" fields))
@@ -15,28 +41,28 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define/augride (decode stream [parent #f] [length_ 0])
     (define res (_setup stream parent length_))
     (_parseFields stream res fields)
-    (send this process res stream)
+    (process res stream)
     res)
 
   (define/augride (encode stream input-hash [parent #f])
     
-    (unless (hash? input-hash)
-      (raise-argument-error 'Struct:encode "hash" input-hash))
+    #;(unless (hash? input-hash)
+        (raise-argument-error 'Struct:encode "hash" input-hash))
 
     (send this preEncode input-hash stream) ; preEncode goes first, because it might bring input hash into compliance
 
-    (unless (andmap (λ (key) (member key (hash-keys input-hash))) (dict-keys fields))
+    (unless (andmap (λ (key) (member key (ref-keys input-hash))) (dict-keys fields))
       (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys input-hash)))
 
     (cond
       [(dict? fields)
        (for* ([(key type) (in-dict fields)])
-         (send type encode stream (hash-ref input-hash key)))]
+         (send type encode stream (ref input-hash key)))]
       [else (send fields encode stream input-hash parent)]))
 
   (define/public-final (_setup stream parent length)
-    (define res (mhasheq))
-    (hash-set*! res 'parent parent
+    (define res (make-object StructRes)) ; not mere hash
+    (hash-set*! (· res _hash) 'parent parent
                 '_startOffset (· stream pos)
                 '_currentOffset 0
                 '_length length)
@@ -49,9 +75,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (define val
         (if (procedure? type)
             (type res)
-            (send type decode stream this)))
-      (hash-set! res key val)
-      (hash-set! res '_currentOffset (- (· stream pos) (· res _startOffset)))))
+            (send type decode stream res)))
+      ;; skip PropertyDescriptor maneuver. Only used for lazy pointer
+      (ref-set! res key val)
+      (hash-set! (· res _hash) '_currentOffset (- (· stream pos) (ref res '_startOffset)))))
+  
 
   (define/override (size [input-hash (mhash)] [parent #f] [includePointers #t])
     (for/sum ([(key type) (in-dict fields)])
