@@ -81,7 +81,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       (for ([ptr (in-list (· ctx pointers))])
         (send (· ptr type) encode stream (· ptr val))))))
 
-(define-values (Array? +Array) (values ArrayT? +ArrayT))
+(define-values (Array Array? +Array) (values ArrayT ArrayT? +ArrayT))
 
 (test-module
  (define stream (+DecodeStream #"ABCDEFG"))
