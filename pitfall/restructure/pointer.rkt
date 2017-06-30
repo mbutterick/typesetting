@@ -80,10 +80,44 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     (send offsetType size))
                  
 
-  #;(define/public (encode stream val)
-      (error 'Pointer-encode-not-done))
+  (define/public (encode stream val [ctx #f])
+    (define parent ctx)
+    (define relative #f)
+    (cond
+      [(not val)
+       (send offsetType encode stream (ref options 'nullValue))]
+      [else
+       (caseq (ref options 'type)
+              [(local) (set! relative (ref ctx 'startOffset))]
+              [(immediate) (set! relative (+ (· stream pos) (send offsetType size val parent)))]
+              [(parent) (set! ctx (ref ctx 'parent))
+                        (set! relative (ref ctx 'startOffset))]
+              [else ; global
+               (set! relative 0)
+               (set! ctx (let loop ([ctx ctx])
+                           (cond
+                             [(ref ctx 'parent) => loop]
+                             [else ctx])))])
+
+       (when (ref options 'relativeTo)
+         (increment! relative (relativeToGetter (ref parent 'val))))
+
+       (send offsetType encode stream (- (ref ctx 'pointerOffset) relative))
+
+       (define type_ type)
+       (unless type_
+         ; todo: uncomment when VoidPointer class is ready
+         #;(unless (VoidPointer? val)
+             (raise-argument-error 'Pointer:size "VoidPointer" val))
+
+         (set! type (ref val 'type))
+         (set! val (ref val 'value)))
+
+       (ref-set! ctx 'pointers (append (ref ctx 'pointers) (list (mhash 'type type
+                                                                        'val val
+                                                                        'parent parent))))
+       (ref-set! ctx 'pointerOffset (+ (ref ctx 'pointerOffset) (send type size val parent)))])))
 
 
   
 
-  )

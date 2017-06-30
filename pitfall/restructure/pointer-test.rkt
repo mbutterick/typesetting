@@ -196,6 +196,18 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      ctx.pointerSize.should.equal 0
 ;
 ;      stream.end()
+
+
+(let ([stream (+EncodeStream)]
+      [ptr (+Pointer uint8 uint8)]
+      [ctx (mhash 'pointerSize 0
+                  'startOffset 0
+                  'pointerOffset 0
+                  'pointers null)])
+  (send ptr encode stream #f ctx)
+  (check-equal? (ref ctx 'pointerSize) 0)
+  (check-equal? (send stream dump) (+Buffer '(0))))
+
 ;
 ;    it 'should handle local offsets', (done) ->
 ;      stream = new EncodeStream
@@ -217,6 +229,22 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      ]
 ;
 ;      stream.end()
+
+
+(let ([stream (+EncodeStream)]
+      [ptr (+Pointer uint8 uint8)]
+      [ctx (mhash 'pointerSize 0
+                  'startOffset 0
+                  'pointerOffset 1
+                  'pointers null)])
+  (send ptr encode stream 10 ctx)
+  (check-equal? (ref ctx 'pointerOffset) 2)
+  (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
+                                                 'val 10
+                                                 'parent ctx)))
+  (check-equal? (send stream dump) (+Buffer '(1))))
+
+
 ;
 ;    it 'should handle immediate offsets', (done) ->
 ;      stream = new EncodeStream
@@ -238,27 +266,21 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      ]
 ;
 ;      stream.end()
-;
-;    it 'should handle immediate offsets', (done) ->
-;      stream = new EncodeStream
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer [0]
-;        done()
-;
-;      ptr = new Pointer uint8, uint8, type: 'immediate'
-;      ctx =
-;        pointerSize: 0,
-;        startOffset: 0,
-;        pointerOffset: 1,
-;        pointers: []
-;
-;      ptr.encode(stream, 10, ctx)
-;      ctx.pointerOffset.should.equal 2
-;      ctx.pointers.should.deep.equal [
-;        { type: uint8, val: 10, parent: ctx }
-;      ]
-;
-;      stream.end()
+
+(let ([stream (+EncodeStream)]
+      [ptr (+Pointer uint8 uint8 (mhash 'type 'immediate))]
+      [ctx (mhash 'pointerSize 0
+                  'startOffset 0
+                  'pointerOffset 1
+                  'pointers null)])
+  (send ptr encode stream 10 ctx)
+  (check-equal? (ref ctx 'pointerOffset) 2)
+  (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
+                                                 'val 10
+                                                 'parent ctx)))
+  (check-equal? (send stream dump) (+Buffer '(0))))
+
+
 ;
 ;    it 'should handle offsets relative to parent', (done) ->
 ;      stream = new EncodeStream
@@ -281,6 +303,21 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      ]
 ;
 ;      stream.end()
+
+(let ([stream (+EncodeStream)]
+      [ptr (+Pointer uint8 uint8 (mhash 'type 'parent))]
+      [ctx (mhash 'parent (mhash 'pointerSize 0
+                                 'startOffset 3
+                                 'pointerOffset 5
+                                 'pointers null))])
+  (send ptr encode stream 10 ctx)
+  (check-equal? (ref* ctx 'parent 'pointerOffset) 6)
+  (check-equal? (ref* ctx 'parent 'pointers) (list (mhash 'type uint8
+                                                          'val 10
+                                                          'parent ctx)))
+  (check-equal? (send stream dump) (+Buffer '(2))))
+
+
 ;
 ;    it 'should handle global offsets', (done) ->
 ;      stream = new EncodeStream
@@ -305,6 +342,24 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      ]
 ;
 ;      stream.end()
+
+
+(let ([stream (+EncodeStream)]
+      [ptr (+Pointer uint8 uint8 (mhash 'type 'global))]
+      [ctx (mhash 'parent
+                  (mhash 'parent
+                         (mhash 'parent (mhash 'pointerSize 0
+                                               'startOffset 3
+                                               'pointerOffset 5
+                                               'pointers null))))])
+  (send ptr encode stream 10 ctx)
+  (check-equal? (ref* ctx 'parent 'parent 'parent 'pointerOffset) 6)
+  (check-equal? (ref* ctx 'parent 'parent 'parent 'pointers) (list (mhash 'type uint8
+                                                                          'val 10
+                                                                          'parent ctx)))
+  (check-equal? (send stream dump) (+Buffer '(5))))
+
+
 ;
 ;    it 'should support offsets relative to a property on the parent', (done) ->
 ;      stream = new EncodeStream
@@ -328,6 +383,22 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      ]
 ;
 ;      stream.end()
+
+
+(let ([stream (+EncodeStream)]
+      [ptr (+Pointer uint8 uint8 (mhash 'relativeTo (λ (ctx) (ref ctx 'ptr))))]
+      [ctx (mhash 'pointerSize 0
+                  'startOffset 0
+                  'pointerOffset 10
+                  'pointers null
+                  'val (mhash 'ptr 4))])
+  (send ptr encode stream 10 ctx)
+  (check-equal? (ref ctx 'pointerOffset) 11)
+  (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
+                                                   'val 10
+                                                   'parent ctx)))
+  (check-equal? (send stream dump) (+Buffer '(6))))
+
 ;
 ;    it 'should support void pointers', (done) ->
 ;      stream = new EncodeStream
