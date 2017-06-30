@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require "struct.rkt" "string.rkt" "number.rkt" "buffer.rkt" "stream.rkt" rackunit)
+(require "struct.rkt" "string.rkt" "number.rkt" "buffer.rkt" "stream.rkt" rackunit "pointer.rkt")
 
 #|
 approximates
@@ -84,7 +84,6 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
   (check-equal? (send struct size (hasheq 'name "devon" 'age 32)) 7))
 
 
-; todo: when pointers are ready
 ;    it 'should compute the correct size with pointers', ->
 ;      struct = new Struct
 ;        name: new StringT uint8
@@ -98,8 +97,10 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 ;
 ;      size.should.equal 14
 
-
-(displayln 'warning:pointer-not-done)
+(let ([struct (+Struct (dictify 'name (+StringT uint8)
+                                'age uint8
+                                'ptr (+Pointer uint8 (+StringT uint8))))])
+  (check-equal? (send struct size (mhash 'name "devon" 'age 21 'ptr "hello")) 14))
 
 
 ;      
@@ -185,7 +186,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
                 (+Buffer "\x05devon\x15")))
 
 
-; todo: when pointer is ready
+
 ;    it 'should encode pointer data after structure', (done) ->
 ;      stream = new EncodeStream
 ;      stream.pipe concat (buf) ->
@@ -203,4 +204,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 ;        ptr: 'hello'
 ;
 ;      stream.end()
-(displayln 'warning:pointer-not-done)
+
+
+(let ([stream (+EncodeStream)]
+        [struct (+Struct (dictify 'name (+StringT uint8)
+                                  'age uint8
+                                  'ptr (+Pointer uint8 (+StringT uint8))))])
+    (send struct encode stream (mhasheq 'name "devon" 'age 21 'ptr "hello"))
+    (check-equal? (send stream dump) (+Buffer "\x05devon\x15\x08\x05hello")))

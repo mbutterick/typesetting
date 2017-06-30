@@ -22,4 +22,4 @@
           "bitfield-test.rkt"
           "stream-test.rkt"
           "buffer-test.rkt"
-          #;"pointer-test.rkt"))
+          "pointer-test.rkt"))

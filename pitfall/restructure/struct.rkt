@@ -44,22 +44,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (process res stream)
     res)
 
-  (define/augride (encode stream input-hash [parent #f])
-    
-    #;(unless (hash? input-hash)
-        (raise-argument-error 'Struct:encode "hash" input-hash))
-
-    (send this preEncode input-hash stream) ; preEncode goes first, because it might bring input hash into compliance
-
-    (unless (andmap (λ (key) (member key (ref-keys input-hash))) (dict-keys fields))
-      (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys input-hash)))
-
-    (cond
-      [(dict? fields)
-       (for* ([(key type) (in-dict fields)])
-         (send type encode stream (ref input-hash key)))]
-      [else (send fields encode stream input-hash parent)]))
-
   (define/public-final (_setup stream parent length)
     (define res (make-object StructRes)) ; not mere hash
     (hash-set*! (· res _hash) 'parent parent
@@ -81,11 +65,42 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (hash-set! (· res _hash) '_currentOffset (- (· stream pos) (ref res '_startOffset)))))
   
 
-  (define/override (size [input-hash (mhash)] [parent #f] [includePointers #t])
-    (for/sum ([(key type) (in-dict fields)])
-      (define val (ref input-hash key))
-      (define args (if val (list val) empty))
-      (send type size . args))))
+  (define/override (size [val (mhash)] [parent #f] [includePointers #t])
+    (define ctx (mhash 'parent parent
+                       'val val
+                       'pointerSize 0))
+    (define size 0)
+    (for ([(key type) (in-dict fields)])
+         (increment! size (send type size (ref val key) ctx)))
+
+    (when includePointers
+      (increment! size (ref ctx 'pointerSize)))
+    
+    size)
+
+  (define/augride (encode stream val [parent #f])
+    
+    #;(unless (hash? input-hash)
+        (raise-argument-error 'Struct:encode "hash" input-hash))
+
+    (send this preEncode val stream) ; preEncode goes first, because it might bring input hash into compliance
+
+    (define ctx (mhash 'pointers empty
+                       'startOffset (· stream pos)
+                       'parent parent
+                       'val val
+                       'pointerSize 0))
+
+    (ref-set! ctx 'pointerOffset (+ (· stream pos) (size val ctx #f)))
+
+    (unless (andmap (λ (key) (member key (ref-keys val))) (dict-keys fields))
+      (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys val)))
+
+    (for ([(key type) (in-dict fields)])
+         (send type encode stream (ref val key) ctx))
+
+    (for ([ptr (in-list (ref ctx 'pointers))])
+         (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
 
 
 (test-module

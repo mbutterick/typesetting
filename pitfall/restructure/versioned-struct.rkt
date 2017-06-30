@@ -117,8 +117,8 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
    (check-exn exn:fail:contract? (λ () (+VersionedStruct 42 42)))
 
    ;; make random versioned structs and make sure we can round trip
-   (for ([i (in-range 20)])
-     (define field-types (for/list ([i (in-range 200)])
+   #;(for ([i (in-range 1)])
+     (define field-types (for/list ([i (in-range 1)])
                            (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
      (define num-versions 20)
      (define which-struct (random num-versions))
@@ -126,6 +126,8 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                                (cons v (for/list ([num-type (in-list field-types)])
                                          (cons (gensym) num-type)))))
      (define vs (+VersionedStruct which-struct struct-versions))
+     (report* vs (send vs size))
+     (error 'stop)
      (define struct-size (for/sum ([num-type (in-list (map cdr (ref struct-versions which-struct)))])
                            (send num-type size)))
      (define bs (apply bytes (for/list ([i (in-range struct-size)])
@@ -134,13 +136,15 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
    (define s (+Struct (dictify 'a uint8 'b uint8 'c uint8)))
    (check-equal? (send s size) 3)
-   (define vs (+VersionedStruct (λ (p) 2) (dictify 1 (dictify 'd s) 2 (dictify 'e s 'f s))))
+   (define vs (+VersionedStruct uint8 (dictify 1 (dictify 'd s) 2 (dictify 'e s 'f s))))
+   (send vs force-version! 1)
    (check-equal? (send vs size) 6)
+   #|
    (define s2 (+Struct (dictify 'a vs)))
    (check-equal? (send s2 size) 6)
    (define vs2 (+VersionedStruct (λ (p) 2) (dictify 1 vs 2 vs)))
    (check-equal? (send vs2 size) 6)
-
+|#
    )
 
 

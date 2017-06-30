@@ -166,8 +166,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.encode(stream, [1, 2, 3, 4])
 ;      stream.end()
 
-(displayln "warning: pointer test not done")
-#;(let ([stream (+EncodeStream)]
+(let ([stream (+EncodeStream)]
       [array (+ArrayT (+Pointer uint8 uint8) uint8)])
   (send array encode stream '(1 2 3 4))
   (check-equal? (send stream dump) (+Buffer '(4 5 6 7 8 1 2 3 4))))

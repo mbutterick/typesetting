@@ -74,7 +74,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
       (set! val (ref val 'value)))
 
     (when (and val ctx)
-      (ref-set! ctx 'pointerSize (+ (ref ctx 'pointerSize) (send type size val parent))))
+      (ref-set! ctx 'pointerSize (and (ref ctx 'pointerSize)
+                                      (+ (ref ctx 'pointerSize) (send type size val parent)))))
 
     (send offsetType size))
                  
