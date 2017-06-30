@@ -6,4 +6,4 @@
 (report 'start-decode)
 (define gpos (send GPOS decode (send f _getTableStream 'GPOS)))
 
-(send (dict-ref gpos 'lookupList) get 1)
+(send (dict-ref gpos 'lookupList) get 2)

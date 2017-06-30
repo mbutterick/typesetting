@@ -52,8 +52,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
 (define-subclass Struct (FeatureRec))
 (define-subclass Pointer (FeatureRec-Pointer))
 (define FeatureRecord (+FeatureRec (dictify
-                                'tag (+String 4)
-                                'feature (+FeatureRec-Pointer uint16be Feature (mhash 'type 'parent)))))
+                                    'tag (+String 4)
+                                    'feature (+FeatureRec-Pointer uint16be Feature (mhash 'type 'parent)))))
 
 (define FeatureList (+Array FeatureRecord uint16be))
 
@@ -92,6 +92,38 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
                         'rangeCount   uint16be
                         'rangeRecords (+Array RangeRecord 'rangeCount)))))
 
+;;#########################
+;; Class Definition Table #
+;;#########################
+
+(define ClassRangeRecord (+Struct
+                          (dictify
+                           'start uint16be
+                           'end uint16be
+                           'class uint16be)))
+
+(define ClassDef (+VersionedStruct uint16be
+                                   (dictify
+                                    1 ;; Class array
+                                    (dictify
+                                     'startGlyph uint16be
+                                     'glyphCount uint16be
+                                     'classValueArray (+Array uint16be 'glyphCount))
+                                    2 ;; Class ranges
+                                    (dictify
+                                     'classRangeCount uint16be
+                                     'classRangeRecord (+Array ClassRangeRecord 'classRangeCount)))))
+
+
+;;###############
+;; Device Table #
+;;###############
+
+(define Device (+Struct
+                (dictify
+                 'startSize uint16be
+                 'endSize uint16be
+                 'deltaFormat uint16be)))
 
 ;;#############################################
 ;; Contextual Substitution/Positioning Tables #

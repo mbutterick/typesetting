@@ -1,6 +1,6 @@
 #lang restructure/racket
 (require racket/dict "stream.rkt" racket/private/generic-methods racket/struct)
-(provide (all-defined-out))
+(provide (all-defined-out) ref* ref*-set!)
 (require (prefix-in d: racket/dict))
 
 #|
