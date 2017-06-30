@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require "versioned-struct.rkt" "string.rkt" "number.rkt" "buffer.rkt" "stream.rkt" rackunit)
+(require "versioned-struct.rkt" "string.rkt" "number.rkt" "buffer.rkt" "stream.rkt" rackunit "pointer.rkt")
 
 #|
 approximates
@@ -387,7 +387,6 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                            'version 1)) 15))
 
 
-; todo: pointers
 ;    it 'should compute the correct size with pointers', ->
 ;      struct = new VersionedStruct uint8,
 ;        0:
@@ -406,7 +405,20 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
 ;
 ;      size.should.equal 15
 
-(displayln "warning: pointer test not done in versioned-struct-test")
+
+
+(let ([struct (+VersionedStruct uint8
+                                (dictify
+                                 0 (dictify 'name (+StringT uint8 'ascii)
+                                            'age uint8)
+                                 1 (dictify 'name (+StringT uint8 'utf8)
+                                            'age uint8
+                                            'ptr (+Pointer uint8 (+StringT uint8)))))])
+  
+  (check-equal? (send struct size (mhasheq 'name "devon"
+                                           'age 21
+                                           'version 1
+                                           'ptr "hello")) 15))
 
 
 ;    
@@ -556,20 +568,20 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
       [stream (+EncodeStream)])
   
   (send struct encode stream (mhasheq 'name "devon"
-                                           'age 21
-                                           'alive 1
-                                           'version 0))
+                                      'age 21
+                                      'alive 1
+                                      'version 0))
   
   (send struct encode stream (mhasheq 'name "devon 👍"
-                                           'gender 0
-                                           'age 21
-                                           'alive 1
-                                           'version 1))
+                                      'gender 0
+                                      'age 21
+                                      'alive 1
+                                      'version 1))
   
   (check-equal? (send stream dump) (+Buffer "\x00\x15\x01\x05devon\x01\x15\x01\x0adevon 👍\x00" 'utf8)))
 
 
-; todo
+
 ;    it 'should encode pointer data after structure', (done) ->
 ;      struct = new VersionedStruct uint8,
 ;        0:
@@ -594,9 +606,20 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
 ;
 ;      stream.end()
 
+(let ([struct (+VersionedStruct uint8
+                                (dictify 
+                                 0 (dictify 'name (+StringT uint8 'ascii)
+                                            'age uint8)
+                                 1 (dictify 'name (+StringT uint8 'utf8)
+                                            'age uint8
+                                            'ptr (+Pointer uint8 (+StringT uint8)))))]
+      [stream (+EncodeStream)])
+  (send struct encode stream (mhasheq 'version 1
+                                      'name "devon"
+                                      'age 21
+                                      'ptr "hello"))
 
-(displayln "warning: pointer test not done in versioned-struct-test")
-
+  (check-equal? (send stream dump) (+Buffer "\x01\x05devon\x15\x09\x05hello" 'utf8)))
 
 
 ;
