@@ -154,20 +154,30 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
   (check-equal? (send pointer size 10 ctx) 1)
   (check-equal? (ref* ctx 'parent 'parent 'parent 'pointerSize) 1))
 
-; todo: void pointer
+
 ;    it 'should handle void pointers', ->
 ;      pointer = new Pointer uint8, 'void'
 ;      ctx = pointerSize: 0
 ;      pointer.size(new VoidPointer(uint8, 50), ctx).should.equal 1
 ;      ctx.pointerSize.should.equal 1
+
+(let ([pointer (+Pointer uint8 'void)]
+      [ctx (mhash 'pointerSize 0)])
+  (check-equal? (send pointer size (+VoidPointer uint8 50) ctx) 1)
+  (check-equal? (ref ctx 'pointerSize) 1))
+
+
+
 ;
 ;    it 'should throw if no type and not a void pointer', ->
 ;      pointer = new Pointer uint8, 'void'
 ;      ctx = pointerSize: 0
 ;      should.throw ->
 ;        pointer.size(30, ctx).should.equal 1
-;
 
+(let ([pointer (+Pointer uint8 'void)]
+      [ctx (mhash 'pointerSize 0)])
+  (check-exn exn:fail:contract? (λ () (send pointer size 30 ctx))))
 
 
 ;    it 'should return a fixed size without a value', ->
@@ -395,8 +405,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
   (send ptr encode stream 10 ctx)
   (check-equal? (ref ctx 'pointerOffset) 11)
   (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
-                                                   'val 10
-                                                   'parent ctx)))
+                                                 'val 10
+                                                 'parent ctx)))
   (check-equal? (send stream dump) (+Buffer '(6))))
 
 ;
@@ -420,6 +430,22 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      ]
 ;
 ;      stream.end()
+
+(let ([stream (+EncodeStream)]
+      [ptr (+Pointer uint8 'void)]
+      [ctx (mhash 'pointerSize 0
+                  'startOffset 0
+                  'pointerOffset 1
+                  'pointers null)])
+  (send ptr encode stream (+VoidPointer uint8 55) ctx)
+  (check-equal? (ref ctx 'pointerOffset) 2)
+  (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
+                                                 'val 55
+                                                 'parent ctx)))
+  (check-equal? (send stream dump) (+Buffer '(1))))
+
+
+
 ;
 ;    it 'should throw if not a void pointer instance', ->
 ;      stream = new EncodeStream
@@ -432,3 +458,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;
 ;      should.throw ->
 ;        ptr.encode(stream, 44, ctx)
+
+
+(let ([stream (+EncodeStream)]
+      [ptr (+Pointer uint8 'void)]
+      [ctx (mhash 'pointerSize 0
+                  'startOffset 0
+                  'pointerOffset 1
+                  'pointers null)])
+  (check-exn exn:fail:contract? (λ () (send ptr encode stream 44 ctx))))

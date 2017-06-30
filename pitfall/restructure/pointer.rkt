@@ -67,9 +67,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 
     (define type_ type)
     (unless type_
-      ; todo: uncomment when VoidPointer class is ready
-      #;(unless (VoidPointer? val)
-          (raise-argument-error 'Pointer:size "VoidPointer" val))
+      (unless (VoidPointer? val)
+        (raise-argument-error 'Pointer:size "VoidPointer" val))
 
       (set! type (ref val 'type))
       (set! val (ref val 'value)))
@@ -106,9 +105,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 
        (define type_ type)
        (unless type_
-         ; todo: uncomment when VoidPointer class is ready
-         #;(unless (VoidPointer? val)
-             (raise-argument-error 'Pointer:size "VoidPointer" val))
+         (unless (VoidPointer? val)
+           (raise-argument-error 'Pointer:encode "VoidPointer" val))
 
          (set! type (ref val 'type))
          (set! val (ref val 'value)))
@@ -119,5 +117,5 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
        (ref-set! ctx 'pointerOffset (+ (ref ctx 'pointerOffset) (send type size val parent)))])))
 
 
-  
-
+;; A pointer whose type is determined at decode time
+(define-subclass object% (VoidPointer type value))
