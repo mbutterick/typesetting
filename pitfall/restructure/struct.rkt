@@ -1,33 +1,36 @@
 #lang restructure/racket
 (require racket/dict "stream.rkt" racket/private/generic-methods racket/struct)
 (provide (all-defined-out))
+(require (prefix-in d: racket/dict))
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
-(define hashable<%>
-  (interface* ()
-              ([(generic-property gen:indexable)
-                (generic-method-table gen:indexable
-                                      (define (ref o i) (or (hash-ref (get-field kv o) i #f)
-                                                            (hash-ref (get-field _hash o) i #f)))
-                                      (define (ref-set! o i v) (hash-set! (get-field kv o) i v))
-                                      (define (ref-keys o) (hash-keys (get-field kv o))))]
-               [(generic-property gen:custom-write)
-                (generic-method-table gen:custom-write
-                                      (define (write-proc o port mode)
-                                        (define proc (case mode
-                                                       [(#t) write]
-                                                       [(#f) display]
-                                                       [else (λ (p port) (print p port mode))]))
-                                        (proc (get-field kv o) port)))])))
 
-(define StructRes (class* RestructureBase (hashable<%>)
-                    (super-make-object)
-                    (field [kv (mhasheq)])
-                    (define/public (ht) kv)))
+(define private-keys '(parent _startOffset _currentOffset _length))
+
+(define dictable<%>
+  (interface* ()
+              ([(generic-property gen:dict)
+                (generic-method-table gen:dict
+                                      (define (dict-set! d k v) (d:dict-set! (if (memq k private-keys)
+                                                                                 (get-field pvt d)
+                                                                                 (get-field kv d)) k v))
+                                      (define (dict-ref d k [thunk #f]) (d:dict-ref (if (memq k private-keys)
+                                                                                        (get-field pvt d)
+                                                                                        (get-field kv d)) k thunk))
+                                      ;; public keys only
+                                      (define (dict-keys d) (d:dict-keys (get-field kv d))))])))
+
+(define StructDictRes (class* RestructureBase (dictable<%>)
+                        (super-make-object)
+                        (field [kv (mhasheq)]
+                               [pvt (mhasheq)])
+                        (public [_kv kv])
+                        (define (_kv) kv)))
+
 
 (define-subclass Streamcoder (Struct [fields (dictify)])
   (field [[_process process] void]
@@ -45,8 +48,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     res)
 
   (define/public-final (_setup stream parent length)
-    (define res (make-object StructRes)) ; not mere hash
-    (hash-set*! (· res _hash) 'parent parent
+    (define res (make-object StructDictRes)) ; not mere hash
+    (dict-set*! res 'parent parent
                 '_startOffset (· stream pos)
                 '_currentOffset 0
                 '_length length)
@@ -71,7 +74,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                        'pointerSize 0))
     (define size 0)
     (for ([(key type) (in-dict fields)])
-         (increment! size (send type size (ref val key) ctx)))
+      (increment! size (send type size (ref val key) ctx)))
 
     (when includePointers
       (increment! size (ref ctx 'pointerSize)))
@@ -97,10 +100,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys val)))
 
     (for ([(key type) (in-dict fields)])
-         (send type encode stream (ref val key) ctx))
+      (send type encode stream (ref val key) ctx))
 
     (for ([ptr (in-list (ref ctx 'pointers))])
-         (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
+      (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
 
 
 (test-module

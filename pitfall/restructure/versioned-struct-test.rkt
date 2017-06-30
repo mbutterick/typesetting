@@ -40,12 +40,12 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'gender uint8)))])
 
   (let ([stream (+DecodeStream (+Buffer "\x00\x05devon\x15"))])
-    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon"
+    (check-equal? (send (send struct decode stream) kv) (mhasheq 'name "devon"
                                                                  'age 21
                                                                  'version 0)))
 
   (let ([stream (+DecodeStream (+Buffer "\x01\x0adevon 👍\x15\x00"))])
-    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon 👍"
+    (check-equal? (send (send struct decode stream) kv) (mhasheq 'name "devon 👍"
                                                                  'age 21
                                                                  'version 1
                                                                  'gender 0))))
@@ -116,13 +116,13 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'gender uint8)))])
 
   (let ([stream (+DecodeStream (+Buffer "\x00\x15\x01\x05devon"))])
-    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon"
+    (check-equal? (send (send struct decode stream) kv) (mhasheq 'name "devon"
                                                                  'age 21
                                                                  'alive 1
                                                                  'version 0)))
 
   (let ([stream (+DecodeStream (+Buffer "\x01\x15\x01\x0adevon 👍\x00"))])
-    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon 👍"
+    (check-equal? (send (send struct decode stream) kv) (mhasheq 'name "devon 👍"
                                                                  'age 21
                                                                  'version 1
                                                                  'alive 1
@@ -161,12 +161,12 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'gender uint8)))])
 
   (let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))])
-    (check-equal? (send (send struct decode stream (mhash 'version 0)) ht) (mhasheq 'name "devon"
+    (check-equal? (send (send struct decode stream (mhash 'version 0)) kv) (mhasheq 'name "devon"
                                                                                     'age 21
                                                                                     'version 0)))
 
   (let ([stream (+DecodeStream (+Buffer "\x0adevon 👍\x15\x00" 'utf8))])
-    (check-equal? (send (send struct decode stream (mhash 'version 1)) ht) (mhasheq 'name "devon 👍"
+    (check-equal? (send (send struct decode stream (mhash 'version 1)) kv) (mhasheq 'name "devon 👍"
                                                                                     'age 21
                                                                                     'version 1
                                                                                     'gender 0))))
@@ -213,16 +213,16 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                                  'isDessert uint8)))))])
 
   (let ([stream (+DecodeStream (+Buffer "\x00\x05devon\x15"))])
-    (check-equal? (send (send struct decode stream (mhash 'version 0)) ht) (mhasheq 'name "devon"
+    (check-equal? (send (send struct decode stream (mhash 'version 0)) kv) (mhasheq 'name "devon"
                                                                                     'age 21
                                                                                     'version 0)))
 
   (let ([stream (+DecodeStream (+Buffer "\x01\x00\x05pasta"))])
-    (check-equal? (send (send struct decode stream (mhash 'version 0)) ht) (mhasheq 'name "pasta"
+    (check-equal? (send (send struct decode stream (mhash 'version 0)) kv) (mhasheq 'name "pasta"
                                                                                     'version 0)))
 
   (let ([stream (+DecodeStream (+Buffer "\x01\x01\x09ice cream\x01"))])
-    (check-equal? (send (send struct decode stream (mhash 'version 0)) ht) (mhasheq 'name "ice cream"
+    (check-equal? (send (send struct decode stream (mhash 'version 0)) kv) (mhasheq 'name "ice cream"
                                                                                     'isDessert 1
                                                                                     'version 1))))
 
@@ -258,7 +258,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'gender uint8)))])
   (set-field! process struct (λ (o stream) (ref-set! o 'processed "true")))
   (let ([stream (+DecodeStream (+Buffer "\x00\x05devon\x15"))])
-    (check-equal? (send (send struct decode stream) ht) (mhasheq 'name "devon"
+    (check-equal? (send (send struct decode stream) kv) (mhasheq 'name "devon"
                                                                  'processed "true"
                                                                  'age 21
                                                                  'version 0))))

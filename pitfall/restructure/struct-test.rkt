@@ -22,7 +22,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
-  (check-equal? (send (send struct decode stream) ht)
+  (check-equal? (send (send struct decode stream) kv)
                 (mhasheq 'name "devon" 'age 21)))
 
 
@@ -45,7 +45,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
   (set-field! process struct (λ (o stream) (ref-set! o 'canDrink (>= (ref o 'age) 21))))
-  (check-equal? (send (send struct decode stream) ht)
+  (check-equal? (send (send struct decode stream) kv)
                 (mhasheq 'name "devon" 'age 32 'canDrink #t)))
 
 
@@ -66,7 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8
                                 'canDrink (λ (o) (>= (ref o 'age) 21))))])
-  (check-equal? (send (send struct decode stream) ht)
+  (check-equal? (send (send struct decode stream) kv)
                 (mhasheq 'name "devon" 'age 32 'canDrink #t)))
 
 
@@ -152,7 +152,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
-  (check-equal? (send (send struct decode stream) ht)
+  (check-equal? (send (send struct decode stream) kv)
                 (mhasheq 'name "devon" 'age 21)))
 
 ;
