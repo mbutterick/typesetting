@@ -17,7 +17,7 @@
 (define-subclass Pointer (LSR-Pointer))
 (define LangSysRecord (+Struct
                        (dictify 'tag (+String 4)
-                                'langSys (+LSR-Pointer uint16be LangSysTable 'parent))))
+                                'langSys (+LSR-Pointer uint16be LangSysTable (mhash 'type 'parent)))))
 
 (define-subclass Pointer (DLS-Pointer))
 (define-subclass Array (DLS-Array))
@@ -30,7 +30,7 @@
 (define-subclass Pointer (ScriptRecord-Pointer))
 (define ScriptRecord (+ScriptRecord-Struct
                       (dictify 'tag (+String 4)
-                               'script (+ScriptRecord-Pointer uint16be Script 'parent))))
+                               'script (+ScriptRecord-Pointer uint16be Script (mhash 'type 'parent)))))
 
 (define ScriptList (+Array ScriptRecord uint16be))
 
@@ -48,7 +48,7 @@
 (define-subclass Pointer (FeatureRec-Pointer))
 (define FeatureRecord (+FeatureRec (dictify
                                 'tag (+String 4)
-                                'feature (+FeatureRec-Pointer uint16be Feature 'parent))))
+                                'feature (+FeatureRec-Pointer uint16be Feature (mhash 'type 'parent)))))
 
 (define FeatureList (+Array FeatureRecord uint16be))
 
