@@ -2,6 +2,11 @@
 (require restructure)
 (provide (all-defined-out))
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
+|#
+
 ;;########################
 ;; Scripts and Languages #
 ;;########################
@@ -62,7 +67,7 @@
                    'subTableCount uint16be
                    'subTables (+Array (+Pointer uint16be SubTable) 'subTableCount)
                    'markFilteringSet uint16be)))
-  (+Array (+Pointer uint16be Lookup) uint16be))
+  (+LazyArray (+Pointer uint16be Lookup) uint16be))
 
 
 ;;#################

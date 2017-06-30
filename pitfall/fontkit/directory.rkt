@@ -23,9 +23,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define-subclass Struct (RDirectory)
   (define/override (process this-res stream)
     (define new-tables-val (mhash))
-    (for ([table (in-list (· this-res tables))])
-         (hash-set! new-tables-val (escape-tag (· table tag)) table))
-    (hash-set! this-res 'tables new-tables-val))
+    (for ([table (in-list (dict-ref this-res 'tables))])
+         (hash-set! new-tables-val (escape-tag (dict-ref table 'tag)) table))
+    (dict-set! this-res 'tables new-tables-val))
 
   (define/override (preEncode this-val stream)
     (define preamble-length 12)
@@ -82,7 +82,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define (file-directory-decode ps)
   (directory-decode (open-input-file ps)))
 
-(test-module
+#;(test-module
  (define ip (open-input-file charter-path))
  (define decoded-dir (deserialize (read (open-input-file charter-directory-path))))
  (check-equal? (directory-decode ip) decoded-dir))

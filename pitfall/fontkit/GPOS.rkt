@@ -22,19 +22,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 
 (define-subclass object% (ValueRecord [key 'valueFormat])
   (define/public (buildStruct parent)
-    ;; set `struct` to the first Struct object in the chain of ancestors
+    ;; set `struct` to the first dict in the chain of ancestors
     ;; with the target key
     (define struct (let loop ([x parent])
                      (cond
-                       [(and x (Struct? x) (dict-ref (· x res) key #f)) x]
+                       [(and x (dict? x) (dict-ref x key #f)) x]
                        [(· x parent) => loop]
                        [else #f])))
+    (report struct)
     (and struct
          (let ()
-           (define format (dict-ref (· struct res) key))
+           (define format (dict-ref struct key))
            (define fields
              (append
-              (dictify 'rel (λ _ (report (get-field _startOffset struct))))
+              (dictify 'rel (λ _ (dict-ref struct '_startOffset)))
               (for/list ([(key val) (in-dict format)]
                          #:when val)
                 (cons key (dict-ref types key)))))
@@ -44,8 +45,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
     (send (buildStruct ctx) size val ctx))
 
   (define/public (decode stream parent)
+    (report* stream parent (buildStruct parent))
     (define res (send (buildStruct parent) decode stream parent))
-    (hash-remove! res 'rel)
+    (dict-remove! res 'rel)
     res)
 
   (define/public (encode . args)
@@ -186,8 +188,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
 ;; GPOSLookup.versions[9].extension.type = GPOSLookup;
 
 (define gpos-common-dict (dictify 'scriptList (+Pointer uint16be ScriptList)
-                                  ;'featureList (+Pointer uint16be FeatureList)
-                                  ;'lookupList (+Pointer uint16be (LookupList GPOSLookup))
+                                  'featureList (+Pointer uint16be FeatureList)
+                                  'lookupList (+Pointer uint16be (LookupList GPOSLookup))
                                   ))
 
 (define-subclass VersionedStruct (GPOS-MainVersionedStruct))

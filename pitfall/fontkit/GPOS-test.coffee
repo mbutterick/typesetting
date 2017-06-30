@@ -3,7 +3,7 @@ fontkit = require '../pdfkit/node_modules/fontkit'
 fira_path = "../pitfall/test/assets/fira.ttf"
 f = fontkit.openSync(fira_path)
 console.log "*************************** start decode"
-thing = f.GPOS.lookupList.get(0)
+thing = f.GPOS.lookupList.get(1)
 console.log thing
 
 ###

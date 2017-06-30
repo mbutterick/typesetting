@@ -5,4 +5,5 @@
 (define f (openSync fira-path))
 (report 'start-decode)
 (define gpos (send GPOS decode (send f _getTableStream 'GPOS)))
-gpos
+
+(send (dict-ref gpos 'lookupList) get 1)

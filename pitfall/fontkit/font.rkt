@@ -38,7 +38,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define/public (_getTable table-tag)
     (unless (has-table? this table-tag)
       (raise-argument-error '_getTable "table that exists in font" table-tag))
-    (hash-ref! _tables table-tag (_decodeTable table-tag))) ; get table from cache, load if not there
+    (dict-ref! _tables table-tag (_decodeTable table-tag))) ; get table from cache, load if not there
 
   (define-table-getters)
 
@@ -56,7 +56,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (define offset (· (hash-ref (· directory tables) table-tag) offset))
     (define len (· (hash-ref (· directory tables) table-tag) length))
     (send stream pos 0)
-    (send table-decoder decode (+DecodeStream (peek-bytes len offset (get-field _port stream))) this length))
+    (send table-decoder decode (+DecodeStream (peek-bytes len offset (get-field _port stream))) this))
 
   (define/public (_decodeDirectory)
     (set! directory (send Directory decode stream (mhash '_startOffset 0)))
@@ -205,7 +205,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define/contract (has-table? this tag)
   ((or/c bytes? symbol?) . ->m . boolean?)
-  (hash-has-key? (· this directory tables) (if (bytes? tag)
+  (dict-has-key? (· this directory tables) (if (bytes? tag)
                                                (string->symbol (bytes->string/latin-1 tag))
                                                tag)))
   

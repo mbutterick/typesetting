@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class (for-syntax racket/base racket/syntax br/syntax) br/define)
+(require racket/class (for-syntax racket/base racket/syntax br/syntax) br/define racket/dict)
 (provide (all-defined-out))
 
 
@@ -53,14 +53,11 @@
   [(_ X REF)
    #'(let loop ([x X])
        (cond
+         ;; dict first, to catch objects that implement gen:dict
+         [(and (dict? x) (dict-ref x 'REF #f))]
+         [(dict? x) #f]
          [(and (object? x) (or (get-or-false x REF) (send-or-false x REF)))]
-         ;[(and (object? x) (get-or-false x res)) => loop]
-         ;[(and (object? x) (send-or-false x res)) => loop]
-         [(object? x) #f]
-         ;[(and (hash? x) (hash-ref x 'res #f)) => loop]
-         [(and (hash? x) (hash-ref x 'REF #f))]
-         [(hash? x) #f]
-         [else (raise-argument-error '· (format "~a must be object or hash" 'X) x)]))]
+         [(object? x) #f]         [else (raise-argument-error '· (format "~a must be object or dict" 'X) x)]))]
   [(_ X REF0 . REFS) #'(· (· X REF0) . REFS)])
 
 #;(module+ test

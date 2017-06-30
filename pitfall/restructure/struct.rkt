@@ -21,8 +21,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                                       (define (dict-ref d k [thunk #f]) (d:dict-ref (if (memq k private-keys)
                                                                                         (get-field pvt d)
                                                                                         (get-field kv d)) k thunk))
+                                      (define (dict-remove! d k) (d:dict-remove! (if (memq k private-keys)
+                                                                                     (get-field pvt d)
+                                                                                     (get-field kv d)) k))
                                       ;; public keys only
-                                      (define (dict-keys d) (d:dict-keys (get-field kv d))))])))
+                                      (define (dict-keys d) (d:dict-keys (get-field kv d))))]
+               [(generic-property gen:custom-write)
+                (generic-method-table gen:custom-write
+                                      (define (write-proc o port mode)
+                                        (define proc (case mode
+                                                       [(#t) write]
+                                                       [(#f) display]
+                                                       [else (λ (p port) (print p port mode))]))
+                                        (proc (get-field kv o) port)))])))
 
 (define StructDictRes (class* RestructureBase (dictable<%>)
                         (super-make-object)
@@ -59,13 +70,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (unless (assocs? fields)
       (raise-argument-error '_parseFields "assocs" fields))
     (for ([(key type) (in-dict fields)])
-      (define val
-        (if (procedure? type)
-            (type res)
-            (send type decode stream res)))
-      ;; skip PropertyDescriptor maneuver. Only used for lazy pointer
-      (ref-set! res key val)
-      (hash-set! (· res _hash) '_currentOffset (- (· stream pos) (ref res '_startOffset)))))
+         (define val
+           (if (procedure? type)
+               (type res)
+               (send type decode stream res)))
+         ;; skip PropertyDescriptor maneuver. Only used for lazy pointer
+         (ref-set! res key val)
+         (ref-set! res '_currentOffset (- (· stream pos) (ref res '_startOffset)))))
   
 
   (define/override (size [val (mhash)] [parent #f] [includePointers #t])
@@ -74,7 +85,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                        'pointerSize 0))
     (define size 0)
     (for ([(key type) (in-dict fields)])
-      (increment! size (send type size (ref val key) ctx)))
+         (increment! size (if val
+                              (send type size (ref val key) ctx)
+                              0)))
 
     (when includePointers
       (increment! size (ref ctx 'pointerSize)))
@@ -100,10 +113,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys val)))
 
     (for ([(key type) (in-dict fields)])
-      (send type encode stream (ref val key) ctx))
+         (send type encode stream (ref val key) ctx))
 
     (for ([ptr (in-list (ref ctx 'pointers))])
-      (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
+         (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
 
 
 (test-module
@@ -113,17 +126,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
  ;; make random structs and make sure we can round trip
  (for ([i (in-range 10)])
-   (define field-types (for/list ([i (in-range 20)])
-                         (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-   (define size-num-types (for/sum ([num-type (in-list field-types)])
-                            (send num-type size)))
-   (define s (+Struct (for/list ([num-type (in-list field-types)])
-                        (cons (gensym) num-type))))
-   (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                             (random 256))))
-   (define es (+EncodeStream))
-   (send s encode es (send s decode bs))
-   (check-equal? (send es dump) bs)))
+      (define field-types (for/list ([i (in-range 20)])
+                                    (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+      (define size-num-types (for/sum ([num-type (in-list field-types)])
+                                      (send num-type size)))
+      (define s (+Struct (for/list ([num-type (in-list field-types)])
+                                   (cons (gensym) num-type))))
+      (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                                        (random 256))))
+      (define es (+EncodeStream))
+      (send s encode es (send s decode bs))
+      (check-equal? (send es dump) bs)))
                    
  
 
