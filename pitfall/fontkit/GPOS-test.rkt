@@ -1,8 +1,9 @@
 #lang fontkit/racket
-(require fontkit rackunit restructure)
+(require fontkit rackunit restructure racket/serialize)
 
 (define fira-path "../pitfall/test/assets/fira.ttf")
 (define f (openSync fira-path))
-(define gpos (send GPOS decode (send f _getTableStream 'GPOS)))
+(define gpos (· f GPOS))
+(define gsub (· f GSUB))
 
-(send (dict-ref gpos 'lookupList) get 2)
+(send (· gpos lookupList) get 9)

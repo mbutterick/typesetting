@@ -90,6 +90,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
   (check-equal? (send array decode stream (mhash '_length 4 '_startOffset 0)) '(1 2 3 4)))
 
 
+; decode to the end of the stream if parent exists, but its length is 0
+(let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
+      [array (+ArrayT uint8)])
+  (check-equal? (send array decode stream (mhash '_length 0 '_startOffset 0)) '(1 2 3 4 5)))
+
+
 ;    it 'should decode to the end of the stream if no parent and length is given', ->
 ;      stream = new DecodeStream new Buffer [1, 2, 3, 4]
 ;      array = new ArrayT uint8

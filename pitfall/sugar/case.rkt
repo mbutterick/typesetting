@@ -17,3 +17,8 @@
 (define-case-macro caseq memq)
 (define-case-macro casev memv)
 
+
+(require sugar/debug)
+(define-macro-cases cond-report
+  [(_ [COND . BODY] ... [else . ELSE-BODY]) #'(cond [(report COND) (report (let () (void) . BODY))] ... [else . ELSE-BODY])]
+  [(_ [COND . BODY] ... ) #'(cond-report [COND . BODY] ... [else (void)])]) 

@@ -1,4 +1,4 @@
-#lang pitfall/pdftest
+ #lang pitfall/pdftest
 
 (define-runtime-path charter-path "assets/charter.ttf")
 

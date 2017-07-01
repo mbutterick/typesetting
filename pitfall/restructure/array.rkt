@@ -30,7 +30,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       [(or (not length__) (eq? lengthType 'bytes))
        (define target (cond
                         [length__ (+ (send stream pos) length__)]
-                        [(and parent (· parent _length))
+                        [(and parent (positive? (· parent _length)))
                          (+ (ref parent '_startOffset)
                             (ref parent '_length))]
                         [else (· stream length_)]))

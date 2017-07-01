@@ -57,20 +57,21 @@
          [(and (dict? x) (dict-ref x 'REF #f))]
          [(dict? x) #f]
          [(and (object? x) (or (get-or-false x REF) (send-or-false x REF)))]
-         [(object? x) #f]         [else (raise-argument-error '· (format "~a must be object or dict" 'X) x)]))]
+         [(object? x) #f]
+         [else (raise-argument-error '· (format "~a must be object or dict" 'X) x)]))]
   [(_ X REF0 . REFS) #'(· (· X REF0) . REFS)])
 
 #;(module+ test
-  (define c (class object%
-              (super-new)
-              (field [a 42])
-              (define/public (res) (hash 'res (hash 'b 43)))))
-  (define co (make-object c))
-  (define h2 (hash 'a 42 'res co))
-  (check-equal? (· h2 a) 42)
-  (check-equal? (· h2 b) 43)
-  (check-equal? (· co a) 42)
-  (check-equal? (· co b) 43))
+    (define c (class object%
+                (super-new)
+                (field [a 42])
+                (define/public (res) (hash 'res (hash 'b 43)))))
+    (define co (make-object c))
+    (define h2 (hash 'a 42 'res co))
+    (check-equal? (· h2 a) 42)
+    (check-equal? (· h2 b) 43)
+    (check-equal? (· co a) 42)
+    (check-equal? (· co b) 43))
 
 (define-macro (·map REF XS)
   #'(for/list ([x (in-list XS)]) (· x REF)))

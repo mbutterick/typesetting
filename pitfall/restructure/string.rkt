@@ -11,7 +11,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
   (define encoder
     (caseq encoding
          [(ascii utf8) string->bytes/utf-8]))
-  (bytes-length (encoder val)))
+  (bytes-length (encoder (format "~a" val))))
 
 (define-subclass Streamcoder (StringT [length_ #f] [encoding_ 'ascii])
          
@@ -30,7 +30,8 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     string)
     
 
-  (define/augment (encode stream val [parent #f])
+  (define/augment (encode stream val-in [parent #f])
+    (define val (format "~a" val-in))
     (define encoding__
          (cond
            [(procedure? encoding_) (or (encoding_ (and parent (· parent val)) 'ascii))]

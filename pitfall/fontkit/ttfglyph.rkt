@@ -96,16 +96,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
            glyph)))
 
   (define/public (_decodeSimple glyph stream)
-    (unless (hash? glyph)
+    (unless (dict? glyph)
       (raise-argument-error 'TTFGlyph-_decodeSimple "decoded RGlyfHeader" glyph))
 
     (unless (DecodeStream? stream)
       (raise-argument-error 'TTFGlyph-_decodeSimple "DecodeStream" stream))
 
     ;; this is a simple glyph
-    (hash-set! glyph 'points empty)
+    (dict-set! glyph 'points empty)
     (define endPtsOfContours (send (+Array uint16be (· glyph numberOfContours)) decode stream))
-    (hash-set! glyph 'instructions (send (+Array uint8be uint16be) decode stream))
+    (dict-set! glyph 'instructions (send (+Array uint8be uint16be) decode stream))
     (define numCoords (add1 (last endPtsOfContours)))
 
     (define flags
@@ -128,15 +128,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
        (set-field! x point next-px)
        (set-field! y point next-py)
        (values (cons point points) next-px next-py)))
-    (hash-set! glyph 'points (reverse points)))
+    (dict-set! glyph 'points (reverse points)))
 
   (define/public (_decodeComposite glyph stream [offset 0])
     ;; this is a composite glyph
-    (hash-set! glyph 'components empty)
+    (dict-set! glyph 'components empty)
     (define haveInstructions #f)
     (define flags MORE_COMPONENTS)
 
-    (hash-set! glyph 'components
+    (dict-set! glyph 'components
                (for/list ([i (in-naturals)]
                           #:break (zero? (bitwise-and flags MORE_COMPONENTS)))
                  (set! flags (send uint16be decode stream))
