@@ -115,7 +115,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (let ([pointer (+Pointer uint8 uint8)]
       [ctx (mhash 'pointerSize 0)])
   (check-equal? (send pointer size 10 ctx) 1)
-  (check-equal? (ref ctx 'pointerSize) 1))
+  (check-equal? (· ctx pointerSize) 1))
 
 
 ;
@@ -128,7 +128,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (let ([pointer (+Pointer uint8 uint8 (mhash 'type 'immediate))]
       [ctx (mhash 'pointerSize 0)])
   (check-equal? (send pointer size 10 ctx) 1)
-  (check-equal? (ref ctx 'pointerSize) 1))
+  (check-equal? (· ctx pointerSize) 1))
 
 ;
 ;    it 'should add to parent pointerSize', ->
@@ -140,7 +140,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (let ([pointer (+Pointer uint8 uint8 (mhash 'type 'parent))]
       [ctx (mhash 'parent (mhash 'pointerSize 0))])
   (check-equal? (send pointer size 10 ctx) 1)
-  (check-equal? (ref* ctx 'parent 'pointerSize) 1))
+  (check-equal? (· ctx parent pointerSize) 1))
 
 ;
 ;    it 'should add to global pointerSize', ->
@@ -152,7 +152,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (let ([pointer (+Pointer uint8 uint8 (mhash 'type 'global))]
       [ctx (mhash 'parent (mhash 'parent (mhash 'parent (mhash 'pointerSize 0))))])
   (check-equal? (send pointer size 10 ctx) 1)
-  (check-equal? (ref* ctx 'parent 'parent 'parent 'pointerSize) 1))
+  (check-equal? (· ctx parent parent parent pointerSize) 1))
 
 
 ;    it 'should handle void pointers', ->
@@ -164,7 +164,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (let ([pointer (+Pointer uint8 'void)]
       [ctx (mhash 'pointerSize 0)])
   (check-equal? (send pointer size (+VoidPointer uint8 50) ctx) 1)
-  (check-equal? (ref ctx 'pointerSize) 1))
+  (check-equal? (· ctx pointerSize) 1))
 
 
 
@@ -215,7 +215,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'pointerOffset 0
                   'pointers null)])
   (send ptr encode stream #f ctx)
-  (check-equal? (ref ctx 'pointerSize) 0)
+  (check-equal? (· ctx pointerSize) 0)
   (check-equal? (send stream dump) (+Buffer '(0))))
 
 ;
@@ -248,8 +248,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'pointerOffset 1
                   'pointers null)])
   (send ptr encode stream 10 ctx)
-  (check-equal? (ref ctx 'pointerOffset) 2)
-  (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
+  (check-equal? (· ctx pointerOffset) 2)
+  (check-equal? (· ctx pointers) (list (mhasheq 'type uint8
                                                  'val 10
                                                  'parent ctx)))
   (check-equal? (send stream dump) (+Buffer '(1))))
@@ -284,8 +284,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'pointerOffset 1
                   'pointers null)])
   (send ptr encode stream 10 ctx)
-  (check-equal? (ref ctx 'pointerOffset) 2)
-  (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
+  (check-equal? (· ctx pointerOffset) 2)
+  (check-equal? (· ctx pointers) (list (mhasheq 'type uint8
                                                  'val 10
                                                  'parent ctx)))
   (check-equal? (send stream dump) (+Buffer '(0))))
@@ -321,8 +321,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                  'pointerOffset 5
                                  'pointers null))])
   (send ptr encode stream 10 ctx)
-  (check-equal? (ref* ctx 'parent 'pointerOffset) 6)
-  (check-equal? (ref* ctx 'parent 'pointers) (list (mhash 'type uint8
+  (check-equal? (· ctx parent pointerOffset) 6)
+  (check-equal? (· ctx parent pointers) (list (mhasheq 'type uint8
                                                           'val 10
                                                           'parent ctx)))
   (check-equal? (send stream dump) (+Buffer '(2))))
@@ -363,8 +363,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                                'pointerOffset 5
                                                'pointers null))))])
   (send ptr encode stream 10 ctx)
-  (check-equal? (ref* ctx 'parent 'parent 'parent 'pointerOffset) 6)
-  (check-equal? (ref* ctx 'parent 'parent 'parent 'pointers) (list (mhash 'type uint8
+  (check-equal? (· ctx parent parent parent pointerOffset) 6)
+  (check-equal? (· ctx parent parent parent pointers) (list (mhasheq 'type uint8
                                                                           'val 10
                                                                           'parent ctx)))
   (check-equal? (send stream dump) (+Buffer '(5))))
@@ -396,15 +396,15 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 
 (let ([stream (+EncodeStream)]
-      [ptr (+Pointer uint8 uint8 (mhash 'relativeTo (λ (ctx) (ref ctx 'ptr))))]
+      [ptr (+Pointer uint8 uint8 (mhash 'relativeTo (λ (ctx) (· ctx ptr))))]
       [ctx (mhash 'pointerSize 0
                   'startOffset 0
                   'pointerOffset 10
                   'pointers null
                   'val (mhash 'ptr 4))])
   (send ptr encode stream 10 ctx)
-  (check-equal? (ref ctx 'pointerOffset) 11)
-  (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
+  (check-equal? (· ctx pointerOffset) 11)
+  (check-equal? (· ctx pointers) (list (mhasheq 'type uint8
                                                  'val 10
                                                  'parent ctx)))
   (check-equal? (send stream dump) (+Buffer '(6))))
@@ -438,8 +438,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'pointerOffset 1
                   'pointers null)])
   (send ptr encode stream (+VoidPointer uint8 55) ctx)
-  (check-equal? (ref ctx 'pointerOffset) 2)
-  (check-equal? (ref ctx 'pointers) (list (mhash 'type uint8
+  (check-equal? (· ctx pointerOffset) 2)
+  (check-equal? (· ctx pointers) (list (mhasheq 'type uint8
                                                  'val 55
                                                  'parent ctx)))
   (check-equal? (send stream dump) (+Buffer '(1))))

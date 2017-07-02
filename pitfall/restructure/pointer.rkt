@@ -6,33 +6,39 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 |#
 
-(define-subclass object% (Pointer offset-type type [options (mhash)])
-  (when (eq? type 'void) (set! type #f))
-  (hash-ref! options 'type 'local)
-  (hash-ref! options 'allowNull #t)
-  (hash-ref! options 'nullValue 0)
-  (hash-ref! options 'lazy #f)
-  (define relative-getter-or-0 (or (ref options 'relativeTo) (λ (ctx) 0))) ; changed this to a simple lambda
+(define (resolve-void-pointer type val)
+  (cond
+    [type (values type val)]
+    [(VoidPointer? val) (values (· val type) (· val value))]
+    [else (raise-argument-error 'Pointer:size "VoidPointer" val)]))
+
+(define (find-top-ctx ctx)
+  (cond
+    [(· ctx parent) => find-top-ctx]
+    [else ctx]))
+
+(define-subclass object% (Pointer offset-type type-in [options (mhasheq)])
+  (field [type (and (not (eq? type-in 'void)) type-in)])
+  (define pointer-style (or (· options type) 'local))
+  (define allow-null (or (· options allowNull) #t)) 
+  (define null-value (or (· options nullValue) 0))
+  (define lazy (· options lazy))
+  (define relative-getter-or-0 (or (· options relativeTo) (λ (ctx) 0))) ; changed this to a simple lambda
 
   (define/public (decode stream [ctx #f])
     (define offset (send offset-type decode stream ctx))
     (cond
-      ;; handle NULL pointers
-      [(and (ref options 'allowNull) (= offset (ref options 'nullValue))) #f]
+      [(and allow-null (= offset null-value)) #f] ; handle null pointers
       [else
-       (define relative (+ (caseq (ref options 'type)
-                                  [(local) (ref ctx '_startOffset)]
+       (define relative (+ (caseq pointer-style
+                                  [(local) (· ctx _startOffset)]
                                   [(immediate) (- (· stream pos) (send offset-type size))]
-                                  [(parent) (ref* ctx 'parent '_startOffset)]
-                                  [else (let loop ([ctx ctx])
-                                          (cond
-                                            [(· ctx parent) => loop]
-                                            [(ref ctx '_startOffset)]
-                                            [else 0]))])
+                                  [(parent) (· ctx parent _startOffset)]
+                                  [(global) (or (· (find-top-ctx ctx) _startOffset) 0)]
+                                  [else (error 'unknown-pointer-style)])
                            (relative-getter-or-0 ctx)))
        (define ptr (+ offset relative))
-       (cond
-         ;; omitted: lazy pointer implementation
+       (cond ; omitted: lazy pointer implementation
          [type (define orig-pos (· stream pos))
                (send stream pos ptr)
                (define val (send type decode stream ctx))
@@ -41,61 +47,42 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
          [else ptr])]))
 
   
-  (define/public (size [val #f] [ctx-in #f])
-    (define parent ctx-in)
-    (define ctx (caseq (ref options 'type)
-                       [(local immediate) ctx-in]
-                       [(parent) (· ctx-in parent)]
-                       [(global) (let loop ([ctx ctx-in])
-                                   (cond
-                                     [(· ctx parent) => loop]
-                                     [else ctx]))]
-                       [else (error 'unknown-pointer-type)]))
-    (unless type
-      (unless (VoidPointer? val)
-        (raise-argument-error 'Pointer:size "VoidPointer" val))
-      (set! type (ref val 'type))
-      (set! val (ref val 'value)))
-    (when (and val ctx)
-      (ref-set! ctx 'pointerSize (and (· ctx pointerSize)
-                                      (+ (· ctx pointerSize) (send type size val parent)))))
-    (send offset-type size))
+  (define/public (size [val #f] [ctx #f])
+    (let*-values ([(parent) ctx]
+                  [(ctx) (caseq pointer-style
+                                [(local immediate) ctx]
+                                [(parent) (· ctx parent)]
+                                [(global) (find-top-ctx ctx)]
+                                [else (error 'unknown-pointer-style)])]
+                  [(type val) (resolve-void-pointer type val)])
+      (when (and val ctx)
+        (ref-set! ctx 'pointerSize (and (· ctx pointerSize)
+                                        (+ (· ctx pointerSize) (send type size val parent)))))
+      (send offset-type size)))
                  
 
   (define/public (encode stream val [ctx #f])
-    (define parent ctx)
-    (define relative #f)
-    (cond
-      [(not val)
-       (send offset-type encode stream (ref options 'nullValue))]
-      [else
-       (caseq (ref options 'type)
-              [(local) (set! relative (ref ctx 'startOffset))]
-              [(immediate) (set! relative (+ (· stream pos) (send offset-type size val parent)))]
-              [(parent) (set! ctx (ref ctx 'parent))
-                        (set! relative (ref ctx 'startOffset))]
-              [(global) (set! relative 0)
-                        (set! ctx (let loop ([ctx ctx])
-                                    (cond
-                                      [(ref ctx 'parent) => loop]
-                                      [else ctx])))]
-              [else (error 'unknown-pointer-type)])
-
-       (increment! relative (relative-getter-or-0 (ref parent 'val)))
-       (send offset-type encode stream (- (ref ctx 'pointerOffset) relative))
-
-       (define type_ type)
-       (unless type_
-         (unless (VoidPointer? val)
-           (raise-argument-error 'Pointer:encode "VoidPointer" val))
-
-         (set! type (ref val 'type))
-         (set! val (ref val 'value)))
-
-       (ref-set! ctx 'pointers (append (ref ctx 'pointers) (list (mhash 'type type
-                                                                        'val val
-                                                                        'parent parent))))
-       (ref-set! ctx 'pointerOffset (+ (ref ctx 'pointerOffset) (send type size val parent)))])))
+    (if (not val)
+        (send offset-type encode stream null-value)
+        (let* ([parent ctx]
+               [ctx (caseq pointer-style
+                           [(local immediate) ctx]
+                           [(parent) (· ctx parent)]
+                           [(global) (find-top-ctx ctx)]
+                           [else (error 'unknown-pointer-style)])]
+               [relative (+ (caseq pointer-style
+                                   [(local parent) (· ctx startOffset)]
+                                   [(immediate) (+ (· stream pos) (send offset-type size val parent))]
+                                   [(global) 0])
+                            (relative-getter-or-0 (· parent val)))])
+         
+          (send offset-type encode stream (- (· ctx pointerOffset) relative))
+         
+          (let-values ([(type val) (resolve-void-pointer type val)])
+            (ref-set! ctx 'pointers (append (· ctx pointers) (list (mhasheq 'type type
+                                                                            'val val
+                                                                            'parent parent))))
+            (ref-set! ctx 'pointerOffset (+ (· ctx pointerOffset) (send type size val parent))))))))
 
 
 ;; A pointer whose type is determined at decode time
