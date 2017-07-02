@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require "number.rkt" (prefix-in utils- "utils.rkt") "stream.rkt")
+(require "number.rkt" "utils.rkt" "stream.rkt")
 (provide (all-defined-out))
 
 #|
@@ -7,72 +7,55 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 |#
 
-(define (byteLength val encoding)
+(define (byte-length val encoding)
   (define encoder
     (caseq encoding
-         [(ascii utf8) string->bytes/utf-8]))
+           [(ascii utf8) string->bytes/utf-8]))
   (bytes-length (encoder (format "~a" val))))
 
-(define-subclass Streamcoder (StringT [length_ #f] [encoding_ 'ascii])
+(define-subclass Streamcoder (StringT [len #f] [encoding 'ascii])
          
   (define/augment (decode stream [parent #f])
-    (define length__
-      (cond
-        [length_ (utils-resolveLength length_ stream parent)]
-        [else (send stream count-nonzero-chars)]))
-    (define encoding__
-      (cond
-        [(procedure? encoding_) (or (encoding_ parent) 'ascii)]
-        [else encoding_]))
-    (define string (send stream readString length__ encoding__))
-    (when (and (not length_) (< (send stream pos) (send stream length)))
-      (send stream pos (add1 (send stream pos))))
-    string)
+    (let ([len (or (resolve-length len stream parent) (send stream count-nonzero-chars))]
+          [encoding (if (procedure? encoding)
+                        (or (encoding parent) 'ascii)
+                        encoding)]
+          [adjustment (if (and (not len) (< (· stream pos) (· stream length))) 1 0)])
+      (define string (send stream readString len encoding))
+      (send stream pos (+ (· stream pos) adjustment))
+      string))
     
 
-  (define/augment (encode stream val-in [parent #f])
-    (define val (format "~a" val-in))
-    (define encoding__
-         (cond
-           [(procedure? encoding_) (or (encoding_ (and parent (· parent val)) 'ascii))]
-           [else encoding_]))
-    (when (NumberT? length_)
-      (send length_ encode stream (byteLength val encoding__)))
-    (send stream writeString val encoding__)
-    (when (not length_)
-      (send stream writeUInt8 #x00)))
-    
-    
+  (define/augment (encode stream val [parent #f])
+    (let* ([val (format "~a" val)]
+           [encoding (if (procedure? encoding)
+                         (or (encoding (and parent (· parent val)) 'ascii))
+                         encoding)])
+      (when (NumberT? len)
+        (send len encode stream (byte-length val encoding)))
+      (send stream writeString val encoding)
+      (when (not len) (send stream writeUInt8 #x00)))) ; null terminated when no len
 
+  
   (define/override (size [val #f] [parent #f])
-    ;; Use the defined value if no value was given
-    (cond
-      [(not val) (utils-resolveLength length_ #f parent)]
-      [else
-       (define encoding__
-         (cond
-           [(procedure? encoding_) (or (encoding_ (and parent (· parent val)) 'ascii))]
-           [else encoding_]))
-       (when (eq? encoding__ 'utf16be)
-         (set! encoding__ 'utf16le))
-       (define size (byteLength val encoding__))
-       (when (NumberT? length_)
-         (increment! size (send length_ size)))
-       (when (not length_)
-         (increment! size))
-       size]))
-    
+    (if (not val)
+        (resolve-length len #f parent)
+        (let* ([encoding (if (procedure? encoding)
+                             (or (encoding (and parent (· parent val)) 'ascii))
+                             encoding)]
+               [encoding (if (eq? encoding 'utf16be) 'utf16le encoding)])
+          (+ (byte-length val encoding) (cond
+                                          [(not len) 1]
+                                          [(NumberT? len) (send len size)]
+                                          [else 0]))))))
 
-  )
 
 (define-values (String? +String) (values StringT? +StringT))
 
-#;(test-module
+(test-module
    (require "stream.rkt")
    (define stream (+DecodeStream #"\2BCDEF"))
    (define S (+String uint8 'utf8))
    (check-equal? (send S decode stream) "BC")
-   (define os (+EncodeStream))
-   (send S encode os "Mike")
-   (check-equal? (send os dump) #"\4Mike")
-   (check-equal? (send (+String) size "foobar") 6))
+   (check-equal? (send S encode #f "Mike") #"\4Mike")
+   (check-equal? (send (+String) size "foobar") 7)) ; null terminated when no len
