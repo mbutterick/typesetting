@@ -10,6 +10,9 @@
 
 (define index? (λ (x) (and (number? x) (integer? x) (not (negative? x)))))
 
+(define key? symbol?)
+(define (keys? x) (and (pair? x) (andmap key? x)))
+
 (define (unsigned->signed uint bits)
   (define most-significant-bit-mask (arithmetic-shift 1 (sub1 bits)))
   (- (bitwise-xor uint most-significant-bit-mask) most-significant-bit-mask))

@@ -1,16 +1,12 @@
 #lang racket/base
-(require racket/class sugar/debug)
+(require racket/class sugar/class)
 (provide (all-defined-out))
 
-(define RestructureBase
-  (class object%
-    (super-new)
+(define-subclass object% (RestructureBase)
     (field [_hash (make-hash)]
            [_list null])
     (define/public (decode stream . args) (void))
     (define/public (encode . xs) (void))
     (define/public (size . xs) (void))
     (define/public (process . args) (void))
-    (define/public (preEncode . args) (void))))
-
-(define (RestructureBase? x) (is-a? x RestructureBase))
+    (define/public (preEncode . args) (void)))

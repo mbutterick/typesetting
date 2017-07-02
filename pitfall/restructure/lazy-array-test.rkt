@@ -29,7 +29,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
        [array (+LazyArray uint8 4)])
   (define arr (send array decode stream))
   (check-false (Array? arr))
-  (check-equal? (ref arr 'length_) 4)
+  (check-equal? (ref arr 'len) 4)
   (check-equal? (send stream pos) 4)
   (check-equal? (send arr get 0) 1)
   (check-equal? (send arr get 1) 2)
@@ -49,7 +49,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 (let* ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
        [array (+LazyArray uint8 4)])
   (define arr (send array decode stream))
-  (check-equal? (send arr toArray) '(1 2 3 4)))
+  (check-equal? (send arr to-list) '(1 2 3 4)))
 
 ;      
 ;    it 'should have an inspect method', ->
@@ -59,7 +59,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 ;      arr = array.decode(stream)
 ;      arr.inspect().should.equal '[ 1, 2, 3, 4 ]'
 
-(let* ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
+#;(let* ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
        [array (+LazyArray uint8 4)])
   (define arr (send array decode stream))
   (check-equal? (send arr inspect) (format "~a" '(1 2 3 4))))
@@ -75,7 +75,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 (let* ([stream (+DecodeStream (+Buffer '(4 1 2 3 4 5)))]
        [array (+LazyArray uint8 uint8)])
   (define arr (send array decode stream))
-  (check-equal? (send arr toArray) '(1 2 3 4)))
+  (check-equal? (send arr to-list) '(1 2 3 4)))
 
 ;      
 ;  describe 'size', ->

@@ -1,11 +1,12 @@
 #lang restructure/racket
-(provide (all-defined-out))
+(provide (all-defined-out) (rename-out [resolveLength resolve-length]))
 (require "number.rkt")
 
-(define (resolveLength length [stream #f] [parent #f])
+(define (resolveLength len-arg [stream #f] [parent #f])
   (cond
-    [(number? length) length]
-    [(procedure? length) (length parent)]
-    [(and parent (symbol? length)) (ref parent length)] ; treat as key into RStruct parent
-    [(and stream (NumberT? length)) (send length decode stream)]
-    [else (raise-argument-error 'resolveLength "fixed-size argument" length)]))
+    [(not len-arg) #f]
+    [(number? len-arg) len-arg]
+    [(procedure? len-arg) (len-arg parent)]
+    [(and parent (key? len-arg)) (ref parent len-arg)] ; treat as key into RStruct parent
+    [(and stream (NumberT? len-arg)) (send len-arg decode stream)]
+    [else (raise-argument-error 'resolveLength "fixed-size argument" len-arg)]))

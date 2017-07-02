@@ -9,17 +9,20 @@
 (provide (all-defined-out))
 
 (define-generics indexable
-  (ref indexable i)
+  (ref indexable i [thunk])
+  (ref! indexable i [thunk])
   (ref-set! indexable i v)
   (ref-keys indexable)
   #:defaults
-  ([hash? (define (ref o i) (hash-ref o i #f))
+  ([hash? (define (ref o i [thunk #f]) (hash-ref o i thunk))
+          (define (ref! o i [thunk #f]) (hash-ref! o i thunk))
           (define ref-set! hash-set!)
           (define ref-keys hash-keys)]
-   [dict? (define (ref o i) (dict-ref o i #f))
+   [dict? (define (ref o i [thunk #f]) (dict-ref o i thunk))
+          (define (ref! o i [thunk #f]) (dict-ref o i thunk))
           (define ref-set! dict-set!)
           (define ref-keys dict-keys)]
-   [object? (define (ref o i) (with-handlers ([exn:fail:object? (λ (exn) (hash-ref (get-field _hash o) i #f))]) (dynamic-get-field i o)))
+   [object? (define (ref o i [thunk #f]) (with-handlers ([exn:fail:object? (λ (exn) (hash-ref (get-field _hash o) i thunk))]) (dynamic-get-field i o)))
             (define (ref-set! o i v) (with-handlers ([exn:fail:object? (λ (exn) (hash-set! (get-field _hash o) i v))]) (dynamic-set-field! i o v)))
             (define (ref-keys o) (append (remove '_hash (field-names o)) (hash-keys (get-field _hash o))))]))
 

@@ -178,7 +178,7 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
 (define-subclass RestructureBase (Streamcoder)
   (define/overment (decode x [parent #f])
     (when parent (unless (indexable? parent)
-                   (raise-argument-error 'Streamcoder:decode "hash or incexable" x)))
+                   (raise-argument-error 'Streamcoder:decode "hash or indexable" x)))
     (define stream (if (bytes? x) (+DecodeStream x) x))
     (unless (DecodeStream? stream)
       (raise-argument-error 'Streamcoder:decode "bytes or DecodeStream" x))

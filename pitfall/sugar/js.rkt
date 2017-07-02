@@ -54,10 +54,9 @@
    #'(let loop ([x X])
        (cond
          ;; dict first, to catch objects that implement gen:dict
-         [(and (dict? x) (dict-ref x 'REF #f))]
-         [(dict? x) #f]
-         [(and (object? x) (or (get-or-false x REF) (send-or-false x REF)))]
-         [(object? x) #f]
+         [(dict? x) (dict-ref x 'REF #f)]
+         ;; give `send` precedence (presence of method => wants runtime resolution of value)
+         [(object? x) (or (send-or-false x REF) (get-or-false x REF))]
          [else (raise-argument-error '· (format "~a must be object or dict" 'X) x)]))]
   [(_ X REF0 . REFS) #'(· (· X REF0) . REFS)])
 

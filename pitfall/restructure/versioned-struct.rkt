@@ -6,8 +6,7 @@
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
-(define key? symbol?)
-(define (keys? x) (and (pair? x) (andmap key? x)))
+
 
 (define-subclass Struct (VersionedStruct type [versions (dictify)])
   
