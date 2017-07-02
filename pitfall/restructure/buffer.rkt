@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require "number.rkt" (prefix-in utils- "utils.rkt"))
+(require "number.rkt" "utils.rkt")
 (provide (all-defined-out))
 
 #|
@@ -15,29 +15,28 @@ A Restructure RBuffer object is separate.
 |#
 
 (define (+Buffer xs [type #f])
-  (cond
-    [(string? xs) (string->bytes/utf-8 xs)]
-    [else (list->bytes xs)]))
+  ((if (string? xs)
+       string->bytes/utf-8
+       list->bytes) xs))
 
-
-(define-subclass RestructureBase (RBuffer [length_ #xffff])
+(define-subclass RestructureBase (RBuffer [len #xffff])
   
   (define/override (decode stream [parent #f])
-    (define length__ (utils-resolveLength length_ stream parent))
-    (send stream readBuffer length__))
+    (define decoded-len (resolve-length len stream parent))
+    (send stream readBuffer decoded-len))
 
   (define/override (size [val #f] [parent #f])
     (when val (unless (bytes? val)
                 (raise-argument-error 'Buffer:size "bytes" val)))
     (if val
         (bytes-length val)
-        (utils-resolveLength length_ val parent)))
+        (resolve-length len val parent)))
 
   (define/override (encode stream buf [parent #f])
     (unless (bytes? buf)
       (raise-argument-error 'Buffer:encode "bytes" buf))
-    (when (NumberT? length_)
-      (send length_ encode stream (length buf)))
+    (when (NumberT? len)
+      (send len encode stream (length buf)))
     (send stream writeBuffer buf)))
 
 (define-subclass RBuffer (BufferT))

@@ -6,78 +6,60 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 |#
 
-(define-subclass object% (Pointer offsetType type [options (mhash)])
+(define-subclass object% (Pointer offset-type type [options (mhash)])
   (when (eq? type 'void) (set! type #f))
   (hash-ref! options 'type 'local)
   (hash-ref! options 'allowNull #t)
   (hash-ref! options 'nullValue 0)
   (hash-ref! options 'lazy #f)
-  (define relativeToGetter (ref options 'relativeTo)) ; change this to a simple lambda
+  (define relative-getter-or-0 (or (ref options 'relativeTo) (λ (ctx) 0))) ; changed this to a simple lambda
 
   (define/public (decode stream [ctx #f])
-    (define offset (send offsetType decode stream ctx))
-
+    (define offset (send offset-type decode stream ctx))
     (cond
       ;; handle NULL pointers
-      [(and (eq? offset (ref options 'nullValue)) (ref options 'allowNull)) #f]
+      [(and (ref options 'allowNull) (= offset (ref options 'nullValue))) #f]
       [else
-       (define relative (caseq (ref options 'type)
-                               [(local) (ref ctx '_startOffset)]
-                               [(immediate) (- (· stream pos) (send offsetType size))]
-                               [(parent) (ref* ctx 'parent '_startOffset)]
-                               [else (let loop ([ctx ctx])
-                                       (cond
-                                         [(· ctx parent) => loop]
-                                         [(ref ctx '_startOffset)]
-                                         [else 0]))]))
-
-       (when (ref options 'relativeTo)
-         ; relativeToGetter only defined if 'relativeTo key exists, so this is safe
-         (increment! relative (relativeToGetter ctx)))
-
+       (define relative (+ (caseq (ref options 'type)
+                                  [(local) (ref ctx '_startOffset)]
+                                  [(immediate) (- (· stream pos) (send offset-type size))]
+                                  [(parent) (ref* ctx 'parent '_startOffset)]
+                                  [else (let loop ([ctx ctx])
+                                          (cond
+                                            [(· ctx parent) => loop]
+                                            [(ref ctx '_startOffset)]
+                                            [else 0]))])
+                           (relative-getter-or-0 ctx)))
        (define ptr (+ offset relative))
-
        (cond
-         [type (define val #f)
-               (define (decodeValue)
-                 (cond
-                   [val]
-                   [else (define pos (· stream pos))
-                         (send stream pos ptr)
-                         (define val (send type decode stream ctx))
-                         (send stream pos pos)
-                         val]))
-
-               ;; skip lazy pointer chores
-
-               (decodeValue)]
+         ;; omitted: lazy pointer implementation
+         [type (define orig-pos (· stream pos))
+               (send stream pos ptr)
+               (define val (send type decode stream ctx))
+               (send stream pos orig-pos)
+               val]
          [else ptr])]))
 
   
-  (define/public (size [val #f] [ctx #f])
-    (define parent ctx)
-    (caseq (ref options 'type)
-           [(local immediate) (void)]
-           [(parent) (set! ctx (ref ctx 'parent))]
-           [else ; global
-            (set! ctx (let loop ([ctx ctx])
-                        (cond
-                          [(ref ctx 'parent) => loop]
-                          [else ctx])))])
-
-    (define type_ type)
-    (unless type_
+  (define/public (size [val #f] [ctx-in #f])
+    (define parent ctx-in)
+    (define ctx (caseq (ref options 'type)
+                       [(local immediate) ctx-in]
+                       [(parent) (· ctx-in parent)]
+                       [(global) (let loop ([ctx ctx-in])
+                                   (cond
+                                     [(· ctx parent) => loop]
+                                     [else ctx]))]
+                       [else (error 'unknown-pointer-type)]))
+    (unless type
       (unless (VoidPointer? val)
         (raise-argument-error 'Pointer:size "VoidPointer" val))
-
       (set! type (ref val 'type))
       (set! val (ref val 'value)))
-
     (when (and val ctx)
-      (ref-set! ctx 'pointerSize (and (ref ctx 'pointerSize)
-                                      (+ (ref ctx 'pointerSize) (send type size val parent)))))
-
-    (send offsetType size))
+      (ref-set! ctx 'pointerSize (and (· ctx pointerSize)
+                                      (+ (· ctx pointerSize) (send type size val parent)))))
+    (send offset-type size))
                  
 
   (define/public (encode stream val [ctx #f])
@@ -85,24 +67,22 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     (define relative #f)
     (cond
       [(not val)
-       (send offsetType encode stream (ref options 'nullValue))]
+       (send offset-type encode stream (ref options 'nullValue))]
       [else
        (caseq (ref options 'type)
               [(local) (set! relative (ref ctx 'startOffset))]
-              [(immediate) (set! relative (+ (· stream pos) (send offsetType size val parent)))]
+              [(immediate) (set! relative (+ (· stream pos) (send offset-type size val parent)))]
               [(parent) (set! ctx (ref ctx 'parent))
                         (set! relative (ref ctx 'startOffset))]
-              [else ; global
-               (set! relative 0)
-               (set! ctx (let loop ([ctx ctx])
-                           (cond
-                             [(ref ctx 'parent) => loop]
-                             [else ctx])))])
+              [(global) (set! relative 0)
+                        (set! ctx (let loop ([ctx ctx])
+                                    (cond
+                                      [(ref ctx 'parent) => loop]
+                                      [else ctx])))]
+              [else (error 'unknown-pointer-type)])
 
-       (when (ref options 'relativeTo)
-         (increment! relative (relativeToGetter (ref parent 'val))))
-
-       (send offsetType encode stream (- (ref ctx 'pointerOffset) relative))
+       (increment! relative (relative-getter-or-0 (ref parent 'val)))
+       (send offset-type encode stream (- (ref ctx 'pointerOffset) relative))
 
        (define type_ type)
        (unless type_
