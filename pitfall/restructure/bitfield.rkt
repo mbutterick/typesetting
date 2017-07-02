@@ -8,13 +8,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 |#
 
 (define-subclass Streamcoder (Bitfield type [flags empty])
+  (unless (andmap (λ (f) (or (key? f) (not f))) flags)
+    (raise-argument-error 'Bitfield "list of keys" flags))
           
   (define/augment (decode stream . _)
     (define flag-hash (mhasheq))
     (for* ([val (in-value (send type decode stream))]
            [(flag i) (in-indexed flags)]
            #:when flag)
-      (hash-set! flag-hash (if (symbol? flag) flag (string->symbol "~a" flag)) (bitwise-bit-set? val i)))
+      (hash-set! flag-hash flag (bitwise-bit-set? val i)))
     flag-hash)
 
   (define/override (size . _) (send type size))
