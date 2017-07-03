@@ -1,5 +1,5 @@
 #lang reader (submod "racket.rkt" reader)
-(require racket/private/generic-methods)
+(require racket/generic racket/private/generic-methods)
 (provide (all-defined-out))
 
 ;; helper class
@@ -15,6 +15,8 @@
  (check-not-exn (λ () (make-object PortWrapper (open-input-bytes #"Foo"))))
  (check-not-exn (λ () (make-object PortWrapper (open-output-bytes))))
  (check-exn exn:fail? (λ () (make-object PortWrapper -42))))
+
+
 
 #| approximates
 https://github.com/mbutterick/restructure/blob/master/src/EncodeStream.coffee
@@ -100,9 +102,18 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
                 (generic-method-table gen:countable
                                       (define (length o) (get-field length_ o)))])))
 
+(define-generics posable
+  (pos posable [new-pos]))
+
+(define posable<%>
+  (interface* ()
+              ([(generic-property gen:posable)
+                (generic-method-table gen:posable
+                                      (define (pos o [new-pos #f]) (send o pos new-pos)))])))
+
 (define DecodeStreamT
   (class* PortWrapper
-    (encodable<%> dumpable<%> countable<%>)
+    (codable<%> dumpable<%> countable<%> posable<%>)
     (init-field [buffer #""])
     (unless (bytes? buffer) ; corresponds to a Node Buffer, not a restructure BufferT object
       (raise-argument-error 'DecodeStream:constructor "bytes" buffer))
