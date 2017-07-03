@@ -13,8 +13,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 (define (choose-dict d k)
   (if (memq k private-keys)
-      (get-field pvt d)
-      (get-field kv d)))
+      (get-field _pvt d)
+      (get-field _kv d)))
 
 (define dictable<%>
   (interface* ()
@@ -26,7 +26,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                                         (if (LazyThunk? res) ((LazyThunk-proc res)) res))
                                       (define (dict-remove! d k) (d:dict-remove! (choose-dict d k) k))
                                       ;; public keys only
-                                      (define (dict-keys d) (d:dict-keys (get-field kv d))))]
+                                      (define (dict-keys d) (d:dict-keys (get-field _kv d))))]
                [(generic-property gen:custom-write)
                 (generic-method-table gen:custom-write
                                       (define (write-proc o port mode)
@@ -34,14 +34,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                                                        [(#t) write]
                                                        [(#f) display]
                                                        [else (λ (p port) (print p port mode))]))
-                                        (proc (get-field kv o) port)))])))
+                                        (proc (get-field _kv o) port)))])))
 
 (define StructDictRes (class* RestructureBase (dictable<%>)
                         (super-make-object)
-                        (field [kv (mhasheq)]
-                               [pvt (mhasheq)])
+                        (field [_kv (mhasheq)]
+                               [_pvt (mhasheq)])
                         
-                        (define/override (dump) kv)))
+                        (define/override (dump) _kv)))
 
 
 (define-subclass Streamcoder (Struct [fields (dictify)])

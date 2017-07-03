@@ -104,7 +104,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (let ([stream (+DecodeStream (+Buffer '(1 53)))]
       [struct (+Struct (dictify 'ptr (+Pointer uint8 uint8 (mhasheq 'lazy #t))))])
   (define res (decode struct stream))
-  (check-true (LazyThunk? (hash-ref (get-field kv res) 'ptr)))
+  (check-true (LazyThunk? (hash-ref (get-field _kv res) 'ptr)))
   (check-equal? (· res ptr) 53))
 
 
