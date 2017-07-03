@@ -26,14 +26,14 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 
 (let* ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
        [array (+LazyArray uint8 4)])
-  (define arr (send array decode stream))
+  (define arr (decode array stream))
   (check-false (Array? arr))
   (check-equal? (ref arr 'len) 4)
-  (check-equal? (send stream pos) 4)
-  (check-equal? (send arr get 0) 1)
-  (check-equal? (send arr get 1) 2)
-  (check-equal? (send arr get 2) 3)
-  (check-equal? (send arr get 3) 4))
+  (check-equal? (pos stream) 4)
+  (check-equal? (get arr 0) 1)
+  (check-equal? (get arr 1) 2)
+  (check-equal? (get arr 2) 3)
+  (check-equal? (get arr 3) 4))
 
 
 
@@ -47,7 +47,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 
 (let* ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
        [array (+LazyArray uint8 4)])
-  (define arr (send array decode stream))
+  (define arr (decode array stream))
   (check-equal? (send arr to-list) '(1 2 3 4)))
 
 ;      
@@ -60,7 +60,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 
 #;(let* ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
        [array (+LazyArray uint8 4)])
-  (define arr (send array decode stream))
+  (define arr (decode array stream))
   (check-equal? (send arr inspect) (format "~a" '(1 2 3 4))))
 
 ;      
@@ -73,7 +73,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 
 (let* ([stream (+DecodeStream (+Buffer '(4 1 2 3 4 5)))]
        [array (+LazyArray uint8 uint8)])
-  (define arr (send array decode stream))
+  (define arr (decode array stream))
   (check-equal? (send arr to-list) '(1 2 3 4)))
 
 ;      
@@ -87,8 +87,8 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 
 (let* ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
        [array (+LazyArray uint8 4)])
-  (define arr (send array decode stream))
-  (check-equal? (send array size arr) 4))
+  (define arr (decode array stream))
+  (check-equal? (size array arr) 4))
 
 ;      
 ;  describe 'encode', ->
@@ -107,7 +107,5 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 
 (let* ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
        [array (+LazyArray uint8 4)])
-  (define arr (send array decode stream))
-  (define enc (+EncodeStream))
-  (send array encode enc arr)
-  (check-equal? (send enc dump) (+Buffer '(1 2 3 4))))
+  (define arr (decode array stream))  
+  (check-equal? (encode array #f arr) (+Buffer '(1 2 3 4))))

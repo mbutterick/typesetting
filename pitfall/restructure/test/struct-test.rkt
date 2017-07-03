@@ -21,7 +21,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
-  (check-equal? (send (send struct decode stream) kv)
+  (check-equal? (dump (decode struct stream))
                 (mhasheq 'name "devon" 'age 21)))
 
 
@@ -44,7 +44,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
   (set-field! process struct (λ (o stream _) (ref-set! o 'canDrink (>= (· o age) 21)) o))
-  (check-equal? (send (send struct decode stream) kv)
+  (check-equal? (dump (decode struct stream))
                 (mhasheq 'name "devon" 'age 32 'canDrink #t)))
 
 
@@ -65,7 +65,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8
                                 'canDrink (λ (o) (>= (ref o 'age) 21))))])
-  (check-equal? (send (send struct decode stream) kv)
+  (check-equal? (dump (decode struct stream))
                 (mhasheq 'name "devon" 'age 32 'canDrink #t)))
 
 
@@ -80,7 +80,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 
 (let ([struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
-  (check-equal? (send struct size (hasheq 'name "devon" 'age 32)) 7))
+  (check-equal? (size struct (hasheq 'name "devon" 'age 32)) 7))
 
 
 ;    it 'should compute the correct size with pointers', ->
@@ -99,7 +99,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (let ([struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8
                                 'ptr (+Pointer uint8 (+StringT uint8))))])
-  (check-equal? (send struct size (mhash 'name "devon" 'age 21 'ptr "hello")) 14))
+  (check-equal? (size struct (mhash 'name "devon" 'age 21 'ptr "hello")) 14))
 
 
 ;      
@@ -113,7 +113,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 
 (let ([struct (+Struct (dictify 'name (+StringT 4)
                                 'age uint8))])
-  (check-equal? (send struct size) 5))
+  (check-equal? (size struct) 5))
 
 
 ;      
@@ -128,7 +128,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 
 (let ([struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
-  (check-exn exn:fail:contract? (λ () (send struct size))))
+  (check-exn exn:fail:contract? (λ () (size struct))))
 
 ;      
 ;  describe 'encode', ->
@@ -151,7 +151,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
-  (check-equal? (send (send struct decode stream) kv)
+  (check-equal? (dump (decode struct stream))
                 (mhasheq 'name "devon" 'age 21)))
 
 ;
@@ -180,8 +180,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
                                 'name (+StringT 'nameLength)
                                 'age uint8))])
   (set-field! preEncode struct (λ (val stream) (ref-set! val 'nameLength (length (ref val 'name)))))
-  (send struct encode stream (mhasheq 'name "devon" 'age 21))
-  (check-equal? (send stream dump)
+  (encode struct stream (mhasheq 'name "devon" 'age 21))
+  (check-equal? (dump stream)
                 (+Buffer "\x05devon\x15")))
 
 
@@ -209,5 +209,5 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8
                                 'ptr (+Pointer uint8 (+StringT uint8))))])
-  (send struct encode stream (mhasheq 'name "devon" 'age 21 'ptr "hello"))
-  (check-equal? (send stream dump) (+Buffer "\x05devon\x15\x08\x05hello")))
+  (encode struct stream (mhasheq 'name "devon" 'age 21 'ptr "hello"))
+  (check-equal? (dump stream) (+Buffer "\x05devon\x15\x08\x05hello")))

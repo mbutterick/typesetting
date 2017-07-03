@@ -16,8 +16,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(#xab #xff #x1f #xb6)))]
       [buf (+BufferT 2)])
-  (check-equal? (send buf decode stream) (+Buffer '(#xab #xff)))
-  (check-equal? (send buf decode stream) (+Buffer '(#x1f #xb6))))
+  (check-equal? (decode buf stream) (+Buffer '(#xab #xff)))
+  (check-equal? (decode buf stream) (+Buffer '(#x1f #xb6))))
 
 
 ;
@@ -29,8 +29,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(#xab #xff #x1f #xb6)))]
       [buf (+BufferT 'len)])
-  (check-equal? (send buf decode stream (hash 'len 3)) (+Buffer '(#xab #xff #x1f)))
-  (check-equal? (send buf decode stream (hash 'len 1)) (+Buffer '(#xb6))))
+  (check-equal? (decode buf stream (hash 'len 3)) (+Buffer '(#xab #xff #x1f)))
+  (check-equal? (decode buf stream (hash 'len 1)) (+Buffer '(#xb6))))
 
 
 ;      
@@ -40,7 +40,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 ;      buf.size(new Buffer [0xab, 0xff]).should.equal 2
 
 (let ([buf (+BufferT 2)])
-  (check-equal? (send buf size (+Buffer '(#xab #xff))) 2))
+  (check-equal? (size buf (+Buffer '(#xab #xff))) 2))
 
 ;
 ;    it 'should use defined length if no value given', ->
@@ -48,7 +48,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 ;      array.size().should.equal 10
 
 (let ([array (+BufferT 10)])
-  (check-equal? (send array size) 10))
+  (check-equal? (size array) 10))
 
 
 ;
@@ -67,9 +67,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 
 (let ([stream (+EncodeStream)]
       [buf (+BufferT 2)])
-  (send buf encode stream (+Buffer '(#xab #xff)))
-  (send buf encode stream (+Buffer '(#x1f #xb6)))
-  (check-equal? (send stream dump) (+Buffer '(#xab #xff #x1f #xb6))))
+  (encode buf stream (+Buffer '(#xab #xff)))
+  (encode buf stream (+Buffer '(#x1f #xb6)))
+  (check-equal? (dump stream) (+Buffer '(#xab #xff #x1f #xb6))))
 
 
 ;    it 'should encode length before buffer', (done) ->
@@ -84,5 +84,5 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 
 (let ([stream (+EncodeStream)]
       [buf (+BufferT uint8)])
-  (send buf encode stream (+Buffer '(#xab #xff)))
-  (check-equal? (send stream dump) (+Buffer '(2 #xab #xff))))
+  (encode buf stream (+Buffer '(#xab #xff)))
+  (check-equal? (dump stream) (+Buffer '(2 #xab #xff))))

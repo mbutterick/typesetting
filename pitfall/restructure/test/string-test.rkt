@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([stream (+DecodeStream (+Buffer "testing"))]
       [string (+StringT 7)])
-  (check-equal? (send string decode stream) "testing"))
+  (check-equal? (decode string stream) "testing"))
 
 ;
 ;    it 'should decode length from parent key', ->
@@ -25,7 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([stream (+DecodeStream (+Buffer "testing"))]
       [string (+StringT 'len)])
-  (check-equal? (send string decode stream (mhash 'len 7)) "testing"))
+  (check-equal? (decode string stream (mhash 'len 7)) "testing"))
 
 
 ;
@@ -35,9 +35,9 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string.decode(stream).should.equal 'testing'
 
 ; octal \7 will print as \a
-(let ([stream (+DecodeStream (+Buffer "\7testing"))]
+(let ([stream (+DecodeStream (+Buffer "\x07testing"))]
       [string (+StringT uint8)])
-  (check-equal? (send string decode stream (mhash 'len 7)) "testing"))
+  (check-equal? (decode string stream (mhash 'len 7)) "testing"))
 
 ;
 ;    it 'should decode utf8', ->
@@ -47,7 +47,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([stream (+DecodeStream (+Buffer "🍻"))]
       [string (+StringT 4 'utf8)])
-  (check-equal? (send string decode stream) "🍻"))
+  (check-equal? (decode string stream) "🍻"))
 ;
 ;    it 'should decode encoding computed from function', ->
 ;      stream = new DecodeStream new Buffer '🍻'
@@ -56,7 +56,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([stream (+DecodeStream (+Buffer "🍻"))]
       [string (+StringT 4 (λ _ 'utf8))])
-  (check-equal? (send string decode stream) "🍻"))
+  (check-equal? (decode string stream) "🍻"))
 
 ;
 ;    it 'should decode null-terminated string and read past terminator', ->
@@ -65,10 +65,10 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string.decode(stream).should.equal '🍻'
 ;      stream.pos.should.equal 5
 
-(let ([stream (+DecodeStream (+Buffer "🍻\0"))]
+(let ([stream (+DecodeStream (+Buffer "🍻\x00"))]
       [string (+StringT #f 'utf8)])
-  (check-equal? (send string decode stream) "🍻")
-  (check-equal? (send stream pos) 5))
+  (check-equal? (decode string stream) "🍻")
+  (check-equal? (pos stream) 5))
 
 ;
 ;    it 'should decode remainder of buffer when null-byte missing', ->
@@ -78,7 +78,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([stream (+DecodeStream (+Buffer "🍻"))]
       [string (+StringT #f 'utf8)])
-  (check-equal? (send string decode stream) "🍻"))
+  (check-equal? (decode string stream) "🍻"))
 
 ;
 ;  describe 'size', ->
@@ -87,7 +87,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string.size('testing').should.equal 7
 
 (let ([string (+StringT 7)])
-  (check-equal? (send string size "testing") 7))
+  (check-equal? (size string "testing") 7))
 
 ;
 ;    it 'should use correct encoding', ->
@@ -95,7 +95,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string.size('🍻').should.equal 4
 
 (let ([string (+StringT 10 'utf8)])
-  (check-equal? (send string size "🍻") 4))
+  (check-equal? (size string "🍻") 4))
 
 ;
 ;    it 'should use encoding from function', ->
@@ -103,7 +103,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string.size('🍻').should.equal 4
 
 (let ([string (+StringT 10 (λ _ 'utf8))])
-  (check-equal? (send string size "🍻") 4))
+  (check-equal? (size string "🍻") 4))
 
 ;
 ;    it 'should add size of length field before string', ->
@@ -111,7 +111,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string.size('🍻').should.equal 5
 
 (let ([string (+StringT uint8 'utf8)])
-  (check-equal? (send string size "🍻") 5))
+  (check-equal? (size string "🍻") 5))
 
 ; todo
 ;    it 'should work with utf16be encoding', ->
@@ -125,7 +125,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      string.size('🍻').should.equal 5
 
 (let ([string (+StringT #f 'utf8)])
-  (check-equal? (send string size "🍻") 5))
+  (check-equal? (size string "🍻") 5))
 
 ;      
 ;    it 'should use defined length if no value given', ->
@@ -133,7 +133,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 ;      array.size().should.equal 10
 
 (let ([string (+StringT 10)])
-  (check-equal? (send string size) 10))
+  (check-equal? (size string) 10))
 
 ;      
 ;  describe 'encode', ->
@@ -149,8 +149,8 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([string (+StringT 7)]
       [stream (+EncodeStream)])
-  (send string encode stream "testing")
-  (check-equal? (send stream dump) #"testing"))
+  (encode string stream "testing")
+  (check-equal? (dump stream) #"testing"))
 
 
 ;
@@ -166,8 +166,8 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([string (+StringT uint8)]
       [stream (+EncodeStream)])
-  (send string encode stream "testing")
-  (check-equal? (send stream dump) #"\7testing"))
+  (encode string stream "testing")
+  (check-equal? (dump stream) #"\x07testing"))
 
 ;
 ;    it 'should encode length as number before string utf8', (done) ->
@@ -182,8 +182,8 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([string (+StringT uint8 'utf8)]
       [stream (+EncodeStream)])
-  (send string encode stream "testing 😜")
-  (check-equal? (send stream dump) (+Buffer "\14testing 😜" 'utf8)))
+  (encode string stream "testing 😜")
+  (check-equal? (dump stream) (+Buffer "\x0ctesting 😜" 'utf8)))
 
 ;
 ;    it 'should encode utf8', (done) ->
@@ -198,8 +198,8 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([string (+StringT 4 'utf8)]
       [stream (+EncodeStream)])
-  (send string encode stream "🍻")
-  (check-equal? (send stream dump) (+Buffer "🍻")))
+  (encode string stream "🍻")
+  (check-equal? (dump stream) (+Buffer "🍻")))
 
 ;
 ;    it 'should encode encoding computed from function', (done) ->
@@ -214,8 +214,8 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([string (+StringT 4 (λ _ 'utf8))]
       [stream (+EncodeStream)])
-  (send string encode stream "🍻")
-  (check-equal? (send stream dump) (+Buffer "🍻")))
+  (encode string stream "🍻")
+  (check-equal? (dump stream) (+Buffer "🍻")))
 
 ;
 ;    it 'should encode null-terminated string', (done) ->
@@ -231,5 +231,5 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (let ([string (+StringT #f 'utf8)]
       [stream (+EncodeStream)])
-  (send string encode stream "🍻")
-  (check-equal? (send stream dump) (+Buffer "🍻\0")))
+  (encode string stream "🍻")
+  (check-equal? (dump stream) (+Buffer "🍻\x00")))

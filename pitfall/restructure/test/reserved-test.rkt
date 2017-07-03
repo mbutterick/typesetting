@@ -11,7 +11,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
 ;    reserved.size().should.equal 1
 
 (let ([reserved (+Reserved uint8)])
-  (check-equal? (send reserved size) 1))
+  (check-equal? (size reserved) 1))
 
 ;
 ;  it 'should allow custom counts and types', ->
@@ -19,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
 ;    reserved.size().should.equal 20
 
 (let ([reserved (+Reserved uint16be 10)])
-  (check-equal? (send reserved size) 20))
+  (check-equal? (size reserved) 20))
 
 ;
 ;  it 'should decode', ->
@@ -30,8 +30,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(0 0)))]
       [reserved (+Reserved uint16be)])
-  (check-equal? (send reserved decode stream) (void))
-  (check-equal? (send stream pos) 2))
+  (check-equal? (decode reserved stream) (void))
+  (check-equal? (pos stream) 2))
 
 ;
 ;  it 'should encode', (done) ->
@@ -46,5 +46,5 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
 
 (let ([stream (+EncodeStream)]
       [reserved (+Reserved uint16be)])
-  (send reserved encode stream)
-  (check-equal? (send stream dump) (+Buffer '(0 0))))
+  (encode reserved stream)
+  (check-equal? (dump stream) (+Buffer '(0 0))))

@@ -11,8 +11,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 ;    e.size().should.equal 1
 
 (define e (+Enum uint8 '("foo" "bar" "baz")))
-
-(check-equal? (send e size) 1)
+(check-equal? (size e) 1)
 
 
 ;
@@ -23,9 +22,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 ;    e.decode(stream).should.equal 'foo'
 
 (let ([stream (+DecodeStream (+Buffer '(1 2 0)))])
-  (check-equal? (send e decode stream) "bar")
-  (check-equal? (send e decode stream) "baz")
-  (check-equal? (send e decode stream) "foo"))
+  (check-equal? (decode e stream) "bar")
+  (check-equal? (decode e stream) "baz")
+  (check-equal? (decode e stream) "foo"))
 
 ;
 ;  it 'should encode', (done) ->
@@ -40,9 +39,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 ;    stream.end()
 
 (let ([stream (+EncodeStream)])
-  (send e encode stream "bar")
-  (send e encode stream "baz")
-  (send e encode stream "foo")
+  (encode e stream "bar")
+  (encode e stream "baz")
+  (encode e stream "foo")
   (check-equal? (send stream dump) (+Buffer '(1 2 0))))
 
 ;
@@ -51,4 +50,4 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 ;    should.throw ->
 ;      e.encode stream, 'unknown'
 
-(check-exn exn:fail:contract? (λ () (send e encode (+EncodeStream) "unknown")))
+(check-exn exn:fail:contract? (λ () (encode e (+EncodeStream) "unknown")))

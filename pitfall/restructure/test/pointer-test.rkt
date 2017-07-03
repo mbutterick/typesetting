@@ -16,7 +16,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(0)))]
       [pointer (+Pointer uint8 uint8)])
-  (check-false (send pointer decode stream (mhash '_startOffset 50))))
+  (check-false (decode pointer stream (mhash '_startOffset 50))))
 
 ;
 ;    it 'should use local offsets from start of parent by default', ->
@@ -27,7 +27,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(1 53)))]
       [pointer (+Pointer uint8 uint8)])
-  (check-equal? (send pointer decode stream (mhash '_startOffset 0)) 53))
+  (check-equal? (decode pointer stream (mhash '_startOffset 0)) 53))
 
 
 ;
@@ -39,7 +39,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(1 53)))]
       [pointer (+Pointer uint8 uint8 (mhash 'type 'immediate))])
-  (check-equal? (send pointer decode stream) 53))
+  (check-equal? (decode pointer stream) 53))
 
 ;
 ;    it 'should support offsets relative to the parent', ->
@@ -51,8 +51,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(0 0 1 53)))]
       [pointer (+Pointer uint8 uint8 (mhash 'type 'parent))])
-  (send stream pos 2)
-  (check-equal? (send pointer decode stream (mhash 'parent (mhash '_startOffset 2))) 53))
+  (pos stream 2)
+  (check-equal? (decode pointer stream (mhash 'parent (mhash '_startOffset 2))) 53))
 
 
 ;
@@ -65,8 +65,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(1 2 4 0 0 0 53)))]
       [pointer (+Pointer uint8 uint8 (mhash 'type 'global))])
-  (send stream pos 2)
-  (check-equal? (send pointer decode stream (mhash 'parent (mhash 'parent (mhash '_startOffset 2)))) 53))
+  (pos stream 2)
+  (check-equal? (decode pointer stream (mhash 'parent (mhash 'parent (mhash '_startOffset 2)))) 53))
 
 
 ;    it 'should support offsets relative to a property on the parent', ->
@@ -76,7 +76,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(1 0 0 0 0 53)))]
       [pointer (+Pointer uint8 uint8 (mhash 'relativeTo (λ (ctx) (· ctx parent ptr))))])
-  (check-equal? (send pointer decode stream (mhash '_startOffset 0 'parent (mhash 'ptr 4))) 53))
+  (check-equal? (decode pointer stream (mhash '_startOffset 0 'parent (mhash 'ptr 4))) 53))
 
 
 ;
@@ -87,7 +87,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(4)))]
       [pointer (+Pointer uint8 'void)])
-  (check-equal? (send pointer decode stream (mhash '_startOffset 0)) 4))
+  (check-equal? (decode pointer stream (mhash '_startOffset 0)) 4))
 
 
 
@@ -103,7 +103,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(1 53)))]
       [struct (+Struct (dictify 'ptr (+Pointer uint8 uint8 (mhasheq 'lazy #t))))])
-  (define res (send struct decode stream))
+  (define res (decode struct stream))
   (check-true (LazyThunk? (hash-ref (get-field kv res) 'ptr)))
   (check-equal? (· res ptr) 53))
 
@@ -118,7 +118,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([pointer (+Pointer uint8 uint8)]
       [ctx (mhash 'pointerSize 0)])
-  (check-equal? (send pointer size 10 ctx) 1)
+  (check-equal? (size pointer 10 ctx) 1)
   (check-equal? (· ctx pointerSize) 1))
 
 
@@ -131,7 +131,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([pointer (+Pointer uint8 uint8 (mhash 'type 'immediate))]
       [ctx (mhash 'pointerSize 0)])
-  (check-equal? (send pointer size 10 ctx) 1)
+  (check-equal? (size pointer 10 ctx) 1)
   (check-equal? (· ctx pointerSize) 1))
 
 ;
@@ -143,7 +143,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([pointer (+Pointer uint8 uint8 (mhash 'type 'parent))]
       [ctx (mhash 'parent (mhash 'pointerSize 0))])
-  (check-equal? (send pointer size 10 ctx) 1)
+  (check-equal? (size pointer 10 ctx) 1)
   (check-equal? (· ctx parent pointerSize) 1))
 
 ;
@@ -155,7 +155,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([pointer (+Pointer uint8 uint8 (mhash 'type 'global))]
       [ctx (mhash 'parent (mhash 'parent (mhash 'parent (mhash 'pointerSize 0))))])
-  (check-equal? (send pointer size 10 ctx) 1)
+  (check-equal? (size pointer 10 ctx) 1)
   (check-equal? (· ctx parent parent parent pointerSize) 1))
 
 
@@ -167,7 +167,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([pointer (+Pointer uint8 'void)]
       [ctx (mhash 'pointerSize 0)])
-  (check-equal? (send pointer size (+VoidPointer uint8 50) ctx) 1)
+  (check-equal? (size pointer (+VoidPointer uint8 50) ctx) 1)
   (check-equal? (· ctx pointerSize) 1))
 
 
@@ -181,7 +181,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (let ([pointer (+Pointer uint8 'void)]
       [ctx (mhash 'pointerSize 0)])
-  (check-exn exn:fail:contract? (λ () (send pointer size 30 ctx))))
+  (check-exn exn:fail:contract? (λ () (size pointer 30 ctx))))
 
 
 ;    it 'should return a fixed size without a value', ->
@@ -189,7 +189,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      pointer.size().should.equal 1
 
 (let ([pointer (+Pointer uint8 uint8)])
-  (check-equal? (send pointer size) 1))
+  (check-equal? (size pointer) 1))
 
 ;
 ;  describe 'encode', ->
@@ -218,9 +218,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'startOffset 0
                   'pointerOffset 0
                   'pointers null)])
-  (send ptr encode stream #f ctx)
+  (encode ptr stream #f ctx)
   (check-equal? (· ctx pointerSize) 0)
-  (check-equal? (send stream dump) (+Buffer '(0))))
+  (check-equal? (dump stream) (+Buffer '(0))))
 
 ;
 ;    it 'should handle local offsets', (done) ->
@@ -251,12 +251,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'startOffset 0
                   'pointerOffset 1
                   'pointers null)])
-  (send ptr encode stream 10 ctx)
+  (encode ptr stream 10 ctx)
   (check-equal? (· ctx pointerOffset) 2)
   (check-equal? (· ctx pointers) (list (mhasheq 'type uint8
                                                  'val 10
                                                  'parent ctx)))
-  (check-equal? (send stream dump) (+Buffer '(1))))
+  (check-equal? (dump stream) (+Buffer '(1))))
 
 
 ;
@@ -287,12 +287,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'startOffset 0
                   'pointerOffset 1
                   'pointers null)])
-  (send ptr encode stream 10 ctx)
+  (encode ptr stream 10 ctx)
   (check-equal? (· ctx pointerOffset) 2)
   (check-equal? (· ctx pointers) (list (mhasheq 'type uint8
                                                  'val 10
                                                  'parent ctx)))
-  (check-equal? (send stream dump) (+Buffer '(0))))
+  (check-equal? (dump stream) (+Buffer '(0))))
 
 
 ;
@@ -324,12 +324,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                  'startOffset 3
                                  'pointerOffset 5
                                  'pointers null))])
-  (send ptr encode stream 10 ctx)
+  (encode ptr stream 10 ctx)
   (check-equal? (· ctx parent pointerOffset) 6)
   (check-equal? (· ctx parent pointers) (list (mhasheq 'type uint8
                                                           'val 10
                                                           'parent ctx)))
-  (check-equal? (send stream dump) (+Buffer '(2))))
+  (check-equal? (dump stream) (+Buffer '(2))))
 
 
 ;
@@ -366,12 +366,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                                'startOffset 3
                                                'pointerOffset 5
                                                'pointers null))))])
-  (send ptr encode stream 10 ctx)
+  (encode ptr stream 10 ctx)
   (check-equal? (· ctx parent parent parent pointerOffset) 6)
   (check-equal? (· ctx parent parent parent pointers) (list (mhasheq 'type uint8
                                                                           'val 10
                                                                           'parent ctx)))
-  (check-equal? (send stream dump) (+Buffer '(5))))
+  (check-equal? (dump stream) (+Buffer '(5))))
 
 
 ;
@@ -406,12 +406,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'pointerOffset 10
                   'pointers null
                   'val (mhash 'ptr 4))])
-  (send ptr encode stream 10 ctx)
+  (encode ptr stream 10 ctx)
   (check-equal? (· ctx pointerOffset) 11)
   (check-equal? (· ctx pointers) (list (mhasheq 'type uint8
                                                  'val 10
                                                  'parent ctx)))
-  (check-equal? (send stream dump) (+Buffer '(6))))
+  (check-equal? (dump stream) (+Buffer '(6))))
 
 ;
 ;    it 'should support void pointers', (done) ->
@@ -441,12 +441,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'startOffset 0
                   'pointerOffset 1
                   'pointers null)])
-  (send ptr encode stream (+VoidPointer uint8 55) ctx)
+  (encode ptr stream (+VoidPointer uint8 55) ctx)
   (check-equal? (· ctx pointerOffset) 2)
   (check-equal? (· ctx pointers) (list (mhasheq 'type uint8
                                                  'val 55
                                                  'parent ctx)))
-  (check-equal? (send stream dump) (+Buffer '(1))))
+  (check-equal? (dump stream) (+Buffer '(1))))
 
 
 
@@ -470,4 +470,4 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                   'startOffset 0
                   'pointerOffset 1
                   'pointers null)])
-  (check-exn exn:fail:contract? (λ () (send ptr encode stream 44 ctx))))
+  (check-exn exn:fail:contract? (λ () (encode ptr stream 44 ctx))))

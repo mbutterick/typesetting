@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(0)))]
       [optional (+Optional uint8 #f)])
-  (check-equal? (send optional decode stream) (void))
+  (check-equal? (decode optional stream) (void))
   (check-equal? (· stream pos) 0))
 
 
@@ -27,7 +27,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(0)))]
       [optional (+Optional uint8 (λ _ #f))])
-  (check-equal? (send optional decode stream) (void))
+  (check-equal? (decode optional stream) (void))
   (check-equal? (· stream pos) 0))
 
 ;
@@ -39,7 +39,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(0)))]
       [optional (+Optional uint8)])
-  (check-not-equal? (send optional decode stream) (void))
+  (check-not-equal? (decode optional stream) (void))
   (check-equal? (· stream pos) 1))
 
 ;
@@ -51,7 +51,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(0)))]
       [optional (+Optional uint8 #t)])
-  (check-not-equal? (send optional decode stream) (void))
+  (check-not-equal? (decode optional stream) (void))
   (check-equal? (· stream pos) 1))
 
 ;
@@ -64,7 +64,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(0)))]
       [optional (+Optional uint8 (λ _ #t))])
-  (check-not-equal? (send optional decode stream) (void))
+  (check-not-equal? (decode optional stream) (void))
   (check-equal? (· stream pos) 1))
 
 ;
@@ -131,8 +131,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+EncodeStream)]
       [optional (+Optional uint8 #f)])
-  (send optional encode stream 128)
-  (check-equal? (send stream dump) (+Buffer empty)))
+  (encode optional stream 128)
+  (check-equal? (dump stream) (+Buffer empty)))
 
 ;
 ;    it 'should not encode when condition is a function and falsy', (done) ->
@@ -147,8 +147,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+EncodeStream)]
       [optional (+Optional uint8 (λ _ #f))])
-  (send optional encode stream 128)
-  (check-equal? (send stream dump) (+Buffer empty)))
+  (encode optional stream 128)
+  (check-equal? (dump stream) (+Buffer empty)))
 
 
 ;
@@ -164,8 +164,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+EncodeStream)]
       [optional (+Optional uint8)])
-  (send optional encode stream 128)
-  (check-equal? (send stream dump) (+Buffer '(128))))
+  (encode optional stream 128)
+  (check-equal? (dump stream) (+Buffer '(128))))
 
 ;
 ;    it 'should encode when condition is truthy', (done) ->
@@ -180,8 +180,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+EncodeStream)]
       [optional (+Optional uint8 #t)])
-  (send optional encode stream 128)
-  (check-equal? (send stream dump) (+Buffer '(128))))
+  (encode optional stream 128)
+  (check-equal? (dump stream) (+Buffer '(128))))
 
 ;
 ;    it 'should encode when condition is a function and truthy', (done) ->
@@ -196,5 +196,5 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (let ([stream (+EncodeStream)]
       [optional (+Optional uint8 (λ _ #t))])
-  (send optional encode stream 128)
-  (check-equal? (send stream dump) (+Buffer '(128))))
+  (encode optional stream 128)
+  (check-equal? (dump stream) (+Buffer '(128))))

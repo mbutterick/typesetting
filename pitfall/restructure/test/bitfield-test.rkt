@@ -25,7 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 ;  it 'should have the right size', ->
 ;    bitfield.size().should.equal 1
 
-(check-equal? (send bitfield size) 1)
+(check-equal? (size bitfield) 1)
 
 ;
 ;  it 'should decode', ->
@@ -53,13 +53,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 ;
 ;    bitfield.encode stream, Jack: yes, Kack: no, Lack: no, Mack: yes, Nack: yes, Oack: no, Pack: yes, Quack: yes
 
-(let ([stream (+EncodeStream)])
-  (send bitfield encode stream (mhasheq 'Quack #t
-                                                  'Nack #t
-                                                  'Lack #f
-                                                  'Oack #f
-                                                  'Pack #t
-                                                  'Mack #t
-                                                  'Jack #t
-                                                  'Kack #f))
-  (check-equal? (send stream dump) (+Buffer (list (bitwise-ior JACK MACK PACK NACK QUACK)))))
+(check-equal? (encode bitfield #f (mhasheq 'Quack #t
+                                           'Nack #t
+                                           'Lack #f
+                                           'Oack #f
+                                           'Pack #t
+                                           'Mack #t
+                                           'Jack #t
+                                           'Kack #f))
+              (+Buffer (list (bitwise-ior JACK MACK PACK NACK QUACK))))
