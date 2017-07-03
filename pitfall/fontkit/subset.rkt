@@ -124,7 +124,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define hhea (cloneDeep (send (· this font hhea) kv)))
   (dict-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
-  (send EncodableDirectory encode stream
+  (send Directory encode stream
         (mhash 'tables
                (mhash
                 'head head
