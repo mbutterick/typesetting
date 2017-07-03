@@ -19,3 +19,5 @@
 
 (define (signed->unsigned sint bits)
   (bitwise-and sint (arithmetic-shift 1 bits)))
+
+(struct LazyThunk (proc) #:transparent)

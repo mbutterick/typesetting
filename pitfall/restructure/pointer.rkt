@@ -1,4 +1,5 @@
 #lang restructure/racket
+(require racket/undefined)
 (provide (all-defined-out))
 
 #|
@@ -38,12 +39,20 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                                   [else (error 'unknown-pointer-style)])
                            (relative-getter-or-0 ctx)))
        (define ptr (+ offset relative))
-       (cond ; omitted: lazy pointer implementation
-         [type (define orig-pos (· stream pos))
-               (send stream pos ptr)
-               (define val (send type decode stream ctx))
-               (send stream pos orig-pos)
-               val]
+       (cond
+         [type (define val undefined)
+               (define (decode-value)
+                 (cond
+                   [(not (eq? val undefined)) val]
+                   [else
+                    (define orig-pos (· stream pos))
+                    (send stream pos ptr)
+                    (set! val (send type decode stream ctx))
+                    (send stream pos orig-pos)
+                    val]))
+               (if lazy
+                   (LazyThunk decode-value)
+                   (decode-value))]
          [else ptr])]))
 
   

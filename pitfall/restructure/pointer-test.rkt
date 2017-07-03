@@ -1,5 +1,5 @@
 #lang restructure/racket
-(require "pointer.rkt" "stream.rkt" "buffer.rkt" "base.rkt" "number.rkt" rackunit)
+(require "pointer.rkt" "stream.rkt" "buffer.rkt" "base.rkt" "number.rkt" "struct.rkt" rackunit)
 
 #|
 approximates
@@ -91,7 +91,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
   (check-equal? (send pointer decode stream (mhash '_startOffset 0)) 4))
 
 
-;      todo: skipped lazy pointers for now
+
 ;    it 'should support decoding pointers lazily', ->
 ;      stream = new DecodeStream new Buffer [1, 53]
 ;      struct = new Struct
@@ -101,7 +101,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 ;      Object.getOwnPropertyDescriptor(res, 'ptr').get.should.be.a('function')
 ;      Object.getOwnPropertyDescriptor(res, 'ptr').enumerable.should.equal(true)
 ;      res.ptr.should.equal 53
-;
+
+(let ([stream (+DecodeStream (+Buffer '(1 53)))]
+      [struct (+Struct (dictify 'ptr (+Pointer uint8 uint8 (mhasheq 'lazy #t))))])
+  (define res (send struct decode stream))
+  (check-true (LazyThunk? (hash-ref (get-field kv res) 'ptr)))
+  (check-equal? (· res ptr) 53))
 
 
 

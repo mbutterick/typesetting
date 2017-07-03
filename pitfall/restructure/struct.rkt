@@ -11,19 +11,20 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 (define private-keys '(parent _startOffset _currentOffset _length))
 
+(define (choose-dict d k)
+  (if (memq k private-keys)
+      (get-field pvt d)
+      (get-field kv d)))
+
 (define dictable<%>
   (interface* ()
               ([(generic-property gen:dict)
                 (generic-method-table gen:dict
-                                      (define (dict-set! d k v) (d:dict-set! (if (memq k private-keys)
-                                                                                 (get-field pvt d)
-                                                                                 (get-field kv d)) k v))
-                                      (define (dict-ref d k [thunk #f]) (d:dict-ref (if (memq k private-keys)
-                                                                                        (get-field pvt d)
-                                                                                        (get-field kv d)) k thunk))
-                                      (define (dict-remove! d k) (d:dict-remove! (if (memq k private-keys)
-                                                                                     (get-field pvt d)
-                                                                                     (get-field kv d)) k))
+                                      (define (dict-set! d k v) (d:dict-set! (choose-dict d k) k v))
+                                      (define (dict-ref d k [thunk #f])
+                                        (define res (d:dict-ref (choose-dict d k) k thunk))
+                                        (if (LazyThunk? res) ((LazyThunk-proc res)) res))
+                                      (define (dict-remove! d k) (d:dict-remove! (choose-dict d k) k))
                                       ;; public keys only
                                       (define (dict-keys d) (d:dict-keys (get-field kv d))))]
                [(generic-property gen:custom-write)
@@ -93,7 +94,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                          'pointerSize 0))
     (+ (for/sum ([(key type) (in-dict fields)]
                  #:when val)
-         (send type size (ref val key) ctx))
+                (send type size (ref val key) ctx))
        (if include-pointers (· ctx pointerSize) 0)))
 
   (define/augride (encode stream val [parent #f])
@@ -112,9 +113,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (raise-argument-error 'Struct:encode
                             (format "dict that contains superset of Struct keys: ~a" (dict-keys fields)) (dict-keys val)))
     (for ([(key type) (in-dict fields)])
-      (send type encode stream (ref val key) ctx))
+         (send type encode stream (ref val key) ctx))
     (for ([ptr (in-list (· ctx pointers))])
-      (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
+         (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
 
 
 (test-module
@@ -124,15 +125,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
  ;; make random structs and make sure we can round trip
  (for ([i (in-range 20)])
-   (define field-types (for/list ([i (in-range 40)])
-                         (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-   (define size-num-types (for/sum ([num-type (in-list field-types)])
-                            (send num-type size)))
-   (define s (+Struct (for/list ([num-type (in-list field-types)])
-                        (cons (gensym) num-type))))
-   (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                             (random 256))))
-   (check-equal? (send s encode #f (send s decode bs)) bs)))
+      (define field-types (for/list ([i (in-range 40)])
+                                    (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+      (define size-num-types (for/sum ([num-type (in-list field-types)])
+                                      (send num-type size)))
+      (define s (+Struct (for/list ([num-type (in-list field-types)])
+                                   (cons (gensym) num-type))))
+      (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                                        (random 256))))
+      (check-equal? (send s encode #f (send s decode bs)) bs)))
                    
  
 
