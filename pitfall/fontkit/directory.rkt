@@ -21,11 +21,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define (unescape-tag tag) (symbol-replace tag "_" " "))
 
 (define-subclass Struct (RDirectory)
-  (define/override (process this-res stream)
+  (define/augride (process this-res stream ctx)
     (define new-tables-val (mhash))
-    (for ([table (in-list (dict-ref this-res 'tables))])
-         (hash-set! new-tables-val (escape-tag (dict-ref table 'tag)) table))
-    (dict-set! this-res 'tables new-tables-val))
+    (for ([table (in-list (· this-res tables))])
+         (hash-set! new-tables-val (escape-tag (· table tag)) table))
+    (dict-set! this-res 'tables new-tables-val)
+    this-res)
 
   (define/override (preEncode this-val stream)
     (define preamble-length 12)

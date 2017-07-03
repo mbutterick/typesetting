@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
   (unless (and (dict? versions) (andmap (λ (val) (or (dict? val) (Struct? val))) (map cdr versions)))
     (raise-argument-error 'VersionedStruct "dict of dicts or Structs" versions))
 
-  (inherit _setup  _parseFields process)
+  (inherit _setup  _parse-fields process)
   (inherit-field fields)
   (field [forced-version #f]
          [versionGetter void]
@@ -42,7 +42,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                 [else (send type decode stream)]))
 
     (when (ref versions 'header)
-      (_parseFields stream res (ref versions 'header)))
+      (_parse-fields stream res (ref versions 'header)))
     
     (define fields (or (ref versions (ref res 'version)) (raise-argument-error 'VersionedStruct:decode "valid version key" (cons version (· this versions)))))
 
@@ -50,7 +50,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (cond
       [(VersionedStruct? fields) (send fields decode stream parent)]
       [else
-       (_parseFields stream res fields)
+       (_parse-fields stream res fields)
        (process res stream)
        res]))
   

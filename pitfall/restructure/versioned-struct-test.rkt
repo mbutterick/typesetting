@@ -256,7 +256,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                  1 (dictify 'name (+StringT uint8 'utf8)
                                             'age uint8
                                             'gender uint8)))])
-  (set-field! process struct (λ (o stream) (ref-set! o 'processed "true")))
+  (set-field! process struct (λ (o stream ctx) (ref-set! o 'processed "true") o))
   (let ([stream (+DecodeStream (+Buffer "\x00\x05devon\x15"))])
     (check-equal? (send (send struct decode stream) kv) (mhasheq 'name "devon"
                                                                  'processed "true"

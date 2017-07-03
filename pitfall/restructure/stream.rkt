@@ -51,7 +51,7 @@ https://github.com/mbutterick/restructure/blob/master/src/EncodeStream.coffee
                                         (error 'swap-bytes-unimplemented))]
            [else (error 'unsupported-string-encoding)])))
 
-#;(test-module
+(test-module
    (define es (+EncodeStream))
    (check-true (EncodeStream? es))
    (send es write #"AB")

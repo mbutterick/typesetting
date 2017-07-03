@@ -12,13 +12,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 |#
 
 (define-subclass VersionedStruct (Rloca)
-  (define/override (process res stream)
+  (define/augride (process res stream ctx)
     ;; in `restructure` `process` method, `res` is aliased as `this`
     ;;
     (when (= 16bit-style (· res version))
       ;; in a 16bits-style loca table, actual 32bit offset values are divided by 2 (to fit into 16 bits)
       ;; so we re-inflate them.
-      (dict-update! res 'offsets (λ (offsets) (map (curry * 2) offsets)))))
+      (dict-update! res 'offsets (λ (offsets) (map (curry * 2) offsets))))
+    res)
 
   (define/override (preEncode this-val stream)
     ;; this = val to be encoded
