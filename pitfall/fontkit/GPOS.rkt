@@ -29,7 +29,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
                        [(and x (dict? x) (dict-ref x key #f)) x]
                        [(· x parent) => loop]
                        [else #f])))
-    (report struct)
     (and struct
          (let ()
            (define format (dict-ref struct key))
@@ -45,7 +44,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
     (send (buildStruct ctx) size val ctx))
 
   (define/public (decode stream parent)
-    (report* stream parent (buildStruct parent))
     (define res (send (buildStruct parent) decode stream parent))
     (dict-remove! res 'rel)
     res)
