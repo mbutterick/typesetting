@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require restructure "tables.rkt")
+(require xenomorph "tables.rkt")
 
 (provide (all-defined-out))
 

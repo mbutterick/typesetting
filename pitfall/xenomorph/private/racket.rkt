@@ -24,4 +24,4 @@
 
 
 (module reader syntax/module-reader
-  #:language 'restructure/private/racket)
+  #:language 'xenomorph/private/racket)

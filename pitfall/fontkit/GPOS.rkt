@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require restructure br/cond "opentype.rkt")
+(require xenomorph br/cond "opentype.rkt")
 (provide (all-defined-out))
 
 #|

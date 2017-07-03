@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require "clone.rkt" "ttfglyphencoder.rkt" "loca.rkt" "directory.rkt" restructure)
+(require "clone.rkt" "ttfglyphencoder.rkt" "loca.rkt" "directory.rkt" xenomorph)
 (provide Subset CFFSubset TTFSubset)
 
 #|

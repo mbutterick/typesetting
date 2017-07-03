@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require restructure)
+(require xenomorph)
 (provide (all-defined-out))
 
 (define 16bit-style 0)
@@ -13,7 +13,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 
 (define-subclass VersionedStruct (Rloca)
   (define/augride (process res stream ctx)
-    ;; in `restructure` `process` method, `res` is aliased as `this`
+    ;; in `xenomorph` `process` method, `res` is aliased as `this`
     ;;
     (when (= 16bit-style (· res version))
       ;; in a 16bits-style loca table, actual 32bit offset values are divided by 2 (to fit into 16 bits)
