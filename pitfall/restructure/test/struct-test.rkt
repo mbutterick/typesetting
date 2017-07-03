@@ -1,5 +1,4 @@
-#lang restructure/racket
-(require "struct.rkt" "string.rkt" "number.rkt" "buffer.rkt" "stream.rkt" rackunit "pointer.rkt")
+#lang restructure/test/racket
 
 #|
 approximates
@@ -207,8 +206,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 
 
 (let ([stream (+EncodeStream)]
-        [struct (+Struct (dictify 'name (+StringT uint8)
-                                  'age uint8
-                                  'ptr (+Pointer uint8 (+StringT uint8))))])
-    (send struct encode stream (mhasheq 'name "devon" 'age 21 'ptr "hello"))
-    (check-equal? (send stream dump) (+Buffer "\x05devon\x15\x08\x05hello")))
+      [struct (+Struct (dictify 'name (+StringT uint8)
+                                'age uint8
+                                'ptr (+Pointer uint8 (+StringT uint8))))])
+  (send struct encode stream (mhasheq 'name "devon" 'age 21 'ptr "hello"))
+  (check-equal? (send stream dump) (+Buffer "\x05devon\x15\x08\x05hello")))

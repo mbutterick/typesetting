@@ -1,6 +1,6 @@
 #lang restructure/racket
 (require racket/dict "stream.rkt" racket/private/generic-methods racket/struct)
-(provide (all-defined-out) ref* ref*-set!)
+(provide (all-defined-out) ref* ref*-set! (all-from-out racket/dict))
 (require (prefix-in d: racket/dict))
 
 #|
@@ -82,8 +82,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (define val (if (procedure? type)
                       (type res)
                       (send type decode stream res)))
-      ;; skip PropertyDescriptor maneuver. Only used for lazy pointer
-      (ref-set! res key val)
+      (unless (void? val)
+        (ref-set! res key val))
       (ref-set! res '_currentOffset (- (· stream pos) (· res _startOffset)))
       res))
   

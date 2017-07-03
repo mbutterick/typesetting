@@ -1,5 +1,5 @@
-#lang restructure/racket
-(require "bitfield.rkt" "number.rkt" "stream.rkt" "buffer.rkt" rackunit racket/match)
+#lang restructure/test/racket
+(require racket/match)
 
 #|
 approximates

@@ -34,7 +34,8 @@ https://github.com/mbutterick/restructure/blob/master/src/EncodeStream.coffee
   (define/public-final (write val)
     (unless (bytes? val)
       (raise-argument-error 'EncodeStream:write "bytes" val))
-    (void (write-bytes val _port)))
+    (write-bytes val _port)
+    (void))
 
   (define/public-final (writeBuffer buffer)
     (write buffer))
@@ -49,25 +50,31 @@ https://github.com/mbutterick/restructure/blob/master/src/EncodeStream.coffee
            [(utf16le ucs2 utf8 ascii) (writeBuffer (string->bytes/utf-8 string))
                                       (when (eq? encoding 'utf16le)
                                         (error 'swap-bytes-unimplemented))]
-           [else (error 'unsupported-string-encoding)])))
+           [else (error 'unsupported-string-encoding)]))
+
+  (define/public (fill val len)
+    (write (make-bytes len val))))
 
 (test-module
-   (define es (+EncodeStream))
-   (check-true (EncodeStream? es))
-   (send es write #"AB")
-   (check-equal? (· es pos) 2)
-   (send es write #"C")
-   (check-equal? (· es pos) 3)
-   (send es write #"D")
-   (check-equal? (· es pos) 4)
-   (check-exn exn:fail? (λ () (send es write -42)))
-   (check-exn exn:fail? (λ () (send es write 1)))
-   (define op (open-output-bytes))
-   (define es2 (+EncodeStream op))
-   (send es2 write #"FOOBAR")
-   (check-equal? (send es2 dump) #"FOOBAR")
-   (check-equal? (send es2 dump) #"FOOBAR") ; dump can repeat
-   (check-equal? (get-output-bytes op) #"FOOBAR"))
+ (define es (+EncodeStream))
+ (check-true (EncodeStream? es))
+ (send es write #"AB")
+ (check-equal? (· es pos) 2)
+ (send es write #"C")
+ (check-equal? (· es pos) 3)
+ (send es write #"D")
+ (check-equal? (· es pos) 4)
+ (check-exn exn:fail? (λ () (send es write -42)))
+ (check-exn exn:fail? (λ () (send es write 1)))
+ (define op (open-output-bytes))
+ (define es2 (+EncodeStream op))
+ (send es2 write #"FOOBAR")
+ (check-equal? (send es2 dump) #"FOOBAR")
+ (check-equal? (send es2 dump) #"FOOBAR") ; dump can repeat
+ (check-equal? (get-output-bytes op) #"FOOBAR")
+ (define es3 (+EncodeStream))
+ (send es3 fill 0 10)
+ (check-equal? (send es3 dump) (make-bytes 10 0)))
 
 
 #| approximates

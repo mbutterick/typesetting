@@ -40,10 +40,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                            (relative-getter-or-0 ctx)))
        (define ptr (+ offset relative))
        (cond
-         [type (define val undefined)
+         [type (define val (void))
                (define (decode-value)
                  (cond
-                   [(not (eq? val undefined)) val]
+                   [(not (void? val)) val]
                    [else
                     (define orig-pos (· stream pos))
                     (send stream pos ptr)

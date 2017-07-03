@@ -1,5 +1,5 @@
-#lang restructure/racket
-(require "buffer.rkt" "stream.rkt" "number.rkt" rackunit)
+#lang restructure/test/racket
+
 
 #|
 approximates

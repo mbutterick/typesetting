@@ -1,5 +1,4 @@
-#lang restructure/racket
-(require "lazy-array.rkt" "array.rkt" "stream.rkt" "number.rkt" "buffer.rkt" rackunit)
+#lang restructure/test/racket
 
 #|
 approximates
