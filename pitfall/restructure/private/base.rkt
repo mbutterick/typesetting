@@ -2,15 +2,15 @@
 (require racket/class sugar/class racket/generic racket/private/generic-methods)
 (provide (all-defined-out))
 
-(define-generics encodable
-  (decode encodable stream [parent])
-  (encode encodable stream [val] [parent]))
+(define-generics codable
+  (decode codable stream [parent])
+  (encode codable stream [val] [parent]))
 
 
-(define encodable<%>
+(define codable<%>
   (interface* ()
-              ([(generic-property gen:encodable)
-                (generic-method-table gen:encodable
+              ([(generic-property gen:codable)
+                (generic-method-table gen:codable
                                       (define (decode o stream [parent #f]) (send o decode stream parent))
                                       (define (encode o stream [val #f] [parent #f]) (send o encode stream val parent)))])))
 
@@ -36,7 +36,7 @@
 
 
 (define RestructureBase
-  (class* object% (encodable<%> sizable<%> dumpable<%>)
+  (class* object% (codable<%> sizable<%> dumpable<%>)
     (super-new)
     (field [_hash (make-hash)]
            [_list null])
