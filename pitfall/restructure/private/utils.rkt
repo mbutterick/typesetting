@@ -1,8 +1,8 @@
 #lang reader (submod "racket.rkt" reader)
-(provide (all-defined-out) (rename-out [resolveLength resolve-length]))
+(provide (all-defined-out))
 (require "number.rkt")
 
-(define (resolveLength len-arg [stream #f] [parent #f])
+(define (resolve-length len-arg [stream #f] [parent #f])
   (cond
     [(not len-arg) #f]
     [(number? len-arg) len-arg]

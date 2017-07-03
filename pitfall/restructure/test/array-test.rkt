@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
       [array (+ArrayT uint8 4)])
-  (check-equal? (send array decode stream) '(1 2 3 4)))
+  (check-equal? (decode array stream) '(1 2 3 4)))
 
 
 ;    it 'should decode fixed amount of bytes', ->
@@ -24,7 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.decode(stream).should.deep.equal [258, 772]
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
       [array (+ArrayT uint16be 4 'bytes)])
-  (check-equal? (send array decode stream) '(258 772)))
+  (check-equal? (decode array stream) '(258 772)))
 
 
 ;    it 'should decode length from parent key', ->
@@ -34,7 +34,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
       [array (+ArrayT uint8 4 'len)])
-  (check-equal? (send array decode stream (mhash 'len 4)) '(1 2 3 4)))
+  (check-equal? (decode array stream (mhash 'len 4)) '(1 2 3 4)))
 
 
 ;    it 'should decode amount of bytes from parent key', ->
@@ -43,7 +43,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.decode(stream, len: 4).should.deep.equal [258, 772]
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
       [array (+ArrayT uint16be 'len 'bytes)])
-  (check-equal? (send array decode stream (mhash 'len 4)) '(258 772)))
+  (check-equal? (decode array stream (mhash 'len 4)) '(258 772)))
 
 
 ;    it 'should decode length as number before array', ->
@@ -52,7 +52,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.decode(stream).should.deep.equal [1, 2, 3, 4]
 (let ([stream (+DecodeStream (+Buffer '(4 1 2 3 4 5)))]
       [array (+ArrayT uint8 uint8)])
-  (check-equal? (send array decode stream) '(1 2 3 4)))
+  (check-equal? (decode array stream) '(1 2 3 4)))
 
 
 ;    it 'should decode amount of bytes as number before array', ->
@@ -61,7 +61,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.decode(stream).should.deep.equal [258, 772]
 (let ([stream (+DecodeStream (+Buffer '(4 1 2 3 4 5)))]
       [array (+ArrayT uint16be uint8 'bytes)])
-  (check-equal? (send array decode stream) '(258 772)))
+  (check-equal? (decode array stream) '(258 772)))
 
 ;    it 'should decode length from function', ->
 ;      stream = new DecodeStream new Buffer [1, 2, 3, 4, 5]
@@ -69,7 +69,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.decode(stream).should.deep.equal [1, 2, 3, 4]
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
       [array (+ArrayT uint8 (λ _ 4))])
-  (check-equal? (send array decode stream) '(1 2 3 4)))
+  (check-equal? (decode array stream) '(1 2 3 4)))
 
 
 ;    it 'should decode amount of bytes from function', ->
@@ -78,7 +78,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.decode(stream).should.deep.equal [258, 772]
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
       [array (+ArrayT uint16be (λ _ 4) 'bytes)])
-  (check-equal? (send array decode stream) '(258 772)))
+  (check-equal? (decode array stream) '(258 772)))
 
 
 ;    it 'should decode to the end of the parent if no length is given', ->
@@ -87,13 +87,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.decode(stream, _length: 4, _startOffset: 0).should.deep.equal [1, 2, 3, 4]
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
       [array (+ArrayT uint8)])
-  (check-equal? (send array decode stream (mhash '_length 4 '_startOffset 0)) '(1 2 3 4)))
+  (check-equal? (decode array stream (mhash '_length 4 '_startOffset 0)) '(1 2 3 4)))
 
 
 ; decode to the end of the stream if parent exists, but its length is 0
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4 5)))]
       [array (+ArrayT uint8)])
-  (check-equal? (send array decode stream (mhash '_length 0 '_startOffset 0)) '(1 2 3 4 5)))
+  (check-equal? (decode array stream (mhash '_length 0 '_startOffset 0)) '(1 2 3 4 5)))
 
 
 ;    it 'should decode to the end of the stream if no parent and length is given', ->
@@ -102,7 +102,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.decode(stream).should.deep.equal [1, 2, 3, 4]
 (let ([stream (+DecodeStream (+Buffer '(1 2 3 4)))]
       [array (+ArrayT uint8)])
-  (check-equal? (send array decode stream) '(1 2 3 4)))
+  (check-equal? (decode array stream) '(1 2 3 4)))
 
 
 ;  describe 'size', ->
@@ -110,7 +110,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array = new ArrayT uint8, 10
 ;      array.size([1, 2, 3, 4]).should.equal 4
 (let ([array (+ArrayT uint8 10)])
-  (check-equal? (send array size '(1 2 3 4)) 4))
+  (check-equal? (size array '(1 2 3 4)) 4))
 
 
 ;    it 'should add size of length field before string', ->
@@ -118,14 +118,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 ;      array.size([1, 2, 3, 4]).should.equal 5
 ;      
 (let ([array (+ArrayT uint8 uint8)])
-  (check-equal? (send array size '(1 2 3 4)) 5))
+  (check-equal? (size array '(1 2 3 4)) 5))
 
 
 ;    it 'should use defined length if no value given', ->
 ;      array = new ArrayT uint8, 10
 ;      array.size().should.equal 10
 (let ([array (+ArrayT uint8 10)])
-  (check-equal? (send array size) 10))
+  (check-equal? (size array) 10))
 
 
 ;  describe 'encode', ->
@@ -141,8 +141,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (let ([stream (+EncodeStream)]
       [array (+ArrayT uint8 10)])
-  (send array encode stream '(1 2 3 4))
-  (check-equal? (send stream dump) (+Buffer '(1 2 3 4))))
+  (check-equal? (encode array #f '(1 2 3 4)) (+Buffer '(1 2 3 4))))
 
 
 ;
@@ -158,8 +157,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (let ([stream (+EncodeStream)]
       [array (+ArrayT uint8 uint8)])
-  (send array encode stream '(1 2 3 4))
-  (check-equal? (send stream dump) (+Buffer '(4 1 2 3 4))))
+  (check-equal? (encode array #f '(1 2 3 4)) (+Buffer '(4 1 2 3 4))))
 
 
 ;    it 'should add pointers after array if length is encoded at start', (done) ->
@@ -174,5 +172,4 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (let ([stream (+EncodeStream)]
       [array (+ArrayT (+Pointer uint8 uint8) uint8)])
-  (send array encode stream '(1 2 3 4))
-  (check-equal? (send stream dump) (+Buffer '(4 5 6 7 8 1 2 3 4))))
+  (check-equal? (encode array #f '(1 2 3 4)) (+Buffer '(4 5 6 7 8 1 2 3 4))))

@@ -34,8 +34,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 ;      Jack: yes, Kack: no, Lack: no, Mack: yes, Nack: yes, Oack: no, Pack: yes, Quack: yes
 
 (let ([stream (+DecodeStream (+Buffer (list (bitwise-ior JACK MACK PACK NACK QUACK))))])
-  (for/and ([(k v) (in-hash (send bitfield decode stream))])
-    (check-equal? v (hash-ref #hasheq((Quack . #t) (Nack . #t) (Lack . #f) (Oack . #f) (Pack . #t) (Mack . #t) (Jack . #t) (Kack . #f)) k))))
+  (check-equal? (decode bitfield stream) (mhasheq 'Quack #t
+                                                  'Nack #t
+                                                  'Lack #f
+                                                  'Oack #f
+                                                  'Pack #t
+                                                  'Mack #t
+                                                  'Jack #t
+                                                  'Kack #f)))
 
 
 ;
@@ -48,6 +54,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 ;    bitfield.encode stream, Jack: yes, Kack: no, Lack: no, Mack: yes, Nack: yes, Oack: no, Pack: yes, Quack: yes
 
 (let ([stream (+EncodeStream)])
-  (define h #hasheq((Quack . #t) (Nack . #t) (Lack . #f) (Oack . #f) (Pack . #t) (Mack . #t) (Jack . #t) (Kack . #f)))
-  (send bitfield encode stream h)
+  (send bitfield encode stream (mhasheq 'Quack #t
+                                                  'Nack #t
+                                                  'Lack #f
+                                                  'Oack #f
+                                                  'Pack #t
+                                                  'Mack #t
+                                                  'Jack #t
+                                                  'Kack #f))
   (check-equal? (send stream dump) (+Buffer (list (bitwise-ior JACK MACK PACK NACK QUACK)))))

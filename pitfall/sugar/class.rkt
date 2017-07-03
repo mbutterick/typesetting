@@ -19,9 +19,9 @@
 
 (define-macro (as-method ID)
   (with-pattern ([PRIVATE-ID (generate-temporary #'ID)])
-    #'(begin
-        (public [PRIVATE-ID ID])
-        (define (PRIVATE-ID . args) (apply ID this args)))))
+                #'(begin
+                    (public [PRIVATE-ID ID])
+                    (define (PRIVATE-ID . args) (apply ID this args)))))
 
 
 (define-macro (as-methods ID ...)
@@ -30,20 +30,23 @@
 
 (define-macro (define-instance ID (MAKER BASE-CLASS . ARGS))
   (with-pattern ([ID-CLASS (prefix-id #'BASE-CLASS ":" #'ID)])
-    #'(define ID (let ([ID-CLASS (class BASE-CLASS (super-new))])
-                           (MAKER ID-CLASS . ARGS)))))
+                #'(define ID (let ([ID-CLASS (class BASE-CLASS (super-new))])
+                               (MAKER ID-CLASS . ARGS)))))
 
 (define-macro (define-subclass SUPERCLASS (ID . INIT-ARGS) . BODY)
   #'(define-subclass* SUPERCLASS (ID . INIT-ARGS) (super-new) . BODY))
 
 
-(define-macro (define-subclass* SUPERCLASS (ID . INIT-ARGS) . BODY)
+(define-macro (define-class-predicates ID)
   (with-pattern ([+ID (prefix-id "+" #'ID)]
                  [ID? (suffix-id #'ID "?")])
-    #'(begin
-        (define ID (class SUPERCLASS (init-field . INIT-ARGS) . BODY))
-        (define (ID? x) (is-a? x ID))
-        (define (+ID . args) (apply make-object ID args)))))
+                #'(begin (define (ID? x) (is-a? x ID))
+                         (define (+ID . args) (apply make-object ID args)))))
+
+(define-macro (define-subclass* SUPERCLASS (ID . INIT-ARGS) . BODY)
+  #'(begin
+      (define ID (class SUPERCLASS (init-field . INIT-ARGS) . BODY))
+      (define-class-predicates ID)))
 
 
 (define-macro (push-field! FIELD O EXPR)
@@ -70,7 +73,7 @@
 
 (define-macro (getter-field [ID . EXPRS])
   (with-pattern ([_ID (prefix-id "_" #'ID)])
-    #`(begin
-        (field [(ID _ID)  . EXPRS])
-        (public (_ID ID))
-        (#,(if (syntax-property caller-stx 'override) #'define/override #'define) (_ID) ID))))
+                #`(begin
+                    (field [(ID _ID)  . EXPRS])
+                    (public (_ID ID))
+                    (#,(if (syntax-property caller-stx 'override) #'define/override #'define) (_ID) ID))))
