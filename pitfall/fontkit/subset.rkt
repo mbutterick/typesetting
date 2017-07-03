@@ -111,17 +111,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
     (define gid (list-ref (· this glyphs) idx))
     (send this _addGlyph gid))
 
-  (define maxp (cloneDeep (send (· this font maxp) kv)))
+  (define maxp (cloneDeep (send (· this font maxp) dump)))
   (dict-set! maxp 'numGlyphs (length (· this glyf)))
   ;; populate the new loca table
   (dict-update! (· this loca) 'offsets (λ (vals) (append vals (list (· this offset)))))
   (loca-preEncode (· this loca))
 
   
-  (define head (cloneDeep (send (· this font head) kv)))
+  (define head (cloneDeep (send (· this font head) dump)))
   (dict-set! head 'indexToLocFormat (· this loca version))
   
-  (define hhea (cloneDeep (send (· this font hhea) kv)))
+  (define hhea (cloneDeep (send (· this font hhea) dump)))
   (dict-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
   (send Directory encode stream
