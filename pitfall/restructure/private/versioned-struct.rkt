@@ -37,8 +37,8 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
                 [forced-version] ; for testing purposes: pass an explicit version
                 [(or (key? type) (procedure? type))
                  (unless parent
-                                  (raise-argument-error 'VersionedStruct:decode "valid parent" parent))
-                                (versionGetter parent)]
+                   (raise-argument-error 'VersionedStruct:decode "valid parent" parent))
+                 (versionGetter parent)]
                 [else (send type decode stream)]))
 
     (when (ref versions 'header)
@@ -98,25 +98,19 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
                        'val val
                        'pointerSize 0))
 
-    (define size 0)
-    (when (not (or (key? type) (procedure? type)))
-      (increment! size (send type size (or forced-version (ref val 'version)) ctx)))
- 
-    (when (ref versions 'header)
-      (increment! size
-                  (for/sum ([(key type) (in-dict (ref versions 'header))])
-                           (send type size (and val (ref val key)) ctx))))
-    
-    (define fields (or (ref versions (or forced-version (ref val 'version))) (raise-argument-error 'VersionedStruct:encode "valid version key" version)))
+    (+ (if (not (or (key? type) (procedure? type)))
+           (send type size (or forced-version (ref val 'version)) ctx)
+           0)
+       
+       (for/sum ([(key type) (in-dict (or (ref versions 'header) empty))])
+                (send type size (and val (ref val key)) ctx))
 
-    (increment! size
-                (for/sum ([(key type) (in-dict fields)])
-                         (send type size (ref val key) ctx)))
+       (let ([fields (or (ref versions (or forced-version (ref val 'version)))
+                         (raise-argument-error 'VersionedStruct:encode "valid version key" version))])
+         (for/sum ([(key type) (in-dict fields)])
+                  (send type size (and val (ref val key)) ctx)))
 
-    (when includePointers
-      (increment! size (ref ctx 'pointerSize)))
-
-    size))
+       (if includePointers (ref ctx 'pointerSize) 0))))
 
 #;(test-module
    (require "number.rkt")
