@@ -31,10 +31,11 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
   (inherit-field len type)
   
   (define/override (decode stream [parent #f])
+    (define pos (· stream pos)) ; ! placement matters. `resolve-length` will change `pos`
     (define decoded-len (resolve-length len stream parent))
     (let ([parent (if (NumberT? len)
                       (mhasheq 'parent parent
-                               '_startOffset (· stream pos)
+                               '_startOffset pos
                                '_currentOffset 0
                                '_length len)
                       parent)])
