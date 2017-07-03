@@ -40,8 +40,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                         (super-make-object)
                         (field [kv (mhasheq)]
                                [pvt (mhasheq)])
-                        (public [_kv kv])
-                        (define (_kv) kv)))
+                        
+                        (define/override (dump) kv)))
 
 
 (define-subclass Streamcoder (Struct [fields (dictify)])
@@ -88,13 +88,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       res))
   
 
-  (define/override (size [val (mhash)] [parent #f] [include-pointers #t])
+  (define/override (size [val #f] [parent #f] [include-pointers #t])
     (define ctx (mhasheq 'parent parent
                          'val val
                          'pointerSize 0))
-    (+ (for/sum ([(key type) (in-dict fields)]
-                 #:when val)
-                (send type size (ref val key) ctx))
+    (+ (for/sum ([(key type) (in-dict fields)])
+                (send type size (and val (ref val key)) ctx))
        (if include-pointers (· ctx pointerSize) 0)))
 
   (define/augride (encode stream val [parent #f])
