@@ -10,33 +10,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
 (define-subclass VersionedStruct (ROS/2))
 
 (define OS/2 (let ()
-               (define header-fields
-                 (dictify 'xAvgCharWidth          int16be   ;; average weighted advance width of lower case letters and space
-                          'usWeightClass          uint16be  ;; visual weight of stroke in glyphs
-                          'usWidthClass           uint16be  ;; relative change from the normal aspect ratio (width to height ratio)
-                          ;; Indicates font embedding licensing rights
-                          'fsType                 (+Bitfield uint16be '(null noEmbedding viewOnly editable null  null null null noSubsetting bitmapOnly))
-                          'ySubscriptXSize        int16be   ;; recommended horizontal size in pixels for subscripts
-                          'ySubscriptYSize        int16be   ;; recommended vertical size in pixels for subscripts
-                          'ySubscriptXOffset      int16be   ;; recommended horizontal offset for subscripts
-                          'ySubscriptYOffset      int16be   ;; recommended vertical offset form the baseline for subscripts
-                          'ySuperscriptXSize      int16be   ;; recommended horizontal size in pixels for superscripts
-                          'ySuperscriptYSize      int16be   ;; recommended vertical size in pixels for superscripts
-                          'ySuperscriptXOffset    int16be   ;; recommended horizontal offset for superscripts
-                          'ySuperscriptYOffset    int16be   ;; recommended vertical offset from the baseline for superscripts
-                          'yStrikeoutSize         int16be   ;; width of the strikeout stroke
-                          'yStrikeoutPosition     int16be   ;; position of the strikeout stroke relative to the baseline
-                          'sFamilyClass           int16be   ;; classification of font-family design
-                          'panose                 (+Array uint8 10)   ;; describe the visual characteristics of a given typeface
-                          'ulCharRange            (+Array uint32be 4)
-                          'vendorID               (+String 4)          ;; four character identifier for the font vendor
-                          ;; bit field containing information about the font
-                          'fsSelection            (+Bitfield uint16 '(italic underscore negative outlined strikeout bold regular useTypoMetrics wws oblique))
-                          'usFirstCharIndex       uint16be  ;; The minimum Unicode index in this font
-                          'usLastCharIndex        uint16be   ;; The maximum Unicode index in this font
-                          ))
-
-               (define type-1-extra
+               (define type-1
                  (dictify     'typoAscender       int16be
                               'typoDescender      int16be
                               'typoLineGap        int16be
@@ -44,26 +18,50 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
                               'winDescent         uint16be
                               'codePageRange      (+Array uint32be 2)))
 
-               (define type-2-extra
+               (define type-2
                  (dictify     'xHeight            int16be
                               'capHeight          int16be
                               'defaultChar        uint16be
                               'breakChar          uint16be
                               'maxContent         uint16be))
 
-               (define type-5-extra
+               (define type-5
                  (dictify     'usLowerOpticalPointSize uint16be
                               'usUpperOpticalPointSize uint16be))
 
-               (make-object ROS/2
-                 uint16be 
-                 (dictify
-                  0 (append header-fields null)
-                  1 (append header-fields type-1-extra)
-                  2 (append header-fields type-1-extra type-2-extra)
-                  3 (append header-fields type-1-extra type-2-extra)
-                  4 (append header-fields type-1-extra type-2-extra)
-                  5 (append header-fields type-1-extra type-2-extra type-5-extra)))))
+               (+ROS/2
+                uint16be 
+                (dictify
+                 'header (dictify 'xAvgCharWidth          int16be   ;; average weighted advance width of lower case letters and space
+                                  'usWeightClass          uint16be  ;; visual weight of stroke in glyphs
+                                  'usWidthClass           uint16be  ;; relative change from the normal aspect ratio (width to height ratio)
+                                  ;; Indicates font embedding licensing rights
+                                  'fsType                 (+Bitfield uint16be '(null noEmbedding viewOnly editable null  null null null noSubsetting bitmapOnly))
+                                  'ySubscriptXSize        int16be   ;; recommended horizontal size in pixels for subscripts
+                                  'ySubscriptYSize        int16be   ;; recommended vertical size in pixels for subscripts
+                                  'ySubscriptXOffset      int16be   ;; recommended horizontal offset for subscripts
+                                  'ySubscriptYOffset      int16be   ;; recommended vertical offset form the baseline for subscripts
+                                  'ySuperscriptXSize      int16be   ;; recommended horizontal size in pixels for superscripts
+                                  'ySuperscriptYSize      int16be   ;; recommended vertical size in pixels for superscripts
+                                  'ySuperscriptXOffset    int16be   ;; recommended horizontal offset for superscripts
+                                  'ySuperscriptYOffset    int16be   ;; recommended vertical offset from the baseline for superscripts
+                                  'yStrikeoutSize         int16be   ;; width of the strikeout stroke
+                                  'yStrikeoutPosition     int16be   ;; position of the strikeout stroke relative to the baseline
+                                  'sFamilyClass           int16be   ;; classification of font-family design
+                                  'panose                 (+Array uint8 10)   ;; describe the visual characteristics of a given typeface
+                                  'ulCharRange            (+Array uint32be 4)
+                                  'vendorID               (+String 4)          ;; four character identifier for the font vendor
+                                  ;; bit field containing information about the font
+                                  'fsSelection            (+Bitfield uint16 '(italic underscore negative outlined strikeout bold regular useTypoMetrics wws oblique))
+                                  'usFirstCharIndex       uint16be  ;; The minimum Unicode index in this font
+                                  'usLastCharIndex        uint16be)   ;; The maximum Unicode index in this font
+                          
+                 0 null
+                 1 type-1
+                 2 (append type-1 type-2)
+                 3 (append type-1 type-2)
+                 4 (append type-1 type-2)
+                 5 (append type-1 type-2 type-5)))))
 
 (test-module
  (define ip (open-input-file charter-path))

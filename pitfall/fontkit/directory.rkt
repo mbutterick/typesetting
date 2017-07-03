@@ -7,7 +7,6 @@
 https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 |#
 
-
 (define TableEntry (+Struct
                     (dictify 'tag (+String 4)
                              'checkSum uint32be
@@ -30,10 +29,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 
   (define/override (preEncode this-val stream)
     (define tables (for/list ([(tag table) (in-hash (· this-val tables))])
+                             (define table-codec (hash-ref table-codecs tag))
                              (mhash 'tag (unescape-tag tag)
                                     'checkSum 0
-                                    'offset (+VoidPointer (hash-ref table-codecs tag) table)
-                                    'length (send (hash-ref table-codecs tag) size table))))
+                                    'offset (+VoidPointer table-codec table)
+                                    'length (send table-codec size table))))
 
     (define numTables (length tables))
     (define searchRange (* (floor (log numTables 2)) 16))
@@ -47,11 +47,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                 'rangeShift (- (* numTables 16) searchRange))))
 
 (define Directory (+RDirectory (dictify 'tag (+String 4)
-                                       'numTables uint16be
-                                       'searchRange uint16be
-                                       'entrySelector uint16be
-                                       'rangeShift uint16be
-                                       'tables (+Array TableEntry 'numTables))))
+                                        'numTables uint16be
+                                        'searchRange uint16be
+                                        'entrySelector uint16be
+                                        'rangeShift uint16be
+                                        'tables (+Array TableEntry 'numTables))))
                             
 
 (define (directory-decode ip [options (mhash)])

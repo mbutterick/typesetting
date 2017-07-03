@@ -10,32 +10,28 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
 
 (define-subclass VersionedStruct (Rpost))
 
-(define post (let ()
-               (define header-fields
-                 (dictify 'italicAngle        fixed32be ;; Italic angle in counter-clockwise degrees from the vertical.
-                          'underlinePosition  int16be   ;; Suggested distance of the top of the underline from the baseline
-                          'underlineThickness int16be   ;; Suggested values for the underline thickness
-                          'isFixedPitch       uint32be  ;; Whether the font is monospaced
-                          'minMemType42       uint32be  ;; Minimum memory usage when a TrueType font is downloaded as a Type 42 font
-                          'maxMemType42       uint32be  ;; Maximum memory usage when a TrueType font is downloaded as a Type 42 font
-                          'minMemType1        uint32be  ;; Minimum memory usage when a TrueType font is downloaded as a Type 1 font
-                          'maxMemType1        uint32be   ;; Maximum memory usage when a TrueType font is downloaded as a Type 1 font
-                          ))
-
-
-               (make-object Rpost
-                 fixed32be
-                 (dictify
-                  1 (append header-fields null)
-                  2 (append header-fields (dictify 'numberOfGlyphs uint16be
-                                                   'glyphNameIndex (+Array uint16be 'numberOfGlyphs)
-                                                   ;; this field causes problems due to deficiency in String class
-                                                   ;; 'names (+Array (+String uint8))
-                                                   ))
-                  2.5 (append header-fields (dictify 'numberOfGlyphs uint16be
-                                                     'offsets (+Array uint8)))
-                  3 (append header-fields null)
-                  4 (append header-fields (dictify 'map (+Array uint32be (λ (t) (· t parent maxp numGlyphs)))))))))
+(define post (make-object Rpost
+               fixed32be
+               (dictify
+                'header (dictify 'italicAngle        fixed32be ;; Italic angle in counter-clockwise degrees from the vertical.
+                                 'underlinePosition  int16be   ;; Suggested distance of the top of the underline from the baseline
+                                 'underlineThickness int16be   ;; Suggested values for the underline thickness
+                                 'isFixedPitch       uint32be  ;; Whether the font is monospaced
+                                 'minMemType42       uint32be  ;; Minimum memory usage when a TrueType font is downloaded as a Type 42 font
+                                 'maxMemType42       uint32be  ;; Maximum memory usage when a TrueType font is downloaded as a Type 42 font
+                                 'minMemType1        uint32be  ;; Minimum memory usage when a TrueType font is downloaded as a Type 1 font
+                                 'maxMemType1        uint32be)   ;; Maximum memory usage when a TrueType font is downloaded as a Type 1 font
+                          
+                1 null
+                2 (dictify 'numberOfGlyphs uint16be
+                                                 'glyphNameIndex (+Array uint16be 'numberOfGlyphs)
+                                                 ;; this field causes problems due to deficiency in String class
+                                                 ;; 'names (+Array (+String uint8))
+                                                 )
+                2.5 (dictify 'numberOfGlyphs uint16be
+                                                   'offsets (+Array uint8))
+                3 null
+                4 (dictify 'map (+Array uint32be (λ (t) (· t parent maxp numGlyphs)))))))
 
 (test-module
  (define ip (open-input-file charter-path))
