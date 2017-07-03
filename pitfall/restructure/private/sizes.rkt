@@ -1,4 +1,4 @@
-#lang restructure/racket
+#lang reader (submod "racket.rkt" reader)
 (provide type-sizes get-type-size)
 
 (define-values (int-keys byte-values) (for*/lists (int-keys byte-values)

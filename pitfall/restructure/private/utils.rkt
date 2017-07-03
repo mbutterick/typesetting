@@ -1,4 +1,4 @@
-#lang restructure/racket
+#lang reader (submod "racket.rkt" reader)
 (provide (all-defined-out) (rename-out [resolveLength resolve-length]))
 (require "number.rkt")
 

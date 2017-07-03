@@ -1,7 +1,6 @@
-#lang restructure/racket
+#lang reader (submod "private/racket.rkt" reader)
 
-(r+p "base.rkt"
-     "array.rkt"
+(r+p "array.rkt"
      "bitfield.rkt"
      "buffer.rkt"
      "enum.rkt"

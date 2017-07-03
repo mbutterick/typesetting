@@ -24,7 +24,4 @@
 
 
 (module reader syntax/module-reader
-  #:language 'restructure/racket
-  #:read @-read
-  #:read-syntax @-read-syntax
-  (require (prefix-in @- scribble/reader)))
+  #:language 'restructure/private/racket)

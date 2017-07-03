@@ -1,4 +1,4 @@
-#lang restructure/test/racket
+#lang reader (submod "racket.rkt" reader)
 
 
 #|

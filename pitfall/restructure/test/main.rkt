@@ -1,4 +1,4 @@
-#lang restructure/racket
+#lang reader (submod "racket.rkt" reader)
 
 (require "array-test.rkt"
          "bitfield-test.rkt"
