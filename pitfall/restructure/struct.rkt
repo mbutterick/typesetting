@@ -44,79 +44,76 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 
 (define-subclass Streamcoder (Struct [fields (dictify)])
-  (field [[_process process] void]
+  (field [[_process process] (λ (res stream ctx) res)]
          [[_preEncode preEncode] void]) ; store as field so it can be mutated from outside
-  (define/override (process . args) (apply _process args))
+  
+  (define/overment (process res stream [ctx #f])
+    (let* ([res (_process res stream ctx)]
+           [res (inner res process res stream ctx)])
+      (unless (dict? res) (raise-result-error 'Struct:process "dict" res))
+      res))
+  
   (define/override (preEncode . args) (apply _preEncode args))
   
   (unless ((disjoin assocs? Struct?) fields) ; should be Versioned Struct but whatever
     (raise-argument-error 'Struct "assocs or Versioned Struct" fields))
 
-  (define/augride (decode stream [parent #f] [length_ 0])
-    (define res (_setup stream parent length_))
-    (_parseFields stream res fields)
-    (process res stream)
-    res)
+  (define/augride (decode stream [parent #f] [len 0])
+    ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
+    (let* ([res (_setup stream parent len)]
+           [res (_parse-fields stream res fields)]
+           [res (process res stream)])
+      res))
 
-  (define/public-final (_setup stream parent length)
+  (define/public-final (_setup stream parent len)
     (define res (make-object StructDictRes)) ; not mere hash
     (dict-set*! res 'parent parent
                 '_startOffset (· stream pos)
                 '_currentOffset 0
-                '_length length)
+                '_length len)
     res)
 
-  (define/public-final (_parseFields stream res fields)
+  (define/public-final (_parse-fields stream res fields)
     (unless (assocs? fields)
-      (raise-argument-error '_parseFields "assocs" fields))
-    (for ([(key type) (in-dict fields)])
-         (define val
-           (if (procedure? type)
-               (type res)
-               (send type decode stream res)))
-         ;; skip PropertyDescriptor maneuver. Only used for lazy pointer
-         (ref-set! res key val)
-         (ref-set! res '_currentOffset (- (· stream pos) (ref res '_startOffset)))))
+      (raise-argument-error '_parse-fields "assocs" fields))
+    (for/fold ([res res])
+              ([(key type) (in-dict fields)])
+      (define val (if (procedure? type)
+                      (type res)
+                      (send type decode stream res)))
+      ;; skip PropertyDescriptor maneuver. Only used for lazy pointer
+      (ref-set! res key val)
+      (ref-set! res '_currentOffset (- (· stream pos) (· res _startOffset)))
+      res))
   
 
-  (define/override (size [val (mhash)] [parent #f] [includePointers #t])
-    (define ctx (mhash 'parent parent
-                       'val val
-                       'pointerSize 0))
-    (define size 0)
-    (for ([(key type) (in-dict fields)])
-         (increment! size (if val
-                              (send type size (ref val key) ctx)
-                              0)))
-
-    (when includePointers
-      (increment! size (ref ctx 'pointerSize)))
-    
-    size)
+  (define/override (size [val (mhash)] [parent #f] [include-pointers #t])
+    (define ctx (mhasheq 'parent parent
+                         'val val
+                         'pointerSize 0))
+    (+ (for/sum ([(key type) (in-dict fields)])
+         (send type size (ref val key) ctx))
+       (if include-pointers (· ctx pointerSize) 0)))
 
   (define/augride (encode stream val [parent #f])
-    
-    #;(unless (hash? input-hash)
-        (raise-argument-error 'Struct:encode "hash" input-hash))
+    (unless (dict? val)
+      (raise-argument-error 'Struct:encode "dict" val))
 
-    (send this preEncode val stream) ; preEncode goes first, because it might bring input hash into compliance
-
+    (send this preEncode val stream) ; preEncode goes first, because it might bring input dict into compliance
     (define ctx (mhash 'pointers empty
                        'startOffset (· stream pos)
                        'parent parent
                        'val val
                        'pointerSize 0))
-
     (ref-set! ctx 'pointerOffset (+ (· stream pos) (size val ctx #f)))
 
-    (unless (andmap (λ (key) (member key (ref-keys val))) (dict-keys fields))
-      (raise-argument-error 'Struct:encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys val)))
-
+    (unless (andmap (λ (key) (memq key (dict-keys val))) (dict-keys fields))
+      (raise-argument-error 'Struct:encode
+                            (format "dict that contains superset of Struct keys: ~a" (dict-keys fields)) (dict-keys val)))
     (for ([(key type) (in-dict fields)])
-         (send type encode stream (ref val key) ctx))
-
-    (for ([ptr (in-list (ref ctx 'pointers))])
-         (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
+      (send type encode stream (ref val key) ctx))
+    (for ([ptr (in-list (· ctx pointers))])
+      (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
 
 
 (test-module
@@ -125,18 +122,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
  (check-exn exn:fail:contract? (λ () (+Struct 42)))
 
  ;; make random structs and make sure we can round trip
- (for ([i (in-range 10)])
-      (define field-types (for/list ([i (in-range 20)])
-                                    (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-      (define size-num-types (for/sum ([num-type (in-list field-types)])
-                                      (send num-type size)))
-      (define s (+Struct (for/list ([num-type (in-list field-types)])
-                                   (cons (gensym) num-type))))
-      (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                                        (random 256))))
-      (define es (+EncodeStream))
-      (send s encode es (send s decode bs))
-      (check-equal? (send es dump) bs)))
+ (for ([i (in-range 20)])
+   (define field-types (for/list ([i (in-range 40)])
+                         (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+   (define size-num-types (for/sum ([num-type (in-list field-types)])
+                            (send num-type size)))
+   (define s (+Struct (for/list ([num-type (in-list field-types)])
+                        (cons (gensym) num-type))))
+   (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                             (random 256))))
+   (check-equal? (send s encode #f (send s decode bs)) bs)))
                    
  
 

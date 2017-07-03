@@ -44,7 +44,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (let ([stream (+DecodeStream (+Buffer "\x05devon\x20"))]
       [struct (+Struct (dictify 'name (+StringT uint8)
                                 'age uint8))])
-  (set-field! process struct (λ (o stream) (ref-set! o 'canDrink (>= (ref o 'age) 21))))
+  (set-field! process struct (λ (o stream _) (ref-set! o 'canDrink (>= (· o age) 21)) o))
   (check-equal? (send (send struct decode stream) kv)
                 (mhasheq 'name "devon" 'age 32 'canDrink #t)))
 
