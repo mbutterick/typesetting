@@ -90,9 +90,9 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
          (send (ref ptr 'type) encode stream (ref ptr 'val) (ref ptr 'parent))))
 
   
-  (define/override (size [val (mhash)] [parent #f] [includePointers #t])
+  (define/override (size [val #f] [parent #f] [includePointers #t])
     (unless (or val forced-version)
-      (error 'VersionedStruct-cannot-compute-size))
+      (raise-argument-error 'VersionedStruct:size "value" val))
 
     (define ctx (mhash 'parent parent
                        'val val
@@ -105,7 +105,7 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
     (when (ref versions 'header)
       (increment! size
                   (for/sum ([(key type) (in-dict (ref versions 'header))])
-                           (send type size (ref val key) ctx))))
+                           (send type size (and val (ref val key)) ctx))))
     
     (define fields (or (ref versions (or forced-version (ref val 'version))) (raise-argument-error 'VersionedStruct:encode "valid version key" version)))
 
