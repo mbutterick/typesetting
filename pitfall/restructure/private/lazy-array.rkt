@@ -7,6 +7,8 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 |#
 
+(define (get o i) (send o get i))
+
 (define-subclass object% (InnerLazyArray type [len #f] [stream #f] [ctx #f])
   (unless stream (raise-argument-error 'LazyArray "stream" stream))
   (define starting-pos (· stream pos))
