@@ -79,13 +79,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                            [(parent) (· ctx parent)]
                            [(global) (find-top-ctx ctx)]
                            [else (error 'unknown-pointer-style)])]
-               [relative (+ (caseq (report pointer-style)
+               [relative (+ (caseq pointer-style
                                    [(local parent) (· ctx startOffset)]
                                    [(immediate) (+ (pos port) (send offset-type size val parent))]
                                    [(global) 0])
                             (relative-getter-or-0 (· parent val)))])
 
-          (report* 'step-1 ctx relative)
           (send offset-type encode port (- (· ctx pointerOffset) relative))
          
           (let-values ([(type val) (resolve-void-pointer type val)])

@@ -63,16 +63,16 @@
     (field [_hash (make-hash)]
            [_list null])
 
-    (define/pubment (decode port [parent #f])
+    (define/pubment (decode port [parent #f] . args)
       (when parent (unless (indexable? parent)
                      (raise-argument-error (symbol-append (get-class-name) ':decode) "indexable" parent)))
       (define ip (cond
                    [(bytes? port) (open-input-bytes port)]
                    [(input-port? port) port]
                    [else (raise-argument-error (symbol-append (get-class-name) ':decode) "bytes or input port" port)]))
-      (post-decode (inner (void) decode ip parent) port parent))
+      (post-decode (inner (void) decode ip parent) port parent . args))
     
-    (define/pubment (encode port val-in [parent #f])
+    (define/pubment (encode port val-in [parent #f] . args)
       #;(report* port val-in parent)
       (define val (pre-encode val-in port))
       (when parent (unless (indexable? parent)
@@ -81,15 +81,15 @@
                    [(output-port? port) port]
                    [(not port) (open-output-bytes)]
                    [else (raise-argument-error 'Xenomorph "output port or #f" port)]))
-      (define encode-result (inner #"" encode op val parent))
+      (define encode-result (inner #"" encode op val parent . args))
       (when (bytes? encode-result)
         (write-bytes encode-result op))
       (when (not port) (get-output-bytes op)))
     
-    (define/pubment (size [val #f] [parent #f] . _)
+    (define/pubment (size [val #f] [parent #f] . args)
       (when parent (unless (indexable? parent)
                      (raise-argument-error (symbol-append (get-class-name) ':size) "indexable" parent)))
-      (define result (inner (void) size val parent))
+      (define result (inner (void) size val parent . args))
       (cond
         [(void? result) 0]
         [(and (integer? result) (not (negative? result))) result]
