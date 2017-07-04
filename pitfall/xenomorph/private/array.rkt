@@ -54,9 +54,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                   (raise-argument-error 'Array:encode "list or countable" array)))
 
     (define (encode-items ctx)
-      (define results (for/list ([item (in-list (countable->list array))])
+      (for ([item (in-list (countable->list array))])
                                 (send type encode port item ctx)))
-      (unless port (apply bytes-append results)))
 
     (cond
       [(NumberT? len) (define ctx (mhash 'pointers null
