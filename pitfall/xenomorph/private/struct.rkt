@@ -45,7 +45,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 
 (define-subclass xenomorph-base% (Struct [fields (dictify)])
-  (field [[_process process] (λ (res port ctx) res)]
+  (field [[_process process] (λ (val port ctx) val)]
          [[_pre-encode pre-encode] (λ (val port) val)]) ; store as field so it can be mutated from outside
   
   (define/overment (post-decode res stream [ctx #f])

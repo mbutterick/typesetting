@@ -10,7 +10,7 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
 
 (define-subclass Struct (VersionedStruct type [versions (dictify)])
   
-  (unless ((disjoin integer? procedure? RestructureBase? symbol?) type)
+  (unless ((disjoin integer? procedure? xenomorph-base%? symbol?) type)
     (raise-argument-error 'VersionedStruct "integer, function, symbol, or Restructure object" type))
   (unless (and (dict? versions) (andmap (λ (val) (or (dict? val) (Struct? val))) (map cdr versions)))
     (raise-argument-error 'VersionedStruct "dict of dicts or Structs" versions))
@@ -58,17 +58,15 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
 
   (define/override (encode stream val [parent #f])
     (unless (hash? val)
-      (raise-argument-error 'Struct:encode "hash" val))
-
-    (send this preEncode val stream) ; preEncode goes first, because it might bring input hash into compliance
+      (raise-argument-error 'VersionedStruct:encode "hash" val))
 
     (define ctx (mhash 'pointers empty
-                       'startOffset (· stream pos)
+                       'startOffset (pos stream)
                        'parent parent
                        'val val
                        'pointerSize 0))
 
-    (ref-set! ctx 'pointerOffset (+ (· stream pos) (size val ctx #f)))
+    (ref-set! ctx 'pointerOffset (+ (pos stream) (size val ctx #f)))
 
     (when (not (or (key? type) (procedure? type)))
       (send type encode stream (or forced-version (· val version))))

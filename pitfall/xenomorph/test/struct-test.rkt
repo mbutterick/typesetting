@@ -9,126 +9,70 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 ;describe 'Struct', ->
 ;  describe 'decode', ->
 ;    it 'should decode into an object', ->
-;      stream = new DecodeStream new Buffer '\x05devon\x15'
-;      struct = new Struct
-;        name: new StringT uint8
-;        age: uint8
-;
-;      struct.decode(stream).should.deep.equal
-;        name: 'devon'
-;        age: 21
 
-(let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))]
-      [struct (+Struct (dictify 'name (+StringT uint8)
-                                'age uint8))])
-  (check-equal? (dump (decode struct stream))
-                (mhasheq 'name "devon" 'age 21)))
+(parameterize ([current-input-port (open-input-bytes #"\x05devon\x15")])
+  (check-equal?
+   (dump (decode (+Struct (dictify 'name (+StringT uint8)
+                                   'age uint8))))
+   (mhasheq 'name "devon" 'age 21)))
 
 
-;
+
 ;    it 'should support process hook', ->
-;      stream = new DecodeStream new Buffer '\x05devon\x20'
-;      struct = new Struct
-;        name: new StringT uint8
-;        age: uint8
-;
-;      struct.process = ->
-;        @canDrink = @age >= 21
-;
-;      struct.decode(stream).should.deep.equal
-;        name: 'devon'
-;        age: 32
-;        canDrink: true
 
-(let ([stream (+DecodeStream (+Buffer "\x05devon\x20"))]
-      [struct (+Struct (dictify 'name (+StringT uint8)
-                                'age uint8))])
-  (set-field! process struct (λ (o stream _) (ref-set! o 'canDrink (>= (· o age) 21)) o))
-  (check-equal? (dump (decode struct stream))
+(parameterize ([current-input-port (open-input-bytes #"\x05devon\x20")])
+  (define struct (+Struct (dictify 'name (+StringT uint8)
+                                   'age uint8)))
+  (set-field! process struct (λ (o . _) (ref-set! o 'canDrink (>= (· o age) 21)) o))
+  (check-equal? (dump (decode struct))
                 (mhasheq 'name "devon" 'age 32 'canDrink #t)))
 
 
-;
+
 ;    it 'should support function keys', ->
-;      stream = new DecodeStream new Buffer '\x05devon\x20'
-;      struct = new Struct
-;        name: new StringT uint8
-;        age: uint8
-;        canDrink: -> @age >= 21
-;
-;      struct.decode(stream).should.deep.equal
-;        name: 'devon'
-;        age: 32
-;        canDrink: true
 
-(let ([stream (+DecodeStream (+Buffer "\x05devon\x20"))]
-      [struct (+Struct (dictify 'name (+StringT uint8)
-                                'age uint8
-                                'canDrink (λ (o) (>= (ref o 'age) 21))))])
-  (check-equal? (dump (decode struct stream))
+(parameterize ([current-input-port (open-input-bytes #"\x05devon\x20")])
+  (define struct (+Struct (dictify 'name (+StringT uint8)
+                                   'age uint8
+                                   'canDrink (λ (o) (>= (ref o 'age) 21)))))
+  (check-equal? (dump (decode struct))
                 (mhasheq 'name "devon" 'age 32 'canDrink #t)))
+
+
 
 
 ;
 ;  describe 'size', ->
 ;    it 'should compute the correct size', ->
-;      struct = new Struct
-;        name: new StringT uint8
-;        age: uint8
-;
-;      struct.size(name: 'devon', age: 21).should.equal 7
 
-(let ([struct (+Struct (dictify 'name (+StringT uint8)
-                                'age uint8))])
-  (check-equal? (size struct (hasheq 'name "devon" 'age 32)) 7))
+(check-equal? (size (+Struct (dictify
+                              'name (+StringT uint8)
+                              'age uint8))
+                    (hasheq 'name "devon" 'age 32)) 7)
+
 
 
 ;    it 'should compute the correct size with pointers', ->
-;      struct = new Struct
-;        name: new StringT uint8
-;        age: uint8
-;        ptr: new Pointer uint8, new StringT uint8
-;
-;      size = struct.size
-;        name: 'devon'
-;        age: 21
-;        ptr: 'hello'
-;
-;      size.should.equal 14
 
-(let ([struct (+Struct (dictify 'name (+StringT uint8)
-                                'age uint8
-                                'ptr (+Pointer uint8 (+StringT uint8))))])
-  (check-equal? (size struct (mhash 'name "devon" 'age 21 'ptr "hello")) 14))
+(check-equal? (size (+Struct (dictify
+                              'name (+StringT uint8)
+                              'age uint8
+                              'ptr (+Pointer uint8 (+StringT uint8))))
+                    (mhash 'name "devon" 'age 21 'ptr "hello")) 14)
 
 
-;      
 ;    it 'should get the correct size when no value is given', ->
-;      struct = new Struct
-;        name: new StringT 4
-;        age: uint8
-;
-;      struct.size().should.equal 5
 
-
-(let ([struct (+Struct (dictify 'name (+StringT 4)
-                                'age uint8))])
-  (check-equal? (size struct) 5))
-
-
-;      
+(check-equal? (size (+Struct (dictify
+                              'name (+StringT 4)
+                              'age uint8))) 5)
+      
 ;    it 'should throw when getting non-fixed length size and no value is given', ->
-;      struct = new Struct
-;        name: new StringT uint8
-;        age: uint8
-;
-;      should.throw ->
-;        struct.size()
-;      , /not a fixed size/i
 
-(let ([struct (+Struct (dictify 'name (+StringT uint8)
-                                'age uint8))])
-  (check-exn exn:fail:contract? (λ () (size struct))))
+(check-exn exn:fail:contract? (λ () (size (+Struct (dictify 'name (+StringT uint8)
+                                                            'age uint8)))))
+
+
 
 ;      
 ;  describe 'encode', ->
@@ -148,66 +92,29 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 ;
 ;      stream.end()
 
-(let ([stream (+DecodeStream (+Buffer "\x05devon\x15"))]
-      [struct (+Struct (dictify 'name (+StringT uint8)
-                                'age uint8))])
-  (check-equal? (dump (decode struct stream))
+(parameterize ([current-input-port (open-input-bytes #"\x05devon\x15")])
+  (check-equal? (dump (decode (+Struct (dictify 'name (+StringT uint8)
+                                                'age uint8))))
                 (mhasheq 'name "devon" 'age 21)))
 
-;
+
 ;    it 'should support preEncode hook', (done) ->
-;      stream = new EncodeStream
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer '\x05devon\x15'
-;        done()
-;
-;      struct = new Struct
-;        nameLength: uint8
-;        name: new StringT 'nameLength'
-;        age: uint8
-;
-;      struct.preEncode = ->
-;        @nameLength = @name.length
-;
-;      struct.encode stream,
-;        name: 'devon'
-;        age: 21
-;
-;      stream.end()
 
-(let ([stream (+EncodeStream)]
-      [struct (+Struct (dictify 'nameLength uint8
-                                'name (+StringT 'nameLength)
-                                'age uint8))])
-  (set-field! preEncode struct (λ (val stream) (ref-set! val 'nameLength (length (ref val 'name)))))
-  (encode struct stream (mhasheq 'name "devon" 'age 21))
-  (check-equal? (dump stream)
-                (+Buffer "\x05devon\x15")))
-
+(parameterize ([current-output-port (open-output-bytes)])
+  (define struct (+Struct (dictify 'nameLength uint8
+                                   'name (+StringT 'nameLength)
+                                   'age uint8)))
+  (set-field! pre-encode struct (λ (val port) (ref-set! val 'nameLength (length (ref val 'name))) val))
+  (encode struct (mhasheq 'name "devon" 'age 21))
+  (check-equal? (dump (current-output-port)) #"\x05devon\x15"))
 
 
 ;    it 'should encode pointer data after structure', (done) ->
-;      stream = new EncodeStream
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer '\x05devon\x15\x08\x05hello'
-;        done()
-;
-;      struct = new Struct
-;        name: new StringT uint8
-;        age: uint8
-;        ptr: new Pointer uint8, new StringT uint8
-;
-;      struct.encode stream,
-;        name: 'devon'
-;        age: 21
-;        ptr: 'hello'
-;
-;      stream.end()
 
+(parameterize ([current-output-port (open-output-bytes)])
+  (define struct (+Struct (dictify 'name (+StringT uint8)
+                                   'age uint8
+                                   'ptr (+Pointer uint8 (+StringT uint8)))))
+  (encode struct (mhasheq 'name "devon" 'age 21 'ptr "hello"))
+  (check-equal? (dump (current-output-port)) #"\x05devon\x15\x08\x05hello"))
 
-(let ([stream (+EncodeStream)]
-      [struct (+Struct (dictify 'name (+StringT uint8)
-                                'age uint8
-                                'ptr (+Pointer uint8 (+StringT uint8))))])
-  (encode struct stream (mhasheq 'name "devon" 'age 21 'ptr "hello"))
-  (check-equal? (dump stream) (+Buffer "\x05devon\x15\x08\x05hello")))

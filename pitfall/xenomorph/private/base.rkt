@@ -6,8 +6,8 @@
   (pos posable [new-pos])
   #:defaults
   ([port? (define (pos p [new-pos #f]) (when new-pos
-                                               (file-position p new-pos))
-                  (file-position p))]))
+                                         (file-position p new-pos))
+            (file-position p))]))
 
 (define posable<%>
   (interface* ()
@@ -24,8 +24,12 @@
   (interface* ()
               ([(generic-property gen:codable)
                 (generic-method-table gen:codable
-                                      (define (decode o [stream (current-input-port)] #:parent [parent #f]) (send o decode stream parent))
-                                      (define (encode o  [val #f] [stream (current-output-port)] #:parent [parent #f]) (send o encode stream val parent)))])))
+                                      (define (decode o [port (current-input-port)] #:parent [parent #f])
+                                        (send o decode port parent))
+                                      (define (encode o  [val #f] [port (current-output-port)] #:parent [parent #f])
+                                        (when (port? val)
+                                          (raise-argument-error 'encode "encodable value" val))
+                                        (send o encode port val parent)))])))
 
 
 (define-generics sizable
