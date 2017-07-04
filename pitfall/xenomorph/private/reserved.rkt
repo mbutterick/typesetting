@@ -1,5 +1,5 @@
 #lang reader (submod "racket.rkt" reader)
-(require "stream.rkt" "utils.rkt")
+(require "utils.rkt")
 (provide (all-defined-out))
 
 #|
@@ -7,15 +7,15 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
 |#
 
-(define-subclass Streamcoder (Reserved type [count 1])
+(define-subclass xenomorph-base% (Reserved type [count 1])
 
-  (define/augment (decode stream parent)
-    (send stream pos (+ (· stream pos) (size #f parent)))
+  (define/augment (decode port parent)
+    (pos port (+ (pos port) (size #f parent)))
     (void))
 
   (define/augment (size [val #f] [parent #f])
     (* (send type size) (resolve-length count #f parent)))
 
-  (define/augment (encode stream val [parent #f])
-    (send stream fill 0 (size val parent))))
+  (define/augment (encode port val [parent #f])
+    (make-bytes (size val parent) 0)))
 

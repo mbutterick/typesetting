@@ -26,14 +26,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
   (define lazy (· options lazy))
   (define relative-getter-or-0 (or (· options relativeTo) (λ (ctx) 0))) ; changed this to a simple lambda
 
-  (define/augment (decode stream [ctx #f])
-    (define offset (send offset-type decode stream ctx))
+  (define/augment (decode port [ctx #f])
+    (define offset (send offset-type decode port ctx))
     (cond
       [(and allow-null (= offset null-value)) #f] ; handle null pointers
       [else
        (define relative (+ (caseq pointer-style
                                   [(local) (· ctx _startOffset)]
-                                  [(immediate) (- (· stream pos) (send offset-type size))]
+                                  [(immediate) (- (pos port) (send offset-type size))]
                                   [(parent) (· ctx parent _startOffset)]
                                   [(global) (or (· (find-top-ctx ctx) _startOffset) 0)]
                                   [else (error 'unknown-pointer-style)])
@@ -45,10 +45,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                  (cond
                    [(not (void? val)) val]
                    [else
-                    (define orig-pos (· stream pos))
-                    (send stream pos ptr)
-                    (set! val (send type decode stream ctx))
-                    (send stream pos orig-pos)
+                    (define orig-pos (pos port))
+                    (pos port ptr)
+                    (set! val (send type decode port ctx))
+                    (pos port orig-pos)
                     val]))
                (if lazy
                    (LazyThunk decode-value)
