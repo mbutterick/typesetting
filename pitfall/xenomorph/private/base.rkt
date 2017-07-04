@@ -3,16 +3,16 @@
 (provide (all-defined-out))
 
 (define-generics codable
-  (decode codable stream [parent])
-  (encode codable stream [val] [parent]))
+  (decode codable #:parent [parent] [stream])
+  (encode codable [val] [stream] #:parent [parent]))
 
 
 (define codable<%>
   (interface* ()
               ([(generic-property gen:codable)
                 (generic-method-table gen:codable
-                                      (define (decode o stream [parent #f]) (send o decode stream parent))
-                                      (define (encode o stream [val #f] [parent #f]) (send o encode stream val parent)))])))
+                                      (define (decode o [stream (current-input-port)] #:parent [parent #f]) (send o decode stream parent))
+                                      (define (encode o  [val #f] [stream (current-output-port)] #:parent [parent #f]) (send o encode stream val parent)))])))
 
 
 (define-generics sizable

@@ -202,9 +202,12 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
   (define/overment (decode x [parent #f])
     (when parent (unless (indexable? parent)
                    (raise-argument-error 'Streamcoder:decode "hash or indexable" x)))
-    (define stream (if (bytes? x) (+DecodeStream x) x))
+    (define stream (cond
+                     [(bytes? x) (+DecodeStream x)]
+                     [(input-port? x) (+DecodeStream (port->bytes x))]
+                     [else x]))
     (unless (DecodeStream? stream)
-      (raise-argument-error 'Streamcoder:decode "bytes or DecodeStream" x))
+      (raise-argument-error 'Streamcoder:decode "bytes or input port or DecodeStream" x))
     (inner (void) decode stream parent))
 
   (define/overment (encode x [val #f] [parent #f])
@@ -228,4 +231,4 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
  (check-exn exn:fail:contract? (λ () (decode d 42)))
  (check-not-exn (λ () (decode d #"foo")))
  (check-exn exn:fail:contract? (λ () (encode d 42 21)))
- (check-not-exn (λ () (encode d (open-output-bytes) 42))))
+ (check-not-exn (λ () (encode d 42 (open-output-bytes) ))))
