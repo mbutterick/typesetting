@@ -70,22 +70,23 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
       (send offset-type size)))
                  
 
-  (define/augment (encode stream val [ctx #f])
+  (define/augment (encode port val [ctx #f])
     (if (not val)
-        (send offset-type encode stream null-value)
+        (send offset-type encode port null-value)
         (let* ([parent ctx]
                [ctx (caseq pointer-style
                            [(local immediate) ctx]
                            [(parent) (· ctx parent)]
                            [(global) (find-top-ctx ctx)]
                            [else (error 'unknown-pointer-style)])]
-               [relative (+ (caseq pointer-style
+               [relative (+ (caseq (report pointer-style)
                                    [(local parent) (· ctx startOffset)]
-                                   [(immediate) (+ (· stream pos) (send offset-type size val parent))]
+                                   [(immediate) (+ (pos port) (send offset-type size val parent))]
                                    [(global) 0])
                             (relative-getter-or-0 (· parent val)))])
-         
-          (send offset-type encode stream (- (· ctx pointerOffset) relative))
+
+          (report* 'step-1 ctx relative)
+          (send offset-type encode port (- (· ctx pointerOffset) relative))
          
           (let-values ([(type val) (resolve-void-pointer type val)])
             (ref-set! ctx 'pointers (append (· ctx pointers) (list (mhasheq 'type type
