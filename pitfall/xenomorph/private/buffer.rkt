@@ -19,7 +19,7 @@ A Restructure RBuffer object is separate.
        string->bytes/utf-8
        list->bytes) xs))
 
-(define-subclass RestructureBase (RBuffer [len #xffff])
+(define-subclass xenomorph-base% (RBuffer [len #xffff])
   
   (define/augment (decode port [parent #f])
     (define decoded-len (resolve-length len port parent))

@@ -18,7 +18,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [(· ctx parent) => find-top-ctx]
     [else ctx]))
 
-(define-subclass RestructureBase (Pointer offset-type type-in [options (mhasheq)])
+(define-subclass xenomorph-base% (Pointer offset-type type-in [options (mhasheq)])
   (field [type (and (not (eq? type-in 'void)) type-in)])
   (define pointer-style (or (· options type) 'local))
   (define allow-null (or (· options allowNull) #t)) 
@@ -26,7 +26,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
   (define lazy (· options lazy))
   (define relative-getter-or-0 (or (· options relativeTo) (λ (ctx) 0))) ; changed this to a simple lambda
 
-  (define/override (decode stream [ctx #f])
+  (define/augment (decode stream [ctx #f])
     (define offset (send offset-type decode stream ctx))
     (cond
       [(and allow-null (= offset null-value)) #f] ; handle null pointers
@@ -56,7 +56,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
          [else ptr])]))
 
   
-  (define/override (size [val #f] [ctx #f])
+  (define/augment (size [val #f] [ctx #f])
     (let*-values ([(parent) ctx]
                   [(ctx) (caseq pointer-style
                                 [(local immediate) ctx]
@@ -70,7 +70,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
       (send offset-type size)))
                  
 
-  (define/override (encode stream val [ctx #f])
+  (define/augment (encode stream val [ctx #f])
     (if (not val)
         (send offset-type encode stream null-value)
         (let* ([parent ctx]

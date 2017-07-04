@@ -102,14 +102,7 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
                 (generic-method-table gen:countable
                                       (define (length o) (get-field length_ o)))])))
 
-(define-generics posable
-  (pos posable [new-pos]))
 
-(define posable<%>
-  (interface* ()
-              ([(generic-property gen:posable)
-                (generic-method-table gen:posable
-                                      (define (pos o [new-pos #f]) (send o pos new-pos)))])))
 
 (define DecodeStreamT
   (class* PortWrapper

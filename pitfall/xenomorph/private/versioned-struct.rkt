@@ -15,7 +15,7 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
   (unless (and (dict? versions) (andmap (λ (val) (or (dict? val) (Struct? val))) (map cdr versions)))
     (raise-argument-error 'VersionedStruct "dict of dicts or Structs" versions))
 
-  (inherit _setup  _parse-fields process)
+  (inherit _setup  _parse-fields post-decode)
   (inherit-field fields)
   (field [forced-version #f]
          [versionGetter void]
@@ -51,7 +51,6 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
       [(VersionedStruct? fields) (send fields decode stream parent)]
       [else
        (_parse-fields stream res fields)
-       (process res stream)
        res]))
   
   (define/public-final (force-version! version)

@@ -9,7 +9,6 @@
      "optional.rkt"
      "pointer.rkt"
      "reserved.rkt"
-     "stream.rkt"
      "string.rkt"
      "struct.rkt"
      "versioned-struct.rkt")

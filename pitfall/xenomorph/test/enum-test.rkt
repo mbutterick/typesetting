@@ -14,40 +14,21 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 (check-equal? (size e) 1)
 
 
-;
 ;  it 'should decode', ->
-;    stream = new DecodeStream new Buffer [1, 2, 0]
-;    e.decode(stream).should.equal 'bar'
-;    e.decode(stream).should.equal 'baz'
-;    e.decode(stream).should.equal 'foo'
+(parameterize ([current-input-port (open-input-bytes (bytes 1 2 0))])
+  (check-equal? (decode e) "bar")
+  (check-equal? (decode e) "baz")
+  (check-equal? (decode e) "foo"))
 
-(let ([stream (+DecodeStream (+Buffer '(1 2 0)))])
-  (check-equal? (decode e stream) "bar")
-  (check-equal? (decode e stream) "baz")
-  (check-equal? (decode e stream) "foo"))
 
-;
 ;  it 'should encode', (done) ->
-;    stream = new EncodeStream
-;    stream.pipe concat (buf) ->
-;      buf.should.deep.equal new Buffer [1, 2, 0]
-;      done()
-;
-;    e.encode stream, 'bar'
-;    e.encode stream, 'baz'
-;    e.encode stream, 'foo'
-;    stream.end()
+(parameterize ([current-output-port (open-output-bytes)])
+  (encode e "bar")
+  (encode e "baz")
+  (encode e "foo")
+  (check-equal? (dump (current-output-port)) (bytes 1 2 0)))
 
-(let ([stream (+EncodeStream)])
-  (encode e stream "bar")
-  (encode e stream "baz")
-  (encode e stream "foo")
-  (check-equal? (send stream dump) (+Buffer '(1 2 0))))
 
-;
 ;  it 'should throw on unknown option', ->
-;    stream = new EncodeStream
-;    should.throw ->
-;      e.encode stream, 'unknown'
 
-(check-exn exn:fail:contract? (λ () (encode e (+EncodeStream) "unknown")))
+(check-exn exn:fail:contract? (λ () (encode e "unknown" (open-output-bytes))))

@@ -7,7 +7,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
 |#
 
-(define-subclass Streamcoder (Enum type [options empty])
+(define-subclass xenomorph-base% (Enum type [options empty])
 
   (define/augment (decode stream . _)
     (define index (send type decode stream))

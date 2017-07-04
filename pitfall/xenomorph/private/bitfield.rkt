@@ -25,11 +25,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     (define bit-int (for/sum ([(flag i) (in-indexed flags)]
                                        #:when (and flag (ref flag-hash flag)))
                                (arithmetic-shift 1 i)))
-    (send type encode port bit-int)))
+    (send type encode port bit-int))
+
+  (define/override (get-class-name) 'Bitfield))
 
 
 (test-module
- (require "number.rkt" "stream.rkt")
+ (require "number.rkt")
  (define bfer (+Bitfield uint16be '(bold italic underline #f shadow condensed extended)))
  (define bf (send bfer decode #"\0\25"))
  (check-equal? (length (ref-keys bf)) 6) ; omits #f flag

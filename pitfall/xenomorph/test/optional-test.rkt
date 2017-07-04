@@ -8,193 +8,106 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 ;describe 'Optional', ->
 ;  describe 'decode', ->
 ;    it 'should not decode when condition is falsy', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8, false
-;      should.not.exist optional.decode(stream)
-;      stream.pos.should.equal 0
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8 #f)])
-  (check-equal? (decode optional stream) (void))
-  (check-equal? (· stream pos) 0))
-
+(parameterize ([current-input-port (open-input-bytes (bytes 0))])
+  (define optional (+Optional uint8 #f))
+  (check-equal? (decode optional) (void))
+  (check-equal? (pos (current-input-port)) 0))
 
 ;    it 'should not decode when condition is a function and falsy', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8, -> false
-;      should.not.exist optional.decode(stream)
-;      stream.pos.should.equal 0
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8 (λ _ #f))])
-  (check-equal? (decode optional stream) (void))
-  (check-equal? (· stream pos) 0))
+(parameterize ([current-input-port (open-input-bytes (bytes 0))])
+  (define optional (+Optional uint8 (λ _ #f)))
+  (check-equal? (decode optional) (void))
+  (check-equal? (pos (current-input-port)) 0))
 
-;
+
 ;    it 'should decode when condition is omitted', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8
-;      should.exist optional.decode(stream)
-;      stream.pos.should.equal 1
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8)])
-  (check-not-equal? (decode optional stream) (void))
-  (check-equal? (· stream pos) 1))
+(parameterize ([current-input-port (open-input-bytes (bytes 0))])
+  (define optional (+Optional uint8))
+  (check-not-equal? (decode optional) (void))
+  (check-equal? (pos (current-input-port)) 1))
 
 ;
 ;    it 'should decode when condition is truthy', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8, true
-;      should.exist optional.decode(stream)
-;      stream.pos.should.equal 1
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8 #t)])
-  (check-not-equal? (decode optional stream) (void))
-  (check-equal? (· stream pos) 1))
+(parameterize ([current-input-port (open-input-bytes (bytes 0))])
+  (define optional (+Optional uint8 #t))
+  (check-not-equal? (decode optional) (void))
+  (check-equal? (pos (current-input-port)) 1))
 
-;
+
 ;    it 'should decode when condition is a function and truthy', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8, -> true
-;      should.exist optional.decode(stream)
-;      stream.pos.should.equal 1
+
+(parameterize ([current-input-port (open-input-bytes (bytes 0))])
+  (define optional (+Optional uint8 (λ _ #t)))
+  (check-not-equal? (decode optional) (void))
+  (check-equal? (pos (current-input-port)) 1))
 
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8 (λ _ #t))])
-  (check-not-equal? (decode optional stream) (void))
-  (check-equal? (· stream pos) 1))
-
-;
 ;  describe 'size', ->
-;    it 'should return 0 when condition is falsy', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8, false
-;      optional.size().should.equal 0
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8 #f)])
-  (check-equal? (· optional size) 0))
+(check-equal? (size (+Optional uint8 #f)) 0)
 
 ;
 ;    it 'should return 0 when condition is a function and falsy', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8, -> false
-;      optional.size().should.equal 0
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8 (λ _ #f))])
-  (check-equal? (· optional size) 0))
+(check-equal? (size (+Optional uint8 (λ _ #f))) 0)
 
-;
+
 ;    it 'should return given type size when condition is omitted', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8
-;      optional.size().should.equal 1
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8)])
-  (check-equal? (· optional size) 1))
-;
+(check-equal? (size (+Optional uint8)) 1)
+
+
 ;    it 'should return given type size when condition is truthy', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8, true
-;      optional.size().should.equal 1
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8 #t)])
-  (check-equal? (· optional size) 1))
+(check-equal? (size (+Optional uint8 #t)) 1)
 
-;
+
 ;    it 'should return given type size when condition is a function and truthy', ->
-;      stream = new DecodeStream new Buffer [0]
-;      optional = new Optional uint8, -> true
-;      optional.size().should.equal 1
 
-(let ([stream (+DecodeStream (+Buffer '(0)))]
-      [optional (+Optional uint8 (λ _ #t))])
-  (check-equal? (· optional size) 1))
+(check-equal? (size (+Optional uint8 (λ _ #t))) 1)
 
-;
+
 ;  describe 'encode', ->
 ;    it 'should not encode when condition is falsy', (done) ->
-;      stream = new EncodeStream
-;      optional = new Optional uint8, false
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal []
-;        done()
-;
-;      optional.encode stream, 128
-;      stream.end()
 
-(let ([stream (+EncodeStream)]
-      [optional (+Optional uint8 #f)])
-  (encode optional stream 128)
-  (check-equal? (dump stream) (+Buffer empty)))
+(parameterize ([current-output-port (open-output-bytes)])
+  (define optional (+Optional uint8 #f))
+  (encode optional 128)
+  (check-equal? (dump (current-output-port)) (bytes)))
 
-;
+
 ;    it 'should not encode when condition is a function and falsy', (done) ->
-;      stream = new EncodeStream
-;      optional = new Optional uint8, -> false
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal []
-;        done()
-;
-;      optional.encode stream, 128
-;      stream.end()
 
-(let ([stream (+EncodeStream)]
-      [optional (+Optional uint8 (λ _ #f))])
-  (encode optional stream 128)
-  (check-equal? (dump stream) (+Buffer empty)))
+(parameterize ([current-output-port (open-output-bytes)])
+  (define optional (+Optional uint8 (λ _ #f)))
+  (encode optional 128)
+  (check-equal? (dump (current-output-port)) (bytes)))
 
 
 ;
 ;    it 'should encode when condition is omitted', (done) ->
-;      stream = new EncodeStream
-;      optional = new Optional uint8
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer [128]
-;        done()
-;
-;      optional.encode stream, 128
-;      stream.end()
 
-(let ([stream (+EncodeStream)]
-      [optional (+Optional uint8)])
-  (encode optional stream 128)
-  (check-equal? (dump stream) (+Buffer '(128))))
+(parameterize ([current-output-port (open-output-bytes)])
+  (define optional (+Optional uint8))
+  (encode optional 128)
+  (check-equal? (dump (current-output-port)) (bytes 128)))
 
-;
+
 ;    it 'should encode when condition is truthy', (done) ->
-;      stream = new EncodeStream
-;      optional = new Optional uint8, true
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer [128]
-;        done()
-;
-;      optional.encode stream, 128
-;      stream.end()
 
-(let ([stream (+EncodeStream)]
-      [optional (+Optional uint8 #t)])
-  (encode optional stream 128)
-  (check-equal? (dump stream) (+Buffer '(128))))
+(parameterize ([current-output-port (open-output-bytes)])
+  (define optional (+Optional uint8 #t))
+  (encode optional 128)
+  (check-equal? (dump (current-output-port)) (bytes 128)))
 
-;
+
 ;    it 'should encode when condition is a function and truthy', (done) ->
-;      stream = new EncodeStream
-;      optional = new Optional uint8, -> true
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer [128]
-;        done()
-;
-;      optional.encode stream, 128
-;      stream.end()
 
-(let ([stream (+EncodeStream)]
-      [optional (+Optional uint8 (λ _ #t))])
-  (encode optional stream 128)
-  (check-equal? (dump stream) (+Buffer '(128))))
+(parameterize ([current-output-port (open-output-bytes)])
+  (define optional (+Optional uint8 (λ _ #t)))
+  (encode optional 128)
+  (check-equal? (dump (current-output-port)) (bytes 128)))

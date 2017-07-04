@@ -51,13 +51,13 @@
 (require sugar/debug)
 (define-macro-cases ·
   [(_ X REF)
-   #'(let loop ([x X])
-       (cond
-         ;; dict first, to catch objects that implement gen:dict
-         [(dict? x) (dict-ref x 'REF #f)]
-         ;; give `send` precedence (presence of method => wants runtime resolution of value)
-         [(object? x) (or (send-or-false x REF) (get-or-false x REF))]
-         [else (raise-argument-error '· (format "~a must be object or dict" 'X) x)]))]
+   (syntax/loc caller-stx (let loop ([x X])
+                             (cond
+                               ;; dict first, to catch objects that implement gen:dict
+                               [(dict? x) (dict-ref x 'REF #f)]
+                               ;; give `send` precedence (presence of method => wants runtime resolution of value)
+                               [(object? x) (or (send-or-false x REF) (get-or-false x REF))]
+                               [else (raise-argument-error '· (format "~a must be object or dict" 'X) x)])))]
   [(_ X REF0 . REFS) #'(· (· X REF0) . REFS)])
 
 #;(module+ test

@@ -50,10 +50,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                            (arithmetic-shift b (* 8 i))))
     unsigned-int)
 
-  (define/override (post-decode unsigned-val)
+  (define/override (post-decode unsigned-val . _)
     (if _signed? (unsigned->signed unsigned-val bits) unsigned-val))
 
-  (define/override (pre-encode val)
+  (define/override (pre-encode val . _)
     (exact-if-possible val))
 
   (define/augment (encode port val [parent #f])
@@ -75,7 +75,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define bs (read-bytes byte-size port))
     (floating-point-bytes->real bs (eq? endian 'be)))
 
-  (define/augment (encode val [parent #f]) ; convert float to int
+  (define/augment (encode port val [parent #f]) ; convert float to int
     (define bs (real->floating-point-bytes val byte-size (eq? endian 'be)))
     bs)
 
@@ -95,10 +95,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (super-make-object (string->symbol (format "int~a" size)) fixed-endian)
   (define _point (arithmetic-shift 1 fracBits))
 
-  (define/override (post-decode int)
+  (define/override (post-decode int . _)
     (exact-if-possible (/ int _point 1.0)))
 
-  (define/override (pre-encode fixed)
+  (define/override (pre-encode fixed . _)
     (exact-if-possible (floor (* fixed _point)))))
 
 (define-instance fixed16 (make-object Fixed 16))

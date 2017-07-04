@@ -44,17 +44,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                         (define/override (dump) _kv)))
 
 
-(define-subclass Streamcoder (Struct [fields (dictify)])
-  (field [[_process process] (λ (res stream ctx) res)]
-         [[_preEncode preEncode] void]) ; store as field so it can be mutated from outside
+(define-subclass xenomorph-base% (Struct [fields (dictify)])
+  (field [[_process process] (λ (res port ctx) res)]
+         [[_pre-encode pre-encode] (λ (val port) val)]) ; store as field so it can be mutated from outside
   
-  (define/overment (process res stream [ctx #f])
+  (define/overment (post-decode res stream [ctx #f])
     (let* ([res (_process res stream ctx)]
-           [res (inner res process res stream ctx)])
+           [res (inner res post-decode res stream ctx)])
       (unless (dict? res) (raise-result-error 'Struct:process "dict" res))
       res))
   
-  (define/override (preEncode . args) (apply _preEncode args))
+  (define/override (pre-encode . args) (apply _pre-encode args))
   
   (unless ((disjoin assocs? Struct?) fields) ; should be Versioned Struct but whatever
     (raise-argument-error 'Struct "assocs or Versioned Struct" fields))
@@ -62,33 +62,32 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define/augride (decode stream [parent #f] [len 0])
     ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
     (let* ([res (_setup stream parent len)]
-           [res (_parse-fields stream res fields)]
-           [res (process res stream)])
+           [res (_parse-fields stream res fields)])
       res))
 
-  (define/public-final (_setup stream parent len)
+  (define/public-final (_setup port parent len)
     (define res (make-object StructDictRes)) ; not mere hash
     (dict-set*! res 'parent parent
-                '_startOffset (· stream pos)
+                '_startOffset (pos port)
                 '_currentOffset 0
                 '_length len)
     res)
 
-  (define/public-final (_parse-fields stream res fields)
+  (define/public-final (_parse-fields port res fields)
     (unless (assocs? fields)
       (raise-argument-error '_parse-fields "assocs" fields))
     (for/fold ([res res])
               ([(key type) (in-dict fields)])
       (define val (if (procedure? type)
                       (type res)
-                      (send type decode stream res)))
+                      (send type decode port res)))
       (unless (void? val)
         (ref-set! res key val))
-      (ref-set! res '_currentOffset (- (· stream pos) (· res _startOffset)))
+      (ref-set! res '_currentOffset (- (pos port) (· res _startOffset)))
       res))
   
 
-  (define/override (size [val #f] [parent #f] [include-pointers #t])
+  (define/augride (size [val #f] [parent #f] [include-pointers #t])
     (define ctx (mhasheq 'parent parent
                          'val val
                          'pointerSize 0))
@@ -96,25 +95,25 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                 (send type size (and val (ref val key)) ctx))
        (if include-pointers (· ctx pointerSize) 0)))
 
-  (define/augride (encode stream val [parent #f])
+  (define/augride (encode port val [parent #f])
     (unless (dict? val)
       (raise-argument-error 'Struct:encode "dict" val))
 
-    (send this preEncode val stream) ; preEncode goes first, because it might bring input dict into compliance
+    (send this pre-encode val port) ; preEncode goes first, because it might bring input dict into compliance
     (define ctx (mhash 'pointers empty
-                       'startOffset (· stream pos)
+                       'startOffset (pos port)
                        'parent parent
                        'val val
                        'pointerSize 0))
-    (ref-set! ctx 'pointerOffset (+ (· stream pos) (size val ctx #f)))
+    (ref-set! ctx 'pointerOffset (+ (pos port) (size val ctx #f)))
 
     (unless (andmap (λ (key) (memq key (dict-keys val))) (dict-keys fields))
       (raise-argument-error 'Struct:encode
                             (format "dict that contains superset of Struct keys: ~a" (dict-keys fields)) (dict-keys val)))
     (for ([(key type) (in-dict fields)])
-         (send type encode stream (ref val key) ctx))
+         (send type encode port (ref val key) ctx))
     (for ([ptr (in-list (· ctx pointers))])
-         (send (· ptr type) encode stream (· ptr val) (· ptr parent)))))
+         (send (· ptr type) encode port (· ptr val) (· ptr parent)))))
 
 
 (test-module

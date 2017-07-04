@@ -1,7 +1,19 @@
 #lang racket/base
-(require racket/class sugar/class racket/generic racket/private/generic-methods "generic.rkt")
+(require racket/class sugar/class racket/generic racket/private/generic-methods "generic.rkt" racket/port)
 (require sugar/debug)
 (provide (all-defined-out))
+(define-generics posable
+  (pos posable [new-pos])
+  #:defaults
+  ([port? (define (pos p [new-pos #f]) (when new-pos
+                                               (file-position p new-pos))
+                  (file-position p))]))
+
+(define posable<%>
+  (interface* ()
+              ([(generic-property gen:posable)
+                (generic-method-table gen:posable
+                                      (define (pos o [new-pos #f]) (send o pos new-pos)))])))
 
 (define-generics codable
   (decode codable #:parent [parent] [stream])
@@ -27,7 +39,10 @@
 
 
 (define-generics dumpable
-  (dump dumpable))
+  (dump dumpable)
+  #:defaults
+  ([input-port? (define (dump p) (port->bytes p))]
+   [output-port? (define (dump p) (get-output-bytes p))]))
 
 (define dumpable<%>
   (interface* ()
@@ -35,6 +50,8 @@
                 (generic-method-table gen:dumpable
                                       (define (dump o) (send o dump)))])))
 
+(define (symbol-append . syms)
+  (string->symbol (apply string-append (map symbol->string syms))))
 
 (define xenomorph-base%
   (class* object% (codable<%> sizable<%> dumpable<%>)
@@ -44,37 +61,41 @@
 
     (define/pubment (decode port [parent #f])
       (when parent (unless (indexable? parent)
-                     (raise-argument-error 'Xenomorph "indexable" parent)))
+                     (raise-argument-error (symbol-append (get-class-name) ':decode) "indexable" parent)))
       (define ip (cond
                    [(bytes? port) (open-input-bytes port)]
                    [(input-port? port) port]
-                   [else (raise-argument-error 'Xenomorph "bytes or input port" port)]))
-      (post-decode (inner (void) decode ip parent)))
+                   [else (raise-argument-error (symbol-append (get-class-name) ':decode) "bytes or input port" port)]))
+      (post-decode (inner (void) decode ip parent) port parent))
     
     (define/pubment (encode port val-in [parent #f])
       #;(report* port val-in parent)
-      (define val (pre-encode val-in))
+      (define val (pre-encode val-in port))
       (when parent (unless (indexable? parent)
-                     (raise-argument-error 'Xenomorph "indexable" parent)))
+                     (raise-argument-error (symbol-append (get-class-name) ':encode) "indexable" parent)))
       (define op (cond
                    [(output-port? port) port]
                    [(not port) (open-output-bytes)]
                    [else (raise-argument-error 'Xenomorph "output port or #f" port)]))
-      (define encode-result (inner (void) encode op val parent))
+      (define encode-result (inner #"" encode op val parent))
       (when (bytes? encode-result)
         (write-bytes encode-result op))
       (when (not port) (get-output-bytes op)))
     
-    (define/pubment (size [val #f] [parent #f])
+    (define/pubment (size [val #f] [parent #f] . _)
       (when parent (unless (indexable? parent)
-                     (raise-argument-error 'Xenomorph "indexable" parent)))
+                     (raise-argument-error (symbol-append (get-class-name) ':size) "indexable" parent)))
       (define result (inner (void) size val parent))
-      (when result (unless (and (integer? result) (not (negative? result)))
-                     (raise-argument-error 'Xenomorph "integer" result)))
-      result)
+      (cond
+        [(void? result) 0]
+        [(and (integer? result) (not (negative? result))) result]
+        [else (raise-argument-error (symbol-append (get-class-name) ':size) "nonnegative integer" result)]))
+
+    (define/public (get-class-name) (define-values (name _) (object-info this))
+      (or name 'Xenomorph))
     
-    (define/public (post-decode val) val)
-    (define/public (pre-encode val) val)
+    (define/public (post-decode val . _) val)
+    (define/public (pre-encode val . _) val)
     (define/public (dump) (void))))
 
 (define-class-predicates xenomorph-base%)
