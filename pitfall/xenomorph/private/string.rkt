@@ -37,7 +37,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       (when (not len) (send stream writeUInt8 #x00)))) ; null terminated when no len
 
   
-  (define/override (size [val #f] [parent #f])
+  (define/augment (size [val #f] [parent #f])
     (if (not val)
         (resolve-length len #f parent)
         (let* ([encoding (if (procedure? encoding)
@@ -54,8 +54,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 
 (test-module
    (require "stream.rkt")
-   (define stream (+DecodeStream #"\2BCDEF"))
    (define S (+String uint8 'utf8))
-   (check-equal? (send S decode stream) "BC")
+   (check-equal? (send S decode #"\2BCDEF") "BC")
    (check-equal? (send S encode #f "Mike") #"\4Mike")
    (check-equal? (send (+String) size "foobar") 7)) ; null terminated when no len

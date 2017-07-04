@@ -13,7 +13,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
     (send stream pos (+ (· stream pos) (size #f parent)))
     (void))
 
-  (define/override (size [val #f] [parent #f])
+  (define/augment (size [val #f] [parent #f])
     (* (send type size) (resolve-length count #f parent)))
 
   (define/augment (encode stream val [parent #f])

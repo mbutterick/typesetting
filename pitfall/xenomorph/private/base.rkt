@@ -1,5 +1,6 @@
 #lang racket/base
-(require racket/class sugar/class racket/generic racket/private/generic-methods)
+(require racket/class sugar/class racket/generic racket/private/generic-methods "generic.rkt")
+(require sugar/debug)
 (provide (all-defined-out))
 
 (define-generics codable
@@ -35,16 +36,49 @@
                                       (define (dump o) (send o dump)))])))
 
 
-(define RestructureBase
+(define xenomorph-base%
   (class* object% (codable<%> sizable<%> dumpable<%>)
     (super-new)
     (field [_hash (make-hash)]
            [_list null])
-    (define/public (decode stream . args) (void))
-    (define/public (encode . xs) (void))
-    (define/public (size . xs) (void))
-    (define/public (process . args) (void))
-    (define/public (preEncode . args) (void))
+
+    (define/pubment (decode port [parent #f])
+      (when parent (unless (indexable? parent)
+                     (raise-argument-error 'Xenomorph "indexable" parent)))
+      (define ip (cond
+                   [(bytes? port) (open-input-bytes port)]
+                   [(input-port? port) port]
+                   [else (raise-argument-error 'Xenomorph "bytes or input port" port)]))
+      (post-decode (inner (void) decode ip parent)))
+    
+    (define/pubment (encode port val-in [parent #f])
+      #;(report* port val-in parent)
+      (define val (pre-encode val-in))
+      (when parent (unless (indexable? parent)
+                     (raise-argument-error 'Xenomorph "indexable" parent)))
+      (define op (cond
+                   [(output-port? port) port]
+                   [(not port) (open-output-bytes)]
+                   [else (raise-argument-error 'Xenomorph "output port or #f" port)]))
+      (define encode-result (inner (void) encode port val parent))
+      (when (bytes? encode-result)
+        (write-bytes encode-result op))
+      (when (not port) (get-output-bytes op)))
+    
+    (define/pubment (size [val #f] [parent #f])
+      (when parent (unless (indexable? parent)
+                     (raise-argument-error 'Xenomorph "indexable" parent)))
+      (define result (inner (void) size val parent))
+      (when result (unless (and (integer? result) (not (negative? result)))
+                     (raise-argument-error 'Xenomorph "integer" result)))
+      result)
+    
+    (define/public (post-decode val) val)
+    (define/public (pre-encode val) val)
     (define/public (dump) (void))))
 
-(define-class-predicates RestructureBase)
+(define-class-predicates xenomorph-base%)
+
+(define-subclass xenomorph-base% (RestructureBase))
+(define-subclass RestructureBase (Streamcoder))
+

@@ -196,35 +196,12 @@ https://github.com/mbutterick/restructure/blob/master/src/DecodeStream.coffee
  (check-exn exn:fail? (λ () (send ds read 1))))
 
 
-;; Streamcoder is a helper class that checks / converts stream arguments before decode / encode
-;; not a subclass of DecodeStream or EncodeStream, however.
-(define-subclass RestructureBase (Streamcoder)
-  (define/overment (decode x [parent #f])
-    (when parent (unless (indexable? parent)
-                   (raise-argument-error 'Streamcoder:decode "hash or indexable" x)))
-    (define stream (cond
-                     [(bytes? x) (+DecodeStream x)]
-                     [(input-port? x) (+DecodeStream (port->bytes x))]
-                     [else x]))
-    (unless (DecodeStream? stream)
-      (raise-argument-error 'Streamcoder:decode "bytes or input port or DecodeStream" x))
-    (inner (void) decode stream parent))
-
-  (define/overment (encode x [val #f] [parent #f])
-    (define stream (cond
-                     [(output-port? x) (+EncodeStream x)]
-                     [(not x) (+EncodeStream)]
-                     [else x]))
-    (unless (EncodeStream? stream)
-      (raise-argument-error 'Streamcoder:encode "output port or EncodeStream" x))
-    (inner (void) encode stream val parent)
-    (when (not x) (send stream dump))))
 
 (test-module
- (define-subclass Streamcoder (Dummy)
+ (define-subclass xenomorph-base% (Dummy)
    (define/augment (decode stream parent) "foo")
    (define/augment (encode stream val parent) "bar")
-   (define/override (size) 42))
+   (define/augment (size) 42))
 
  (define d (+Dummy))
  (check-true (Dummy? d))

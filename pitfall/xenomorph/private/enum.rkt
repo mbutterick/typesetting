@@ -13,7 +13,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
     (define index (send type decode stream))
     (or (list-ref options index) index))
 
-  (define/override (size . _) (send type size))
+  (define/augment (size . _) (send type size))
 
   (define/augment (encode stream val [ctx #f])
     (define index (index-of options val))
