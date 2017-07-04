@@ -20,14 +20,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define (unescape-tag tag) (symbol-replace tag "_" " "))
 
 (define-subclass Struct (RDirectory)
-  (define/augride (process this-res stream ctx)
+  (define/augride (post-decode this-res stream ctx)
     (define new-tables-val (mhash))
     (for ([table (in-list (· this-res tables))])
          (hash-set! new-tables-val (escape-tag (· table tag)) table))
     (dict-set! this-res 'tables new-tables-val)
     this-res)
 
-  (define/override (preEncode this-val stream)
+  (define/override (pre-encode this-val stream)
     (define tables (for/list ([(tag table) (in-hash (· this-val tables))])
                              (define table-codec (hash-ref table-codecs tag))
                              (mhash 'tag (unescape-tag tag)
@@ -44,7 +44,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                 'tables tables
                 'searchRange searchRange
                 'entrySelector (floor (/ searchRange (log 2)))
-                'rangeShift (- (* numTables 16) searchRange))))
+                'rangeShift (- (* numTables 16) searchRange))
+
+    this-val))
 
 (define Directory (+RDirectory (dictify 'tag (+String 4)
                                         'numTables uint16be
@@ -55,7 +57,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                             
 
 (define (directory-decode ip [options (mhash)])
-  (send Directory decode (+DecodeStream (port->bytes ip))))
+  (send Directory decode ip))
 
 (define (file-directory-decode ps)
   (directory-decode (open-input-file ps)))

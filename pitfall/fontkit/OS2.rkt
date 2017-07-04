@@ -70,7 +70,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
  (define len (· dir tables OS/2 length))
  (check-equal? offset 360)
  (check-equal? len 96)
- (define ds (+DecodeStream (peek-bytes len offset ip)))
+ (define ds (open-input-bytes (peek-bytes len offset ip)))
  (define version (send uint16be decode ds))
  (send OS/2 force-version! version)
  (define table-data (send OS/2 decode ds))

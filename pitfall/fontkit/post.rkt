@@ -25,8 +25,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
                 1 null
                 2 (dictify 'numberOfGlyphs uint16be
                                                  'glyphNameIndex (+Array uint16be 'numberOfGlyphs)
-                                                 ;; this field causes problems due to deficiency in String class
-                                                 ;; 'names (+Array (+String uint8))
+                                                 'names (+Array (+String uint8))
                                                  )
                 2.5 (dictify 'numberOfGlyphs uint16be
                                                    'offsets (+Array uint8))
@@ -40,9 +39,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
  (define len (· dir tables post length))
  (check-equal? offset 41520)
  (check-equal? len 514)
- (define ds (+DecodeStream (peek-bytes len offset ip)))
- (define version (send fixed32be decode ds)) ; version = 2
+ (define ds (open-input-bytes (peek-bytes len offset ip)))
+ (define version (decode fixed32be ds)) ; version = 2
  (send post force-version! version)
- (define table-data (send post decode ds))
+ (define table-data (decode post ds))
  (check-equal? (· table-data underlineThickness) 58)
- (check-equal? (· table-data underlinePosition) -178))
+ (check-equal? (· table-data underlinePosition) -178)
+ (check-equal? (· table-data names) '("periodcentered" "macron")))

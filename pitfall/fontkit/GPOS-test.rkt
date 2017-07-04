@@ -6,4 +6,4 @@
 (define gpos (· f GPOS))
 (define gsub (· f GSUB))
 
-(send (· gpos lookupList) get 9)
+(send (· gpos lookupList) get 1)

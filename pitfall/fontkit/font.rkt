@@ -20,14 +20,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 ;; This is the base class for all SFNT-based font formats in fontkit.
 ;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
-(define-subclass object% (TTFFont stream [_src #f])
-  (when stream (unless (DecodeStream? stream)
-                 (raise-argument-error 'TTFFont "DecodeStream" stream)))
-  (unless (member (peek-bytes 4 0 (get-field _port  stream)) (list #"true" #"OTTO" (bytes 0 1 0 0)))
+(define-subclass object% (TTFFont port [_src #f])
+  (when port (unless (input-port? port)
+                 (raise-argument-error 'TTFFont "input port" port)))
+  (unless (member (peek-bytes 4 0 port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
     (raise 'probe-fail))
   
   ;; skip variationCoords
-  (field [_directoryPos (send stream pos)]
+  (field [_directoryPos (pos port)]
          [_tables (mhash)] ; holds decoded tables (loaded lazily)
          [_glyphs (mhash)]
          [_layoutEngine #f])
@@ -46,8 +46,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (define table (hash-ref (· this directory tables) tag))
     (cond
       [table
-       (send stream pos (· table offset))
-       stream]
+       (pos port (· table offset))
+       port]
       [else #f]))
 
   (define/public (_decodeTable table-tag)
@@ -55,11 +55,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                                     (λ () (raise-argument-error '_decodeTable "decodable table" table-tag))))
     (define offset (· (hash-ref (· directory tables) table-tag) offset))
     (define len (· (hash-ref (· directory tables) table-tag) length))
-    (send stream pos 0)
-    (send table-decoder decode (+DecodeStream (peek-bytes len offset (get-field _port stream))) this))
+    (pos port 0)
+    (decode table-decoder (open-input-bytes (peek-bytes len offset port)) #:parent this))
 
   (define/public (_decodeDirectory)
-    (set! directory (send Directory decode stream (mhash '_startOffset 0)))
+    (set! directory (decode Directory port #:parent (mhash '_startOffset 0)))
     directory)
 
   (field [ft-library (FT_Init_FreeType)]
@@ -301,7 +301,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                 ;; rather than use a `probe` function,
                 ;; just try making a font with each format and see what happens
                 [font (in-value (with-handlers ([(curry eq? 'probe-fail) (λ (exn) #f)])
-                                  (make-object format (+DecodeStream buffer) filename)))]
+                                  (make-object format (open-input-bytes buffer) filename)))]
                 #:when font)
                (if postscriptName
                    (send font getFont postscriptName) ; used to select from collection files like TTC

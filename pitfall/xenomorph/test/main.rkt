@@ -9,7 +9,6 @@
          "optional-test.rkt"
          "pointer-test.rkt"
          "reserved-test.rkt"
-         "stream-test.rkt"
          "string-test.rkt"
          "struct-test.rkt"
          "versioned-struct-test.rkt")

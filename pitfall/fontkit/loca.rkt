@@ -12,7 +12,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 |#
 
 (define-subclass VersionedStruct (Rloca)
-  (define/augride (process res stream ctx)
+  (define/augride (post-decode res stream ctx)
     ;; in `xenomorph` `process` method, `res` is aliased as `this`
     ;;
     (when (= 16bit-style (· res version))
@@ -21,12 +21,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
       (dict-update! res 'offsets (λ (offsets) (map (curry * 2) offsets))))
     res)
 
-  (define/override (preEncode this-val stream)
+  (define/override (pre-encode this-val stream)
     ;; this = val to be encoded
-    (loca-preEncode this-val stream)))
+    (loca-pre-encode this-val stream)
+    this-val))
 
 ;; make "static method"
-(define (loca-preEncode this . args)
+(define (loca-pre-encode this . args)
   ;; this = val to be encoded
   (unless (dict-has-key? this 'version)
     (dict-set! this 'version (if (> (last (· this offsets)) max-32-bit-value)
@@ -49,7 +50,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
  (define len (· dir tables loca length))
  (check-equal? offset 38692)
  (check-equal? len 460)
- (define ds (+DecodeStream (peek-bytes len offset ip)))
+ (define ds (peek-bytes len offset ip))
  (check-equal?
   (send loca encode #f (mhash 'version 0 'offsets '(0 76 156))) #"\0\0\0L\0\234")
  (check-equal?

@@ -34,11 +34,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
  (check-equal? hmtx-offset 456)
  (check-equal? hmtx-length 916)
  (define hmtx-bytes (peek-bytes hmtx-length hmtx-offset ip))
- (define hmtx-data (send hmtx-test decode (+DecodeStream hmtx-bytes)))
+ (define hmtx-data (decode hmtx-test hmtx-bytes))
  (check-equal? (send hmtx-test size) (* 229 (send HmtxEntry size)))
  (define H-gid 41) (define OE-gid 142)
- (check-equal? (send (· hmtx-data metrics) get H-gid) (mhasheq 'advance 738 'bearing 33))
- (check-equal? (send (· hmtx-data metrics) get OE-gid) (mhasheq 'advance 993 'bearing 43))
+ (check-equal? (dump (send (· hmtx-data metrics) get H-gid)) (mhasheq 'advance 738 'bearing 33))
+ (check-equal? (dump (send (· hmtx-data metrics) get OE-gid)) (mhasheq 'advance 993 'bearing 43))
 
 
  )

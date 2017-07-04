@@ -1,6 +1,7 @@
 #lang reader (submod "private/racket.rkt" reader)
 
 (r+p "array.rkt"
+     "base.rkt"
      "bitfield.rkt"
      "buffer.rkt"
      "enum.rkt"

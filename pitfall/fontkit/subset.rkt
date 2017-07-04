@@ -14,10 +14,7 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 
   (send this includeGlyph 0) ; always include the missing glyph in subset
 
-  (define/public (encodeStream)
-    (define s (+EncodeStream))
-    (send this encode s)
-    s)
+
   
   (as-methods
    includeGlyph))
@@ -97,7 +94,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 ;; name, cmap, OS/2, post
 
 (define/contract (encode this stream)
-  (EncodeStream? . ->m . void?)
+  (output-port? . ->m . void?)
   (set-field! glyf this empty)
   (set-field! offset this 0)
   (set-field! loca this (mhash 'offsets empty))
@@ -115,7 +112,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (dict-set! maxp 'numGlyphs (length (· this glyf)))
   ;; populate the new loca table
   (dict-update! (· this loca) 'offsets (λ (vals) (append vals (list (· this offset)))))
-  (loca-preEncode (· this loca))
+  (loca-pre-encode (· this loca))
 
   
   (define head (cloneDeep (send (· this font head) dump)))
