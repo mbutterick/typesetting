@@ -21,9 +21,9 @@ A Restructure RBuffer object is separate.
 
 (define-subclass RestructureBase (RBuffer [len #xffff])
   
-  (define/override (decode stream [parent #f])
-    (define decoded-len (resolve-length len stream parent))
-    (send stream readBuffer decoded-len))
+  (define/override (decode port [parent #f])
+    (define decoded-len (resolve-length len port parent))
+    (read-bytes decoded-len port))
 
   (define/override (size [val #f] [parent #f])
     (when val (unless (bytes? val)
@@ -32,12 +32,14 @@ A Restructure RBuffer object is separate.
         (bytes-length val)
         (resolve-length len val parent)))
 
-  (define/override (encode stream buf [parent #f])
+  (define/override (encode port buf [parent #f])
     (unless (bytes? buf)
       (raise-argument-error 'Buffer:encode "bytes" buf))
+    (define op (or port (open-output-bytes)))
     (when (NumberT? len)
-      (send len encode stream (length buf)))
-    (send stream writeBuffer buf)))
+      (send len encode op (length buf)))
+    (write-bytes buf op)
+    (unless port (get-output-bytes op))))
 
 (define-subclass RBuffer (BufferT))
 

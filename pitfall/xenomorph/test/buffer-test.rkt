@@ -9,80 +9,35 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 ;describe 'Buffer', ->
 ;  describe 'decode', ->
 ;    it 'should decode', ->
-;      stream = new DecodeStream new Buffer [0xab, 0xff, 0x1f, 0xb6]
-;      buf = new BufferT(2)
-;      buf.decode(stream).should.deep.equal new Buffer [0xab, 0xff]
-;      buf.decode(stream).should.deep.equal new Buffer [0x1f, 0xb6]
-
-(let ([stream (+DecodeStream (+Buffer '(#xab #xff #x1f #xb6)))]
-      [buf (+BufferT 2)])
-  (check-equal? (decode buf stream) (+Buffer '(#xab #xff)))
-  (check-equal? (decode buf stream) (+Buffer '(#x1f #xb6))))
+(parameterize ([current-input-port (open-input-bytes (bytes #xab #xff #x1f #xb6))])
+  (define buf (+BufferT 2))
+  (check-equal? (decode buf) (bytes #xab #xff))
+  (check-equal? (decode buf) (bytes #x1f #xb6)))
 
 
-;
 ;    it 'should decode with parent key length', ->
-;      stream = new DecodeStream new Buffer [0xab, 0xff, 0x1f, 0xb6]
-;      buf = new BufferT('len')
-;      buf.decode(stream, len: 3).should.deep.equal new Buffer [0xab, 0xff, 0x1f]
-;      buf.decode(stream, len: 1).should.deep.equal new Buffer [0xb6]
-
-(let ([stream (+DecodeStream (+Buffer '(#xab #xff #x1f #xb6)))]
-      [buf (+BufferT 'len)])
-  (check-equal? (decode buf stream (hash 'len 3)) (+Buffer '(#xab #xff #x1f)))
-  (check-equal? (decode buf stream (hash 'len 1)) (+Buffer '(#xb6))))
+(parameterize ([current-input-port (open-input-bytes (bytes #xab #xff #x1f #xb6))])
+  (define buf (+BufferT 'len))
+  (check-equal? (decode buf #:parent (hash 'len 3)) (bytes #xab #xff #x1f))
+  (check-equal? (decode buf #:parent (hash 'len 1)) (bytes #xb6)))
 
 
-;      
 ;  describe 'size', ->
 ;    it 'should return size', ->
-;      buf = new BufferT(2)
-;      buf.size(new Buffer [0xab, 0xff]).should.equal 2
-
-(let ([buf (+BufferT 2)])
-  (check-equal? (size buf (+Buffer '(#xab #xff))) 2))
-
-;
-;    it 'should use defined length if no value given', ->
-;      array = new BufferT 10
-;      array.size().should.equal 10
-
-(let ([array (+BufferT 10)])
-  (check-equal? (size array) 10))
+(check-equal? (size (+BufferT 2) (bytes #xab #xff)) 2)
 
 
-;
+;    it 'should use defined length if no value given', ->x
+(check-equal? (size (+BufferT 10)) 10)
+
+
 ;  describe 'encode', ->
 ;    it 'should encode', (done) ->
-;      stream = new EncodeStream
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer [0xab, 0xff, 0x1f, 0xb6]
-;        done()
-;
-;      buf = new BufferT(2)
-;      buf.encode stream, new Buffer [0xab, 0xff]
-;      buf.encode stream, new Buffer [0x1f, 0xb6]
-;      stream.end()
-;
-
-(let ([stream (+EncodeStream)]
-      [buf (+BufferT 2)])
-  (encode buf stream (+Buffer '(#xab #xff)))
-  (encode buf stream (+Buffer '(#x1f #xb6)))
-  (check-equal? (dump stream) (+Buffer '(#xab #xff #x1f #xb6))))
+(let ([buf (+BufferT 2)])
+  (check-equal? (bytes-append
+                 (encode buf (bytes #xab #xff) #f)
+                 (encode buf (bytes #x1f #xb6) #f)) (bytes #xab #xff #x1f #xb6)))
 
 
 ;    it 'should encode length before buffer', (done) ->
-;      stream = new EncodeStream
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer [2, 0xab, 0xff]
-;        done()
-;
-;      buf = new BufferT(uint8)
-;      buf.encode stream, new Buffer [0xab, 0xff]
-;      stream.end()
-
-(let ([stream (+EncodeStream)]
-      [buf (+BufferT uint8)])
-  (encode buf stream (+Buffer '(#xab #xff)))
-  (check-equal? (dump stream) (+Buffer '(2 #xab #xff))))
+(check-equal? (encode (+BufferT uint8) (bytes #xab #xff) #f) (bytes 2 #xab #xff))

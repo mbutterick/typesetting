@@ -21,44 +21,27 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 (match-define (list JACK KACK LACK MACK NACK OACK PACK QUACK)
   (map (curry arithmetic-shift 1) (range 8)))
 
-;
 ;  it 'should have the right size', ->
-;    bitfield.size().should.equal 1
-
 (check-equal? (size bitfield) 1)
 
-;
 ;  it 'should decode', ->
-;    stream = new DecodeStream new Buffer [JACK | MACK | PACK | NACK | QUACK]
-;    bitfield.decode(stream).should.deep.equal
-;      Jack: yes, Kack: no, Lack: no, Mack: yes, Nack: yes, Oack: no, Pack: yes, Quack: yes
-
-(let ([stream (+DecodeStream (+Buffer (list (bitwise-ior JACK MACK PACK NACK QUACK))))])
-  (check-equal? (decode bitfield stream) (mhasheq 'Quack #t
-                                                  'Nack #t
-                                                  'Lack #f
-                                                  'Oack #f
-                                                  'Pack #t
-                                                  'Mack #t
-                                                  'Jack #t
-                                                  'Kack #f)))
-
-
-;
-;  it 'should encode', (done) ->
-;    stream = new EncodeStream
-;    stream.pipe concat (buf) ->
-;      buf.should.deep.equal new Buffer [JACK | MACK | PACK | NACK | QUACK]
-;      done()
-;
-;    bitfield.encode stream, Jack: yes, Kack: no, Lack: no, Mack: yes, Nack: yes, Oack: no, Pack: yes, Quack: yes
-
-(check-equal? (encode bitfield #f (mhasheq 'Quack #t
+(parameterize ([current-input-port (open-input-bytes (bytes (bitwise-ior JACK MACK PACK NACK QUACK)))])
+  (check-equal? (decode bitfield) (mhasheq 'Quack #t
                                            'Nack #t
                                            'Lack #f
                                            'Oack #f
                                            'Pack #t
                                            'Mack #t
                                            'Jack #t
-                                           'Kack #f))
-              (+Buffer (list (bitwise-ior JACK MACK PACK NACK QUACK))))
+                                           'Kack #f)))
+
+;  it 'should encode', (done) ->
+(check-equal? (encode bitfield (mhasheq 'Quack #t
+                                        'Nack #t
+                                        'Lack #f
+                                        'Oack #f
+                                        'Pack #t
+                                        'Mack #t
+                                        'Jack #t
+                                        'Kack #f) #f)
+              (bytes (bitwise-ior JACK MACK PACK NACK QUACK)))
