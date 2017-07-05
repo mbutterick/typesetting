@@ -40,25 +40,22 @@
   (check-equal? (number -4) "-4"))
 
 
-(define-syntax-rule (send-or-false X REF)
-  (with-handlers ([exn:fail:object? (λ (exn) #f)])
-    (send X REF)))
+(define ·-helper
+  (procedure-rename
+   (λ (x . refs)
+     (for/fold ([x x])
+               ([ref (in-list refs)])
+       (cond
+         ;; dict first, to catch objects that implement gen:dict
+         [(dict? x) (dict-ref x ref #f)]
+         ;; give `send` precedence (presence of method => wants runtime resolution of value)
+         [(object? x) (cond
+                        [(memq ref (interface->method-names (object-interface x))) (dynamic-send x ref)]
+                        [(memq ref (field-names x)) (dynamic-get-field ref x)]
+                        [else #f])]
+         [else (raise-argument-error '· "object or dict" x)]))) '·))
 
-(define-syntax-rule (get-or-false X REF)
-  (with-handlers ([exn:fail:object? (λ (exn) #f)])
-    (get-field REF X)))
-
-(require sugar/debug)
-(define-macro-cases ·
-  [(_ X REF)
-   (syntax/loc caller-stx (let loop ([x X])
-                             (cond
-                               ;; dict first, to catch objects that implement gen:dict
-                               [(dict? x) (dict-ref x 'REF #f)]
-                               ;; give `send` precedence (presence of method => wants runtime resolution of value)
-                               [(object? x) (or (send-or-false x REF) (get-or-false x REF))]
-                               [else (raise-argument-error '· (format "~a must be object or dict" 'X) x)])))]
-  [(_ X REF0 . REFS) #'(· (· X REF0) . REFS)])
+(define-macro (· X REF ...) #'(·-helper X 'REF ...))
 
 #;(module+ test
     (define c (class object%

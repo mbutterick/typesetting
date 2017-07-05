@@ -77,11 +77,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
   (when isCFF
     (hash-set! (· fontFile payload) 'Subtype "CIDFontType0C"))
-
-  ;; todo: address spooky behavior
-  ;; `(send p dump)` throws an exn:fail:object, but it gets swallowed by an intervening · operator
-  (define p (send (· this subset) encode-to-port))
-  (send fontFile end (get-output-bytes p))
+  
+  (send fontFile end (get-output-bytes (· this subset encode-to-port)))
 
   (define familyClass (let ([val (if (send (· this font) has-table? 'OS/2)
                                      (· this font OS/2 sFamilyClass)
