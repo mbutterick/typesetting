@@ -76,7 +76,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (when (and glyf (negative? (· glyf numberOfContours)))
     (for ([component (in-list (· glyf components))])
       (define gid (send this includeGlyph (· component glyphID)))
-      (bytes-copy! buffer (pos component) (send uint16be encode #f gid))))
+      ;; note: this (· component pos) is correct. It's a field of a Component object, not a port
+      (bytes-copy! buffer (· component pos) (send uint16be encode #f gid))))
   
   ;; skip variation shit
 
