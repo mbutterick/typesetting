@@ -24,7 +24,7 @@
 (define/contract (finalize this)
   (->m void?)
   (unless (or (· this embedded) (not (· this dictionary)))
-    (· this embed)
+    (send this embed)
     (set-field! embedded this #t)))
 
 

@@ -14,10 +14,10 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 
   (send this includeGlyph 0) ; always include the missing glyph in subset
 
-  (define/public (encodeStream)
-    (define s (open-output-bytes))
-    (send this encode s)
-    s)
+  (define/public (encode-to-port)
+    (define p (open-output-bytes))
+    (encode this p)
+    p)
   
   (as-methods
    includeGlyph))

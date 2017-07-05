@@ -46,21 +46,21 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define glyphRun (send (· this font) layout text features))
   (define glyphs (· glyphRun glyphs))
   (for ([g (in-list glyphs)])
-       (· g id))
+    (· g id))
   (define positions (· glyphRun positions))
   (define-values (subset-idxs new-positions)
     (for/lists (idxs posns)
-               ([(glyph i) (in-indexed glyphs)]
-                [posn (in-list positions)])
-               (define gid (send (· this subset) includeGlyph (· glyph id)))
-               (define subset-idx (toHex gid))
-               (set-field! advanceWidth posn (· glyph advanceWidth))
+      ([(glyph i) (in-indexed glyphs)]
+       [posn (in-list positions)])
+      (define gid (send (· this subset) includeGlyph (· glyph id)))
+      (define subset-idx (toHex gid))
+      (set-field! advanceWidth posn (· glyph advanceWidth))
 
-               (hash-ref! (· this widths) gid (λ () (· posn advanceWidth)))
-               (hash-ref! (· this unicode) gid (λ () (· glyph codePoints)))
+      (hash-ref! (· this widths) gid (λ () (· posn advanceWidth)))
+      (hash-ref! (· this unicode) gid (λ () (· glyph codePoints)))
 
-               (send posn scale (· this scale))
-               (values subset-idx posn)))
+      (send posn scale (· this scale))
+      (values subset-idx posn)))
   (list subset-idxs new-positions))
 
 
@@ -68,7 +68,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   #'(for/sum ([c (in-list (list COND ...))]
               [v (in-list (list VAL ...))]
               #:when c)
-             v))
+      v))
 
 (define/contract (embed this)
   (->m void?)
@@ -78,9 +78,10 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (when isCFF
     (hash-set! (· fontFile payload) 'Subtype "CIDFontType0C"))
 
-  (report* (· this subset))
-
-  (send fontFile end (send (send (· this subset) encodeStream) dump))
+  ;; todo: address spooky behavior
+  ;; `(send p dump)` throws an exn:fail:object, but it gets swallowed by an intervening · operator
+  (define p (send (· this subset) encode-to-port))
+  (send fontFile end (get-output-bytes p))
 
   (define familyClass (let ([val (if (send (· this font) has-table? 'OS/2)
                                      (· this font OS/2 sFamilyClass)
@@ -101,7 +102,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
   (when (test-mode) (random-seed 0))
   (define tag (list->string (for/list ([i (in-range 6)])
-                                      (integer->char (random 65 (+ 65 26))))))
+                              (integer->char (random 65 (+ 65 26))))))
   (define name (string-append tag "+" (· this font postscriptName)))
 
   (define bbox (· this font bbox))
@@ -140,7 +141,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                  'Supplement 0)
                                 'FontDescriptor descriptor
                                 'W (list 0 (for/list ([idx (in-range (length (hash-keys (· this widths))))])
-                                                     (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
+                                             (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
 
   (· descendantFont end)
   #;(report (· descendantFont toString) 'descendantFont)
@@ -160,12 +161,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define cmap (· this document ref))
   (define entries
     (for/list ([idx (in-range (length (hash-keys (· this unicode))))])
-              (define codePoints (hash-ref (· this unicode) idx))
-              (define encoded ; encode codePoints to utf16
-                ;; todo: full utf16 support. for now just utf8
-                (for/list ([value (in-list codePoints)])
-                          (toHex value)))
-              (format "<~a>" (string-join encoded " "))))
+      (define codePoints (hash-ref (· this unicode) idx))
+      (define encoded ; encode codePoints to utf16
+        ;; todo: full utf16 support. for now just utf8
+        (for/list ([value (in-list codePoints)])
+          (toHex value)))
+      (format "<~a>" (string-join encoded " "))))
 
   (define unicode-cmap-str #<<HERE
 /CIDInit /ProcSet findresource begin
@@ -200,7 +201,7 @@ HERE
   (() () #:rest (listof number?) . ->*m . string?)
   (string-append*
    (for/list ([code (in-list codePoints)])
-             (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
+     (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
                  
 
 (module+ test
