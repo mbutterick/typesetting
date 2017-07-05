@@ -3,6 +3,7 @@
 (r+p "array.rkt"
      "base.rkt"
      "bitfield.rkt"
+     "buffer.rkt"
      "enum.rkt"
      "lazy-array.rkt"
      "number.rkt"

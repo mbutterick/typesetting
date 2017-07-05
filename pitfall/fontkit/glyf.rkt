@@ -8,7 +8,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/glyf.js
 
 (define-subclass Struct (Rglyf))
 
-(define glyf (+Array (+RBuffer)))
+(define glyf (+Array (+BufferT)))
 
 (test-module
  (define ip (open-input-file charter-path))
