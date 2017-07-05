@@ -17,13 +17,13 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'gender uint8)))])
 
-  (parameterize ([current-input-port (open-input-bytes #"\x00\x05devon\x15")])
-    (check-equal? (dump (decode struct)) (mhasheq 'name "devon"
+  (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
+    (check-equal? (dump (decode struct)) (mhasheq 'name "roxyb"
                                                   'age 21
                                                   'version 0)))
 
-  (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x01\x0adevon 👍\x15\x00"))])
-    (check-equal? (dump (decode struct)) (mhasheq 'name "devon 👍"
+  (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x01\x0aroxyb 🤘\x15\x00"))])
+    (check-equal? (dump (decode struct)) (mhasheq 'name "roxyb 🤘"
                                                   'age 21
                                                   'version 1
                                                   'gender 0))))
@@ -39,7 +39,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'gender uint8)))])
 
-  (parameterize ([current-input-port (open-input-bytes #"\x05\x05devon\x15")])
+  (parameterize ([current-input-port (open-input-bytes #"\x05\x05roxyb\x15")])
     (check-exn exn:fail:contract? (λ () (decode struct)))))
 
 
@@ -54,14 +54,14 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                  1 (dictify 'name (+StringT uint8 'utf8)
                                             'gender uint8)))])
 
-  (parameterize ([current-input-port (open-input-bytes #"\x00\x15\x01\x05devon")])
-    (check-equal? (dump (decode struct)) (mhasheq 'name "devon"
+  (parameterize ([current-input-port (open-input-bytes #"\x00\x15\x01\x05roxyb")])
+    (check-equal? (dump (decode struct)) (mhasheq 'name "roxyb"
                                                   'age 21
                                                   'alive 1
                                                   'version 0)))
 
-  (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x01\x15\x01\x0adevon 👍\x00"))])
-    (check-equal? (dump (decode struct)) (mhasheq 'name "devon 👍"
+  (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x01\x15\x01\x0aroxyb 🤘\x00"))])
+    (check-equal? (dump (decode struct)) (mhasheq 'name "roxyb 🤘"
                                                   'age 21
                                                   'version 1
                                                   'alive 1
@@ -78,13 +78,13 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'gender uint8)))])
 
-  (parameterize ([current-input-port (open-input-bytes #"\x05devon\x15")])
-    (check-equal? (dump (decode struct #:parent (mhash 'version 0))) (mhasheq 'name "devon"
+  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
+    (check-equal? (dump (decode struct #:parent (mhash 'version 0))) (mhasheq 'name "roxyb"
                                                                               'age 21
                                                                               'version 0)))
 
-  (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x0adevon 👍\x15\x00"))])
-    (check-equal? (dump (decode struct #:parent (mhash 'version 1))) (mhasheq 'name "devon 👍"
+  (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x0aroxyb 🤘\x15\x00"))])
+    (check-equal? (dump (decode struct #:parent (mhash 'version 1))) (mhasheq 'name "roxyb 🤘"
                                                                               'age 21
                                                                               'version 1
                                                                               'gender 0))))
@@ -104,8 +104,8 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                       1 (dictify 'name (+StringT uint8)
                                                                  'isDessert uint8)))))])
 
-  (parameterize ([current-input-port (open-input-bytes #"\x00\x05devon\x15")])
-    (check-equal? (dump (decode struct #:parent (mhash 'version 0))) (mhasheq 'name "devon"
+  (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
+    (check-equal? (dump (decode struct #:parent (mhash 'version 0))) (mhasheq 'name "roxyb"
                                                                               'age 21
                                                                               'version 0)))
 
@@ -130,8 +130,8 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'gender uint8)))])
   (set-field! post-decode struct (λ (o stream ctx) (ref-set! o 'processed "true") o))
-  (parameterize ([current-input-port (open-input-bytes #"\x00\x05devon\x15")])
-    (check-equal? (dump (decode struct)) (mhasheq 'name "devon"
+  (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
+    (check-equal? (dump (decode struct)) (mhasheq 'name "roxyb"
                                                   'processed "true"
                                                   'age 21
                                                   'version 0))))
@@ -149,11 +149,11 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'gender uint8)))])
   
-  (check-equal? (size struct (mhasheq 'name "devon"
+  (check-equal? (size struct (mhasheq 'name "roxyb"
                                       'age 21
                                       'version 0)) 8)
   
-  (check-equal? (size struct (mhasheq 'name "devon 👍"
+  (check-equal? (size struct (mhasheq 'name "roxyb 🤘"
                                       'gender 0
                                       'age 21
                                       'version 1)) 14))
@@ -172,7 +172,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'gender uint8)))])
   
-  (check-exn exn:fail:contract? (λ () (size struct (mhasheq 'name "devon"
+  (check-exn exn:fail:contract? (λ () (size struct (mhasheq 'name "roxyb"
                                                             'age 21
                                                             'version 5)))))
 
@@ -188,12 +188,12 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                  1 (dictify 'name (+StringT uint8 'utf8)
                                             'gender uint8)))])
   
-  (check-equal? (size struct (mhasheq 'name "devon"
+  (check-equal? (size struct (mhasheq 'name "roxyb"
                                       'age 21
                                       'alive 1
                                       'version 0)) 9)
   
-  (check-equal? (size struct (mhasheq 'name "devon 👍"
+  (check-equal? (size struct (mhasheq 'name "roxyb 🤘"
                                       'gender 0
                                       'age 21
                                       'alive 1
@@ -212,7 +212,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'ptr (+Pointer uint8 (+StringT uint8)))))])
   
-  (check-equal? (size struct (mhasheq 'name "devon"
+  (check-equal? (size struct (mhasheq 'name "roxyb"
                                       'age 21
                                       'version 1
                                       'ptr "hello")) 15))
@@ -246,14 +246,14 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'gender uint8)))]
       [port (open-output-bytes)])
-  (encode struct (mhasheq 'name "devon"
+  (encode struct (mhasheq 'name "roxyb"
                           'age 21
                           'version 0) port)
-  (encode struct (mhasheq 'name "devon 👍"
+  (encode struct (mhasheq 'name "roxyb 🤘"
                           'age 21
                           'gender 0
                           'version 1) port)
-  (check-equal? (dump port) (string->bytes/utf-8 "\x00\x05devon\x15\x01\x0adevon 👍\x15\x00")))
+  (check-equal? (dump port) (string->bytes/utf-8 "\x00\x05roxyb\x15\x01\x0aroxyb 🤘\x15\x00")))
 
 
 ;
@@ -267,7 +267,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'age uint8
                                             'gender uint8)))]
       [port (open-output-bytes)])
-  (check-exn exn:fail:contract? (λ () (encode struct port (mhasheq 'name "devon"
+  (check-exn exn:fail:contract? (λ () (encode struct port (mhasheq 'name "roxyb"
                                                                    'age 21
                                                                    'version 5)))))
 
@@ -284,18 +284,18 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'gender uint8)))]
       [stream (open-output-bytes)])
   
-  (encode struct (mhasheq 'name "devon"
+  (encode struct (mhasheq 'name "roxyb"
                           'age 21
                           'alive 1
                           'version 0) stream)
   
-  (encode struct (mhasheq 'name "devon 👍"
+  (encode struct (mhasheq 'name "roxyb 🤘"
                           'gender 0
                           'age 21
                           'alive 1
                           'version 1) stream)
   
-  (check-equal? (dump stream) (string->bytes/utf-8 "\x00\x15\x01\x05devon\x01\x15\x01\x0adevon 👍\x00")))
+  (check-equal? (dump stream) (string->bytes/utf-8 "\x00\x15\x01\x05roxyb\x01\x15\x01\x0aroxyb 🤘\x00")))
 
 
 
@@ -310,11 +310,11 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'ptr (+Pointer uint8 (+StringT uint8)))))]
       [stream (open-output-bytes)])
   (encode struct (mhasheq 'version 1
-                          'name "devon"
+                          'name "roxyb"
                           'age 21
                           'ptr "hello") stream)
 
-  (check-equal? (dump stream) (string->bytes/utf-8 "\x01\x05devon\x15\x09\x05hello")))
+  (check-equal? (dump stream) (string->bytes/utf-8 "\x01\x05roxyb\x15\x09\x05hello")))
 
 
 
@@ -330,10 +330,10 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                             'gender uint8)))]
       [stream (open-output-bytes)])
   (set-field! pre-encode struct (λ (val port) (ref-set! val 'version (if (ref val 'gender) 1 0)) val))
-  (encode struct (mhasheq 'name "devon"
+  (encode struct (mhasheq 'name "roxyb"
                                       'age 21
                                       'version 0) stream)
-  (encode struct (mhasheq 'name "devon 👍"
+  (encode struct (mhasheq 'name "roxyb 🤘"
                                       'age 21
                                       'gender 0) stream)
-  (check-equal? (dump stream) (string->bytes/utf-8 "\x00\x05devon\x15\x01\x0adevon 👍\x15\x00")))
+  (check-equal? (dump stream) (string->bytes/utf-8 "\x00\x05roxyb\x15\x01\x0aroxyb 🤘\x15\x00")))
