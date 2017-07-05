@@ -45,7 +45,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
 
 
 (define Feature (+Struct (dictify
-                          'featureParams uint16be ; pointer
+                          'featureParams uint16be
                           'lookupCount uint16be
                           'lookupListIndexes (+Array uint16be 'lookupCount))))
 
@@ -141,21 +141,21 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
    (dictify
     ;; Simple context
     1 (dictify
-       'coverage uint16be ; pointer
+       'coverage (+Pointer uint16be 'Coverage)
        'ruleSetCount uint16be
-       'ruleSets (+Array uint16be 'ruleSetCount)) ; pointer
-
+       'ruleSets (+Array (+Pointer uint16be 'RuleSet) 'ruleSetCount))
+    
     ;; Class-based context
     2 (dictify
-       'coverage uint16be ; pointer
-       'classDef uint16be ; pointer
+       'coverage (+Pointer uint16be 'Coverage)
+       'classDef (+Pointer uint16be 'ClassDef)
        'classSetCnt uint16be
-       'classSet (+Array uint16be 'classSetCnt)) ; pointer
+       'classSet (+Array (+Pointer uint16be 'ClassSet) 'classSetCnt))
 
     3 (dictify
        'glyphCount uint16be
        'lookupCount uint16be
-       'coverages (+Array uint16be 'glyphCount) ; pointer
+       'coverages (+Array (+Pointer uint16be 'Coverage) 'glyphCount)
        'lookupRecords (+Array LookupRecord 'lookupCount)))))
 
 
@@ -169,26 +169,26 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
    (dictify
     ;; Simple context glyph substitution
     1 (dictify
-       'coverage uint16be ; pointer
+       'coverage (+Pointer uint16be 'Coverage)
        'chainCount uint16be
-       'chainRuelSets (+Array uint16be 'chainCount)) ; pointer
+       'chainRuleSets (+Array (+Pointer uint16be 'ChainRuleSet) 'chainCount))
 
     ;; Class-based chaining context
     2 (dictify
-       'coverage uint16be ; pointer
-       'backtrackClassDef uint16be ; pointer
-       'inputClassDef uint16be ; pointer
-       'lookaheadClassDef uint16be ; pointer
+       'coverage (+Pointer uint16be 'Coverage)
+       'backtrackClassDef (+Pointer uint16be 'ClassDef)
+       'inputClassDef (+Pointer uint16be 'ClassDef)
+       'lookaheadClassDef (+Pointer uint16be 'ClassDef)
        'chainCount uint16be
-       'chainClassSet (+Array uint16be 'chainCount)) ; pointer
+       'chainClassSet (+Array (+Pointer uint16be 'ChainRuleSet) 'chainCount))
 
     ;; Coverage-based chaining context
     3 (dictify
        'backtrackGlyphCount uint16be
-       'backtrackCoverage (+Array uint16be 'backtrackGlyphCount) ; pointer 
+       'backtrackCoverage (+Array (+Pointer uint16be 'Coverage) 'backtrackGlyphCount)
        'inputGlyphCount uint16be
-       'inputCoverage (+Array uint16be 'inputGlyphCount) ; pointer
+       'inputCoverage (+Array (+Pointer uint16be 'Coverage) 'inputGlyphCount)
        'lookaheadGlyphCount uint16be
-       'lookaheadCoverage (+Array uint16be 'lookaheadGlyphCount) ; pointer
+       'lookaheadCoverage (+Array (+Pointer uint16be 'Coverage) 'lookaheadGlyphCount)
        'lookupCount uint16be
        'lookupRecords (+Array LookupRecord 'lookupCount)))))
