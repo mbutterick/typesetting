@@ -24,7 +24,8 @@
      sugar/dict
      sugar/stub
      sugar/port
-     sugar/contract)
+     sugar/contract
+     describe)
 
 (module reader syntax/module-reader
   #:language 'pitfall/racket

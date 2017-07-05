@@ -43,11 +43,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 (define/contract (encode this text [features #f])
   ((string?) ((option/c list?)) . ->*m .
              (list/c (listof string?) (listof GlyphPosition?)))
+  (report*/file 'starting-layout-in-embedded (description (· this font)))
   (define glyphRun (send (· this font) layout text features))
   (define glyphs (· glyphRun glyphs))
   (for ([g (in-list glyphs)])
     (· g id))
   (define positions (· glyphRun positions))
+  (report positions)
   (define-values (subset-idxs new-positions)
     (for/lists (idxs posns)
       ([(glyph i) (in-indexed glyphs)]

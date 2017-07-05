@@ -2,6 +2,11 @@
 (require sugar/list)
 (provide text-mixin)
 
+#|
+approximates
+https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
+|#
+
 (define (text-mixin [% mixin-tester%])
   (class %
     (super-new)

@@ -31,53 +31,55 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
 
 (define/contract (layout this str-or-glyphs [features #f]
                          ;; Attempt to detect the script if not provided.
-                         [script (report (if (string? str-or-glyphs)
+                         [script (if (string? str-or-glyphs)
                                      (Script-forString str-or-glyphs)
-                                     (Script-forCodePoints (append-map (λ (g) (· g codePoints)) str-or-glyphs))))]
+                                     (Script-forCodePoints (append-map (λ (g) (· g codePoints)) str-or-glyphs)))]
                          [language #f])
   (((or/c string? (listof Glyph?))) ((option/c list?) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
   
   (define glyphs
+    ;; Map string to glyphs if needed
     (if (string? str-or-glyphs)
         (send (· this font) glyphsForString str-or-glyphs)
         str-or-glyphs))
 
-  (define glyphRun (make-object GlyphRun glyphs features script language))
+  (report*/file 'starting-layout-in-layout-engine glyphs)
+  (cond
+    [(empty? glyphs) (+GlyphRun glyphs empty)] ; Return early if there are no glyphs
+    [else
+     ;; Setup the advanced layout engine
+     (when (and (· this engine) #;(·? engine setup))
+       (send (· this engine) setup glyphs features script language))
 
-  (if (empty? glyphs)
-      (set-field! positions glyphRun empty)
-      (begin
-        ;; Setup the advanced layout engine ; todo
+     ;; Substitute and position the glyphs
+     (set! glyphs (send this substitute glyphs features script language))
+     (define positions (send this position glyphs features script language))
 
-        ;; Substitute and position the glyphs
-        (send this substitute glyphRun)
-        (send this position glyphRun)
-        (send this hideDefaultIgnorables glyphRun)
-
-        ;; Let the layout engine clean up any state it might have
-        (and (· this engine) (· this engine cleanup))))
-  
-  glyphRun)
+     ;; Let the layout engine clean up any state it might have
+     (when (and (· this engine) #;(·? this engine cleanup))
+       (· this engine cleanup))
+     (+GlyphRun glyphs positions)]))
 
 
-(define/contract (substitute this glyphRun)
-  ((is-a?/c GlyphRun) . ->m . void?)
+(define (substitute this glyphs features script language)
+  #;((is-a?/c GlyphRun) . ->m . void?)
   ;; Call the advanced layout engine to make substitutions
-  (when (and (· this engine) (· this engine substitute))
-    (send (· this engine) substitute glyphRun)))
+  (when (and (· this engine) #;(· this engine substitute))
+    (send (· this engine) substitute glyphs features script language))
+  glyphs)
 
 
-(define/contract (position this glyphRun)
-  ((is-a?/c GlyphRun) . ->m . void?)
+(define (position this glyphs features script language)
+  ((listof Glyph?) (option/c list?) (option/c symbol?) (option/c symbol?) . ->m . (listof GlyphPosition?))
 
-  (define positions (for/list ([g (in-list (· glyphRun glyphs))])
-                      (make-object GlyphPosition (· g advanceWidth))))
-  (set-field! positions glyphRun positions)
   
+  (define positions (for/list ([glyph (in-list glyphs)])
+                              (make-object GlyphPosition (· glyph advanceWidth))))
+  #|
   ;; Call the advanced layout engine. Returns the features applied.
   (define positioned
-    (and (· this engine) (· this engine position)
-         (send (· this engine) position glyphRun)))
+    (and (· this engine) #;(· this engine position)
+         (send (· this engine) position glyphs positions features script language)))
 
   ;; if there is no GPOS table, use unicode properties to position marks.
   ;; todo: implement unicodelayoutengine
@@ -85,7 +87,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
 
   ;; if kerning is not supported by GPOS, do kerning with the TrueType/AAT kern table
   ;; todo: implement kerning
-  (void)
+|#
+  positions
   )
 
 
@@ -94,15 +97,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
   (define space (send (· this font) glyphForCodePoint #x20))
   (define-values (new-glyphs new-positions)
     (for/lists (ngs nps)
-      ([glyph (in-list (· glyphRun glyphs))]
-       [pos (in-list (· glyphRun positions))])
-      (cond
-        [(send this isDefaultIgnorable (car (· glyph codePoints)))
-         (define new-pos pos)
-         (set-field! xAdvance new-pos 0)
-         (set-field! yAdvance new-pos 0)
-         (values space new-pos)]
-        [else (values glyph pos)])))
+               ([glyph (in-list (· glyphRun glyphs))]
+                [pos (in-list (· glyphRun positions))])
+               (cond
+                 [(send this isDefaultIgnorable (car (· glyph codePoints)))
+                  (define new-pos pos)
+                  (set-field! xAdvance new-pos 0)
+                  (set-field! yAdvance new-pos 0)
+                  (values space new-pos)]
+                 [else (values glyph pos)])))
   (set-field! glyphs glyphRun new-glyphs)
   (set-field! positions glyphRun new-positions))
 

@@ -236,7 +236,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   ((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
   (unless (· this _layoutEngine)
     (set-field! _layoutEngine this (+LayoutEngine this)))
-  (report* 'in-layout (· this _layoutEngine))
+  (report*/file 'in-layout (· this _layoutEngine))
   (send (· this _layoutEngine) layout string userFeatures script language))
 
 

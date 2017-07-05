@@ -1,5 +1,7 @@
 #lang pitfall/pdftest
 
+;; test kerning from GPOS
+
 (define-runtime-path ttf-path "assets/fira.ttf")
 
 (define (proc doc)
@@ -12,7 +14,7 @@
     [fontSize 25]
     [text "ATAVATA" 100 100 (hash 'width #f)]))
 
-;; test against non-subsetted font version
+
 (define-runtime-path this "test15rkt.pdf")
 (make-doc this #f proc #:test #f)
 
