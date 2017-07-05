@@ -1,5 +1,4 @@
 #lang reader (submod "racket.rkt" reader)
-(require "stream.rkt")
 (provide (all-defined-out))
 
 #|

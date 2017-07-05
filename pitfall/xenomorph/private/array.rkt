@@ -1,5 +1,5 @@
 #lang reader (submod "racket.rkt" reader)
-(require "number.rkt" "utils.rkt" "stream.rkt")
+(require "number.rkt" "utils.rkt")
 (provide (all-defined-out))
 
 #|

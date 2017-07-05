@@ -61,7 +61,6 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
                            val) ctx)))    
 
 (test-module
- (require "stream.rkt")
  (define bstr #"ABCD1234")
  (define ds (open-input-bytes bstr))
  (define la (+LazyArray uint8 4))

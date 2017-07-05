@@ -1,5 +1,5 @@
 #lang reader (submod "racket.rkt" reader)
-(require "number.rkt" "utils.rkt" "stream.rkt")
+(require "number.rkt" "utils.rkt")
 (provide (all-defined-out))
 
 #|
@@ -79,7 +79,6 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (define-values (String? +String) (values StringT? +StringT))
 
 (test-module
-   (require "stream.rkt")
    (define S (+String uint8 'utf8))
    (check-equal? (send S decode #"\2BCDEF") "BC")
    (check-equal? (send S encode #f "Mike") #"\4Mike")

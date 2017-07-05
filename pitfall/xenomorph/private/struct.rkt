@@ -1,5 +1,5 @@
 #lang reader (submod "racket.rkt" reader)
-(require racket/dict "stream.rkt" racket/private/generic-methods racket/struct)
+(require racket/dict racket/private/generic-methods racket/struct)
 (provide (all-defined-out) ref* ref*-set! (all-from-out racket/dict))
 (require (prefix-in d: racket/dict))
 

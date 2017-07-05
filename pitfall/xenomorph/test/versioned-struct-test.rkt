@@ -129,7 +129,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                  1 (dictify 'name (+StringT uint8 'utf8)
                                             'age uint8
                                             'gender uint8)))])
-  (set-field! process struct (λ (o stream ctx) (ref-set! o 'processed "true") o))
+  (set-field! post-decode struct (λ (o stream ctx) (ref-set! o 'processed "true") o))
   (parameterize ([current-input-port (open-input-bytes #"\x00\x05devon\x15")])
     (check-equal? (dump (decode struct)) (mhasheq 'name "devon"
                                                   'processed "true"
@@ -253,7 +253,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                           'age 21
                           'gender 0
                           'version 1) port)
-  (check-equal? (dump port) (+Buffer "\x00\x05devon\x15\x01\x0adevon 👍\x15\x00" 'utf8)))
+  (check-equal? (dump port) (string->bytes/utf-8 "\x00\x05devon\x15\x01\x0adevon 👍\x15\x00")))
 
 
 ;
