@@ -23,7 +23,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (parameterize ([current-input-port (open-input-bytes #"\x05devon\x20")])
   (define struct (+Struct (dictify 'name (+StringT uint8)
                                    'age uint8)))
-  (set-field! process struct (λ (o . _) (ref-set! o 'canDrink (>= (· o age) 21)) o))
+  (set-field! post-decode struct (λ (o . _) (ref-set! o 'canDrink (>= (· o age) 21)) o))
   (check-equal? (dump (decode struct))
                 (mhasheq 'name "devon" 'age 32 'canDrink #t)))
 

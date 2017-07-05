@@ -1,5 +1,5 @@
 #lang fontkit/racket
-(require xenomorph "tables.rkt")
+(require xenomorph "tables.rkt" describe)
 
 (provide (all-defined-out))
 
@@ -27,7 +27,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
     (dict-set! this-res 'tables new-tables-val)
     this-res)
 
-  (define/override (pre-encode this-val stream)
+  (define/augride (pre-encode this-val port)
     (define tables (for/list ([(tag table) (in-hash (· this-val tables))])
                              (define table-codec (hash-ref table-codecs tag))
                              (mhash 'tag (unescape-tag tag)

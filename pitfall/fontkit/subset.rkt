@@ -67,10 +67,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; get the offset to the glyph from the loca table
   (match-define (list curOffset nextOffset) (take (drop (· this font loca offsets) gid) 2))
 
-  (define stream (send (· this font) _getTableStream 'glyf))
-  (pos (+ (pos stream) curOffset))
+  (define port (send (· this font) _getTableStream 'glyf))
+  (pos port (+ (pos port) curOffset))
 
-  (define buffer (send stream readBuffer (- nextOffset curOffset)))
+  (define buffer (read-bytes  (- nextOffset curOffset) port))
 
   ;; if it is a compound glyph, include its components
   (when (and glyf (negative? (· glyf numberOfContours)))
@@ -96,8 +96,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 ;; additional tables required for standalone fonts:
 ;; name, cmap, OS/2, post
 
-(define/contract (encode this stream)
+(define/contract (encode this port)
   (output-port? . ->m . void?)
+  
   (set-field! glyf this empty)
   (set-field! offset this 0)
   (set-field! loca this (mhash 'offsets empty))
@@ -122,8 +123,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   
   (define hhea (cloneDeep (dump (· this font hhea))))
   (dict-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
-
-  (send Directory encode stream
+  
+  (send Directory encode port
         (mhash 'tables
                (mhash
                 'head head
@@ -134,8 +135,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 'prep (· this font prep)
                 'glyf (· this glyf)
                 'hmtx (· this hmtx)
-                'fpgm (· this font fpgm)
-                )))
+                'fpgm (· this font fpgm))))
 
   #;(report* (bytes-length (send stream dump)) (send stream dump))
   #;(report* (bytes-length (file->bytes "out.bin")) (file->bytes "out.bin"))

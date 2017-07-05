@@ -21,7 +21,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
       (dict-update! res 'offsets (λ (offsets) (map (curry * 2) offsets))))
     res)
 
-  (define/override (pre-encode this-val stream)
+  (define/augride (pre-encode this-val stream)
     ;; this = val to be encoded
     (loca-pre-encode this-val stream)
     this-val))

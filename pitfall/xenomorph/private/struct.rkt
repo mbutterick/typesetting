@@ -45,16 +45,20 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 
 (define-subclass xenomorph-base% (Struct [fields (dictify)])
-  (field [[_process process] (λ (val port ctx) val)]
+  (field [[_post-decode post-decode] (λ (val port ctx) val)]
          [[_pre-encode pre-encode] (λ (val port) val)]) ; store as field so it can be mutated from outside
   
   (define/overment (post-decode res stream [ctx #f])
-    (let* ([res (_process res stream ctx)]
+    (let* ([res (_post-decode res stream ctx)]
            [res (inner res post-decode res stream ctx)])
-      (unless (dict? res) (raise-result-error 'Struct:process "dict" res))
+      (unless (dict? res) (raise-result-error 'Struct:post-decode "dict" res))
       res))
   
-  (define/override (pre-encode . args) (apply _pre-encode args))
+  (define/overment (pre-encode res . args)
+    (let* ([res (apply _pre-encode res args)]
+           [res (inner res pre-encode res . args)])
+      (unless (dict? res) (raise-result-error 'Struct:pre-encode "dict" res))
+      res))
   
   (unless ((disjoin assocs? Struct?) fields) ; should be Versioned Struct but whatever
     (raise-argument-error 'Struct "assocs or Versioned Struct" fields))
@@ -100,7 +104,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (unless (dict? val)
       (raise-argument-error 'Struct:encode "dict" val))
 
-    (send this pre-encode val port) ; preEncode goes first, because it might bring input dict into compliance
     (define ctx (mhash 'pointers empty
                        'startOffset (pos port)
                        'parent parent

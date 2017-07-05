@@ -81,7 +81,7 @@
                    [(output-port? port) port]
                    [(not port) (open-output-bytes)]
                    [else (raise-argument-error 'Xenomorph "output port or #f" port)]))
-      (define encode-result (inner #"" encode op val parent . args))
+      (define encode-result (inner (void) encode op val parent . args))
       (when (bytes? encode-result)
         (write-bytes encode-result op))
       (when (not port) (get-output-bytes op)))
