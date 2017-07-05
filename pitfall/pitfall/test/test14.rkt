@@ -1,5 +1,6 @@
 #lang pitfall/pdftest
 
+;; subset font with GPOS table
 (define-runtime-path ttf-path "assets/fira.ttf")
 
 (define (proc doc)
@@ -14,7 +15,7 @@
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test14rkt.pdf")
-(make-doc this #f proc #:pdfkit #t)
+(make-doc this #f proc )
 
 (define-runtime-path that "test14crkt.pdf")
 (make-doc that #t proc #:pdfkit #f)

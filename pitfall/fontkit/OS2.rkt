@@ -50,7 +50,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
                                   'sFamilyClass           int16be   ;; classification of font-family design
                                   'panose                 (+Array uint8 10)   ;; describe the visual characteristics of a given typeface
                                   'ulCharRange            (+Array uint32be 4)
-                                  'vendorID               (+String 4)          ;; four character identifier for the font vendor
+                                  'vendorID               (+Symbol 4)          ;; four character identifier for the font vendor
                                   ;; bit field containing information about the font
                                   'fsSelection            (+Bitfield uint16 '(italic underscore negative outlined strikeout bold regular useTypoMetrics wws oblique))
                                   'usFirstCharIndex       uint16be  ;; The minimum Unicode index in this font

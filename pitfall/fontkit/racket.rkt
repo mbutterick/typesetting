@@ -23,9 +23,9 @@
      sugar/dict
      sugar/stub
      sugar/port
-     sugar/contract)
+     sugar/contract
+     describe)
 
-(define script? symbol?)
 
 (module reader syntax/module-reader
   #:language 'fontkit/racket

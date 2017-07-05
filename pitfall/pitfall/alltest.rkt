@@ -14,6 +14,6 @@
            pitfall/test/test11
            pitfall/test/test12 ; ttf subset
            pitfall/test/test13 ; subset with composites
-           ;pitfall/test/test14 ; Fira ttf
+           pitfall/test/test14 ; Fira ttf with GPOS
            pitfall/page-test
            (submod pitfall/zlib test)))

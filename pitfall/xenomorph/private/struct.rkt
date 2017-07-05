@@ -26,7 +26,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                                         (if (LazyThunk? res) ((LazyThunk-proc res)) res))
                                       (define (dict-remove! d k) (d:dict-remove! (choose-dict d k) k))
                                       ;; public keys only
-                                      (define (dict-keys d) (d:dict-keys (get-field _kv d))))]
+                                      (define (dict-keys d) (d:dict-keys (get-field _kv d)))
+                                      (define (dict-iterate-first d) (and (pair? (dict-keys d)) 0))
+                                      (define (dict-iterate-next d i) (and (< (add1 i) (length (dict-keys d))) (add1 i)))
+                                      (define (dict-iterate-key d i) (list-ref (dict-keys d) i))
+                                      (define (dict-iterate-value d i) (dict-ref d (dict-iterate-key d i))))]
                [(generic-property gen:custom-write)
                 (generic-method-table gen:custom-write
                                       (define (write-proc o port mode)
@@ -34,23 +38,29 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                                                        [(#t) write]
                                                        [(#f) display]
                                                        [else (λ (p port) (print p port mode))]))
-                                        (proc (get-field _kv o) port)))])))
+                                        (proc (dump o) port)))])))
 
-(define StructDictRes (class* RestructureBase (dictable<%>)
-                        (super-make-object)
-                        (field [_kv (mhasheq)]
-                               [_pvt (mhasheq)])
+(define-subclass*/interfaces xenomorph-base% (dictable<%>)
+  (StructDictRes)
+  (super-make-object)
+  (field [_kv (mhasheq)]
+         [_pvt (mhasheq)])
                         
-                        (define/override (dump) _kv)))
+  (define/override (dump)
+    ;; convert to immutable for display & debug
+    (for/hasheq ([(k v) (in-hash _kv)])
+                                      (values k v)))
+
+  (define/public (to-hash) _kv))
 
 
 (define-subclass xenomorph-base% (Struct [fields (dictify)])
   (field [[_post-decode post-decode] (λ (val port ctx) val)]
          [[_pre-encode pre-encode] (λ (val port) val)]) ; store as field so it can be mutated from outside
   
-  (define/overment (post-decode res stream [ctx #f])
-    (let* ([res (_post-decode res stream ctx)]
-           [res (inner res post-decode res stream ctx)])
+  (define/overment (post-decode res . args)
+    (let* ([res (apply _post-decode res args)]
+           [res (inner res post-decode res . args)])
       (unless (dict? res) (raise-result-error 'Struct:post-decode "dict" res))
       res))
   
@@ -65,30 +75,30 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
   (define/augride (decode stream [parent #f] [len 0])
     ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
-    (let* ([res (_setup stream parent len)]
-           [res (_parse-fields stream res fields)])
-      res))
+    (let* ([sdr (_setup stream parent len)] ; returns StructDictRes
+           [sdr (_parse-fields stream sdr fields)])
+      sdr))
 
   (define/public-final (_setup port parent len)
-    (define res (make-object StructDictRes)) ; not mere hash
-    (dict-set*! res 'parent parent
+    (define sdr (make-object StructDictRes)) ; not mere hash
+    (dict-set*! sdr 'parent parent
                 '_startOffset (pos port)
                 '_currentOffset 0
                 '_length len)
-    res)
+    sdr)
 
-  (define/public-final (_parse-fields port res fields)
+  (define/public-final (_parse-fields port sdr fields)
     (unless (assocs? fields)
       (raise-argument-error '_parse-fields "assocs" fields))
-    (for/fold ([res res])
+    (for/fold ([sdr sdr])
               ([(key type) (in-dict fields)])
       (define val (if (procedure? type)
-                      (type res)
-                      (send type decode port res)))
+                      (type sdr)
+                      (send type decode port sdr)))
       (unless (void? val)
-        (ref-set! res key val))
-      (ref-set! res '_currentOffset (- (pos port) (· res _startOffset)))
-      res))
+        (dict-set! sdr key val))
+      (dict-set! sdr '_currentOffset (- (pos port) (· sdr _startOffset)))
+      sdr))
   
 
   (define/augride (size [val #f] [parent #f] [include-pointers #t])

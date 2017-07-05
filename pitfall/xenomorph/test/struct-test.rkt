@@ -14,7 +14,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
   (check-equal?
    (dump (decode (+Struct (dictify 'name (+StringT uint8)
                                    'age uint8))))
-   (mhasheq 'name "roxyb" 'age 21)))
+   (hasheq 'name "roxyb" 'age 21)))
 
 
 
@@ -25,7 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
                                    'age uint8)))
   (set-field! post-decode struct (λ (o . _) (ref-set! o 'canDrink (>= (· o age) 21)) o))
   (check-equal? (dump (decode struct))
-                (mhasheq 'name "roxyb" 'age 32 'canDrink #t)))
+                (hasheq 'name "roxyb" 'age 32 'canDrink #t)))
 
 
 
@@ -36,7 +36,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
                                    'age uint8
                                    'canDrink (λ (o) (>= (ref o 'age) 21)))))
   (check-equal? (dump (decode struct))
-                (mhasheq 'name "roxyb" 'age 32 'canDrink #t)))
+                (hasheq 'name "roxyb" 'age 32 'canDrink #t)))
 
 
 
@@ -95,7 +95,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
   (check-equal? (dump (decode (+Struct (dictify 'name (+StringT uint8)
                                                 'age uint8))))
-                (mhasheq 'name "roxyb" 'age 21)))
+                (hasheq 'name "roxyb" 'age 21)))
 
 
 ;    it 'should support preEncode hook', (done) ->
@@ -115,6 +115,6 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
   (define struct (+Struct (dictify 'name (+StringT uint8)
                                    'age uint8
                                    'ptr (+Pointer uint8 (+StringT uint8)))))
-  (encode struct (mhasheq 'name "roxyb" 'age 21 'ptr "hello"))
+  (encode struct (hasheq 'name "roxyb" 'age 21 'ptr "hello"))
   (check-equal? (dump (current-output-port)) #"\x05roxyb\x15\x08\x05hello"))
 

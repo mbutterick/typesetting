@@ -33,9 +33,6 @@
                 #'(define ID (let ([ID-CLASS (class BASE-CLASS (super-new))])
                                (MAKER ID-CLASS . ARGS)))))
 
-(define-macro (define-subclass SUPERCLASS (ID . INIT-ARGS) . BODY)
-  #'(define-subclass* SUPERCLASS (ID . INIT-ARGS) (super-new) . BODY))
-
 
 (define-macro (define-class-predicates ID)
   (with-pattern ([+ID (prefix-id "+" #'ID)]
@@ -43,10 +40,19 @@
                 #'(begin (define (ID? x) (is-a? x ID))
                          (define (+ID . args) (apply make-object ID args)))))
 
-(define-macro (define-subclass* SUPERCLASS (ID . INIT-ARGS) . BODY)
+(define-macro (define-subclass*/interfaces SUPERCLASS INTERFACES (ID . INIT-ARGS) . BODY)
   #'(begin
-      (define ID (class SUPERCLASS (init-field . INIT-ARGS) . BODY))
+      (define ID (class* SUPERCLASS INTERFACES (init-field . INIT-ARGS) . BODY))
       (define-class-predicates ID)))
+
+(define-macro (define-subclass/interfaces SUPERCLASS INTERFACES (ID . INIT-ARGS) . BODY)
+  #'(define-subclass*/interfaces SUPERCLASS INTERFACES (ID . INIT-ARGS) (super-new) . BODY))
+
+(define-macro (define-subclass* SUPERCLASS (ID . INIT-ARGS) . BODY)
+  #'(define-subclass*/interfaces SUPERCLASS () (ID . INIT-ARGS) . BODY))
+
+(define-macro (define-subclass SUPERCLASS (ID . INIT-ARGS) . BODY)
+  #'(define-subclass* SUPERCLASS (ID . INIT-ARGS) (super-new) . BODY))
 
 
 (define-macro (push-field! FIELD O EXPR)

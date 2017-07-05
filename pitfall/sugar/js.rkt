@@ -46,11 +46,12 @@
      (for/fold ([x x])
                ([ref (in-list refs)])
        (cond
+         ;; give `send` precedence (presence of method => wants runtime resolution of value)
+         [(and (object? x)
+               (memq ref (interface->method-names (object-interface x)))) (dynamic-send x ref)]
          ;; dict first, to catch objects that implement gen:dict
          [(dict? x) (dict-ref x ref #f)]
-         ;; give `send` precedence (presence of method => wants runtime resolution of value)
          [(object? x) (cond
-                        [(memq ref (interface->method-names (object-interface x))) (dynamic-send x ref)]
                         [(memq ref (field-names x)) (dynamic-get-field ref x)]
                         [else #f])]
          [else (raise-argument-error '· "object or dict" x)]))) '·))

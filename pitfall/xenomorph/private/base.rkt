@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class sugar/class racket/generic racket/private/generic-methods "generic.rkt" racket/port)
+(require racket/class sugar/class racket/generic racket/private/generic-methods "generic.rkt" racket/port racket/dict racket/function)
 (require sugar/debug)
 (provide (all-defined-out))
 (define-generics posable
@@ -41,24 +41,28 @@
                 (generic-method-table gen:sizable
                                       (define (size o [val #f] [parent #f]) (send o size val parent)))])))
 
+(define (dump x)
+  (let loop ([x x])
+    (cond
+      [(input-port? x) (port->bytes x)]
+      [(output-port? x) (get-output-bytes x)]
+      [(dict? x) (for/list ([(k v) (in-dict x)])
+                           (cons (loop k) (loop v)))]
+      [(list? x) (map loop x)]
+      [(and (object? x) (memq 'dump (interface->method-names (object-interface x)))) (send x dump)]
+      [else x])))
 
-(define-generics dumpable
-  (dump dumpable)
-  #:defaults
-  ([input-port? (define (dump p) (port->bytes p))]
-   [output-port? (define (dump p) (get-output-bytes p))]))
-
-(define dumpable<%>
-  (interface* ()
-              ([(generic-property gen:dumpable)
-                (generic-method-table gen:dumpable
-                                      (define (dump o) (send o dump)))])))
+#;(define dumpable<%>
+    (interface* ()
+                ([(generic-property gen:dumpable)
+                  (generic-method-table gen:dumpable
+                                        (define (dump o) (send o dump)))])))
 
 (define (symbol-append . syms)
   (string->symbol (apply string-append (map symbol->string syms))))
 
 (define xenomorph-base%
-  (class* object% (codable<%> sizable<%> dumpable<%>)
+  (class* object% (codable<%> sizable<%>)
     (super-new)
     (field [_hash (make-hash)]
            [_list null])

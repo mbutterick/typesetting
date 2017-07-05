@@ -12,10 +12,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
          [GSUBProcessor #f]
          [GPOSProcessor #f])
 
-  (report 'dingdong)
-  (when (· font has-gsub-table?)
+  (report/file 'starting-ot-layout-engine)
+  ;; todo: gsub
+  #;(when  (· font has-gsub-table?)
       (set-field! GSUBProcessor this (+GSUBProcessor font (· font GSUB))))
 
+  
+  (report* 'starting-gpos-dingdong)
   (when (· font has-gpos-table?)
       (set-field! GPOSProcessor this (+GPOSProcessor font (· font GPOS))))
 

@@ -15,7 +15,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
          [language #f]
          [languageTag #f]
          [features (mhash)]
-         [lookups (mhash)])
+         [lookups (mhash)]
+         [direction #f]) ; appears below
 
   ;; initialize to default script + language
   (selectScript)
@@ -25,22 +26,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
          [positions empty] ; only used by GPOS
          [ligatureID 1])
 
-  (define/public (findScript script)
-    (unless (script? script)
-      (raise-argument-error 'findScript "script" script))
+  (define/public (findScript script-or-scripts)
     (and (· this table scriptList)
-         (let ([script (if (not (list? script)) (list script) script)])
+         (let ([scripts (if (pair? script-or-scripts) script-or-scripts (list script-or-scripts))])
            (for*/first ([entry (in-list (· this table scriptList))]
-                        [s (in-list script)]
-                        #:when (equal? (· entry tag) s))
+                        [s (in-list scripts)]
+                        #:when (eq? (· entry tag) s))
                        entry))))
 
 
-  (define/public (selectScript script language)
+  (define/public (selectScript [script #f] [language #f])
     (let/ec return!
       (define changed #f)
       (define entry #f)
-      (when (or (not (· this script)) (not (equal? script (· this scriptTag))))
+      (when (or (not (· this script)) (not (eq? script (· this scriptTag))))
         (set! entry (findScript script))
         (when script
           (set! entry (findScript script))) ; ? why double dip
@@ -69,11 +68,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
         (set-field! features this (mhash))
         (when (· this language)
           (for ([featureIndex (in-list (· this language featureIndexes))])
-               (define record (hash-ref (· this table featureList) featureIndex))
-               (hash-set! (· this features) (· record tag)) (· record feature))))))
-
-  
-  )
-         
-  
+               (define record (list-ref (· this table featureList) featureIndex))
+               (dict-set! (· this features) (· record tag) (· record feature))))))))
 

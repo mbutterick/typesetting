@@ -18,6 +18,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
           (cond
             [(· this font has-morx-table?) (error 'morx-layout-unimplemented)]
             [(or (· this font has-gsub-table?) (· this font has-gpos-table?))
+             (report/file 'starting-layout-engine)
              (+OTLayoutEngine (· this font))]
             [else #f])])
 

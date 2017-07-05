@@ -141,7 +141,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/Script.js
 
 
 (define/contract (fromUnicode script)
-  ((option/c script?) . -> . script?)
+  ((option/c symbol?) . -> . symbol?)
   (hash-ref UNICODE_SCRIPTS script #f))
 
 (define-stub-stop forString)
@@ -178,5 +178,5 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/Script.js
   ))
 
 (define/contract (direction script)
-  ((option/c script?) . -> . (or/c 'rtl 'ltr))
+  ((option/c symbol?) . -> . (or/c 'rtl 'ltr))
   (if (memq script RTL) 'rtl 'ltr))

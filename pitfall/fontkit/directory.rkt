@@ -8,7 +8,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 |#
 
 (define TableEntry (+Struct
-                    (dictify 'tag (+String 4)
+                    (dictify 'tag (+Symbol 4)
                              'checkSum uint32be
                              'offset (+Pointer uint32be 'void (mhash 'type 'global))
                              'length uint32be)))
@@ -39,7 +39,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
     (define searchRange (* (floor (log numTables 2)) 16))
     
     (hash-set*! this-val
-                'tag "true"
+                'tag 'true
                 'numTables numTables
                 'tables tables
                 'searchRange searchRange
@@ -48,7 +48,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 
     this-val))
 
-(define Directory (+RDirectory (dictify 'tag (+String 4)
+(define Directory (+RDirectory (dictify 'tag (+Symbol 4)
                                         'numTables uint16be
                                         'searchRange uint16be
                                         'entrySelector uint16be

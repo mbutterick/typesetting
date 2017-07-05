@@ -21,7 +21,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
 
 (define-subclass Pointer (LSR-Pointer))
 (define LangSysRecord (+Struct
-                       (dictify 'tag (+String 4)
+                       (dictify 'tag (+Symbol 4)
                                 'langSys (+LSR-Pointer uint16be LangSysTable (mhash 'type 'parent)))))
 
 (define-subclass Pointer (DLS-Pointer))
@@ -34,7 +34,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
 (define-subclass Struct (ScriptRecord-Struct))
 (define-subclass Pointer (ScriptRecord-Pointer))
 (define ScriptRecord (+ScriptRecord-Struct
-                      (dictify 'tag (+String 4)
+                      (dictify 'tag (+Symbol 4)
                                'script (+ScriptRecord-Pointer uint16be Script (mhash 'type 'parent)))))
 
 (define ScriptList (+Array ScriptRecord uint16be))
@@ -52,7 +52,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
 (define-subclass Struct (FeatureRec))
 (define-subclass Pointer (FeatureRec-Pointer))
 (define FeatureRecord (+FeatureRec (dictify
-                                    'tag (+String 4)
+                                    'tag (+Symbol 4)
                                     'feature (+FeatureRec-Pointer uint16be Feature (mhash 'type 'parent)))))
 
 (define FeatureList (+Array FeatureRecord uint16be))

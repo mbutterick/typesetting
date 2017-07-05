@@ -235,8 +235,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define/contract (layout this string [userFeatures #f] [script #f] [language #f])
   ((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
   (unless (· this _layoutEngine)
-    (set-field! _layoutEngine this (make-object LayoutEngine this)))
-  (report 'in-layout)
+    (set-field! _layoutEngine this (+LayoutEngine this)))
+  (report* 'in-layout (· this _layoutEngine))
   (send (· this _layoutEngine) layout string userFeatures script language))
 
 

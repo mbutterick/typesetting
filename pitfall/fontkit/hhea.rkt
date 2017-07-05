@@ -35,8 +35,5 @@
  (define table-data (decode hhea table-bytes))
  (check-equal? (· table-data ascent) 980)
  (check-equal? (· table-data descent) -238)
- (check-equal? (· table-data numberOfMetrics) 229)
-
-
- )
+ (check-equal? (· table-data numberOfMetrics) 229))
 
