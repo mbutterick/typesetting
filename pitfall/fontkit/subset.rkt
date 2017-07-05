@@ -14,7 +14,10 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 
   (send this includeGlyph 0) ; always include the missing glyph in subset
 
-
+  (define/public (encodeStream)
+    (define s (open-output-bytes))
+    (send this encode s)
+    s)
   
   (as-methods
    includeGlyph))
@@ -65,7 +68,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (match-define (list curOffset nextOffset) (take (drop (· this font loca offsets) gid) 2))
 
   (define stream (send (· this font) _getTableStream 'glyf))
-  (send stream pos (+ (send stream pos) curOffset))
+  (pos (+ (pos stream) curOffset))
 
   (define buffer (send stream readBuffer (- nextOffset curOffset)))
 
@@ -73,7 +76,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (when (and glyf (negative? (· glyf numberOfContours)))
     (for ([component (in-list (· glyf components))])
       (define gid (send this includeGlyph (· component glyphID)))
-      (bytes-copy! buffer (· component pos) (send uint16be encode #f gid))))
+      (bytes-copy! buffer (pos component) (send uint16be encode #f gid))))
   
   ;; skip variation shit
 
@@ -108,17 +111,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
     (define gid (list-ref (· this glyphs) idx))
     (send this _addGlyph gid))
 
-  (define maxp (cloneDeep (send (· this font maxp) dump)))
+  (define maxp (cloneDeep (dump (· this font maxp))))
   (dict-set! maxp 'numGlyphs (length (· this glyf)))
   ;; populate the new loca table
   (dict-update! (· this loca) 'offsets (λ (vals) (append vals (list (· this offset)))))
   (loca-pre-encode (· this loca))
 
-  
-  (define head (cloneDeep (send (· this font head) dump)))
+  (define head (cloneDeep (dump (· this font head))))
   (dict-set! head 'indexToLocFormat (· this loca version))
   
-  (define hhea (cloneDeep (send (· this font hhea) dump)))
+  (define hhea (cloneDeep (dump (· this font hhea))))
   (dict-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
 
   (send Directory encode stream
@@ -140,5 +142,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   
   (void)
   )
-
 

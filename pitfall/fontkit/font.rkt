@@ -43,7 +43,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define-table-getters)
 
   (define/public (_getTableStream tag)
-    (define table (hash-ref (· this directory tables) tag))
+    (define table (dict-ref (· this directory tables) tag))
     (cond
       [table
        (pos port (· table offset))

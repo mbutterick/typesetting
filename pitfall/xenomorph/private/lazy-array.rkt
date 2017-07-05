@@ -21,8 +21,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 
   (define/public-final (get index)
     (unless (<= 0 index (sub1 len))
-      #;(raise-argument-error 'LazyArray:get (format "index in range 0 to ~a" len) index)
-      (void))
+      (raise-argument-error 'LazyArray:get (format "index in range 0 to ~a" (sub1 len)) index))
     (ref! item-cache index (λ ()
                              (define orig-pos (pos port))
                              (pos port (+ starting-pos (* (send type size #f ctx) index)))

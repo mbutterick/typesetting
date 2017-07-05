@@ -78,6 +78,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (when isCFF
     (hash-set! (· fontFile payload) 'Subtype "CIDFontType0C"))
 
+  (report* (· this subset))
+
   (send fontFile end (send (send (· this subset) encodeStream) dump))
 
   (define familyClass (let ([val (if (send (· this font) has-table? 'OS/2)

@@ -86,13 +86,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
     ;; Nothing to do if there is no data for this glyph
     (and (not (= glyfPos nextPos))
          (let ()
-           (define stream (send _font _getTableStream 'glyf))
-           (send stream pos (+ (send stream pos) glyfPos))
-           (define startPos (· stream pos))
-           (define glyph (send GlyfHeader decode stream))
+           (define port (send _font _getTableStream 'glyf))
+           (pos port (+ (pos port) glyfPos))
+           (define startPos (pos port))
+           (define glyph (decode GlyfHeader port))
            (match (· glyph numberOfContours)
-             [(? positive?) (_decodeSimple glyph stream)]
-             [(? negative?) (_decodeComposite glyph stream startPos)])
+             [(? positive?) (_decodeSimple glyph port)]
+             [(? negative?) (_decodeComposite glyph port startPos)])
            glyph)))
 
   (define/public (_decodeSimple glyph port)
@@ -130,7 +130,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
        (values (cons point points) next-px next-py)))
     (dict-set! glyph 'points (reverse points)))
 
-  (define/public (_decodeComposite glyph stream [offset 0])
+  (define/public (_decodeComposite glyph port [offset 0])
     ;; this is a composite glyph
     (dict-set! glyph 'components empty)
     (define haveInstructions #f)
@@ -139,33 +139,33 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
     (dict-set! glyph 'components
                (for/list ([i (in-naturals)]
                           #:break (zero? (bitwise-and flags MORE_COMPONENTS)))
-                 (set! flags (send uint16be decode stream))
-                 (define gPos (- (send stream pos) offset))
-                 (define glyphID (send uint16be decode stream))
+                 (set! flags (send uint16be decode port))
+                 (define gPos (- (pos port) offset))
+                 (define glyphID (send uint16be decode port))
                  (unless haveInstructions
                    (set! haveInstructions (not (zero? (bitwise-and flags WE_HAVE_INSTRUCTIONS)))))
 
                  (match-define
                    (list dx dy)
                    (let ([decoder (if (not (zero? (bitwise-and flags ARG_1_AND_2_ARE_WORDS))) int16be int8)])
-                     (list (send decoder decode stream) (send decoder decode stream))))
+                     (list (send decoder decode port) (send decoder decode port))))
 
                  (define component (+Component glyphID dx dy))
                  (set-field! pos component gPos)
 
                  (cond
                    [(not (zero? (bitwise-and flags WE_HAVE_A_SCALE)))
-                    (define scale (read-fixed14 stream))
+                    (define scale (read-fixed14 port))
                     (set-field! scaleX component scale)
                     (set-field! scaleY component scale)]
                    [(not (zero? (bitwise-and flags WE_HAVE_AN_X_AND_Y_SCALE)))
-                    (set-field! scaleX component (read-fixed14 stream))
-                    (set-field! scaleY component (read-fixed14 stream))]
+                    (set-field! scaleX component (read-fixed14 port))
+                    (set-field! scaleY component (read-fixed14 port))]
                    [(not (zero? (bitwise-and flags WE_HAVE_A_TWO_BY_TWO)))
-                    (set-field! scaleX component (read-fixed14 stream))
-                    (set-field! scale01 component (read-fixed14 stream))
-                    (set-field! scale10 component (read-fixed14 stream))
-                    (set-field! scaleY component (read-fixed14 stream))])
+                    (set-field! scaleX component (read-fixed14 port))
+                    (set-field! scale01 component (read-fixed14 port))
+                    (set-field! scale10 component (read-fixed14 port))
+                    (set-field! scaleY component (read-fixed14 port))])
                  component))
     haveInstructions))
         

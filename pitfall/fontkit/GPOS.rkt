@@ -43,8 +43,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/GPOS.js
   (define/public (size val ctx)
     (send (buildStruct ctx) size val ctx))
 
-  (define/public (decode stream parent)
-    (define res (send (buildStruct parent) decode stream parent))
+  (define/public (decode port parent)
+    (define res (send (buildStruct parent) decode port parent))
     (dict-remove! res 'rel)
     res)
 

@@ -50,7 +50,7 @@
    end)
 
   (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) ; if no 'info key, nothing will be copied from (hash)
-    (hash-set! info key val))
+       (hash-set! info key val))
 
   ;; Write the header
   (write this (format "%PDF-~a" pdf-version)) ;  PDF version
@@ -142,15 +142,15 @@
   (flushPages this)
   (define _info (ref this))
   (for ([(key val) (in-hash (· this info))])
-    ;; upgrade string literal to String struct
-    (hash-set! (· _info payload) key (if (string? val) (String val) val)))
+       ;; upgrade string literal to String struct
+       (hash-set! (· _info payload) key (if (string? val) (String val) val)))
 
 
   #;(report* (· this _offsets))
   (· _info end)
 
   (for ([font (in-hash-values (· this _fontFamilies))])
-    (· font finalize))
+       (· font finalize))
 
   #;(report* (· this _offsets))
 
@@ -168,11 +168,15 @@
     (this-write "xref")
     (this-write (format "0 ~a" (add1 (length this-offsets))))
     (this-write "0000000000 65535 f ")
+    (let ([missing-offsets (for/list ([offset (in-list this-offsets)]
+                                      [idx (in-list this-idxs)]
+                                      #:unless (number? offset))
+                                      idx)])
+      (unless (empty? missing-offsets)
+        (raise-argument-error 'document:end "numerical offsets" missing-offsets)))
     (for ([offset (in-list this-offsets)]
           [idx (in-list this-idxs)])
-      (unless (number? offset)
-        (raise-argument-error 'document:end (format "numerical offset for ref ~a" idx) offset))
-      (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
+         (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
     (this-write "trailer") ;; trailer
     (this-write (convert
                  (mhash 'Size (add1 (length this-offsets))

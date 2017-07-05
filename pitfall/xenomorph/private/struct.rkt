@@ -91,7 +91,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (define ctx (mhasheq 'parent parent
                          'val val
                          'pointerSize 0))
-    (+ (for/sum ([(key type) (in-dict fields)])
+    (+ (for/sum ([(key type) (in-dict fields)]
+                 #:when (object? type))
                 (send type size (and val (ref val key)) ctx))
        (if include-pointers (· ctx pointerSize) 0)))
 
