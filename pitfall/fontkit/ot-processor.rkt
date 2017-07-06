@@ -69,5 +69,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
         (when (· this language)
           (for ([featureIndex (in-list (· this language featureIndexes))])
                (define record (list-ref (· this table featureList) featureIndex))
-               (dict-set! (· this features) (· record tag) (· record feature))))))))
+               (dict-set! (· this features) (· record tag) (· record feature)))))))
+
+
+  (define/public (applyFeatures userFeatures glyphs advances)
+    (error 'ot-processor-applyFeatures-not-implemented)))
 
