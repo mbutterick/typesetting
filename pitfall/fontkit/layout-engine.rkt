@@ -52,8 +52,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
        (send (· this engine) setup glyphs features script language))
 
      ;; Substitute and position the glyphs
-     (set! glyphs (send this substitute glyphs features script language))
+     ;; todo: glyph substitution
+     #;(set! glyphs (send this substitute glyphs features script language))
+     (report/file 'ready-position)
      (define positions (send this position glyphs features script language))
+     (report/file 'fired-position)
 
      ;; Let the layout engine clean up any state it might have
      (when (and (· this engine) #;(·? this engine cleanup))
@@ -69,25 +72,31 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
   glyphs)
 
 
-(define (position this glyphs features script language)
+(define/contract (position this glyphs features script language)
   ((listof Glyph?) (option/c list?) (option/c symbol?) (option/c symbol?) . ->m . (listof GlyphPosition?))
 
-  
   (define positions (for/list ([glyph (in-list glyphs)])
-                              (make-object GlyphPosition (· glyph advanceWidth))))
-  #|
+                      (make-object GlyphPosition (· glyph advanceWidth))))
+  
   ;; Call the advanced layout engine. Returns the features applied.
   (define positioned
     (and (· this engine) #;(· this engine position)
          (send (· this engine) position glyphs positions features script language)))
 
   ;; if there is no GPOS table, use unicode properties to position marks.
-  ;; todo: implement unicodelayoutengine
-
+  ;; todo: unicode layout
+  #;(unless positioned
+    (unless (· this unicodeLayoutEngine)
+      (set! unicodeLayoutEngine (+UnicodeLayoutEngine (· this font))))
+    (send unicodeLayoutEngine positionGlyphs glyphs positions))
 
   ;; if kerning is not supported by GPOS, do kerning with the TrueType/AAT kern table
-  ;; todo: implement kerning
-|#
+  ;; todo: old style kern table
+  #;(when (and (or (not positioned) (not (· positioned kern))) (· this font kern))
+      (unless kernProcessor
+        (set! kernProcessor (+KernProcessor (· this font))))
+      (send kernProcessor process glyphs positions))
+  
   positions
   )
 
@@ -97,15 +106,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
   (define space (send (· this font) glyphForCodePoint #x20))
   (define-values (new-glyphs new-positions)
     (for/lists (ngs nps)
-               ([glyph (in-list (· glyphRun glyphs))]
-                [pos (in-list (· glyphRun positions))])
-               (cond
-                 [(send this isDefaultIgnorable (car (· glyph codePoints)))
-                  (define new-pos pos)
-                  (set-field! xAdvance new-pos 0)
-                  (set-field! yAdvance new-pos 0)
-                  (values space new-pos)]
-                 [else (values glyph pos)])))
+      ([glyph (in-list (· glyphRun glyphs))]
+       [pos (in-list (· glyphRun positions))])
+      (cond
+        [(send this isDefaultIgnorable (car (· glyph codePoints)))
+         (define new-pos pos)
+         (set-field! xAdvance new-pos 0)
+         (set-field! yAdvance new-pos 0)
+         (values space new-pos)]
+        [else (values glyph pos)])))
   (set-field! glyphs glyphRun new-glyphs)
   (set-field! positions glyphRun new-positions))
 

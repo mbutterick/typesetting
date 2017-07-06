@@ -2,6 +2,11 @@
 (require "default-shaper.rkt")
 (provide (all-defined-out))
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/opentype/shapers/index.js
+|#
+
 ;; todo: alternative shapers
 (define SHAPERS
   (hasheq

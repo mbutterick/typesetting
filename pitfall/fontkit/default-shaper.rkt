@@ -15,6 +15,7 @@
 (define-subclass object% (DefaultShaper)
   
   (define/public (plan plan_ glyphs features)
+    (report*/file plan_ glyphs features)
     ;; Plan the features we want to apply
     (planPreprocessing plan_)
     (planFeatures plan_)
@@ -36,7 +37,10 @@
     (void))
   
 (define/public (planPostprocessing plan userFeatures)
-    (send plan add (append COMMON_FEATURES HORIZONTAL_FEATURES userFeatures)))
+  (when userFeatures
+    (unless (and (list? userFeatures) (andmap symbol? userFeatures))
+                       (raise-argument-error 'DefaultShaper:planPostprocessing "list of features" userFeatures)))
+    (send plan add (append COMMON_FEATURES HORIZONTAL_FEATURES (or userFeatures empty))))
 
   (define/public (assignFeatures plan glyphs)
     ;; todo: Enable contextual fractions
