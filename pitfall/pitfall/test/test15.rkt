@@ -12,11 +12,11 @@
   (send* doc
     [font "the-font"]
     [fontSize 25]
-    [text "ATAVATA" 100 100 (hash 'width #f)]))
+    [text "HTAVATH" 100 100 (hash 'width #f)]))
 
 
 (define-runtime-path this "test15rkt.pdf")
-(make-doc this #f proc #:test #f)
+(make-doc this #f proc)
 
-#;(define-runtime-path that "test15crkt.pdf")
-#;(make-doc that #t proc #:pdfkit #f)
+(define-runtime-path that "test15crkt.pdf")
+(make-doc that #t proc #:pdfkit #f)

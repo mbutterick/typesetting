@@ -26,6 +26,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GlyphIterator.js
         (and (· flags ignoreLigatures) (· glyph isLigature))))
 
   (define/public (move dir)
+    (unless (= (abs dir) 1)
+      (raise-argument-error 'GlyphIterator:move "1 or -1" dir))
     (increment-field! index this dir)
     (while (and (<= 0 (· this index))
                 (< (· this index) (length (· this glyphs)))
@@ -55,7 +57,22 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GlyphIterator.js
     res)
 
   (define/public (increment [count 1])
-    (for ([i (in-range (abs count))])
-      (send this move (if (negative? count) -1 1)))
-    (list-ref (· this glyphs) (· this index))))
-                
+    (for/last ([i (in-range (abs count))])
+      (send this move (if (negative? count) -1 1)))))
+
+(test-module
+ (define gi (+GlyphIterator '(a b c)))
+ (check-equal? (· gi index) 0)
+ (check-equal? (send gi cur) 'a)
+ (check-equal? (send gi move 1) 'b)
+ (check-equal? (send gi move 1) 'c)
+ (check-false (send gi move 1))
+ (check-equal? (send gi increment -3) 'a)
+ (check-equal? (send gi cur) 'a)
+ (check-equal? (send gi peek 1) 'b)
+ (check-equal? (send gi peek 2) 'c)
+ (check-equal? (send gi peek 3) #f)
+ (check-equal? (send gi cur) 'a)
+ 
+
+ )

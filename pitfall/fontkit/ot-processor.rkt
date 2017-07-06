@@ -105,7 +105,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
       (send (· this glyphIterator) reset (· lookup flags))
       (while (< (· this glyphIterator index) (length glyphs))
              (when (dict-has-key? (· this glyphIterator cur features)  feature)
-               (for/first ([table (in-list (· lookup subTables))])
+               (for/or ([table (in-list (· lookup subTables))])
                  (send this applyLookup (· lookup lookupType) table)))
              (send (· this glyphIterator) next))))
 
@@ -118,13 +118,25 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
   (define/public (coverageIndex coverage [glyph #f])
     (unless glyph
       (set! glyph (· this glyphIterator cur id)))
-
-    (or (case (· coverage version)
+    (or (case (report (· coverage version))
           [(1) (index-of (· coverage glyphs) glyph)]
           [(2) (for/first ([range (in-list (· coverage rangeRecords))]
                            #:when (<= (· range start) glyph (· range end)))
                  (+ (· range startCoverageIndex) glyph (- (· range start))))]
           [else #f]) -1))
-                       
 
-  )
+  (define/public (getClassID glyph classDef)
+    (or
+     (case (· classDef version)
+       [(1) ;; Class array
+        (define i (- glyph (· classDef startGlyph)))
+        (and (>= i 0)
+             (< i (length (· classDef classValueArray)))
+             (list-ref (· classDef classValueArray) i))]
+       [(2)
+        (for/first ([range (in-list (· classDef classRangeRecord))]
+                    #:when (<= (· range start) glyph (· range end)))
+          (· range class))])
+     0)))
+    
+                      

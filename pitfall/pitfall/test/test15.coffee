@@ -9,7 +9,7 @@ make = (doc) ->
   # Set the font, draw some text
   doc.font('the-font')
      .fontSize(25)
-     .text('ATAVATA', 100, 100, {width: false})
+     .text('HTAVATH', 100, 100, {width: false})
                  
   doc.end()
 
