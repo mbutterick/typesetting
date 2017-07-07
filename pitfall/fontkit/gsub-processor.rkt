@@ -157,5 +157,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
             (set-field! glyphs (· this glyphIterator) (· this glyphs))
             (report* (for/list ([g (· this glyphs)]) (· g id)) (· this glyphIterator index))
                 #t)]
-         [else #f])])))
+         [else #f])]
+      [else (error 'unimplemented-gsub-lookup)])))
 

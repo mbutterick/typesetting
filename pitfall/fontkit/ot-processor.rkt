@@ -109,6 +109,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
           (send (· this glyphIterator) reset (· lookup flags))
       
           (while (< (or (· this glyphIterator index) 0) (length (· this glyphs)))
+                 (report 'start-while++++++++++++++++++)
                  (report (length (· this glyphs)) 'glyphs-length-top)
                  (report (for/list ([g (· this glyphs)]) (· g id)) 'gids-top)
                  (report (· this glyphIterator index) giterator-idx-top)
@@ -118,7 +119,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
                    [(not (dict-has-key? (· this glyphIterator cur features) feature))
                     (send (· this glyphIterator) next)]
                    [else
-                    (report/file '=================)
+                    (report/file 'start-lookup-branch=================)
                     (report* (for/list ([g (· this glyphs)]) (· g id)) (for/list ([g (· this glyphIterator glyphs)]) (· g id)) (for/list ([g glyphs]) (· g id)) (· this glyphIterator index) (· this glyphIterator cur id) (· this glyphIterator peekIndex))
                    (for/or ([table (in-list (· lookup subTables))])
                            (send this applyLookup (· lookup lookupType) table))

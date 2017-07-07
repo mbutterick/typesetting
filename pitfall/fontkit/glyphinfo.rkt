@@ -17,8 +17,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GlyphInfo.js
     [(list? features-in)
      (for ([feature (in-list features-in)])
           (hash-set! features feature #t))]
-    [(object? features-in)
-     (hash-set! features (· features-in features))])
+    [(dict? features-in)
+     (for ([(feature val) (in-dict features-in)])
+          (hash-set! features feature val))])
 
   (field [ligatureID #f]
          [ligatureComponent #f]
