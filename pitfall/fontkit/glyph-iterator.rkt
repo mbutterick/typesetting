@@ -67,6 +67,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GlyphIterator.js
  (check-equal? (send gi move 1) 'b)
  (check-equal? (send gi move 1) 'c)
  (check-false (send gi move 1))
+ (check-false (send gi cur))
  (check-equal? (send gi increment -3) 'a)
  (check-equal? (send gi cur) 'a)
  (check-equal? (send gi peek 1) 'b)

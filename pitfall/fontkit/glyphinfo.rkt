@@ -32,8 +32,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GlyphInfo.js
   (define/public (id [id-in #f])
     (cond
       [(not id-in) _id]
-      [else (set! _id id-in)
-            (set! substituted #t)
+      [else (set-field! _id this id-in)
+            (set-field! substituted this #t)
 
             (cond
               [(and (· this _font GDEF) (· this _font GDEF glyphClassDef))

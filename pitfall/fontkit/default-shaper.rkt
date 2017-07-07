@@ -15,7 +15,7 @@
 (define-subclass object% (DefaultShaper)
   
   (define/public (plan plan_ glyphs features)
-    (report*/file plan_ glyphs features)
+    #;(report*/file plan_ glyphs features)
     ;; Plan the features we want to apply
     (planPreprocessing plan_)
     (planFeatures plan_)

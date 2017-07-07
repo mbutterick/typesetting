@@ -12,7 +12,7 @@
   (send* doc
     [font "the-font"]
     [fontSize 100]
-    [text "fifl" 100 100 (hash 'width #f)]))
+    [text "fi" 100 100 (hash 'width #f)]))
 
 
 (define-runtime-path this "test16rkt.pdf")

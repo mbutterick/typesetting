@@ -10,7 +10,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
 (define-subclass OTProcessor (GSUBProcessor)
 
   (define/override (applyLookup lookupType table)
-    (report* 'GSUBProcessor:applyLookup lookupType)
+    (report  lookupType 'GSUBProcessor:applyLookup)
     (case lookupType
       [(1) ;; Single Substitution
        (report 'single-substitution)
@@ -18,7 +18,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
        (cond
          [(= index -1) #f]
          [else (define glyph (· this glyphIterator cur))
-               (set-field! id glyph
+               (send glyph id
                            (case (· table version)
                              [(1) (bitwise-and (+ (· glyph id) (· table deltaGlyphID)) #xffff)]
                              [(2) (send (· table substitute) get index)]))
@@ -29,7 +29,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
        (cond
          [(= index -1) #f]
          [else (define sequence (send (· table sequences) get index))
-               (set-field! id (· this glyphIterator cur) (list-ref sequence 0))
+               (send (· this glyphIterator cur)  id (list-ref sequence 0))
                (set-field! ligatureComponent (· this glyphIterator cur) 0)
 
                (define features (· this glyphIterator cur features))
@@ -52,7 +52,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
        (cond
          [(= index -1) #f]
          [else (define USER_INDEX 0)
-               (set-field! id (· this glyphIterator cur) (list-ref (send (· table alternateSet) get index) USER_INDEX))
+               (send (· this glyphIterator cur)  id (list-ref (send (· table alternateSet) get index) USER_INDEX))
                #t])]
 
       [(4) ;; Ligature substitution
@@ -151,8 +151,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                        (set-field! ligatureComponent (list-ref (· this glyphs) i) ligatureComponent)))
 
                 ;; Delete the matched glyphs, and replace the current glyph with the ligature glyph
+            (report* (for/list ([g (· this glyphs)]) (· g id)) (· this glyphIterator index))
                 (set-field! glyphs this (drop-right (· this glyphs) (length matched)))
                 (set-field! glyphs this (list-set (· this glyphs) (· this glyphIterator index) ligatureGlyph))
+            (set-field! glyphs (· this glyphIterator) (· this glyphs))
+            (report* (for/list ([g (· this glyphs)]) (· g id)) (· this glyphIterator index))
                 #t)]
          [else #f])])))
 

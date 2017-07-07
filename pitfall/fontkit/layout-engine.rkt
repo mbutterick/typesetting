@@ -18,7 +18,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
           (cond
             [(· this font has-morx-table?) (error 'morx-layout-unimplemented)]
             [(or (· this font has-gsub-table?) (· this font has-gpos-table?))
-             (report/file 'starting-layout-engine)
+             #;(report/file 'starting-layout-engine)
              (+OTLayoutEngine (· this font))]
             [else #f])])
 
@@ -43,7 +43,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
         (send (· this font) glyphsForString str-or-glyphs)
         str-or-glyphs))
 
-  (report*/file 'starting-layout-in-layout-engine glyphs)
+  #;(report*/file 'starting-layout-in-layout-engine glyphs)
   (cond
     [(empty? glyphs) (+GlyphRun glyphs empty)] ; Return early if there are no glyphs
     [else
@@ -53,6 +53,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
 
      ;; Substitute and position the glyphs
      (set! glyphs (send this substitute glyphs features script language))
+     (report/file 'end-sub)
+     (error 'stop)
      (report/file 'ready-position)
      (define positions (send this position glyphs features script language))
      (report/file 'fired-position)

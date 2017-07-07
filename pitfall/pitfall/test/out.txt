@@ -1,0 +1,201 @@
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 450
+forker = 0
+table.ligatureSets.get(_index3) = [object Object],[object Object]
+starting index = 0
+ligature.components = 480
+in match loop
+idx = 0
+glyph.id = 480
+matched = 1
+index = 1
+characters = 102,105
+ligatureGlyph.id = 731
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 450
+forker = 0
+table.ligatureSets.get(_index3) = [object Object],[object Object]
+starting index = 0
+ligature.components = 480
+matched = false
+starting index = 0
+ligature.components = 514
+in match loop
+idx = 0
+glyph.id = 514
+matched = 2
+index = 2
+characters = 102,108
+ligatureGlyph.id = 732
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
+forker = -1
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
+forker = -1
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 450
+forker = 0
+table.ligatureSets.get(_index3) = [object Object],[object Object]
+starting index = 0
+ligature.components = 480
+in match loop
+idx = 0
+glyph.id = 480
+matched = 1
+index = 1
+characters = 102,105
+ligatureGlyph.id = 731
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 450
+forker = 0
+table.ligatureSets.get(_index3) = [object Object],[object Object]
+starting index = 0
+ligature.components = 480
+matched = false
+starting index = 0
+ligature.components = 514
+in match loop
+idx = 0
+glyph.id = 514
+matched = 2
+index = 2
+characters = 102,108
+ligatureGlyph.id = 732
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
+forker = -1
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
+forker = -1
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 450
+forker = 0
+table.ligatureSets.get(_index3) = [object Object],[object Object]
+starting index = 0
+ligature.components = 480
+in match loop
+idx = 0
+glyph.id = 480
+matched = 1
+index = 1
+characters = 102,105
+ligatureGlyph.id = 731
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 450
+forker = 0
+table.ligatureSets.get(_index3) = [object Object],[object Object]
+starting index = 0
+ligature.components = 480
+matched = false
+starting index = 0
+ligature.components = 514
+in match loop
+idx = 0
+glyph.id = 514
+matched = 2
+index = 2
+characters = 102,108
+ligatureGlyph.id = 732
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
+forker = -1
+'GSUBProcessor:applyLookup 4
+----------------------------
+start ligature-substitution
+lookupType = 4
+table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
+forker = -1
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6
+'GSUBProcessor:applyLookup 6

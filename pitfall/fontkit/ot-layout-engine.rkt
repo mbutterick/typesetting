@@ -13,7 +13,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
          [GSUBProcessor #f]
          [GPOSProcessor #f])
 
-  (report/file 'starting-ot-layout-engine)
+  #;(report/file 'starting-ot-layout-engine)
   (when  (· font has-gsub-table?)
     (set-field! GSUBProcessor this (+GSUBProcessor font (or (· font GSUB) (error 'no-gsub-table)))))
 
@@ -31,7 +31,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
     ;; This determines which features to apply to which glyphs.
     (set! shaper (Shapers-choose script))
     (set! plan (+ShapingPlan (· this font) script language))
-    (report/file shaper)
+    #;(report/file shaper)
     (send (make-object shaper) plan (· this plan) (· this glyphInfos) features))
 
   (define/public (substitute glyphs . _)

@@ -74,23 +74,23 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
 
   
   (define/public (lookupsForFeatures [userFeatures empty] [exclude #f])
-    (report*/file 'ot-proc:lookupsForFeatures)
+    #;(report*/file 'ot-proc:lookupsForFeatures)
     (sort (for*/list ([tag (in-list userFeatures)]
-                      [feature (in-value (dict-ref (report/file (· this features)) tag #f))]
+                      [feature (in-value (dict-ref (· this features) tag #f))]
                       #:when feature
                       [lookupIndex (in-list (· feature lookupListIndexes))]
                       #:unless (and exclude (index-of exclude lookupIndex)))
-                     (report*/file tag lookupIndex)
+                     #;(report*/file tag lookupIndex)
                      (mhasheq 'feature tag
                               'index lookupIndex
                               'lookup (send (· this table lookupList) get lookupIndex)))
-          < #:key (λ (i) (report*/file (· i index)))))
+          < #:key (λ (i) (· i index))))
       
 
   (define/public (applyFeatures userFeatures glyphs advances)
-    (report/file 'ot-proc:applyFeatures-part1)
+    #;(report/file 'ot-proc:applyFeatures-part1)
     (define lookups (send this lookupsForFeatures userFeatures))
-    (report/file 'ot-proc:applyFeatures-part2)
+    #;(report/file 'ot-proc:applyFeatures-part2)
     (report (length lookups))
     (send this applyLookups lookups glyphs advances))
 
@@ -98,17 +98,33 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
   (define/public (applyLookups lookups glyphs positions)
     (set-field! glyphs this glyphs)
     (set-field! positions this positions)
-    (report/file 'ot-proc:applyLookups)
+    #;(report/file 'ot-proc:applyLookups)
+    (report (for/list ([g glyphs]) (· g id)))
     (set-field! glyphIterator this (+GlyphIterator glyphs))
+    
     (for* ([lookup-entry (in-list lookups)])
-          (define feature (dict-ref lookup-entry 'feature))
-          (define lookup (dict-ref lookup-entry 'lookup))
+          (define feature (· lookup-entry feature))
+          (define lookup (· lookup-entry lookup))
+      (report 'resetting-iterator)
           (send (· this glyphIterator) reset (· lookup flags))
-          (while (< (· this glyphIterator index) (length glyphs))
-                 (when (dict-has-key? (· this glyphIterator cur features)  feature)
+      
+          (while (< (or (· this glyphIterator index) 0) (length (· this glyphs)))
+                 (report (length (· this glyphs)) 'glyphs-length-top)
+                 (report (for/list ([g (· this glyphs)]) (· g id)) 'gids-top)
+                 (report (· this glyphIterator index) giterator-idx-top)
+                 (report* feature (· this glyphIterator cur id) (· this glyphIterator cur features))
+                 (report (dict-has-key? (· this glyphIterator cur features) feature))
+                 (cond
+                   [(not (dict-has-key? (· this glyphIterator cur features) feature))
+                    (send (· this glyphIterator) next)]
+                   [else
+                    (report/file '=================)
+                    (report* (for/list ([g (· this glyphs)]) (· g id)) (for/list ([g (· this glyphIterator glyphs)]) (· g id)) (for/list ([g glyphs]) (· g id)) (· this glyphIterator index) (· this glyphIterator cur id) (· this glyphIterator peekIndex))
                    (for/or ([table (in-list (· lookup subTables))])
-                           (send this applyLookup (· lookup lookupType) table)))
-                 (send (· this glyphIterator) next))))
+                           (send this applyLookup (· lookup lookupType) table))
+                   (report 'incrementing-iterator-at-bottom)
+                   (send (· this glyphIterator) next)
+                   (report* (· this glyphIterator cur) (· this glyphIterator index))]))))
 
   (abstract applyLookup)
 
@@ -117,8 +133,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (error))
 
   (define/public (coverageIndex coverage [glyph #f])
-    (unless glyph
-      (set! glyph (· this glyphIterator cur id)))
+    (unless glyph (set! glyph (· this glyphIterator cur id)))
     (or (case (· coverage version)
           [(1) (index-of (· coverage glyphs) glyph)]
           [(2) (for/first ([range (in-list (· coverage rangeRecords))]

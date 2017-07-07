@@ -22,7 +22,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/ShapingPlan.js
   ;; Adds the given features to the last stage.
   ;; Ignores features that have already been applied.
   (define/public (_addFeatures features)
-    (report*/file 'stages-before stages)
+    #;(report*/file 'stages-before stages)
     (match-define (list head-stages ... last-stage) stages)
     (set! stages
           `(,@head-stages
@@ -31,7 +31,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/ShapingPlan.js
                                 #:unless (dict-ref (· this allFeatures) feature #f))
                        (dict-set! (· this allFeatures) feature #t)
                        feature))))
-    (report*/file 'stages-after stages))
+    #;(report*/file 'stages-after stages)
+    stages)
 
   ;; Adds the given features to the global list
   (define/public (_addGlobal features)
@@ -69,23 +70,23 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/ShapingPlan.js
 
   ;; Assigns the global features to the given glyphs
   (define/public (assignGlobalFeatures glyphs)
-    (report*/file glyphs (· this globalFeatures))
+    #;(report*/file glyphs (· this globalFeatures))
     (for* ([glyph (in-list glyphs)]
            [feature (in-dict-keys (· this globalFeatures))])
       (dict-set! (· glyph features) feature #t)))
 
   ;; Executes the planned stages using the given OTProcessor
   (define/public (process processor glyphs [positions #f])
-    (report*/file 'shaping-plan-process processor)
+    #;(report*/file 'shaping-plan-process processor)
     (send processor selectScript (· this script) (· this language))
 
-    (report/file stages)
+    #;(report/file stages)
     (for ([stage (in-list stages)])
       (cond
         [(and (procedure? stage) (not positions))
          (stage (· this font) glyphs positions)]
         [(> (length stage) 0)
-         (report*/file 'shaping-plan:applying-features processor)
+         #;(report*/file 'shaping-plan:applying-features processor)
          (send processor applyFeatures stage glyphs positions)]))))
   
 
