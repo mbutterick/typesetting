@@ -54,7 +54,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
      ;; Substitute and position the glyphs
      (set! glyphs (send this substitute glyphs features script language))
      (report*/file 'end-sub glyphs)
-     (error 'stop)
+     #;(error 'stop)
      (report/file 'ready-position)
      (define positions (send this position glyphs features script language))
      (report/file 'fired-position)
@@ -69,8 +69,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
   #;((is-a?/c GlyphRun) . ->m . void?)
   ;; Call the advanced layout engine to make substitutions
   (when (and (· this engine) #;(· this engine substitute))
-    (send (· this engine) substitute glyphs features script language))
-  glyphs)
+    (set! glyphs (send (· this engine) substitute glyphs features script language)))
+  (report/file glyphs))
 
 
 (define/contract (position this glyphs features script language)

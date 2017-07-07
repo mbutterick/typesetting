@@ -38,11 +38,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
     (cond
       [(· this GSUBProcessor)
        #;(report/file (· this glyphInfos))
-       (send (· this plan) process (· this GSUBProcessor) (· this glyphInfos))
-       #;(report/file (· this glyphInfos))
+       (define new-glyphinfos
+       (send (· this plan) process (· this GSUBProcessor) (· this glyphInfos)))
+       (report/file new-glyphinfos)
        ;; Map glyph infos back to normal Glyph objects
-       (for/list ([glyphInfo (in-list (· this glyphInfos))])
-                 (send (· this font) getGlyph (· glyphInfo id) (· glyphInfo codePoints)))]
+       (report/file (for/list ([glyphInfo (in-list new-glyphinfos)])
+                 (send (· this font) getGlyph (· glyphInfo id) (· glyphInfo codePoints))))]
       [else glyphs]))
 
   (define/public (position glyphs positions . _)
