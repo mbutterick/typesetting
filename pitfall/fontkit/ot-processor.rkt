@@ -91,15 +91,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     #;(report/file 'ot-proc:applyFeatures-part1)
     (define lookups (send this lookupsForFeatures userFeatures))
     #;(report/file 'ot-proc:applyFeatures-part2)
-    (report (length lookups))
-    (send this applyLookups lookups glyphs advances))
+    (report/file (length glyphs))
+    (send this applyLookups lookups glyphs advances)
+    (report*/file (length glyphs) (length (· this glyphs)))
+    (· this glyphs))
 
   
   (define/public (applyLookups lookups glyphs positions)
     (set-field! glyphs this glyphs)
     (set-field! positions this positions)
     #;(report/file 'ot-proc:applyLookups)
-    (report (for/list ([g glyphs]) (· g id)))
+    (report (for/list ([g (· this glyphs)]) (· g id)) 'glyph-ids)
     (set-field! glyphIterator this (+GlyphIterator glyphs))
     
     (for* ([lookup-entry (in-list lookups)])
@@ -109,18 +111,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
       (send (· this glyphIterator) reset (· lookup flags))
       
       (while (< (or (· this glyphIterator index) 0) (length (· this glyphs)))
-             (report 'start-while++++++++++++++++++)
+             (report/file 'start-while++++++++++++++++++)
              (report (length (· this glyphs)) 'glyphs-length-top)
              (report (for/list ([g (· this glyphs)]) (· g id)) 'gids-top)
              (report (· this glyphIterator index) giterator-idx-top)
-             (report* feature (· this glyphIterator cur id) (· this glyphIterator cur features))
+             (report* feature (dict-keys (· this glyphIterator cur features)))
              (report (dict-has-key? (· this glyphIterator cur features) feature))
              (cond
                [(not (dict-has-key? (· this glyphIterator cur features) feature))
                 (send (· this glyphIterator) next)]
                [else
-                (report/file 'start-lookup-branch=================)
-                (report* (for/list ([g (· this glyphs)]) (· g id)) (for/list ([g (· this glyphIterator glyphs)]) (· g id)) (for/list ([g glyphs]) (· g id)) (· this glyphIterator index) (· this glyphIterator cur id) (· this glyphIterator peekIndex))
+                (report 'start-lookup-branch=================)
+                (report* (for/list ([g glyphs]) (· g id)) (for/list ([g (· this glyphs)]) (· g id)) (for/list ([g (· this glyphIterator glyphs)]) (· g id))  (· this glyphIterator index) (· this glyphIterator cur id) (· this glyphIterator peekIndex))
                 (for/or ([table (in-list (· lookup subTables))])
                   (send this applyLookup (· lookup lookupType) table))
                 (report 'incrementing-iterator-at-bottom)
@@ -146,7 +148,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (define pos (· this glyphIterator index))
     (define glyph (send (· this glyphIterator) increment sequenceIndex))
     (define idx 0)
-    (report*/file (and (pair? sequence) (list-ref sequence idx)) glyph (and glyph (· glyph id)))
+    #;(report*/file (and (pair? sequence) (list-ref sequence idx)) glyph (and glyph (· glyph id)))
 
     (while (and (< idx (length sequence)) glyph (fn (list-ref sequence idx) (· glyph id)))
            (report* 'in-match-loop idx (· glyph id))
@@ -164,7 +166,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (send this match sequenceIndex sequence (λ (component glyph) (= component glyph)) empty))
 
   (define/public (coverageSequenceMatches sequenceIndex sequence)
-    (report 'in-coverageSequenceMatches)
+    #;(report 'in-coverageSequenceMatches)
     (send this match sequenceIndex sequence (λ (coverage glyph) (>= (send this coverageIndex coverage glyph) 0))))
 
   (define/public (getClassID glyph classDef)
@@ -207,10 +209,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
       [else #f]))
 
 (define/public (applyChainingContext table)
-  (report/file 'otproc:applyChainingContext)
+  #;(report/file 'otproc:applyChainingContext)
   (case (· table version)
     [(1)
-     (report 'case-1)
+     #;(report 'case-1)
      (define index (send this coverageIndex (· table coverage)))
          (cond
            [(= index -1) #f]
@@ -221,7 +223,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
                                    (send this sequenceMatches (add1 (length (· rule input))) (· rule lookahead))))
                    (send this applyLookupList (· rule lookupRecords)))])]
     [(2)
-     (report 'case-2)
+     #;(report 'case-2)
      (cond
            [(= -1 (send this coverageIndex (· table coverage))) #f]
            [else (define index (send this getClassID (· this glyphIterator cur id) (· table inputClassDef)))
@@ -234,11 +236,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
                                    (send this classSequenceMatches (add1 (length (· rule input))) (· rule lookahead) (· table lookaheadClassDef))))
                            (send this applyLookupList (· rule lookupRecords)))])])]
     [(3)
-     (report 'case-3)
+     #;(report 'case-3)
      (and
-          (report (send this coverageSequenceMatches (- (· table backtrackGlyphCount)) (· table backtrackCoverage)) 'a)
-          (report (send this coverageSequenceMatches 0 (· table inputCoverage)) 'b)
-          (report (send this coverageSequenceMatches (· table inputGlyphCount) (· table lookaheadCoverage)) 'c)
+          (send this coverageSequenceMatches (- (· table backtrackGlyphCount)) (· table backtrackCoverage))
+          (send this coverageSequenceMatches 0 (· table inputCoverage))
+          (send this coverageSequenceMatches (· table inputGlyphCount) (· table lookaheadCoverage))
           (send this applyLookupList (· table lookupRecords)))]
     [else #f]))
 
