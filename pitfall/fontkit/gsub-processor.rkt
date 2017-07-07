@@ -83,33 +83,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                 (set-field! isLigated ligatureGlyph #t)
                 (set-field! substituted ligatureGlyph #t)
 
-                ;; From Harfbuzz:
-                ;; - If it *is* a mark ligature, we don't allocate a new ligature id, and leave
-                ;;   the ligature to keep its old ligature id.  This will allow it to attach to
-                ;;   a base ligature in GPOS.  Eg. if the sequence is: LAM,LAM,SHADDA,FATHA,HEH,
-                ;;   and LAM,LAM,HEH for a ligature, they will leave SHADDA and FATHA with a
-                ;;   ligature id and component value of 2.  Then if SHADDA,FATHA form a ligature
-                ;;   later, we don't want them to lose their ligature id/component, otherwise
-                ;;   GPOS will fail to correctly position the mark ligature on top of the
-                ;;   LAM,LAM,HEH ligature. See https://bugzilla.gnome.org/show_bug.cgi?id=676343
-                ;;
-                ;; - If a ligature is formed of components that some of which are also ligatures
-                ;;   themselves, and those ligature components had marks attached to *their*
-                ;;   components, we have to attach the marks to the new ligature component
-                ;;   positions!  Now *that*'s tricky!  And these marks may be following the
-                ;;   last component of the whole sequence, so we should loop forward looking
-                ;;   for them and update them.
-                ;;
-                ;;   Eg. the sequence is LAM,LAM,SHADDA,FATHA,HEH, and the font first forms a
-                ;;   'calt' ligature of LAM,HEH, leaving the SHADDA and FATHA with a ligature
-                ;;   id and component == 1.  Now, during 'liga', the LAM and the LAM-HEH ligature
-                ;;   form a LAM-LAM-HEH ligature.  We need to reassign the SHADDA and FATHA to
-                ;;   the new ligature with a component value of 2.
-                ;;
-                ;;   This in fact happened to a font...  See
-                ;;   https://bugzilla.gnome.org/show_bug.cgi?id=437633
-
-                
                 (define isMarkLigature
                   (and (· curGlyph isMark)
                        (for/and ([match-idx (in-list matched)])
@@ -158,5 +131,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
             (report* (for/list ([g (· this glyphs)]) (· g id)) (· this glyphIterator index))
                 #t)]
          [else #f])]
+      [(5) ;; Contextual Substitution
+       (send this applyContext table)]
+      [(6) ;; Chaining Contextual Substitution
+       (send this applyChainingContext table)]
+      [(7) ;; Extension Substitution
+       (send this applyLookup (· table lookupType) (· table extension))]
       [else (error 'unimplemented-gsub-lookup)])))
 
