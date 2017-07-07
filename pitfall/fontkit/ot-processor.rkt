@@ -146,7 +146,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (define pos (· this glyphIterator index))
     (define glyph (send (· this glyphIterator) increment sequenceIndex))
     (define idx 0)
-    (report*/file (list-ref sequence idx) glyph (· glyph id))
+    (report*/file (list-ref sequence idx) glyph (and glyph (· glyph id)))
 
     (while (and (< idx (length sequence)) glyph (fn (list-ref sequence idx) (· glyph id)))
            (report* 'in-match-loop idx (· glyph id))
