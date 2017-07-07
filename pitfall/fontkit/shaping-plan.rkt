@@ -88,6 +88,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/ShapingPlan.js
          (stage (· this font) glyphs positions)]
         [(> (length stage) 0)
          #;(report*/file 'shaping-plan:applying-features processor)
+         (report/file positions)
          (report/file (send processor applyFeatures stage glyphs positions))]))))
   
 

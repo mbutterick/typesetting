@@ -19,9 +19,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
          [(= index -1) #f]
          [else (define glyph (· this glyphIterator cur))
                (send glyph id
-                           (case (· table version)
-                             [(1) (bitwise-and (+ (· glyph id) (· table deltaGlyphID)) #xffff)]
-                             [(2) (send (· table substitute) get index)]))
+                     (case (· table version)
+                       [(1) (bitwise-and (+ (· glyph id) (· table deltaGlyphID)) #xffff)]
+                       [(2) (send (· table substitute) get index)]))
                #t])]
       [(2) ;; Multiple Substitution
        (report 'multiple-substitution)
@@ -64,72 +64,80 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
        (cond
          [(= index -1) #f]
          [(for*/or ([ligature (in-list (report (send (· table ligatureSets) get (report index 'starting-index))))]
-                 [matched (in-value (send this sequenceMatchIndices 1 (report (· ligature components))))]
-                 #:when (report matched))
-                (define curGlyph (· this glyphIterator cur))
+                    [matched (in-value (send this sequenceMatchIndices 1 (report (· ligature components))))]
+                    #:when (report matched))
+                   (define curGlyph (· this glyphIterator cur))
 
-                ;; Concatenate all of the characters the new ligature will represent
-                (define characters
-                  (append (· curGlyph codePoints)
-                          (append* (for/list ([index (in-list matched)])
-                                             (report index)
-                                             (get-field codePoints (list-ref (· this glyphs) index))))))
+                   ;; Concatenate all of the characters the new ligature will represent
+                   (define characters
+                     (append (· curGlyph codePoints)
+                             (append* (for/list ([index (in-list matched)])
+                                                (report index)
+                                                (get-field codePoints (list-ref (· this glyphs) index))))))
 
-                (report characters)
-                ;; Create the replacement ligature glyph
-                (define ligatureGlyph (+GlyphInfo (· this font) (· ligature glyph) characters (· curGlyph features)))
-                (report (· ligatureGlyph id))
-                (set-field! shaperInfo ligatureGlyph (· curGlyph shaperInfo))
-                (set-field! isLigated ligatureGlyph #t)
-                (set-field! substituted ligatureGlyph #t)
+                   (report characters)
+                   ;; Create the replacement ligature glyph
+                   (define ligatureGlyph (+GlyphInfo (· this font) (· ligature glyph) characters (· curGlyph features)))
+                   (report (· ligatureGlyph id))
+                   (set-field! shaperInfo ligatureGlyph (· curGlyph shaperInfo))
+                   (set-field! isLigated ligatureGlyph #t)
+                   (set-field! substituted ligatureGlyph #t)
 
-                (define isMarkLigature
-                  (and (· curGlyph isMark)
-                       (for/and ([match-idx (in-list matched)])
-                                (· (list-ref (· this glyphs) match-idx) isMark))))
+                   (define isMarkLigature
+                     (and (· curGlyph isMark)
+                          (for/and ([match-idx (in-list matched)])
+                                   (· (list-ref (· this glyphs) match-idx) isMark))))
 
-                (set-field! ligatureID ligatureGlyph (cond
-                                                       [isMarkLigature #f]
-                                                       [else (define id (· this ligatureID))
-                                                             (increment-field! ligatureID this)
-                                                             id]))
+                   (set-field! ligatureID ligatureGlyph (cond
+                                                          [isMarkLigature #f]
+                                                          [else (define id (· this ligatureID))
+                                                                (increment-field! ligatureID this)
+                                                                id]))
 
-                (define lastLigID (· curGlyph ligatureID))
-                (define lastNumComps (length (· curGlyph codePoints)))
-                (define curComps lastNumComps)
-                (define idx (add1 (· this glyphIterator index)))
+                   (define lastLigID (· curGlyph ligatureID))
+                   (define lastNumComps (length (· curGlyph codePoints)))
+                   (define curComps lastNumComps)
+                   (define idx (add1 (· this glyphIterator index)))
 
-                ;; Set ligatureID and ligatureComponent on glyphs that were skipped in the matched sequence.
-                ;; This allows GPOS to attach marks to the correct ligature components.
-                (for ([matchIndex (in-list matched)])
-                     ;; Don't assign new ligature components for mark ligatures (see above)
-                     (cond
-                       [isMarkLigature (set! idx matchIndex)]
-                       [else (while (< idx matchIndex)
-                                    (define ligatureComponent (+ curComps (- lastNumComps) (min (or (get-field ligatureComponent (list-ref (· this glyphs) idx)) 1) lastNumComps)))
-                                    (set-field! ligatureID (list-ref (· this glyphs) idx) (· ligatureGlyph ligatureID))
-                                    (set-field! ligatureComponent (list-ref (· this glyphs) idx) ligatureComponent)
-                                    (increment! idx))])
+                   ;; Set ligatureID and ligatureComponent on glyphs that were skipped in the matched sequence.
+                   ;; This allows GPOS to attach marks to the correct ligature components.
+                   (for ([matchIndex (in-list matched)])
+                        ;; Don't assign new ligature components for mark ligatures (see above)
+                        (cond
+                          [isMarkLigature (set! idx matchIndex)]
+                          [else (while (< idx matchIndex)
+                                       (define ligatureComponent (+ curComps (- lastNumComps) (min (or (get-field ligatureComponent (list-ref (· this glyphs) idx)) 1) lastNumComps)))
+                                       (set-field! ligatureID (list-ref (· this glyphs) idx) (· ligatureGlyph ligatureID))
+                                       (set-field! ligatureComponent (list-ref (· this glyphs) idx) ligatureComponent)
+                                       (increment! idx))])
 
-                     (define lastLigID (· (list-ref (· this glyphs) idx) ligatureID))
-                     (define lastNumComps (length (· (list-ref (· this glyphs) idx) codePoints)))
-                     (increment! curComps lastNumComps)
-                     (increment! idx)) ;; skip base glyph
+                        (define lastLigID (· (list-ref (· this glyphs) idx) ligatureID))
+                        (define lastNumComps (length (· (list-ref (· this glyphs) idx) codePoints)))
+                        (increment! curComps lastNumComps)
+                        (increment! idx)) ;; skip base glyph
                     
-                ;; Adjust ligature components for any marks following
-                (when (and lastLigID (not isMarkLigature))
-                  (for ([i (in-range idx (length (· this glyphs)))]
-                        #:when (= (· (list-ref (· this glyphs) idx) ligatureID) lastLigID))
-                       (define ligatureComponent (+ curComps (- lastNumComps) (min (or (get-field ligatureComponent (list-ref (· this glyphs) i)) 1) lastNumComps)))
-                       (set-field! ligatureComponent (list-ref (· this glyphs) i) ligatureComponent)))
+                   ;; Adjust ligature components for any marks following
+                   (when (and lastLigID (not isMarkLigature))
+                     (for ([i (in-range idx (length (· this glyphs)))]
+                           #:when (= (· (list-ref (· this glyphs) idx) ligatureID) lastLigID))
+                          (define ligatureComponent (+ curComps (- lastNumComps) (min (or (get-field ligatureComponent (list-ref (· this glyphs) i)) 1) lastNumComps)))
+                          (set-field! ligatureComponent (list-ref (· this glyphs) i) ligatureComponent)))
 
-                ;; Delete the matched glyphs, and replace the current glyph with the ligature glyph
-            (report* (for/list ([g (· this glyphs)]) (· g id)) (· this glyphIterator index))
-                (set-field! glyphs this (drop-right (· this glyphs) (length matched)))
-                (set-field! glyphs this (list-set (· this glyphs) (· this glyphIterator index) ligatureGlyph))
-            (set-field! glyphs (· this glyphIterator) (· this glyphs))
-            (report* (for/list ([g (· this glyphs)]) (· g id)) (· this glyphIterator index))
-                #t)]
+                   ;; Delete the matched glyphs, and replace the current glyph with the ligature glyph
+                   (report (for/list ([g (· this glyphs)]) (· g id)) 'step-a)
+                   (report matched)
+                   (report (· this glyphIterator index))
+                   (set-field! glyphs this (for*/fold ([gids (· this glyphs)])
+                                                      ([idx (in-list (reverse matched))])
+                                             (for/list ([(gid i) (in-indexed gids)]
+                                                        #:unless (= idx i))
+                                                       gid)))
+                   (report (for/list ([g (· this glyphs)]) (· g id)) 'step-b)
+                   (set-field! glyphs this (list-set (· this glyphs) (· this glyphIterator index) ligatureGlyph))
+                   (set-field! glyphs (· this glyphIterator) (· this glyphs))
+                   (report (for/list ([g (· this glyphs)]) (· g id)) 'step-c)
+                   (report (· this glyphIterator index))
+                   #t)]
          [else #f])]
       [(5) ;; Contextual Substitution
        (send this applyContext table)]
