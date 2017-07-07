@@ -146,7 +146,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (define pos (· this glyphIterator index))
     (define glyph (send (· this glyphIterator) increment sequenceIndex))
     (define idx 0)
-    (report*/file (list-ref sequence idx) glyph (and glyph (· glyph id)))
+    (report*/file (and (pair? sequence) (list-ref sequence idx)) glyph (and glyph (· glyph id)))
 
     (while (and (< idx (length sequence)) glyph (fn (list-ref sequence idx) (· glyph id)))
            (report* 'in-match-loop idx (· glyph id))
@@ -164,6 +164,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (send this match sequenceIndex sequence (λ (component glyph) (= component glyph)) empty))
 
   (define/public (coverageSequenceMatches sequenceIndex sequence)
+    (report 'in-coverageSequenceMatches)
     (send this match sequenceIndex sequence (λ (coverage glyph) (>= (send this coverageIndex coverage glyph) 0))))
 
   (define/public (getClassID glyph classDef)
@@ -235,9 +236,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     [(3)
      (report 'case-3)
      (and
-          (send this coverageSequenceMatches (- (· table backtrackGlyphCount)) (· table backtrackCoverage))
-          (send this coverageSequenceMatches 0 (· table inputCoverage))
-          (send this coverageSequenceMatches (· table inputGlyphCount) (· table lookaheadCoverage))
+          (report (send this coverageSequenceMatches (- (· table backtrackGlyphCount)) (· table backtrackCoverage)) 'a)
+          (report (send this coverageSequenceMatches 0 (· table inputCoverage)) 'b)
+          (report (send this coverageSequenceMatches (· table inputGlyphCount) (· table lookaheadCoverage)) 'c)
           (send this applyLookupList (· table lookupRecords)))]
     [else #f]))
 
