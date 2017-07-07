@@ -10,7 +10,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
 (define-subclass OTProcessor (GSUBProcessor)
 
   (define/override (applyLookup lookupType table)
-    (report* 'GSUBProcessor:applyLookup lookupType)
+    (report/file 'GSUBProcessor:applyLookup)
     (case lookupType
       [(1) ;; Single Substitution
        (report 'single-substitution)
@@ -47,7 +47,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                #t])]
 
       [(3) ;; Alternate substitution
-       (report 'alternate-substitution)
+       (report 'altnernate-substitution)
        (define index (send this coverageIndex (· table coverage)))
        (cond
          [(= index -1) #f]
@@ -56,32 +56,30 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                #t])]
 
       [(4) ;; Ligature substitution
-       (report '---------------------------)
        (report 'ligature-substitution)
-       (report* lookupType (· table coverage glyphs))
-       (define index (send this coverageIndex (· table coverage)))
-       (report index 'forker)
+       (define index (report* (· table coverage) (send this coverageIndex (· table coverage))))
+       
        (cond
          [(= index -1) #f]
-         [(for*/or ([ligature (in-list (report (send (· table ligatureSets) get (report index 'starting-index))))]
-                 [matched (in-value (send this sequenceMatchIndices 1 (report (· ligature components))))]
-                 #:when (report matched))
+         [(for* ([ligature (in-list (send (· table ligatureSets) get index))]
+                 [matched (in-value (send this sequenceMatchIndices 1 (report* ligature (· ligature components))))]
+                 #:when matched)
+                (report*/file matched (· this glyphs) index)
                 (define curGlyph (· this glyphIterator cur))
 
                 ;; Concatenate all of the characters the new ligature will represent
                 (define characters
                   (append (· curGlyph codePoints)
                           (append* (for/list ([index (in-list matched)])
-                                             (report index)
                                              (get-field codePoints (list-ref (· this glyphs) index))))))
 
-                (report characters)
                 ;; Create the replacement ligature glyph
                 (define ligatureGlyph (+GlyphInfo (· this font) (· ligature glyph) characters (· curGlyph features)))
-                (report (· ligatureGlyph id))
                 (set-field! shaperInfo ligatureGlyph (· curGlyph shaperInfo))
-                (set-field! isLigated ligatureGlyph #t)
+                (set-field! ligated ligatureGlyph #t)
                 (set-field! substituted ligatureGlyph #t)
+
+                (report 'from-harfbuzz)
 
                 ;; From Harfbuzz:
                 ;; - If it *is* a mark ligature, we don't allocate a new ligature id, and leave
@@ -115,6 +113,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                        (for/and ([match-idx (in-list matched)])
                                 (· (list-ref (· this glyphs) match-idx) isMark))))
 
+                (report isMarkLigature)
+
                 (set-field! ligatureID ligatureGlyph (cond
                                                        [isMarkLigature #f]
                                                        [else (define id (· this ligatureID))
@@ -126,9 +126,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                 (define curComps lastNumComps)
                 (define idx (add1 (· this glyphIterator index)))
 
+                (report/file 'set-ligature-id)
                 ;; Set ligatureID and ligatureComponent on glyphs that were skipped in the matched sequence.
                 ;; This allows GPOS to attach marks to the correct ligature components.
                 (for ([matchIndex (in-list matched)])
+                     (report/file matchIndex)
                      ;; Don't assign new ligature components for mark ligatures (see above)
                      (cond
                        [isMarkLigature (set! idx matchIndex)]

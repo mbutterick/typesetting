@@ -52,8 +52,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
        (send (· this engine) setup glyphs features script language))
 
      ;; Substitute and position the glyphs
-     ;; todo: glyph substitution
-     #;(set! glyphs (send this substitute glyphs features script language))
+     (set! glyphs (send this substitute glyphs features script language))
      (report/file 'ready-position)
      (define positions (send this position glyphs features script language))
      (report/file 'fired-position)

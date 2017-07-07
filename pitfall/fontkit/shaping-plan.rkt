@@ -75,7 +75,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/ShapingPlan.js
       (dict-set! (· glyph features) feature #t)))
 
   ;; Executes the planned stages using the given OTProcessor
-  (define/public (process processor glyphs positions)
+  (define/public (process processor glyphs [positions #f])
     (report*/file 'shaping-plan-process processor)
     (send processor selectScript (· this script) (· this language))
 

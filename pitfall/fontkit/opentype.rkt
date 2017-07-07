@@ -141,13 +141,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
    (dictify
     ;; Simple context
     1 (dictify
-       'coverage (+Pointer uint16be 'Coverage)
+       'coverage (+Pointer uint16be Coverage)
        'ruleSetCount uint16be
        'ruleSets (+Array (+Pointer uint16be 'RuleSet) 'ruleSetCount))
     
     ;; Class-based context
     2 (dictify
-       'coverage (+Pointer uint16be 'Coverage)
+       'coverage (+Pointer uint16be Coverage)
        'classDef (+Pointer uint16be 'ClassDef)
        'classSetCnt uint16be
        'classSet (+Array (+Pointer uint16be 'ClassSet) 'classSetCnt))
@@ -155,7 +155,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
     3 (dictify
        'glyphCount uint16be
        'lookupCount uint16be
-       'coverages (+Array (+Pointer uint16be 'Coverage) 'glyphCount)
+       'coverages (+Array (+Pointer uint16be Coverage) 'glyphCount)
        'lookupRecords (+Array LookupRecord 'lookupCount)))))
 
 
@@ -169,13 +169,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
    (dictify
     ;; Simple context glyph substitution
     1 (dictify
-       'coverage (+Pointer uint16be 'Coverage)
+       'coverage (+Pointer uint16be Coverage)
        'chainCount uint16be
        'chainRuleSets (+Array (+Pointer uint16be 'ChainRuleSet) 'chainCount))
 
     ;; Class-based chaining context
     2 (dictify
-       'coverage (+Pointer uint16be 'Coverage)
+       'coverage (+Pointer uint16be Coverage)
        'backtrackClassDef (+Pointer uint16be 'ClassDef)
        'inputClassDef (+Pointer uint16be 'ClassDef)
        'lookaheadClassDef (+Pointer uint16be 'ClassDef)
@@ -185,10 +185,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/opentype.js
     ;; Coverage-based chaining context
     3 (dictify
        'backtrackGlyphCount uint16be
-       'backtrackCoverage (+Array (+Pointer uint16be 'Coverage) 'backtrackGlyphCount)
+       'backtrackCoverage (+Array (+Pointer uint16be Coverage) 'backtrackGlyphCount)
        'inputGlyphCount uint16be
-       'inputCoverage (+Array (+Pointer uint16be 'Coverage) 'inputGlyphCount)
+       'inputCoverage (+Array (+Pointer uint16be Coverage) 'inputGlyphCount)
        'lookaheadGlyphCount uint16be
-       'lookaheadCoverage (+Array (+Pointer uint16be 'Coverage) 'lookaheadGlyphCount)
+       'lookaheadCoverage (+Array (+Pointer uint16be Coverage) 'lookaheadGlyphCount)
        'lookupCount uint16be
        'lookupRecords (+Array LookupRecord 'lookupCount)))))

@@ -33,7 +33,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
            (for*/first ([entry (in-list (· this table scriptList))]
                         [s (in-list scripts)]
                         #:when (eq? (· entry tag) s))
-             entry))))
+                       entry))))
 
 
   (define/public (selectScript [script #f] [language #f])
@@ -57,9 +57,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
       (when (and (not language) (not (equal? language (· this languageTag))))
         (for/first ([lang (in-list (· this script langSysRecords))]
                     #:when (equal? (· lang tag) language))
-          (set-field! language this (· lang langSys))
-          (set-field! languageTag this (· lang tag))
-          (set! changed #t)))
+                   (set-field! language this (· lang langSys))
+                   (set-field! languageTag this (· lang tag))
+                   (set! changed #t)))
 
       (when (not (· this language))
         (set-field! language this (· this script defaultLangSys)))
@@ -69,8 +69,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
         (set-field! features this (mhash))
         (when (· this language)
           (for ([featureIndex (in-list (· this language featureIndexes))])
-            (define record (list-ref (· this table featureList) featureIndex))
-            (dict-set! (· this features) (· record tag) (· record feature)))))))
+               (define record (list-ref (· this table featureList) featureIndex))
+               (dict-set! (· this features) (· record tag) (· record feature)))))))
 
   
   (define/public (lookupsForFeatures [userFeatures empty] [exclude #f])
@@ -80,10 +80,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
                       #:when feature
                       [lookupIndex (in-list (· feature lookupListIndexes))]
                       #:unless (and exclude (index-of exclude lookupIndex)))
-            (report*/file tag lookupIndex)
-            (mhasheq 'feature tag
-                     'index lookupIndex
-                     'lookup (send (· this table lookupList) get lookupIndex)))
+                     (report*/file tag lookupIndex)
+                     (mhasheq 'feature tag
+                              'index lookupIndex
+                              'lookup (send (· this table lookupList) get lookupIndex)))
           < #:key (λ (i) (report*/file (· i index)))))
       
 
@@ -91,6 +91,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (report/file 'ot-proc:applyFeatures-part1)
     (define lookups (send this lookupsForFeatures userFeatures))
     (report/file 'ot-proc:applyFeatures-part2)
+    (report (length lookups))
     (send this applyLookups lookups glyphs advances))
 
   
@@ -100,14 +101,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (report/file 'ot-proc:applyLookups)
     (set-field! glyphIterator this (+GlyphIterator glyphs))
     (for* ([lookup-entry (in-list lookups)])
-      (define feature (dict-ref lookup-entry 'feature))
-      (define lookup (dict-ref lookup-entry 'lookup))
-      (send (· this glyphIterator) reset (· lookup flags))
-      (while (< (· this glyphIterator index) (length glyphs))
-             (when (dict-has-key? (· this glyphIterator cur features)  feature)
-               (for/or ([table (in-list (· lookup subTables))])
-                 (send this applyLookup (· lookup lookupType) table)))
-             (send (· this glyphIterator) next))))
+          (define feature (dict-ref lookup-entry 'feature))
+          (define lookup (dict-ref lookup-entry 'lookup))
+          (send (· this glyphIterator) reset (· lookup flags))
+          (while (< (· this glyphIterator index) (length glyphs))
+                 (when (dict-has-key? (· this glyphIterator cur features)  feature)
+                   (for/or ([table (in-list (· lookup subTables))])
+                           (send this applyLookup (· lookup lookupType) table)))
+                 (send (· this glyphIterator) next))))
 
   (abstract applyLookup)
 
@@ -118,12 +119,33 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
   (define/public (coverageIndex coverage [glyph #f])
     (unless glyph
       (set! glyph (· this glyphIterator cur id)))
-    (or (case (report (· coverage version))
+    (or (case (· coverage version)
           [(1) (index-of (· coverage glyphs) glyph)]
           [(2) (for/first ([range (in-list (· coverage rangeRecords))]
                            #:when (<= (· range start) glyph (· range end)))
-                 (+ (· range startCoverageIndex) glyph (- (· range start))))]
+                          (+ (· range startCoverageIndex) glyph (- (· range start))))]
           [else #f]) -1))
+
+  (define/public (match sequenceIndex sequence fn [matched #f])
+    (define pos (· this glyphIterator index))
+    (define glyph (send (· this glyphIterator) increment sequenceIndex))
+    (define idx 0)
+    (report* (list-ref sequence idx) (· glyph id))
+
+    (while (and (< idx (length sequence)) glyph (fn (list-ref sequence idx) (· glyph id)))
+           (report* 'in-match-loop idx (· glyph id))
+           (when matched
+             (push-end! matched (· this glyphIterator index)))
+           (increment! idx)
+           (set! glyph (· this glyphIterator next)))
+
+    (set-field! index (· this glyphIterator) pos)
+    (cond
+      [(< idx (length sequence)) #f]
+      [else (or matched #t)]))
+  
+  (define/public (sequenceMatchIndices sequenceIndex sequence)
+    (send this match sequenceIndex sequence (λ (component glyph) (= component glyph)) empty))
 
   (define/public (getClassID glyph classDef)
     (or
@@ -136,7 +158,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
        [(2)
         (for/first ([range (in-list (· classDef classRangeRecord))]
                     #:when (<= (· range start) glyph (· range end)))
-          (· range class))])
+                   (· range class))])
      0)))
     
-                      

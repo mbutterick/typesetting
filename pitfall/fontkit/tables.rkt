@@ -10,4 +10,4 @@
                     (test-module (require (submod TABLE-ID-STRING test) ...))
                     (define ID (make-hasheq (map cons (list 'TABLE-ID ...) (list TABLE-ID ...)))))))
 
-(define-table-codecs table-codecs maxp hhea head loca prep fpgm hmtx cvt_ glyf OS/2 post GPOS)
+(define-table-codecs table-codecs maxp hhea head loca prep fpgm hmtx cvt_ glyf OS/2 post GPOS GSUB)

@@ -18,13 +18,6 @@
 ;; approximates
 ;; https://github.com/devongovett/fontkit/blob/master/src/glyph/Glyph.js
 
-(define (is-mark? codepoint)
-  ;; mark classes = Mn Me Mc
-  (regexp-match #px"\\p{Mn}|\\p{Me}|\\p{Mc}" (string (integer->char codepoint))))
-
-(module+ test
-  (check-true (and (is-mark? #x300) #t))
-  (check-false (and (is-mark? #x2ee) #t)))
 
 (define-subclass object% (Glyph id codePoints font)
   (field [_font font]
