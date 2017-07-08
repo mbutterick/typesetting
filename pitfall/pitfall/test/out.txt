@@ -1,22 +1,22 @@
-glyph ids =450,480,555
+glyph ids =450,480,538
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -24,21 +24,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -46,21 +46,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -68,21 +68,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -90,21 +90,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -112,15 +112,15 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = liga
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =450,480,555
-this.glyph ids =450,480,555
-glyphIterator.glyph ids =450,480,555
+glyph ids =450,480,538
+this.glyph ids =450,480,538
+glyphIterator.glyph ids =450,480,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 450
 this.glyphIterator.peekIndex() = 1
@@ -140,26 +140,26 @@ matched = 1
 index = 1
 characters = 102,105
 ligatureGlyph.id = 731
-glyph ids before =450,480,555
+glyph ids before =450,480,538
 this.glyphIterator.index = 0
-glyph ids after =731,555
+glyph ids after =731,538
 this.glyphIterator.index = 0
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = liga
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 4
 ----------------------------
@@ -173,15 +173,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -196,39 +196,43 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 4
 ----------------------------
 start ligature-substitution
 lookupType = 4
 table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
-forker = -1
+forker = 4
+table.ligatureSets.get(_index3) = [object Object]
+starting index = 4
+ligature.components = 2495
+matched = false
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -241,17 +245,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
@@ -263,15 +267,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -284,17 +288,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
@@ -306,15 +310,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -325,36 +329,38 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
-glyph ids =731,555
+ready position
+glyph ids731,538
+glyph ids =731,538
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -363,17 +369,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -381,15 +387,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -398,17 +404,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -416,15 +422,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -433,17 +439,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -451,15 +457,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -468,17 +474,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -486,15 +492,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -503,17 +509,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -521,15 +527,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -538,17 +544,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -556,15 +562,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -573,17 +579,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -591,15 +597,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -608,17 +614,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -626,15 +632,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -643,17 +649,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -661,15 +667,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -678,17 +684,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -696,15 +702,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -713,17 +719,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -731,15 +737,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -748,40 +754,42 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
-glyph ids =450,480,555
+positions572,585
+fired position
+glyph ids =450,480,538
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -789,21 +797,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -811,21 +819,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -833,21 +841,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -855,21 +863,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -877,15 +885,15 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = liga
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =450,480,555
-this.glyph ids =450,480,555
-glyphIterator.glyph ids =450,480,555
+glyph ids =450,480,538
+this.glyph ids =450,480,538
+glyphIterator.glyph ids =450,480,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 450
 this.glyphIterator.peekIndex() = 1
@@ -905,26 +913,26 @@ matched = 1
 index = 1
 characters = 102,105
 ligatureGlyph.id = 731
-glyph ids before =450,480,555
+glyph ids before =450,480,538
 this.glyphIterator.index = 0
-glyph ids after =731,555
+glyph ids after =731,538
 this.glyphIterator.index = 0
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = liga
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 4
 ----------------------------
@@ -938,15 +946,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -961,39 +969,43 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 4
 ----------------------------
 start ligature-substitution
 lookupType = 4
 table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
-forker = -1
+forker = 4
+table.ligatureSets.get(_index3) = [object Object]
+starting index = 4
+ligature.components = 2495
+matched = false
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1006,17 +1018,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
@@ -1028,15 +1040,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1049,17 +1061,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
@@ -1071,15 +1083,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1090,36 +1102,38 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
-glyph ids =731,555
+ready position
+glyph ids731,538
+glyph ids =731,538
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1128,17 +1142,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1146,15 +1160,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1163,17 +1177,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1181,15 +1195,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1198,17 +1212,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1216,15 +1230,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1233,17 +1247,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1251,15 +1265,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1268,17 +1282,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1286,15 +1300,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1303,17 +1317,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1321,15 +1335,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1338,17 +1352,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1356,15 +1370,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1373,17 +1387,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1391,15 +1405,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1408,17 +1422,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1426,15 +1440,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1443,17 +1457,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1461,15 +1475,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1478,17 +1492,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1496,15 +1510,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1513,40 +1527,42 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
-glyph ids =450,480,555
+positions572,585
+fired position
+glyph ids =450,480,538
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = numr
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -1554,21 +1570,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = dnom
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -1576,21 +1592,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -1598,21 +1614,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -1620,21 +1636,21 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 1
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = false
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 2
 feature = frac
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
@@ -1642,15 +1658,15 @@ this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,c
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 3
-glyph ids at top =450,480,555
+glyph ids at top =450,480,538
 this.glyphIterator.index at top = 0
 feature = liga
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =450,480,555
-this.glyph ids =450,480,555
-glyphIterator.glyph ids =450,480,555
+glyph ids =450,480,538
+this.glyph ids =450,480,538
+glyphIterator.glyph ids =450,480,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 450
 this.glyphIterator.peekIndex() = 1
@@ -1670,26 +1686,26 @@ matched = 1
 index = 1
 characters = 102,105
 ligatureGlyph.id = 731
-glyph ids before =450,480,555
+glyph ids before =450,480,538
 this.glyphIterator.index = 0
-glyph ids after =731,555
+glyph ids after =731,538
 this.glyphIterator.index = 0
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = liga
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 4
 ----------------------------
@@ -1703,15 +1719,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1726,39 +1742,43 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 4
 ----------------------------
 start ligature-substitution
 lookupType = 4
 table.coverage.glyphs = 373,393,450,532,538,598,609,616,625,640,718,2127
-forker = -1
+forker = 4
+table.ligatureSets.get(_index3) = [object Object]
+starting index = 4
+ligature.components = 2495
+matched = false
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1771,17 +1791,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
@@ -1793,15 +1813,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1814,17 +1834,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
@@ -1836,15 +1856,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1855,36 +1875,38 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = calt
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 'GSUBProcessor:applyLookup 6
 'GSUBProcessor:applyLookup 6
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
-glyph ids =731,555
+ready position
+glyph ids731,538
+glyph ids =731,538
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1893,17 +1915,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1911,15 +1933,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1928,17 +1950,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1946,15 +1968,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1963,17 +1985,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -1981,15 +2003,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -1998,17 +2020,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = kern
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -2016,15 +2038,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -2033,17 +2055,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -2051,15 +2073,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -2068,17 +2090,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -2086,15 +2108,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -2103,17 +2125,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mark
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -2121,15 +2143,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -2138,17 +2160,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -2156,15 +2178,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -2173,17 +2195,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -2191,15 +2213,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -2208,17 +2230,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -2226,15 +2248,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -2243,17 +2265,17 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
@@ -2261,15 +2283,15 @@ this.glyphIterator.index = bottom = 2
 resetting iterator
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 0
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 0
 this.glyphIterator.cur.id = 731
 this.glyphIterator.peekIndex() = 1
@@ -2278,18 +2300,20 @@ this.glyphIterator.cur = bottom = [object Object]
 this.glyphIterator.index = bottom = 1
 start while +++++++++++++++++++++++++++++
 glyphs.length at top = 2
-glyph ids at top =731,555
+glyph ids at top =731,538
 this.glyphIterator.index at top = 1
 feature = mkmk
 this.glyphIterator.cur.features = rvrn,ltra,ltrm,ccmp,locl,rlig,mark,mkmk,calt,clig,liga,rclt,curs,kern
 (feature in this.glyphIterator.cur.features) = true
 start lookup branch ==================================
-glyph ids =731,555
-this.glyph ids =731,555
-glyphIterator.glyph ids =731,555
+glyph ids =731,538
+this.glyph ids =731,538
+glyphIterator.glyph ids =731,538
 this.glyphIterator.index = 1
-this.glyphIterator.cur.id = 555
+this.glyphIterator.cur.id = 538
 this.glyphIterator.peekIndex() = 2
 incrementing iterator at bottom
 this.glyphIterator.cur = bottom = null
 this.glyphIterator.index = bottom = 2
+positions572,585
+fired position

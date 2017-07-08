@@ -49,7 +49,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (for ([g (in-list glyphs)])
     (· g id))
   (define positions (· glyphRun positions))
-  (report/file (for/list ([p (in-list positions)])
+  #;(report/file (for/list ([p (in-list positions)])
                  (list (· p xAdvance) (· p xOffset))))
   (define-values (subset-idxs new-positions)
     (for/lists (idxs posns)

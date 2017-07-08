@@ -56,7 +56,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
      (report*/file 'end-sub glyphs)
      #;(error 'stop)
      (report/file 'ready-position)
+     (report (for/list ((g (in-list glyphs))) (· g id)) 'shecky)
      (define positions (send this position glyphs features script language))
+     (report (for/list ((p (in-list positions))) (list (· p xAdvance) (· p xOffset))))
      (report/file 'fired-position)
 
      ;; Let the layout engine clean up any state it might have

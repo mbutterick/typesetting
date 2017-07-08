@@ -16,7 +16,7 @@
 
 
 (define-runtime-path this "test16rkt.pdf")
-(make-doc this #f proc #:test #f)
+(make-doc this #f proc)
 
-#;(define-runtime-path that "test16crkt.pdf")
-#;(make-doc that #t proc #:pdfkit #f)
+(define-runtime-path that "test16crkt.pdf")
+(make-doc that #t proc #:pdfkit #f)

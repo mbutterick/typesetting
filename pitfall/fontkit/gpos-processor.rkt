@@ -63,25 +63,25 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GPOSProcessor.js
                         (send this applyPositionValue 0 (· pair value2))
                         #t])])])])]
       [(3) ;; Cursive Attachment Positioning
-       #;(report/file 'cursive-attachment-positioning-unimplemented)
+       (report/file 'cursive-attachment-positioning-unimplemented)
        (void)]
       [(4) ;; Mark to base positioning
-       #;(report/file 'mark-to-base-positioning-unimplemented)
+       (report/file 'mark-to-base-positioning-unimplemented)
        (void)]
       [(5) ;; Mark to ligature positioning
-       #;(report/file 'mark-to-ligature-positioning-unimplemented)
+       (report/file 'mark-to-ligature-positioning-unimplemented)
        (void)]
       [(6) ;; Mark to mark positioning
-       #;(report/file 'mark-to-mark-positioning-unimplemented)
+       (report/file 'mark-to-mark-positioning-unimplemented)
        (void)]
       [(7) ;; Contextual positioning
-       #;(report/file 'contextual-positioning-unimplemented)
+       (report/file 'contextual-positioning-unimplemented)
        (void)]
       [(8) ;; Chaining contextual positioning
-       #;(report/file 'chaining-contextual-positioning-unimplemented)
+       (report/file 'chaining-contextual-positioning-unimplemented)
        (void)]
       [(9) ;; Extension positioning
-       #;(report/file 'extension-contextual-positioning-unimplemented)
+       (report/file 'extension-contextual-positioning-unimplemented)
        (void)]
       [else
        (raise-argument-error 'GPOSProcessor:applyLookup "supported GPOS table" lookupType)]))

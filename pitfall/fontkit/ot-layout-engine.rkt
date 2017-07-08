@@ -40,6 +40,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
        #;(report/file (· this glyphInfos))
        (define new-glyphinfos
        (send (· this plan) process (· this GSUBProcessor) (· this glyphInfos)))
+       (set! glyphInfos new-glyphinfos) ; update OTLayoutEngine state for positioning pass
        (report/file new-glyphinfos)
        ;; Map glyph infos back to normal Glyph objects
        (report/file (for/list ([glyphInfo (in-list new-glyphinfos)])
