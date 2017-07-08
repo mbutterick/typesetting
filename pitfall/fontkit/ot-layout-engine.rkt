@@ -39,12 +39,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
       [(· this GSUBProcessor)
        #;(report/file (· this glyphInfos))
        (define new-glyphinfos
-       (send (· this plan) process (· this GSUBProcessor) (· this glyphInfos)))
+         (send (· this plan) process (· this GSUBProcessor) (· this glyphInfos)))
        (set! glyphInfos new-glyphinfos) ; update OTLayoutEngine state for positioning pass
        (report/file new-glyphinfos)
        ;; Map glyph infos back to normal Glyph objects
        (report/file (for/list ([glyphInfo (in-list new-glyphinfos)])
-                 (send (· this font) getGlyph (· glyphInfo id) (· glyphInfo codePoints))))]
+                      (send (· this font) getGlyph (· glyphInfo id) (· glyphInfo codePoints))))]
       [else glyphs]))
 
   (define/public (position glyphs positions . _)
@@ -72,10 +72,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
     (set! positions
           (for/list ([glyphInfo (in-list glyphInfos)]
                      [position (in-list positions)])
-                    (when (· glyphInfo isMark)
-                      (dict-set*! position
-                                  'xAdvance 0
-                                  'yAdvance 0))
-                    position)))
+            (when (· glyphInfo isMark)
+              (dict-set*! position
+                          'xAdvance 0
+                          'yAdvance 0))
+            position)))
 
   )
