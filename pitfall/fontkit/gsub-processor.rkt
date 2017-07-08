@@ -127,14 +127,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                    (report (for/list ([g (· this glyphs)]) (· g id)) 'step-a)
                    (report matched)
                    (report (· this glyphIterator index))
-                   (set-field! glyphs this (for*/fold ([gids (· this glyphs)])
-                                                      ([idx (in-list (reverse matched))])
-                                             (for/list ([(gid i) (in-indexed gids)]
-                                                        #:unless (= idx i))
-                                                       gid)))
-                   (report (for/list ([g (· this glyphs)]) (· g id)) 'step-b)
-                   (set-field! glyphs this (list-set (· this glyphs) (· this glyphIterator index) ligatureGlyph))
-                   (set-field! glyphs (· this glyphIterator) (· this glyphs))
+                   (set-field! glyphs this (for*/list ([(glyph idx) (in-indexed (· this glyphs))]
+                                                       [midx (in-list matched)]
+                                                       #:unless (= idx midx))
+                                                      (if (= idx (· this glyphIterator index))
+                                                          ligatureGlyph
+                                                          glyph)))
+                   (set-field! glyphs (· this glyphIterator) (· this glyphs)) ; update glyph iterator to keep it in sync <sigh>
                    (report (for/list ([g (· this glyphs)]) (· g id)) 'step-c)
                    (report (· this glyphIterator index))
                    #t)]

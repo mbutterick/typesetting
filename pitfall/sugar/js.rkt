@@ -44,7 +44,8 @@
   (procedure-rename
    (λ (x . refs)
      (for/fold ([x x])
-               ([ref (in-list refs)])
+               ([ref (in-list refs)]
+                #:break (not x))
        (cond
          ;; give `send` precedence (presence of method => wants runtime resolution of value)
          [(and (object? x)
