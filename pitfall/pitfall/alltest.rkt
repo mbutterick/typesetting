@@ -16,5 +16,8 @@
            pitfall/test/test13 ; subset with composites
            pitfall/test/test14 ; Fira ttf with GPOS (no kerning)
            pitfall/test/test15 ; Fira ttf with GPOS kerning
+           pitfall/test/test16 ; lig (GSUB)
+           pitfall/test/test17 ; multiple ligs & kerns (GSUB and GPOS)
+           pitfall/test/test18 ; paragraph
            pitfall/page-test
            (submod pitfall/zlib test)))
