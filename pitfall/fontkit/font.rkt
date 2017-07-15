@@ -16,6 +16,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (test-module
  (define f (openSync (path->string charter-path)))
+ (define otf (openSync (path->string fira-otf-path)))
  (check-equal? (postscriptName f) "Charter"))
 
 ;; This is the base class for all SFNT-based font formats in fontkit.
@@ -209,7 +210,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                                                (string->symbol (bytes->string/latin-1 tag))
                                                tag)))
   
-(define has-cff-table? (curryr has-table? '|CFF |))
+(define has-cff-table? (curryr has-table? 'CFF_))
 (define has-morx-table? (curryr has-table? 'morx))
 (define has-gpos-table? (curryr has-table? 'GPOS))
 (define has-gsub-table? (curryr has-table? 'GSUB))
@@ -313,3 +314,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0)
  (check-true (send f has-table? #"cmap"))
  (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag))))
+
