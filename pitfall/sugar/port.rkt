@@ -2,8 +2,11 @@
 (require racket/port)
 (provide (all-defined-out) (all-from-out racket/port))
 
-(define (port-position ip)
-  (file-position ip))
+(define (port-position ip [where #f])
+  (cond
+    [where (file-position ip where)
+           ip]
+    [else (file-position ip)]))
 
 (define (set-port-position! ip where)
   (file-position ip where))
