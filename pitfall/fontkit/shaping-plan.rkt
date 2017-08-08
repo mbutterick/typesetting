@@ -80,7 +80,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/ShapingPlan.js
     #;(report*/file 'shaping-plan-process processor)
     (send processor selectScript (· this script) (· this language))
 
-    (report/file stages)
+    #;(report/file stages)
     (for/fold ([glyphs glyphs])
               ([stage (in-list stages)])
       (cond
@@ -88,7 +88,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/ShapingPlan.js
          (stage (· this font) glyphs positions)]
         [(> (length stage) 0)
          #;(report*/file 'shaping-plan:applying-features processor)
-         (report/file positions)
-         (report/file (send processor applyFeatures stage glyphs positions))]))))
+         #;(report/file positions)
+         #;(report/file (send processor applyFeatures stage glyphs positions))
+         (send processor applyFeatures stage glyphs positions)]))))
   
 

@@ -41,20 +41,22 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
        (define new-glyphinfos
          (send (· this plan) process (· this GSUBProcessor) (· this glyphInfos)))
        (set! glyphInfos new-glyphinfos) ; update OTLayoutEngine state for positioning pass
-       (report/file new-glyphinfos)
+       #;(report/file new-glyphinfos)
        ;; Map glyph infos back to normal Glyph objects
-       (report/file (for/list ([glyphInfo (in-list new-glyphinfos)])
-                      (send (· this font) getGlyph (· glyphInfo id) (· glyphInfo codePoints))))]
+       #;(report/file (for/list ([glyphInfo (in-list new-glyphinfos)])
+                      (send (· this font) getGlyph (· glyphInfo id) (· glyphInfo codePoints))))
+       (for/list ([glyphInfo (in-list new-glyphinfos)])
+                      (send (· this font) getGlyph (· glyphInfo id) (· glyphInfo codePoints)))]
       [else glyphs]))
 
   (define/public (position glyphs positions . _)
-    (report*/file glyphs positions shaper)
+    #;(report*/file glyphs positions shaper)
     (define static-shaper (make-object shaper))
     (when (eq? (· static-shaper zeroMarkWidths) 'BEFORE_GPOS)
       (zeroMarkAdvances positions))
 
     (when GPOSProcessor
-      (report/file GPOSProcessor)
+      #;(report/file GPOSProcessor)
       (send (· this plan) process GPOSProcessor glyphInfos positions))
 
     (when (eq? (· static-shaper zeroMarkWidths) 'AFTER_GPOS)
@@ -65,7 +67,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTLayoutEngine.js
       (set! glyphs (reverse glyphs))
       (set! positions (reverse positions)))
 
-    (report/file (and GPOSProcessor (· GPOSProcessor features))))
+    #;(report/file (and GPOSProcessor (· GPOSProcessor features)))
+    (and GPOSProcessor (· GPOSProcessor features)))
 
 
   (define/public (zeroMarkAdvances positions)

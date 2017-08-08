@@ -53,13 +53,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
 
      ;; Substitute and position the glyphs
      (set! glyphs (send this substitute glyphs features script language))
-     (report*/file 'end-sub glyphs)
+     #;(report*/file 'end-sub glyphs)
      #;(error 'stop)
-     (report/file 'ready-position)
-     (report (for/list ((g (in-list glyphs))) (· g id)) 'shecky)
+     #;(report/file 'ready-position)
+     #;(report (for/list ((g (in-list glyphs))) (· g id)) 'shecky)
      (define positions (send this position glyphs features script language))
-     (report (for/list ((p (in-list positions))) (list (· p xAdvance) (· p xOffset))))
-     (report/file 'fired-position)
+     #;(report (for/list ((p (in-list positions))) (list (· p xAdvance) (· p xOffset))))
+     #;(report/file 'fired-position)
 
      ;; Let the layout engine clean up any state it might have
      (when (and (· this engine) #;(·? this engine cleanup))
@@ -72,7 +72,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/LayoutEngine.js
   ;; Call the advanced layout engine to make substitutions
   (when (and (· this engine) #;(· this engine substitute))
     (set! glyphs (send (· this engine) substitute glyphs features script language)))
-  (report/file glyphs))
+  #;(report/file glyphs)
+  glyphs)
 
 
 (define/contract (position this glyphs features script language)

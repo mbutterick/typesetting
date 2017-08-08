@@ -91,9 +91,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     #;(report/file 'ot-proc:applyFeatures-part1)
     (define lookups (send this lookupsForFeatures userFeatures))
     #;(report/file 'ot-proc:applyFeatures-part2)
-    (report/file (length glyphs))
+    #;(report/file (length glyphs))
     (send this applyLookups lookups glyphs advances)
-    (report*/file (length glyphs) (length (· this glyphs)))
+    #;(report*/file (length glyphs) (length (· this glyphs)))
     (· this glyphs))
 
   
@@ -101,33 +101,34 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     (set-field! glyphs this glyphs)
     (set-field! positions this positions)
     #;(report/file 'ot-proc:applyLookups)
-    (report (for/list ([g (· this glyphs)]) (· g id)) 'glyph-ids)
+    #;(report (for/list ([g (· this glyphs)]) (· g id)) 'glyph-ids)
     (set-field! glyphIterator this (+GlyphIterator glyphs))
     
     (for* ([lookup-entry (in-list lookups)])
       (define feature (· lookup-entry feature))
       (define lookup (· lookup-entry lookup))
-      (report 'resetting-iterator)
+      #;(report 'resetting-iterator)
       (send (· this glyphIterator) reset (· lookup flags))
       
       (while (< (or (· this glyphIterator index) 0) (length (· this glyphs)))
-             (report/file 'start-while++++++++++++++++++)
-             (report (length (· this glyphs)) 'glyphs-length-top)
-             (report (for/list ([g (· this glyphs)]) (· g id)) 'gids-top)
-             (report (· this glyphIterator index) giterator-idx-top)
-             (report* feature (dict-keys (· this glyphIterator cur features)))
-             (report (dict-has-key? (· this glyphIterator cur features) feature))
+             #;(report/file 'start-while++++++++++++++++++)
+             #;(report (length (· this glyphs)) 'glyphs-length-top)
+             #;(report (for/list ([g (· this glyphs)]) (· g id)) 'gids-top)
+             #;(report (· this glyphIterator index) giterator-idx-top)
+             #;(report* feature (dict-keys (· this glyphIterator cur features)))
+             #;(report (dict-has-key? (· this glyphIterator cur features) feature))
              (cond
                [(not (dict-has-key? (· this glyphIterator cur features) feature))
                 (send (· this glyphIterator) next)]
                [else
-                (report 'start-lookup-branch=================)
-                (report* (for/list ([g glyphs]) (· g id)) (for/list ([g (· this glyphs)]) (· g id)) (for/list ([g (· this glyphIterator glyphs)]) (· g id))  (· this glyphIterator index) (· this glyphIterator cur id) (· this glyphIterator peekIndex))
+                #;(report 'start-lookup-branch=================)
+                #;(report* (for/list ([g glyphs]) (· g id)) (for/list ([g (· this glyphs)]) (· g id)) (for/list ([g (· this glyphIterator glyphs)]) (· g id))  (· this glyphIterator index) (· this glyphIterator cur id) (· this glyphIterator peekIndex))
                 (for/or ([table (in-list (· lookup subTables))])
                   (send this applyLookup (· lookup lookupType) table))
-                (report 'incrementing-iterator-at-bottom)
+                #;(report 'incrementing-iterator-at-bottom)
                 (send (· this glyphIterator) next)
-                (report* (· this glyphIterator cur) (· this glyphIterator index))]))))
+                #;(report* (· this glyphIterator cur) (· this glyphIterator index))
+                (· this glyphIterator index)]))))
 
   (abstract applyLookup)
 
@@ -151,7 +152,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/OTProcessor.js
     #;(report*/file (and (pair? sequence) (list-ref sequence idx)) glyph (and glyph (· glyph id)))
 
     (while (and (< idx (length sequence)) glyph (fn (list-ref sequence idx) (· glyph id)))
-           (report* 'in-match-loop idx (· glyph id))
+           #;(report* 'in-match-loop idx (· glyph id))
            (when matched
              (push-end! matched (· this glyphIterator index)))
            (increment! idx)

@@ -10,10 +10,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
 (define-subclass OTProcessor (GSUBProcessor)
 
   (define/override (applyLookup lookupType table)
-    (report  lookupType 'GSUBProcessor:applyLookup)
+    #;(report lookupType 'GSUBProcessor:applyLookup)
     (case lookupType
       [(1) ;; Single Substitution
-       (report 'single-substitution)
+       #;(report 'single-substitution)
        (define index (send this coverageIndex (· table coverage)))
        (cond
          [(= index -1) #f]
@@ -24,7 +24,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                        [(2) (send (· table substitute) get index)]))
                #t])]
       [(2) ;; Multiple Substitution
-       (report 'multiple-substitution)
+       #;(report 'multiple-substitution)
        (define index (send this coverageIndex (· table coverage)))
        (cond
          [(= index -1) #f]
@@ -47,7 +47,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                #t])]
 
       [(3) ;; Alternate substitution
-       (report 'alternate-substitution)
+       #;(report 'alternate-substitution)
        (define index (send this coverageIndex (· table coverage)))
        (cond
          [(= index -1) #f]
@@ -56,29 +56,29 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                #t])]
 
       [(4) ;; Ligature substitution
-       (report '---------------------------)
-       (report 'ligature-substitution)
-       (report* lookupType (· table coverage glyphs))
+       #;(report '---------------------------)
+       #;(report 'ligature-substitution)
+       #;(report* lookupType (· table coverage glyphs))
        (define index (send this coverageIndex (· table coverage)))
-       (report index 'forker)
+       #;(report index 'forker)
        (cond
          [(= index -1) #f]
-         [(for*/or ([ligature (in-list (report (send (· table ligatureSets) get (report index 'starting-index))))]
-                    [matched (in-value (send this sequenceMatchIndices 1 (report (· ligature components))))]
-                    #:when (report matched))
+         [(for*/or ([ligature (in-list (send (· table ligatureSets) get index))]
+                    [matched (in-value (send this sequenceMatchIndices 1 (· ligature components)))]
+                    #:when matched)
                    (define curGlyph (· this glyphIterator cur))
 
                    ;; Concatenate all of the characters the new ligature will represent
                    (define characters
                      (append (· curGlyph codePoints)
                              (append* (for/list ([index (in-list matched)])
-                                                (report index)
+                                                index
                                                 (get-field codePoints (list-ref (· this glyphs) index))))))
 
-                   (report characters)
+                   characters
                    ;; Create the replacement ligature glyph
                    (define ligatureGlyph (+GlyphInfo (· this font) (· ligature glyph) characters (· curGlyph features)))
-                   (report (· ligatureGlyph id))
+                   (· ligatureGlyph id)
                    (set-field! shaperInfo ligatureGlyph (· curGlyph shaperInfo))
                    (set-field! isLigated ligatureGlyph #t)
                    (set-field! substituted ligatureGlyph #t)
@@ -124,9 +124,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                           (set-field! ligatureComponent (list-ref (· this glyphs) i) ligatureComponent)))
 
                    ;; Delete the matched glyphs, and replace the current glyph with the ligature glyph
-                   (report (for/list ([g (· this glyphs)]) (· g id)) 'step-a)
-                   (report matched)
-                   (report (· this glyphIterator index))
+                   #;(report (for/list ([g (· this glyphs)]) (· g id)) 'step-a)
+                   #;(report matched)
+                   #;(report (· this glyphIterator index))
                    (set-field! glyphs this (for*/list ([(glyph idx) (in-indexed (· this glyphs))]
                                                        [midx (in-list matched)]
                                                        #:unless (= idx midx))
@@ -134,8 +134,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GSUBProcessor.js
                                                           ligatureGlyph
                                                           glyph)))
                    (set-field! glyphs (· this glyphIterator) (· this glyphs)) ; update glyph iterator to keep it in sync <sigh>
-                   (report (for/list ([g (· this glyphs)]) (· g id)) 'step-c)
-                   (report (· this glyphIterator index))
+                   #;(report (for/list ([g (· this glyphs)]) (· g id)) 'step-c)
+                   #;(report (· this glyphIterator index))
                    #t)]
          [else #f])]
       [(5) ;; Contextual Substitution
