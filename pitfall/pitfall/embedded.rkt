@@ -31,10 +31,10 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 (define/contract (widthOfString this string size [features #f])
   ((string? number?) ((option/c list?)) . ->*m . number?)
   (cond
-    [features
+    [features ; #f disables features ; null enables default features ; list adds features
      (define run (send (· this font) layout string features))
      (define width (· run advanceWidth))
-     (define scale (/ size (· this font unitsPerEm)))
+     (define scale (/ size (+ (· this font unitsPerEm) 0.0)))
      (* width scale)]
     [else (send (· this font) measure-string string size)]))
 
