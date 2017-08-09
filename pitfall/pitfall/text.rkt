@@ -16,6 +16,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (as-methods
      initText
      _initOptions
+     lineGap
+     moveDown
+     moveUp
      _text
      _fragment
      text
