@@ -57,8 +57,11 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
            [encoding (if (procedure? encoding)
                          (or (encoding (and parent (· parent val)) 'ascii))
                          encoding)])
+      (define encoded-length (byte-length val encoding))
+      (when (and (exact-nonnegative-integer? len) (> encoded-length len))
+        (raise-argument-error 'String:encode (format "string no longer than ~a" len) val)) 
       (when (NumberT? len)
-        (send len encode port (byte-length val encoding)))
+        (send len encode port encoded-length))
       (write-encoded-string port val encoding)
       (when (not len) (write-byte #x00 port)))) ; null terminated when no len
 
@@ -89,6 +92,9 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 
 
 (test-module
+ (define S-fixed (+String 4 'utf8))
+ (check-equal? (encode S-fixed "Mike" #f) #"Mike")
+ (check-exn exn:fail? (λ () (encode S-fixed "Mikes" #f))) ; too long for fixed string 
  (define S (+String uint8 'utf8))
  (check-equal? (decode S #"\2BCDEF") "BC")
  (check-equal? (encode S "Mike" #f) #"\4Mike")

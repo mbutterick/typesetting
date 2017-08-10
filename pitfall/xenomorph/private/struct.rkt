@@ -114,6 +114,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (unless (dict? val)
       (raise-argument-error 'Struct:encode "dict" val))
 
+    ;; check keys first, since `size` also relies on keys being valid
+    (unless (andmap (λ (key) (memq key (dict-keys val))) (dict-keys fields))
+      (raise-argument-error 'Struct:encode
+                            (format "dict that contains superset of Struct keys: ~a" (dict-keys fields)) (dict-keys val)))
+
     (define ctx (mhash 'pointers empty
                        'startOffset (pos port)
                        'parent parent
@@ -121,9 +126,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                        'pointerSize 0))
     (ref-set! ctx 'pointerOffset (+ (pos port) (size val ctx #f)))
 
-    (unless (andmap (λ (key) (memq key (dict-keys val))) (dict-keys fields))
-      (raise-argument-error 'Struct:encode
-                            (format "dict that contains superset of Struct keys: ~a" (dict-keys fields)) (dict-keys val)))
     (for ([(key type) (in-dict fields)])
          (send type encode port (ref val key) ctx))
     (for ([ptr (in-list (· ctx pointers))])

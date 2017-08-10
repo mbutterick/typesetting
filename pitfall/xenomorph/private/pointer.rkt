@@ -71,6 +71,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                  
 
   (define/augment (encode port val [ctx #f])
+    (unless ctx
+      ;; todo: furnish default pointer context? adapt from Struct?
+      (raise-argument-error 'Pointer:encode "valid pointer context" ctx))
     (if (not val)
         (send offset-type encode port null-value)
         (let* ([parent ctx]
