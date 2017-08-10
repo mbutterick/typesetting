@@ -42,14 +42,17 @@
                                       (define (size o [val #f] [parent #f]) (send o size val parent)))])))
 
 (define (dump x)
+  (define (dump-dict x)
+    (for/list ([(k v) (in-dict x)])
+              (cons (dump k) (dump v))))
   (let loop ([x x])
     (cond
       [(input-port? x) (port->bytes x)]
       [(output-port? x) (get-output-bytes x)]
-      [(dict? x) (for/list ([(k v) (in-dict x)])
-                           (cons (loop k) (loop v)))]
+      [(and (object? x)
+            (memq 'dump (interface->method-names (object-interface x)))) (send x dump)]
+      [(dict? x) (dump-dict x)]
       [(list? x) (map loop x)]
-      [(and (object? x) (memq 'dump (interface->method-names (object-interface x)))) (send x dump)]
       [else x])))
 
 #;(define dumpable<%>
