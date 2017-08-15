@@ -199,7 +199,8 @@ class PDFDocument extends stream.Readable
     #console.log(@_offsets)
     if @_waiting is 0
       #console.log(@_offsets.length)
-      #console.log("finalize2") ; @_finalize()
+      #console.log("finalize2") ; 
+      @_finalize()
     else
       #console.log("ended is true") ; 
       @_ended = true
