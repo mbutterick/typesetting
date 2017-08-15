@@ -29,6 +29,7 @@
      fill
      stroke
      fillAndStroke
+     clip
      transform
      translate
      scale)))
@@ -208,6 +209,11 @@
         (+ (* n12 m21) (* n22 m22))
         (+ (* n11 mdx) (* n21 mdy) ndx)
         (+ (* n12 mdx) (* n22 mdy) ndy)))
+
+
+(define/contract (clip this [rule #f])
+  (() ((or/c string? #f)) . ->*m . object?)
+  (send this addContent (string-append "W" (_windingRule rule) " n")))
 
 
 (define/contract (transform this m11 m12 m21 m22 mdx mdy)
