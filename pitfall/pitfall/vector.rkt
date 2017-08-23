@@ -30,6 +30,7 @@
      stroke
      fillAndStroke
      clip
+     shear
      transform
      translate
      scale)))
@@ -216,11 +217,16 @@
   (send this addContent (string-append "W" (_windingRule rule) " n")))
 
 
-(define/contract (transform this m11 m12 m21 m22 mdx mdy)
+(define/contract (transform this scaleX shearY shearX scaleY mdx mdy)
   (number? number? number? number? number? number? . ->m . object?)
-  (define new-ctm (list m11 m12 m21 m22 mdx mdy))
+  (define new-ctm (list scaleX shearY shearX scaleY mdx mdy))
   (set-field! _ctm this (combine-transforms (· this _ctm) new-ctm))
   (send this addContent (make-transform-string new-ctm)))
+
+
+(define/contract (shear this x y)
+  (number? number? . ->m . object?)
+  (transform this 1 y x 1 0 0))
 
 
 (define/contract (translate this x y)
