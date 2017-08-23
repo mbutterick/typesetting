@@ -28,7 +28,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GlyphInfo.js
          [cursiveAttachment #f]
          [markattachment #f]
          [shaperInfo #f]
-         [substituted #f])
+         [substituted #f]
+         [isMark #f]
+         [isLigature #f])
 
   (define/public (id [id-in #f])
     (cond
