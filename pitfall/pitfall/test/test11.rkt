@@ -4,6 +4,7 @@
   (send* doc
     [fillColor "blue"]
     [font "Helvetica" 30]
+    [translate 50 50]
     [text "Here is a link!" 100 100 (hash
                                      'link "http://google.com/"
                                      'underline #t

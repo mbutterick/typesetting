@@ -50,10 +50,8 @@
         [y1 (+ y1 h)]
         [x2 (+ x1 w)])
     (match-define (list m0 m1 m2 m3 m4 m5) (· this _ctm))
-    ;; original code mutates x1 and y1 during transformation
-    ;; I think this is wrong
-    (let* ([x1a (+ (* x1 m0) (* y1 m2) m4)]
-           [y1a (+ (* x1 m1) (* y1 m3) m5)]
-           [x2a (+ (* x2 m0) (* y2 m2) m4)]
-           [y2a (+ (* x2 m1) (* y2 m3) m5)])
-      (list x1a y1a x2a y2a))))
+    (let* ([x1 (+ (* x1 m0) (* y1 m2) m4)]
+           [y1 (+ (* x1 m1) (* y1 m3) m5)]
+           [x2 (+ (* x2 m0) (* y2 m2) m4)]
+           [y2 (+ (* x2 m1) (* y2 m3) m5)])
+      (list x1 y1 x2 y2))))

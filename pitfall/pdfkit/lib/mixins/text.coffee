@@ -205,7 +205,7 @@ module.exports =
 
     # create underline or strikethrough line
     if options.underline or options.strike
-      console.log("enter underline")
+      #console.log("enter underline")
       @save()
       @strokeColor @_fillColor... unless options.stroke
 

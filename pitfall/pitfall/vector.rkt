@@ -160,7 +160,7 @@
     [(pair? points)
      (apply moveTo this (car points))
      (for ([pt (in-list (cdr points))])
-       (apply lineTo this pt))
+          (apply lineTo this pt))
      (closePath this)]
     [else this]))
 
@@ -200,16 +200,16 @@
   (format "~a cm" (string-join (map number ctm) " ")))
 
 
-(define/contract (combine-transforms m-transform n-transform)
+(define/contract (combine-transforms m new-ctm)
   (tm/c tm/c . -> . tm/c)
-  (match-define (list m11 m12 m21 m22 mdx mdy) m-transform)
-  (match-define (list n11 n12 n21 n22 ndx ndy) n-transform)
-  (list (+ (* n11 m11) (* n21 m12))
-        (+ (* n12 m11) (* n22 m12))
-        (+ (* n11 m21) (* n21 m22))
-        (+ (* n12 m21) (* n22 m22))
-        (+ (* n11 mdx) (* n21 mdy) ndx)
-        (+ (* n12 mdx) (* n22 mdy) ndy)))
+  (match-define (list m0 m1 m2 m3 m4 m5) m)
+  (match-define (list m11 m12 m21 m22 dx dy) new-ctm)
+  (list (+ (* m0 m11) (* m2 m12))
+        (+ (* m1 m11) (* m3 m12))
+        (+ (* m0 m21) (* m2 m22))
+        (+ (* m1 m21) (* m3 m22))
+        (+ (* m0 dx) (* m2 dy) m4)
+        (+ (* m1 dx) (* m3 dy) m5)))
 
 
 (define/contract (clip this [rule #f])
@@ -261,4 +261,11 @@
   (set! ctm (combine-transforms ctm ctm2))
   (check-equal? ctm '(7 10 15 22 28 40))
   (set! ctm (combine-transforms ctm ctm2))
-  (check-equal? ctm '(37 54 81 118 153 222)))
+  (check-equal? ctm '(37 54 81 118 153 222))
+
+  (check-equal? (combine-transforms '(1 0 0 -1 0 792.0) '(1 0 0 1 50 50))
+                '(1 0 0 -1 50 742.0))
+
+  (check-equal? (combine-transforms '(1 0 0 -1 50 742.0) '(1 0 0 -1 0 792))
+                '(1 0 0 1 50 -50.0))
+  )

@@ -1,5 +1,6 @@
 module.exports = 
   annotate: (x, y, w, h, options) ->
+    #console.log(@_ctm)
     options.Type = 'Annot'
     options.Rect = @_convertRect x, y, w, h
     options.Border = [0, 0, 0]
