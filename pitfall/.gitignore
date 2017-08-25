@@ -14,3 +14,7 @@ Icon
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+xenomorph/doc/*
+xenomorph/scribblings/*.css
+xenomorph/scribblings/*.js
+xenomorph/scribblings/*.html
