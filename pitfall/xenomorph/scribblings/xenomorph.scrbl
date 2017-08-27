@@ -23,7 +23,7 @@ Everyone else: Xenomorph eases the pain of working with binary formats. Instead 
 
 @item{This declaration can then be used as a binary parser, converting a binary file to Racket values.}
 
-@item{This same declaration can @emph{also} be used as a binary compiler, converting Racket values to a binary file.}
+@item{This @emph{same} declaration can also be used as a binary compiler, converting Racket values to a binary file.}
 ]
 
 Derived principally from Devon Govett's @link["https://github.com/devongovett/restructure"]{@tt{restructure}} library for Node. Thanks for figuring out the hard parts, dude.
@@ -54,11 +54,61 @@ Invoke the library in a source file by importing it in the usual way: @code{(req
    ]
 
 
+@section{Binary parts}
 
-@section{The big idea}
+@subsection{Numbers}
 
-@section{Numbers}
+@defmodule[xenomorph/number]
 
+@subsection{Strings}
+
+@defmodule[xenomorph/string]
+
+@subsection{Arrays}
+
+@defmodule[xenomorph/array]
+
+@subsection{Lazy arrays}
+
+@defmodule[xenomorph/lazy-array]
+
+
+@subsection{Structs}
+
+@defmodule[xenomorph/struct]
+
+@subsection{Versioned structs}
+
+@defmodule[xenomorph/versioned-struct]
+
+@subsection{Pointers}
+
+@defmodule[xenomorph/pointer]
+
+@subsection{Bitfields}
+
+@defmodule[xenomorph/bitfield]
+
+@subsection{Enumerations}
+
+@defmodule[xenomorph/enum]
+
+@subsection{Optional}
+
+@defmodule[xenomorph/optional]
+
+@subsection{Reserved}
+
+@defmodule[xenomorph/reserved]
+
+
+
+@defproc[
+(array?
+[type any/c])
+void?]{
+Hello
+}
 
 
 @section{License & source code}
