@@ -22,6 +22,12 @@
      sugar/port
      sugar/case)
 
+(provide define-procedures)
+(define-macro (define-procedures (NEW ...) (OLD ...))
+  #'(define-values (NEW ...)
+      (values (if (procedure? OLD)
+                  (procedure-rename OLD 'NEW)
+                  OLD) ...)))
 
 (module reader syntax/module-reader
   #:language 'xenomorph/private/racket)

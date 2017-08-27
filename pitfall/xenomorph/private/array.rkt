@@ -29,10 +29,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                          [else +inf.0]))
        (for/list ([i (in-naturals)]
                   #:break (or (eof-object? (peek-byte port)) (= (pos port) end-pos)))
-                 (send type decode port ctx))]
+         (send type decode port ctx))]
       ;; we have decoded-len, which is treated as count of items
       [else (for/list ([i (in-range decoded-len)])
-                      (send type decode port ctx))]))
+              (send type decode port ctx))]))
   
 
   (define/augride (size [val #f] [ctx #f])
@@ -43,7 +43,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                                             (values (mhasheq 'parent ctx) (send len size))
                                             (values ctx 0))])
              (+ len-size (for/sum ([item (in-list (countable->list val))])
-                                  (send type size item ctx))))]
+                           (send type size item ctx))))]
       [else (let ([item-count (resolve-length len #f ctx)]
                   [item-size (send type size #f ctx)])
               (* item-size item-count))]))
@@ -54,8 +54,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                   (raise-argument-error 'Array:encode "list or countable" array)))
 
     (define (encode-items ctx)
-      (for ([item (in-list (countable->list array))])
-           (send type encode port item ctx)))
+      (let* ([items (countable->list array)]
+             [item-count (length items)]
+             [max-items (if (number? len) len item-count)])
+        (unless (= item-count max-items)
+          (raise-argument-error 'Array:encode (format "list or countable with ~a items" max-items) items))
+        (for ([item (in-list items)])
+          (send type encode port item ctx))))
 
     (cond
       [(NumberT? len) (define ctx (mhash 'pointers null
@@ -65,10 +70,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                       (send len encode port (length array)) ; encode length at front
                       (encode-items ctx)
                       (for ([ptr (in-list (· ctx pointers))]) ; encode pointer data at end
-                           (send (· ptr type) encode port (· ptr val)))]
+                        (send (· ptr type) encode port (· ptr val)))]
       [else (encode-items parent)])))
 
-(define-values (Array Array? +Array) (values ArrayT ArrayT? +ArrayT))
+(define-procedures (Array Array? +Array) (ArrayT ArrayT? +ArrayT))
+(define-procedures (array% array? array) (ArrayT ArrayT? +ArrayT))
 
 (test-module
  (check-equal? (decode (+Array uint16be 3) #"ABCDEF") '(16706 17220 17734))
