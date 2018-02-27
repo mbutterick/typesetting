@@ -7,6 +7,7 @@
                "png-image"
                "srfi-lite-lib"
                "sugar"
+               "debug"
                "base" "rackunit-lib"))
 (define build-deps '("scribble-lib" "racket-doc"))
 (define version "0.0")
