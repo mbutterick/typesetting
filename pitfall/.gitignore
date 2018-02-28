@@ -18,3 +18,4 @@ xenomorph/doc/*
 xenomorph/scribblings/*.css
 xenomorph/scribblings/*.js
 xenomorph/scribblings/*.html
+pdfkit/
