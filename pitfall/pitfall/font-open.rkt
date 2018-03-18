@@ -11,6 +11,7 @@
      (define font
        (cond
          [(string? src) (openSync src family)]
+         [(path? src) (openSync (path->string src) family)]
          ;; todo: other font-loading cases
          [else (raise-argument-error 'PDFFont-open "loadable font thingy" src)]))
      (make-object EmbeddedFont document font id)]))
