@@ -190,6 +190,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; If we have a word spacing value, we need to encode each word separately
   ;; since the normal Tw operator only works on character code 32, which isn't
   ;; used for embedded fonts.
+  ;; 180321: the first call to this operation is very slow from Quad
   (match-define (list encoded-char-strs positions)
     (if (not (zero? wordSpacing))
         (error 'unimplemented-brach) ; todo
