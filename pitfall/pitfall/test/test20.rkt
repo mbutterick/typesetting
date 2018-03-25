@@ -1,13 +1,13 @@
 #lang pitfall/pdftest
 
-;; subset font with GPOS table
-(define-runtime-path ttf-path "assets/fira.otf")
+;; subset OTF font
+(define-runtime-path otf-path "assets/charter.otf")
 
 ;; embed otf
 
 (define (proc doc)
   ;; Register a font name for use later
-  (send doc registerFont "the-font" (path->string ttf-path))
+  (send doc registerFont "the-font" (path->string otf-path))
 
   ;; Set the font, draw some text
   (send* doc
@@ -17,7 +17,7 @@
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test20rkt.pdf")
-(make-doc this #f proc )
+(make-doc this #f proc #:test #f)
 
-(define-runtime-path that "test20crkt.pdf")
-(make-doc that #t proc #:pdfkit #f)
+#;(define-runtime-path that "test20crkt.pdf")
+#;(make-doc that #t proc #:pdfkit #f)

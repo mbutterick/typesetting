@@ -6,7 +6,7 @@ fs = require 'fs'
 make = (doc) -> 
 
   # Register a font name for use later
-  doc.registerFont('the-font', 'assets/fira.otf')
+  doc.registerFont('the-font', 'assets/charter.otf')
 
   # Set the font, draw some text
   doc.font('the-font')
