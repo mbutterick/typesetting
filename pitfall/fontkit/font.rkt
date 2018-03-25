@@ -1,4 +1,4 @@
-#lang fontkit/racket
+#lang debug fontkit/racket
 (require "freetype-ffi.rkt" (except-in ffi/unsafe array?) racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" xenomorph "tables.rkt" "ttfglyph.rkt")
 (provide (all-defined-out))
 
@@ -20,10 +20,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (check-equal? (postscriptName f) "Charter"))
 
 ;; This is the base class for all SFNT-based font formats in fontkit.
+;; (including CFF)
 ;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
 (define-subclass object% (TTFFont port [_src #f])
   (when port (unless (input-port? port)
-                 (raise-argument-error 'TTFFont "input port" port)))
+               (raise-argument-error 'TTFFont "input port" port)))
   (unless (member (peek-bytes 4 0 port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
     (raise 'probe-fail))
   
@@ -278,6 +279,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                  (measure-char-width this c))) (· this unitsPerEm)))
 
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/index.js
+|#
+
 ;; Register font formats
 (define formats (list TTFFont))
 ;;fontkit.registerFormat(WOFFFont); ;; todo
@@ -286,6 +292,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;;fontkit.registerFormat(DFont); ;; todo
 
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/base.js
+|#
 
 (define/contract (openSync str-or-path [postscriptName #f])
   (((or/c path? string?)) ((option/c string?)) . ->* . TTFFont?)

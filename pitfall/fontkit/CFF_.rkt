@@ -1,11 +1,18 @@
 #lang fontkit/racket
 (require xenomorph)
-(provide (all-defined-out))
+(provide CFF_)
 #|
 approximates
-https://github.com/mbutterick/fontkit/blob/master/src/tables/CFF.js
+https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
 |#
 
-(define CFF_ (+Array (+BufferT)))
+;; the CFFFont object acts as the decoder for the `CFF ` table.
+
+
+(define-subclass BufferT (RCFF_)
+  )
+
+(define CFF_ (+RCFF_))
+
 
 (test-module)

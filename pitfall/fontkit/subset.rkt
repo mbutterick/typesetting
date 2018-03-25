@@ -1,4 +1,4 @@
-#lang fontkit/racket
+#lang debug fontkit/racket
 (require "clone.rkt" "ttfglyphencoder.rkt" "loca.rkt" "directory.rkt" xenomorph)
 (provide Subset CFFSubset TTFSubset)
 
@@ -33,8 +33,42 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
                  (sub1 (length (· this glyphs)))))))  
 
 
+
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
+|#
+
+
 (define-subclass Subset (CFFSubset)
-  (error 'cff-subset-unimplemented))
+  #R (· this font)
+  (field [cff (send (· this font) _getTable 'CFF_)])
+  (unless (· this cff) (error 'not-a-cff-font))
+  (field [charStrings #f]
+         [subrs #f])
+
+  (as-methods
+   subsetCharstrings
+   #;subsetSubrs
+   #;subsetFontdict
+   #;createCIDFontdict
+   #;addString
+   #;encode))
+
+
+(define/contract (subsetCharstrings this)
+  (->m void?)
+  (set-field! charStrings this null)
+  (define gsubrs (make-hash))
+  (for ([gid (in-list (· this glyphs))])
+       (push-end-field! charStrings this (· this cff getCharString gid))
+       (define glyph (· this font getGlyph gid))
+       (define path (· glyph path)) ; this causes the glyph to be parsed
+       (for ([subr (in-list (· glyph _usedGsubrs))])
+            (hash-set! gsubrs subr #true)))
+  (set-field! this gsubrs (send this subsetSubrs (· this cff globalSubrIndex) gsubrs))
+  (void))
+
 
 
 #|
@@ -75,9 +109,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; if it is a compound glyph, include its components
   (when (and glyf (negative? (· glyf numberOfContours)))
     (for ([component (in-list (· glyf components))])
-      (define gid (send this includeGlyph (· component glyphID)))
-      ;; note: this (· component pos) is correct. It's a field of a Component object, not a port
-      (bytes-copy! buffer (· component pos) (send uint16be encode #f gid))))
+         (define gid (send this includeGlyph (· component glyphID)))
+         ;; note: this (· component pos) is correct. It's a field of a Component object, not a port
+         (bytes-copy! buffer (· component pos) (send uint16be encode #f gid))))
   
   ;; skip variation shit
 
@@ -110,8 +144,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; glyphs to the array as component glyphs are discovered & enqueued
   (for ([idx (in-naturals)]
         #:break (= idx (length (· this glyphs))))
-    (define gid (list-ref (· this glyphs) idx))
-    (send this _addGlyph gid))
+       (define gid (list-ref (· this glyphs) idx))
+       (send this _addGlyph gid))
 
   (define maxp (cloneDeep (· this font maxp to-hash)))
   (dict-set! maxp 'numGlyphs (length (· this glyf)))
