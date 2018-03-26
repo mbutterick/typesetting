@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require sugar/list)
+(require sugar/list racket/promise)
 (provide text-mixin)
 
 #|
@@ -65,7 +65,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
          (error 'unimplemented-branch-of-_text)] ; todo
       [else ; render paragraphs as single lines
        (for ([line (in-list (string-split text "\n"))])
-            (lineCallback line options))]))
+         (lineCallback line options))]))
   
   this)
 
@@ -91,7 +91,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (when (· this _textOptions)
       (for ([(key val) (in-hash (· this _textOptions))]
             #:unless (equal? (key "continued")))
-           (hash-ref! options key val)))
+        (hash-ref! options key val)))
 
     ;; Update the current position
     (when x (set-field! x this x))
@@ -112,9 +112,10 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ((string?) (hash? (or/c procedure? #f)) . ->*m . void?)
   (send this _fragment text (· this x) (· this y) options)
   (define lineGap (or (· options lineGap) (· this _lineGap) 0))
-  (if (not wrapper)
-      (increment-field! x this (send this widthOfString text))
-      (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
+  ;; 180325 suppress the size tracking: we'll do our own line measurement
+  #;(if (not wrapper)
+        (increment-field! x this (send this widthOfString text))
+        (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
   (void))
 
 
@@ -128,14 +129,15 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
   ;; calculate the actual rendered width of the string after word and character spacing
   (define renderedWidth
-    (+ (or (· options textWidth)
-           (widthOfString this text options))
-       (* wordSpacing (sub1 (or (· options wordCount) 0)))
-       (* characterSpacing (sub1 (string-length text)))))
+    ;; wrap this in delay so it's only calculated if needed
+    (delay
+      (+ (or (· options textWidth) (widthOfString this text options))
+         (* wordSpacing (sub1 (or (· options wordCount) 0)))
+         (* characterSpacing (sub1 (string-length text))))))
 
   ;; create link annotations if the link option is given
   (when (· options link)
-    (send this link x y-in renderedWidth (· this currentLineHeight) (· options link)))
+    (send this link x y-in (force renderedWidth) (· this currentLineHeight) (· options link)))
 
   
   ;; create underline or strikethrough line
@@ -154,7 +156,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (increment! lineY (- lineWidth)))
 
     (send this moveTo x lineY)
-    (send this lineTo (+ x renderedWidth) lineY)
+    (send this lineTo (+ x (force renderedWidth)) lineY)
     (send this stroke)
     (send this restore))
 
