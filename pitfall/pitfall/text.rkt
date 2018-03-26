@@ -76,6 +76,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
 (define/contract (widthOfString this str [options (mhash)])
   ((string?) (hash?) . ->*m . number?)
+  #;(report str 'measuring-width-of)
   (+ (send (· this _font) widthOfString str (· this _fontSize) (hash-ref options 'features #f))
      (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
 

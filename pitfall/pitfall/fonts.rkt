@@ -63,6 +63,7 @@
                                                      (set-field! _font this val))]
     ;; load the font
     [else
+     (println (format "Load font: ~a" src))
      (define id (format "F~a" (increment-field! _fontCount this)))
      (set-field! _font this (PDFFont-open this src family id))
      
