@@ -15,9 +15,10 @@
 |#
 
 
-;; approximates
-;; https://github.com/devongovett/fontkit/blob/master/src/glyph/Glyph.js
-
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
+|#
 
 (define-subclass object% (Glyph id codePoints font)
   (field [_font font]
@@ -56,6 +57,24 @@
                 'leftBearing (FT_Glyph_Metrics-horiBearingX glyph-metrics)))
   (· this _metrics))
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
+|#
 
 (define-subclass Glyph (CFFGlyph)
-  (error 'cff-glyph-unimplemented))
+  (error 'cff-glyph-unimplemented)
+
+  #;(define/override (_getName this)
+    (->m any/c)
+    (if (send (· this _font) _getTable 'CFF2)
+        (super _getName)
+        (send (send (· this _font) _getTable 'CFF_) getGlyphName (· this id))))
+  (as-methods
+   #;_getName
+   #;bias
+   #;_getPath))
+
+
+
+
