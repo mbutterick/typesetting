@@ -46,11 +46,13 @@
 (send problem reset)
 (send problem add-variables '(a b) '(1 2))
 (send problem add-constraint <) ; implicit
-(check-hash-items (send problem get-solution) #hash((a . 1) (b . 2)))
+(check-true (let ([s (sort (hash->list (send problem get-solution)) #:key cdr <)])
+              (or (equal? s '((a . 1) (b . 2))) (equal? s '((b . 1) (a . 2))))))
 (send problem reset)
 (send problem add-variables '(a b) '(1 2))
 (send problem add-constraint (new function-constraint% [func <])) ; explicit
-(check-hash-items (send problem get-solution) #hash((a . 1) (b . 2)))
+(check-true (let ([s (sort (hash->list (send problem get-solution)) #:key cdr <)])
+              (or (equal? s '((a . 1) (b . 2))) (equal? s '((b . 1) (a . 2))))))
 
 ;; AllDifferentConstraint
 (send problem reset)
