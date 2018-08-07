@@ -12,4 +12,5 @@
 (define build-deps '("scribble-lib" "racket-doc"))
 (define version "0.0")
 (define pkg-authors '(mb))
+(define test-omit-paths 'all)
 #;(define compile-omit-paths '("pdfkit" "fontkit"))
