@@ -8,7 +8,9 @@
                "srfi-lite-lib"
                "sugar"
                "debug"
-               "base" "rackunit-lib"))
+               "base" 
+               "draw-lib"
+               "rackunit-lib"))
 (define build-deps '("scribble-lib" "racket-doc"))
 (define version "0.0")
 (define pkg-authors '(mb))
