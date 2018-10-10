@@ -1,11 +1,25 @@
 #lang debug racket
-
+(provide (all-defined-out))
 (struct $csp ([vars #:mutable]
               [constraints #:mutable]) #:transparent)
 
+(define (new-csp) ($csp null null))
+
 (struct $var (name vals) #:transparent)
 (define $var-name? symbol?)
-(struct $constraint (names proc) #:transparent)
+(struct $constraint (names proc) #:transparent
+  #:property prop:procedure
+  (λ (constraint csp)
+    (unless ($csp? csp)
+      (raise-argument-error '$constraint-proc "$csp" csp))
+    (match-define ($constraint names proc) constraint)
+    (cond
+      [(empty? names) (proc)]
+      [else
+       (match-define (cons name other-names) names)
+       (for/and ([val (in-list ($csp-vals csp name))])
+         ;; todo: reconsider efficiency of currying every value
+         (($constraint other-names (curry proc val)) csp))])))
 
 (define/contract (check-name-in-csp! caller csp name)
   (symbol? $csp? $var-name? . -> . void?)
@@ -13,9 +27,9 @@
   (unless (memq name names)
     (raise-argument-error caller (format "csp variable name: ~v" names) name)))
 
-(define/contract (nary-constraint? constraint num)
+(define/contract (nary-constraint? constraint n)
   ($constraint? exact-nonnegative-integer? . -> . boolean?)
-  (= num (length ($constraint-names constraint))))
+  (= n (length ($constraint-names constraint))))
 
 (define/contract (unary-constraint? constraint)
   ($constraint? . -> . boolean?)
@@ -31,24 +45,18 @@
     (raise-argument-error 'add-var! "var that doesn't exist" name))
   (set-$csp-vars! csp (cons ($var name vals) ($csp-vars csp))))
 
-(define/contract (add-constraint! csp proc var-names)
-  ($csp? procedure? (listof $var-name?) . -> . void?)
+(define/contract (add-constraint! csp proc . var-names)
+  (($csp? procedure?) #:rest (listof $var-name?) . ->* . void?)
   (for ([name (in-list var-names)])
     (check-name-in-csp! 'add-constraint! csp name))
   (set-$csp-constraints! csp (cons ($constraint var-names proc) ($csp-constraints csp))))
-
 
 (define/contract (no-solutions? csp)
   ($csp? . -> . boolean?)
   (for/or ([var (in-list ($csp-vars csp))])
     (empty? ($var-vals var))))
 
-(define/contract (check-has-solutions! csp)
-  ($csp? . -> . $csp?)
-  (when (no-solutions? csp) (raise 'no-solutions))
-  csp)
-
-(struct $no-solutions () #:transparent)
+(struct $csp-inconsistent () #:transparent)
 
 (define/contract (apply-unary-constraint csp constraint)
   ($csp? unary-constraint? . -> . $csp?)
@@ -56,15 +64,14 @@
   (define new-csp ($csp (for/list ([var (in-list ($csp-vars csp))])
                           (match-define ($var name vals) var)
                           (if (eq? name constraint-name)
-                              ($var name (cond
-                                           [(promise? proc) (force proc)]
-                                           [else (filter proc vals)]))
+                              ($var name (if (promise? proc)
+                                             (force proc)
+                                             (filter proc vals)))
                               var))
                         ;; once the constraint is applied, it can go away
                         (remove constraint ($csp-constraints csp))))
-  (when (no-solutions? new-csp) (raise ($no-solutions)))
+  (when (no-solutions? new-csp) (raise ($csp-inconsistent)))
   new-csp)
-
 
 (define/contract (make-node-consistent csp)
   ($csp? . -> . $csp?)
@@ -141,9 +148,17 @@
   ($csp? . -> . boolean?)
   (andmap var-assigned? ($csp-vars csp)))
 
+(define (assigned-helper csp) (partition var-assigned? ($csp-vars csp)))
+
 (define/contract (unassigned-vars csp)
   ($csp? . -> . (listof $var?))
-  (filter-not var-assigned? ($csp-vars csp)))
+  (match-define-values (assigned unassigned) (assigned-helper csp))
+  unassigned)
+
+(define/contract (assigned-vars csp)
+  ($csp? . -> . (listof $var?))
+  (match-define-values (assigned unassigned) (assigned-helper csp))
+  assigned)
 
 (define/contract (select-unassigned-var csp)
   ($csp? . -> . $var?)
@@ -156,30 +171,23 @@
   vals)
 
 ;; todo: inferences between assignments
-(define inference values)
+(define infer values)
 
 (define/contract (assign-val csp name val)
   ($csp? $var-name? any/c . -> . $csp?)
-  (apply-unary-constraint csp ($constraint (list name) (delay (list val)))))
+  (validate-assignment (apply-unary-constraint csp ($constraint (list name) (delay (list val)))) name))
 
-(define/contract (assignment-consistent? csp name)
-  ($csp? $var-name? . -> . boolean?)
-  (define assigned-names (for/list ([var (in-list ($csp-vars csp))]
-                                    #:when (= 1 (length ($var-vals var))))
-                           ($var-name var)))
-  (define constraints-to-check
-    (for/list ([constraint (in-list ($csp-constraints csp))]
-               #:when (match-let ([($constraint constraint-names _) constraint])
-                        (and
-                         (memq name constraint-names)
-                         (for/and ([constraint-name (in-list constraint-names)])
-                           (memq constraint-name assigned-names)))))
-      constraint))
-  ;; todo: remove constraints after testing and return reduced csp instead of boolean
-  (for/and ([constraint (in-list constraints-to-check)])
-    (match-define ($constraint names pred) constraint)
-    (apply pred (for/list ([name (in-list names)])
-                  (car ($csp-vals csp name))))))
+(define/contract (validate-assignment csp name)
+  ($csp? $var-name? . -> . $csp?)
+  (define assigned-names (map $var-name (assigned-vars csp)))
+  (for/fold ([csp csp])
+            ([constraint (in-list ($csp-constraints csp))]
+             #:when (match-let ([($constraint cnames _) constraint])
+                      (and (memq name cnames)
+                           (for/and ([cname (in-list cnames)])
+                             (memq cname assigned-names)))))
+    (unless (constraint csp) (raise ($csp-inconsistent)))
+    ($csp ($csp-vars csp) (remove constraint ($csp-constraints csp)))))
                          
 
 (define/contract (backtrack csp)
@@ -188,39 +196,15 @@
     [(assignment-complete? csp) csp]
     [(match-let ([($var name vals) (select-unassigned-var csp)])
        (for/or ([val (in-list (order-domain-values vals))])
-         (with-handlers ([$no-solutions? (λ (exn) #f)])
-           (define new-csp (assign-val csp name val))
-           (and (assignment-consistent? new-csp name)
-                (backtrack (inference new-csp))))))]
-    [else (raise ($no-solutions))]))
+         (with-handlers ([$csp-inconsistent? (λ (exn) #f)])
+           (backtrack (infer (assign-val csp name val))))))]
+    [else (raise ($csp-inconsistent))]))
      
-
 (define/contract (solve csp)
   ($csp? . -> . any/c)
   (backtrack (make-arc-consistent (make-node-consistent csp))))
 
-
-(define csp ($csp empty empty))
-
-(define digits (range 7))
-(add-var! csp 't digits)
-(add-var! csp 'w digits)
-(add-var! csp 'o '(2 6 7))
-
-(define (sum-three t w o) (= 3 (+ t w o)))
-(add-constraint! csp sum-three '(t w o))
-
-(define diff (compose1 not =))
-(add-constraint! csp diff '(t w))
-(add-constraint! csp diff '(w o))
-(add-constraint! csp diff '(t o))
-
-(add-constraint! csp < '(t w))
-
-(define three-or-less (curryr <= 3))
-(add-constraint! csp three-or-less '(t))
-(add-constraint! csp three-or-less '(w))
-(add-constraint! csp three-or-less '(o))
-
-csp
-(solve csp)
+(define/contract (alldiff . xs)
+  (() #:rest (listof any/c) . ->* . boolean?)
+  (for*/and ([comb (in-combinations xs 2)])
+   (not (apply equal? comb)))) 
