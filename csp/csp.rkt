@@ -67,7 +67,7 @@
   (for/or ([var (in-list ($csp-vars csp))])
           (empty? ($var-vals var))))
 
-(struct $csp-inconsistent () #:transparent)
+(struct inconsistency-error () #:transparent)
 
 (define/contract (apply-unary-constraint csp constraint)
   ($csp? unary-constraint? . -> . $csp?)
@@ -75,13 +75,17 @@
   (define new-csp ($csp (for/list ([var (in-list ($csp-vars csp))])
                                   (match-define ($var name vals) var)
                                   (if (eq? name constraint-name)
+                                      ;; special rule: use promise for a constant value
+                                      ;; to skip the filtering
                                       ($var name (if (promise? proc)
                                                      (force proc)
                                                      (filter proc vals)))
                                       var))
                         ;; once the constraint is applied, it can go away
+                        ;; ps this is not the same as an "assigned" constraint
+                        ;; because the var may still have multiple values
                         (remove constraint ($csp-constraints csp))))
-  (when (no-solutions? new-csp) (raise ($csp-inconsistent)))
+  (when (no-solutions? new-csp) (raise (inconsistency-error)))
   new-csp)
 
 (define/contract (make-nodes-consistent csp)
@@ -211,7 +215,7 @@
             ([constraint (in-list ($csp-constraints csp))]
              #:when (and (constraint-has-name? constraint name)
                          (constraint-assigned? csp constraint)))
-    (unless (constraint csp) (raise ($csp-inconsistent)))
+    (unless (constraint csp) (raise (inconsistency-error)))
     (remove-assigned-constraints csp)))
 
 (define/contract (backtracking-solver csp)
@@ -223,7 +227,7 @@
                  [else ;; we have at least 1 unassigned var
                   (match-define ($var name vals) (select-unassigned-var csp))
                   (for ([val (in-list (order-domain-values vals))])
-                       (with-handlers ([$csp-inconsistent? (const #f)])
+                       (with-handlers ([inconsistency-error? void])
                          (backtrack (infer (assign-val csp name val)))))]))))
 
 (define/contract (solve* csp [finish-proc values][solution-limit +inf.0])
@@ -232,7 +236,7 @@
     (for/list ([solution (in-producer (backtracking-solver csp) (void))]
                [idx (in-range solution-limit)])
               (finish-proc solution)))
-  (unless (pair? solutions) (raise ($csp-inconsistent)))
+  (unless (pair? solutions) (raise (inconsistency-error)))
   solutions)
 
 (define/contract (solve csp [finish-proc values])

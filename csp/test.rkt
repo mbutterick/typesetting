@@ -108,7 +108,7 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 |#
 
 (define xsum-problem (make-csp))
-(add-vars! xsum-problem '(l1 l2 l3 l4 r1 r2 r3 r4 x) (λ () (shuffle (range 1 10)))
+(add-vars! xsum-problem '(l1 l2 l3 l4 r1 r2 r3 r4 x) (λ () (shuffle (range 1 10))))
 (add-constraint! xsum-problem < '(l1 l2 l3 l4))
 (add-constraint! xsum-problem < '(r1 r2 r3 r4))
 (add-constraint! xsum-problem (λ (l1 l2 l3 l4 x) (= 27 (+ l1 l2 l3 l4 x))) '(l1 l2 l3 l4 x))
