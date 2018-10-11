@@ -3,7 +3,7 @@
 (struct $csp ([vars #:mutable]
               [constraints #:mutable]) #:transparent)
 
-(define (new-csp) ($csp null null))
+(define (make-csp) ($csp null null))
 
 (struct $var (name vals) #:transparent)
 (define $var-name? symbol?)
@@ -41,15 +41,21 @@
 
 (define/contract (add-var! csp name [vals empty])
   (($csp? $var-name?) ((listof any/c)) . ->* . void?)
-  (when (memq name (map $var-name ($csp-vars csp)))
+  (add-vars! csp (list name) vals))
+
+(define/contract (add-vars! csp names [vals empty])
+  (($csp? (listof $var-name?)) ((listof any/c)) . ->* . void?)
+  (for ([name (in-list names)]
+        #:when (memq name (map $var-name ($csp-vars csp))))
     (raise-argument-error 'add-var! "var that doesn't exist" name))
-  (set-$csp-vars! csp (cons ($var name vals) ($csp-vars csp))))
+  (for ([name (in-list names)])
+    (set-$csp-vars! csp (cons ($var name vals) ($csp-vars csp)))))
 
 (define (unique-varnames? xs)
   (and (andmap $var-name? xs) (not (check-duplicates xs eq?))))
 
-(define/contract (add-constraint! csp proc . var-names)
-  (($csp? procedure?) #:rest (listof $var-name?) . ->* . void?)
+(define/contract (add-constraint! csp proc var-names)
+  ($csp? procedure? (listof $var-name?) . -> . void?)
   (for ([name (in-list var-names)])
     (check-name-in-csp! 'add-constraint! csp name))
   (set-$csp-constraints! csp (cons ($constraint var-names proc) ($csp-constraints csp))))
@@ -213,4 +219,4 @@
 (define/contract (alldiff . xs)
   (() #:rest (listof any/c) . ->* . boolean?)
   (for/and ([comb (in-combinations xs 2)])
-   (not (apply equal? comb)))) 
+    (not (apply equal? comb)))) 
