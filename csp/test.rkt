@@ -1,4 +1,4 @@
-#lang racket
+#lang at-exp racket
 (require "csp.rkt" rackunit)
 
 (let ([demo (new-csp)])
@@ -23,6 +23,8 @@
   (add-constraint! demo three-or-less 'o)
   (check-equal? (solve demo) ($csp (list ($var 'o '(2)) ($var 'w '(1)) ($var 't '(0))) '())))
 
+
+;; TWO + TWO = FOUR
 (define ttf (new-csp))
 (define digs (range 10))
 (add-var! ttf 't digs)
@@ -44,4 +46,23 @@
 (add-constraint! ttf positive? 'f)
 (add-constraint! ttf = 'f 'c1000)
 
-(check-equal? (solve ttf) ($csp (list ($var 'c1000 '(1)) ($var 'c100 '(0)) ($var 'c10 '(0)) ($var 'r '(8)) ($var 'u '(6)) ($var 'f '(1)) ($var 'o '(4)) ($var 'w '(3)) ($var 't '(7))) '()))
+
+(define ttf-solution (solve ttf)) 
+(check-equal? ttf-solution
+              ($csp
+               (list
+                ($var 'c1000 '(1))
+                ($var 'c100 '(0))
+                ($var 'c10 '(0))
+                ($var 'r '(8))
+                ($var 'u '(6))
+                ($var 'f '(1))
+                ($var 'o '(4))
+                ($var 'w '(3))
+                ($var 't '(7)))
+               '()))
+
+(define (ttf-print csp)
+  (format "~a~a~a + ~a~a~a = ~a~a~a~a" ($csp-ref csp 't) ($csp-ref csp 'w) ($csp-ref csp 'o) ($csp-ref csp 't) ($csp-ref csp 'w) ($csp-ref csp 'o) ($csp-ref csp 'f) ($csp-ref csp 'o) ($csp-ref csp 'u) ($csp-ref csp 'r)))
+
+(check-equal? (solve ttf-solution ttf-print) "734 + 734 = 1468")

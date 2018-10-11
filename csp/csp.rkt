@@ -45,6 +45,9 @@
     (raise-argument-error 'add-var! "var that doesn't exist" name))
   (set-$csp-vars! csp (cons ($var name vals) ($csp-vars csp))))
 
+(define (unique-varnames? xs)
+  (and (andmap $var-name? xs) (not (check-duplicates xs eq?))))
+
 (define/contract (add-constraint! csp proc . var-names)
   (($csp? procedure?) #:rest (listof $var-name?) . ->* . void?)
   (for ([name (in-list var-names)])
@@ -73,7 +76,7 @@
   (when (no-solutions? new-csp) (raise ($csp-inconsistent)))
   new-csp)
 
-(define/contract (make-node-consistent csp)
+(define/contract (make-nodes-consistent csp)
   ($csp? . -> . $csp?)
   (for/fold ([csp csp])
             ([constraint (in-list ($csp-constraints csp))]
@@ -134,7 +137,7 @@
                             ;; revision reduced the domain, so supplement the list of arcs
                             (remove-duplicates (append (all-arcs . terminating-at . name) other-arcs))))))
 
-(define/contract (make-arc-consistent csp)
+(define/contract (make-arcs-consistent csp)
   ($csp? . -> . $csp?)
   ;; csp is arc-consistent if every pair of variables (x y)
   ;; has values in their domain that satisfy every binary constraint
@@ -200,11 +203,14 @@
            (backtrack (infer (assign-val csp name val))))))]
     [else (raise ($csp-inconsistent))]))
      
-(define/contract (solve csp)
-  ($csp? . -> . any/c)
-  (backtrack (make-arc-consistent (make-node-consistent csp))))
+(define/contract (solve csp [finish-proc values])
+  (($csp?) (procedure?) . ->* . any/c)
+  (finish-proc (backtrack (make-arcs-consistent (make-nodes-consistent csp)))))
+
+(define ($csp-ref csp name)
+  (car ($csp-vals csp name)))
 
 (define/contract (alldiff . xs)
   (() #:rest (listof any/c) . ->* . boolean?)
-  (for*/and ([comb (in-combinations xs 2)])
+  (for/and ([comb (in-combinations xs 2)])
    (not (apply equal? comb)))) 
