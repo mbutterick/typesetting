@@ -1,4 +1,5 @@
 #lang debug racket
+(require racket/generator)
 (provide (all-defined-out))
 (struct $csp ([vars #:mutable]
               [constraints #:mutable]) #:transparent)
@@ -198,32 +199,36 @@
     (unless (constraint csp) (raise ($csp-inconsistent)))
     ($csp ($csp-vars csp) (remove constraint ($csp-constraints csp)))))
 
-(define/contract (backtrack csp)
-  ($csp? . -> . $csp?)
-  (cond
-    [(assignment-complete? csp) csp]
-    [(match-let ([($var name vals) (select-unassigned-var csp)])
-       (for/or ([val (in-list (order-domain-values vals))])
-         (with-handlers ([$csp-inconsistent? (λ (exn) #f)])
-           (backtrack (infer (assign-val csp name val))))))]
-    [else (raise ($csp-inconsistent))]))
-     
-(define/contract (solve csp [finish-proc values])
-  (($csp?) (procedure?) . ->* . any/c)
-  (finish-proc (backtrack (make-arcs-consistent (make-nodes-consistent csp)))))
-
-(require racket/generator)
+(define gen-stop-val (gensym))
 (define/contract (backtrack-solver csp)
   ($csp? . -> . generator?)
   (generator ()
-             (let loop ([csp csp])
+             (let backtrack ([csp csp])
                (cond
                  [(assignment-complete? csp) (yield csp)]
                  [else
                   (match-define ($var name vals) (select-unassigned-var csp))
                   (for ([val (in-list (order-domain-values vals))])
                     (with-handlers ([$csp-inconsistent? (λ (exn) #f)])
-                      (loop (infer (assign-val csp name val)))))]))))
+                      (backtrack (infer (assign-val csp name val)))))
+                  gen-stop-val]))))
+
+(define (make-backtrack-iterator csp)
+  (backtrack-solver (make-arcs-consistent (make-nodes-consistent csp))))
+     
+(define/contract (solve csp [finish-proc values])
+  (($csp?) (procedure?) . ->* . any/c)
+  (or
+   (for/first ([solution (in-producer (make-backtrack-iterator csp) gen-stop-val)])
+     (finish-proc solution))
+   (raise ($csp-inconsistent))))
+
+(define/contract (solve* csp [finish-proc values])
+  (($csp?) (procedure?) . ->* . (listof any/c))
+  (define solutions (for/list ([solution (in-producer (make-backtrack-iterator csp) gen-stop-val)])
+                      (finish-proc solution)))
+  (when (empty? solutions) (raise ($csp-inconsistent)))
+  solutions)
 
 (define ($csp-ref csp name)
   (car ($csp-vals csp name)))
