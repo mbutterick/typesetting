@@ -52,11 +52,21 @@
 ;;      A+B+C
 
 (define abc (make-csp))
-(add-vars! abc '(a b c) (range 1 10))
-(define (test-solution s) (let ([a (car ($csp-vals abc 'a))]
-                                [b (car ($csp-vals abc 'b))]
-                                [c (car ($csp-vals abc 'c))])
-                            (/ (+ (* 100 a) (* 10 b) c) (+ a b c))))
+(add-vars! abc '(a b c) (range 1 3))
+(define (test-solution abc)
+  (let ([a ($csp-ref abc 'a)]
+        [b ($csp-ref abc 'b)]
+        [c ($csp-ref abc 'c)])
+    (/ (+ (* 100 a) (* 10 b) c) (+ a b c))))
+
 
 ;; todo: gather all solutins in generator
-(test-solution (solve abc))
+(define bs (backtrack-solver abc))
+(bs)
+(bs)
+(bs)
+(bs)
+(bs)
+(bs)
+(bs)
+(bs)

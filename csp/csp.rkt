@@ -197,7 +197,6 @@
                              (memq cname assigned-names)))))
     (unless (constraint csp) (raise ($csp-inconsistent)))
     ($csp ($csp-vars csp) (remove constraint ($csp-constraints csp)))))
-                         
 
 (define/contract (backtrack csp)
   ($csp? . -> . $csp?)
@@ -212,6 +211,19 @@
 (define/contract (solve csp [finish-proc values])
   (($csp?) (procedure?) . ->* . any/c)
   (finish-proc (backtrack (make-arcs-consistent (make-nodes-consistent csp)))))
+
+(require racket/generator)
+(define/contract (backtrack-solver csp)
+  ($csp? . -> . generator?)
+  (generator ()
+             (let loop ([csp csp])
+               (cond
+                 [(assignment-complete? csp) (yield csp)]
+                 [else
+                  (match-define ($var name vals) (select-unassigned-var csp))
+                  (for ([val (in-list (order-domain-values vals))])
+                    (with-handlers ([$csp-inconsistent? (λ (exn) #f)])
+                      (loop (infer (assign-val csp name val)))))]))))
 
 (define ($csp-ref csp name)
   (car ($csp-vals csp name)))
