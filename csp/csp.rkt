@@ -126,13 +126,30 @@
              #:when (eq? name (second ($constraint-names ($arc-constraint arc)))))
     arc))
 
+(define/contract (constraint-names-assigned? csp constraint)
+  ($csp? $constraint? . -> . boolean?)
+  (define assigned-var-names
+    (for/list ([var (in-list (assigned-vars csp))])
+      ($var-name var)))
+  (match-define ($constraint names _) constraint)
+  (for/and ([name (in-list names)])
+    (memq name assigned-var-names)))
+
+(define/contract (remove-obsolete-constraints csp)
+  ($csp? . -> . $csp?)
+  ($csp
+   ($csp-vars csp)
+   (for/list ([constraint (in-list ($csp-constraints csp))]
+              #:unless (constraint-names-assigned? csp constraint))
+     constraint)))
+
 (define/contract (ac-3 csp)
   ($csp? . -> . $csp?)
   ;; as described by AIMA @ 265
   (define all-arcs (binary-constraints->arcs (filter binary-constraint? ($csp-constraints csp))))
   (for/fold ([csp csp]
              [arcs all-arcs]
-             #:result csp)
+             #:result (remove-obsolete-constraints csp))
             ([i (in-naturals)]
              #:break (empty? arcs))
     (match-define (cons arc other-arcs) arcs)
@@ -173,7 +190,10 @@
 (define/contract (select-unassigned-var csp)
   ($csp? . -> . $var?)
   ;; minimum remaining values (MRV) rule
-  (argmin (λ (var) (length ($var-vals var))) (unassigned-vars csp)))
+  (define uvars (unassigned-vars csp))
+  (when (empty? uvars)
+    (raise-argument-error 'select-unassigned-var "nonempty list of vars" uvars))
+  (argmin (λ (var) (length ($var-vals var))) uvars))
 
 (define/contract (order-domain-values vals)
   ((listof any/c) . -> . (listof any/c))
@@ -197,43 +217,45 @@
                            (for/and ([cname (in-list cnames)])
                              (memq cname assigned-names)))))
     (unless (constraint csp) (raise ($csp-inconsistent)))
-    ($csp ($csp-vars csp) (remove constraint ($csp-constraints csp)))))
+    (remove-obsolete-constraints csp)))
 
-(define gen-stop-val (gensym))
-(define/contract (backtrack-solver csp)
+(define solver-stop-val (gensym 'solver-stop))
+(define/contract (backtracking-solution-generator csp)
   ($csp? . -> . generator?)
   (generator ()
-             (let backtrack ([csp csp])
-               (cond
-                 [(assignment-complete? csp) (yield csp)]
-                 [else
-                  (match-define ($var name vals) (select-unassigned-var csp))
-                  (for ([val (in-list (order-domain-values vals))])
-                    (with-handlers ([$csp-inconsistent? (λ (exn) #f)])
-                      (backtrack (infer (assign-val csp name val)))))
-                  gen-stop-val]))))
+             (begin0
+               solver-stop-val
+               (let backtrack ([csp csp])
+                 (cond
+                   [(assignment-complete? csp) (yield csp)]
+                   [else ;; we have at least 1 unassigned var
+                    (match-define ($var name vals) (select-unassigned-var csp))
+                    (for ([val (in-list (order-domain-values vals))])
+                      (with-handlers ([$csp-inconsistent? (const #f)])
+                        (backtrack (infer (assign-val csp name val)))))])))))
 
-(define (make-backtrack-iterator csp)
-  (backtrack-solver (make-arcs-consistent (make-nodes-consistent csp))))
+(define (backtracking-solver csp)
+  (backtracking-solution-generator (make-arcs-consistent (make-nodes-consistent csp))))
      
 (define/contract (solve csp [finish-proc values])
   (($csp?) (procedure?) . ->* . any/c)
   (or
-   (for/first ([solution (in-producer (make-backtrack-iterator csp) gen-stop-val)])
+   (for/first ([solution (in-producer (backtracking-solver csp) solver-stop-val)])
      (finish-proc solution))
    (raise ($csp-inconsistent))))
 
 (define/contract (solve* csp [finish-proc values])
   (($csp?) (procedure?) . ->* . (listof any/c))
-  (define solutions (for/list ([solution (in-producer (make-backtrack-iterator csp) gen-stop-val)])
+  (define solutions (for/list ([solution (in-producer (backtracking-solver csp) solver-stop-val)])
                       (finish-proc solution)))
   (when (empty? solutions) (raise ($csp-inconsistent)))
   solutions)
+
 
 (define ($csp-ref csp name)
   (car ($csp-vals csp name)))
 
 (define/contract (alldiff . xs)
   (() #:rest (listof any/c) . ->* . boolean?)
-  (for/and ([comb (in-combinations xs 2)])
-    (not (apply equal? comb)))) 
+  (= (length (remove-duplicates xs)) (length xs)))
+
