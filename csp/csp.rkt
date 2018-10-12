@@ -235,7 +235,9 @@
   (validate-assignments csp-with-assignment))
 
 (define (reduce-arity proc pattern)
-  (unless (= (length pattern) (procedure-arity proc))
+  (unless (match (procedure-arity proc)
+            [(arity-at-least val) (<= val (length pattern))]
+            [(? number? val) (= val (length pattern))])
     (raise-argument-error 'reduce-arity (format "list of length ~a, same as procedure arity" (procedure-arity proc)) pattern))
   (define reduced-arity-name (string->symbol (format "reduced-arity-~a" (object-name proc))))
   (define-values (id-names vals) (partition symbol? pattern))
@@ -248,8 +250,8 @@
                             [xs xs]
                             [vals vals]
                             #:result (reverse acc))
-                           ([arg (in-list pattern)])
-                   (if (symbol? arg)
+                           ([pat-item (in-list pattern)])
+                   (if (symbol? pat-item)
                        (values (cons (car xs) acc) (cdr xs) vals)
                        (values (cons (car vals) acc) xs (cdr vals))))))
    reduced-arity-name))
