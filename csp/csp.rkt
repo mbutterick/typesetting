@@ -20,8 +20,8 @@
       [else
        (match-define (cons name other-names) names)
        (for/and ([val (in-list ($csp-vals csp name))])
-         ;; todo: reconsider efficiency of currying every value
-         (($constraint other-names (curry proc val)) csp))])))
+                ;; todo: reconsider efficiency of currying every value
+                (($constraint other-names (curry proc val)) csp))])))
 
 (define/contract (check-name-in-csp! caller csp name)
   (symbol? $csp? $var-name? . -> . void?)
@@ -61,11 +61,11 @@
   (($csp? procedure? (listof (listof $var-name?))) ((or/c #false $var-name?)) . ->* . void?)
   (set-$csp-constraints! csp (append ($csp-constraints csp) 
                                      (for/list ([names (in-list namess)])
-                                       (for ([name (in-list names)])
-                                         (check-name-in-csp! 'add-constraint! csp name))
-                                       ($constraint names (if proc-name
-                                                              (procedure-rename proc proc-name)
-                                                              proc))))))
+                                               (for ([name (in-list names)])
+                                                    (check-name-in-csp! 'add-constraint! csp name))
+                                               ($constraint names (if proc-name
+                                                                      (procedure-rename proc proc-name)
+                                                                      proc))))))
 
 (define/contract (add-pairwise-constraint! csp proc var-names [proc-name #false])
   (($csp? procedure? (listof $var-name?)) ($var-name?) . ->* . void?)
@@ -78,7 +78,7 @@
 (define/contract (no-solutions? csp)
   ($csp? . -> . boolean?)
   (for/or ([var (in-list ($csp-vars csp))])
-    (empty? ($var-vals var))))
+          (empty? ($var-vals var))))
 
 (struct inconsistency-error () #:transparent)
 
@@ -86,14 +86,14 @@
   ($csp? unary-constraint? . -> . $csp?)
   (match-define ($constraint (list constraint-name) proc) constraint)
   (define new-csp ($csp (for/list ([var (in-list ($csp-vars csp))])
-                          (match-define ($var name vals) var)
-                          (if (eq? name constraint-name)
-                              ;; special rule: use promise for a constant value
-                              ;; to skip the filtering
-                              ($var name (if (promise? proc)
-                                             (force proc)
-                                             (filter proc vals)))
-                              var))
+                                  (match-define ($var name vals) var)
+                                  (if (eq? name constraint-name)
+                                      ;; special rule: use promise for a constant value
+                                      ;; to skip the filtering
+                                      ($var name (if (promise? proc)
+                                                     (force proc)
+                                                     (filter proc vals)))
+                                      var))
                         ;; once the constraint is applied, it can go away
                         ;; ps this is not the same as an "assigned" constraint
                         ;; because the var may still have multiple values
@@ -113,7 +113,7 @@
   (check-name-in-csp! '$csp-vals csp name)
   (for/first ([var (in-list ($csp-vars csp))]
               #:when (eq? name ($var-name var)))
-    ($var-vals var)))
+             ($var-vals var)))
 
 (struct $arc (name constraint) #:transparent)
 
@@ -126,7 +126,7 @@
                    (λ (val other-val) (constraint-proc other-val val)))) ; otherwise reverse arg order
   (define (satisfies-arc? val)
     (for/or ([other-val (in-list ($csp-vals csp other-name))])
-      (proc val other-val)))
+            (proc val other-val)))
   (apply-unary-constraint csp ($constraint (list name)
                                            (procedure-rename
                                             satisfies-arc?
@@ -136,18 +136,18 @@
   ((listof binary-constraint?) . -> . (listof $arc?))
   (for*/list ([constraint (in-list constraints)]
               [name (in-list ($constraint-names constraint))])
-    ($arc name constraint)))
+             ($arc name constraint)))
 
 (define/contract (terminating-at arcs name)
   ((listof $arc?) $var-name? . -> . (listof $arc?))
   (for/list ([arc (in-list arcs)]
              #:when (eq? name (second ($constraint-names ($arc-constraint arc)))))
-    arc))
+            arc))
 
 (define/contract (constraint-assigned? csp constraint)
   ($csp? $constraint? . -> . any/c)
   (for/and ([name (in-list ($constraint-names constraint))])
-    (memq name (map $var-name (assigned-vars csp)))))
+           (memq name (map $var-name (assigned-vars csp)))))
 
 (define/contract (remove-assigned-constraints csp [arity #false])
   (($csp?) ((or/c #false exact-nonnegative-integer?)) . ->* . $csp?)
@@ -156,7 +156,7 @@
    (for/list ([constraint (in-list ($csp-constraints csp))]
               #:unless (and (if arity (= (length ($constraint-names constraint)) arity) #true)
                             (constraint-assigned? csp constraint)))
-     constraint)))
+             constraint)))
 
 (define (remove-assigned-binary-constraints csp)
   (remove-assigned-constraints csp 2))
@@ -226,7 +226,7 @@
   ($csp? . -> . $csp?)
   (for ([constraint (in-list ($csp-constraints csp))]
         #:when (constraint-assigned? csp constraint))
-    (unless (constraint csp) (raise (inconsistency-error))))
+       (unless (constraint csp) (raise (inconsistency-error))))
   (reduce-constraint-arity (remove-assigned-constraints csp)))
 
 (define/contract (assign-val csp name val)
@@ -235,6 +235,8 @@
   (validate-assignments csp-with-assignment))
 
 (define (reduce-arity proc args)
+  (unless (= (length args) (procedure-arity proc))
+    (raise-argument-error 'reduce-arity (format "list of length ~a, same as procedure arity" (procedure-arity proc)) args))
   (procedure-rename
    (λ xs
      (apply proc (for/fold ([acc empty]
@@ -261,19 +263,19 @@
   (define assigned-names (map $var-name (assigned-vars csp)))
   ($csp ($csp-vars csp)
         (for/list ([constraint (in-list ($csp-constraints csp))])
-          (match-define ($constraint cnames proc) constraint)
-          (cond
-            [(and (<= minimum-arity (length cnames))
-                  (for/or ([cname (in-list cnames)])
-                    (memq cname assigned-names)))
-             ($constraint (for/list ([cname (in-list cnames)]
-                                     #:unless (memq cname assigned-names))
-                            cname)
-                          (reduce-arity proc (for/list ([cname (in-list cnames)])
-                                               (if (memq cname assigned-names)
-                                                   (car ($csp-vals csp cname))
-                                                   cname))))]
-            [else constraint]))))
+                  (match-define ($constraint cnames proc) constraint)
+                  (cond
+                    [(and (<= minimum-arity (length cnames))
+                          (for/or ([cname (in-list cnames)])
+                                  (memq cname assigned-names)))
+                     ($constraint (for/list ([cname (in-list cnames)]
+                                             #:unless (memq cname assigned-names))
+                                            cname)
+                                  (reduce-arity proc (for/list ([cname (in-list cnames)])
+                                                               (if (memq cname assigned-names)
+                                                                   (car ($csp-vals csp cname))
+                                                                   cname))))]
+                    [else constraint]))))
 
 (module+ test
   (define creduce (assign-val ($csp (list ($var 'a '(1 2 3)) ($var 'b '(2 3)) ($var 'c '(1 2 3 4 5))) (list ($constraint '(a b c) (procedure-rename (λ (a b c) (= (+ a b c) 4)) 'summer)))) 'a 1))
@@ -295,15 +297,15 @@
                  [else ;; we have at least 1 unassigned var
                   (match-define ($var name vals) (select-unassigned-var csp))
                   (for ([val (in-list (order-domain-values vals))])
-                    (with-handlers ([inconsistency-error? void])
-                      (backtrack (infer (assign-val csp name val)))))]))))
+                       (with-handlers ([inconsistency-error? void])
+                         (backtrack (infer (assign-val csp name val)))))]))))
 
 (define/contract (solve* csp [finish-proc values][solution-limit +inf.0])
   (($csp?) (procedure? integer?) . ->* . (listof any/c))
   (define solutions
     (for/list ([solution (in-producer (backtracking-solver csp) (void))]
                [idx (in-range solution-limit)])
-      (finish-proc solution)))
+              (finish-proc solution)))
   (unless (pair? solutions) (raise (inconsistency-error)))
   solutions)
 
