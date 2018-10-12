@@ -7,8 +7,8 @@
 
 (define (sum-three t w o) (= 3 (+ t w o)))
 (add-constraint! demo sum-three '(t w o))
-(add-constraint! demo alldiff '(t w o))
-(add-constraint! demo < '(t w o))
+(add-pairwise-constraint! demo alldiff= '(t w o))
+(add-pairwise-constraint! demo < '(t w o))
 
 (check-equal? (time (solve demo))  ($csp (list ($var 't '(0)) ($var 'w '(1)) ($var 'o '(2))) '()))
 
@@ -22,7 +22,8 @@
     (for/sum ([i (in-range (length xs))])
              (* (list-ref xs i) (expt 10 i)))))
 
-(add-constraint! ttf alldiff '(t w o f u r))
+(add-pairwise-constraint! ttf alldiff= '(t w o f u r))
+(add-constraint! ttf (λ (o r) (= (modulo (+ o o) 10) r)) '(o r))
 (add-constraint! ttf (λ (t w o f u r) (= (+ (word-value t w o) (word-value t w o))
                                          (word-value f o u r))) '(t w o f u r))
 (add-constraint! ttf positive? '(t))
@@ -32,18 +33,18 @@
 (check-equal? ttf-solution
               ($csp
                (list
-                ($var 't '(9))
+                ($var 't '(7))
                 ($var 'w '(3))
-                ($var 'o '(8))
+                ($var 'o '(4))
                 ($var 'f '(1))
-                ($var 'u '(7))
-                ($var 'r '(6)))
+                ($var 'u '(6))
+                ($var 'r '(8)))
                '()))
 
 (define (ttf-print csp)
   (format "~a~a~a + ~a~a~a = ~a~a~a~a" ($csp-ref csp 't) ($csp-ref csp 'w) ($csp-ref csp 'o) ($csp-ref csp 't) ($csp-ref csp 'w) ($csp-ref csp 'o) ($csp-ref csp 'f) ($csp-ref csp 'o) ($csp-ref csp 'u) ($csp-ref csp 'r)))
 
-(check-equal? (time (solve ttf-solution ttf-print)) "938 + 938 = 1876")
+(check-equal? (time (solve ttf-solution ttf-print)) "734 + 734 = 1468")
 
 
 ;; ABC problem:
@@ -72,11 +73,11 @@
 ;; 26 dollars and quarters
 ;; that add up to $17.
 
-(define quarter-problem (make-csp))
-(add-vars! quarter-problem '(dollars quarters) (range 26))
-(add-constraint! quarter-problem (λ (d q) (= 26 (+ d q))) '(dollars quarters))
-(add-constraint! quarter-problem (λ (d q) (= 17 (+ d (* 0.25 q)))) '(dollars quarters))
-(check-equal? (time (solve quarter-problem))
+(define quarters (make-csp))
+(add-vars! quarters '(dollars quarters) (range 26))
+(add-constraint! quarters (λ (d q) (= 26 (+ d q))) '(dollars quarters))
+(add-constraint! quarters (λ (d q) (= 17 (+ d (* 0.25 q)))) '(dollars quarters))
+(check-equal? (time (solve quarters))
               ($csp (list ($var 'dollars '(14)) ($var 'quarters '(12))) '()))
 
 
@@ -84,13 +85,13 @@
 #|
 A collection of 33 coins, consisting of nickels, dimes, and quarters, has a value of $3.30. If there are three times as many nickels as quarters, and one-half as many dimes as nickels, how many coins of each kind are there?
 |#
-(define ndq-problem (make-csp))
-(add-vars! ndq-problem '(n d q) (range 33))
-(add-constraint! ndq-problem (λ (n d q) (= 33 (+ n d q))) '(n d q))
-(add-constraint! ndq-problem (λ (n d q) (= 330 (+ (* n 5) (* d 10) (* q 25)))) '(n d q))
-(add-constraint! ndq-problem (λ (n q) (= (* 3 q) n)) '(n q))
-(add-constraint! ndq-problem (λ (d n) (= (* 2 d) n)) '(d n))
-(check-equal? (time (solve ndq-problem))
+(define nickels (make-csp))
+(add-vars! nickels '(n d q) (range 33))
+(add-constraint! nickels (λ (n d q) (= 33 (+ n d q))) '(n d q))
+(add-constraint! nickels (λ (n d q) (= 330 (+ (* n 5) (* d 10) (* q 25)))) '(n d q))
+(add-constraint! nickels (λ (n q) (= (* 3 q) n)) '(n q))
+(add-constraint! nickels (λ (d n) (= (* 2 d) n)) '(d n))
+(check-equal? (time (solve nickels))
               ($csp (list ($var 'n '(18)) ($var 'd '(9)) ($var 'q '(6))) '()))
 
 
@@ -107,16 +108,15 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 #
 |#
 
-(define xsum-problem (make-csp))
-(add-vars! xsum-problem '(l1 l2 l3 l4 r1 r2 r3 r4 x) (λ () (shuffle (range 1 10))))
-(add-constraint! xsum-problem < '(l1 l2 l3 l4))
-(add-constraint! xsum-problem < '(r1 r2 r3 r4))
-(add-constraint! xsum-problem (λ (l1 l2 l3 l4 x) (= 27 (+ l1 l2 l3 l4 x))) '(l1 l2 l3 l4 x))
-(add-constraint! xsum-problem (λ (r1 r2 r3 r4 x)  (= 27 (+ r1 r2 r3 r4 x))) '(r1 r2 r3 r4 x))
-(add-constraint! xsum-problem alldiff '(l1 l2 l3 l4 r1 r2 r3 r4 x))
+(define xsum (make-csp))
+(add-vars! xsum '(l1 l2 l3 l4 r1 r2 r3 r4 x) (λ () (shuffle (range 1 10))))
+(add-pairwise-constraint! xsum < '(l1 l2 l3 l4))
+(add-pairwise-constraint! xsum < '(r1 r2 r3 r4))
+(add-constraint! xsum (λ (l1 l2 l3 l4 x) (= 27 (+ l1 l2 l3 l4 x))) '(l1 l2 l3 l4 x))
+(add-constraint! xsum (λ (r1 r2 r3 r4 x)  (= 27 (+ r1 r2 r3 r4 x))) '(r1 r2 r3 r4 x))
+(add-pairwise-constraint! xsum alldiff= '(l1 l2 l3 l4 r1 r2 r3 r4 x))
 
-;; todo: too slow
-#;(check-equal? (length (time (solve* xsum-problem))) 8)
+(check-equal? (length (time (solve* xsum))) 8)
 
 
 ;; send more money problem
@@ -137,7 +137,7 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 (add-constraint! smm (λ (s e n d m o r y)
                        (= (+ (word-value s e n d) (word-value m o r e))
                           (word-value m o n e y))) '(s e n d m o r y))
-(add-constraint! smm alldiff '(s e n d m o r y))
+(add-constraint! smm alldiff= '(s e n d m o r y))
 
 ;; todo: too slow
 ;(solve smm)
