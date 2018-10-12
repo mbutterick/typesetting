@@ -237,8 +237,12 @@
 (define (reduce-arity proc args)
   (unless (= (length args) (procedure-arity proc))
     (raise-argument-error 'reduce-arity (format "list of length ~a, same as procedure arity" (procedure-arity proc)) args))
+  (define reduced-arity-name (string->symbol (format "reduced-arity-~a" (object-name proc))))
+  (define new-arity (length (filter symbol? args)))
   (procedure-rename
    (λ xs
+     (unless (= (length xs) new-arity)
+       (apply raise-arity-error reduced-arity-name new-arity xs))
      (apply proc (for/fold ([acc empty]
                             [xs xs]
                             [vals (filter-not symbol? args)]
@@ -247,7 +251,7 @@
                    (if (symbol? arg)
                        (values (cons (car xs) acc) (cdr xs) vals)
                        (values (cons (car vals) acc) xs (cdr vals))))))
-   (string->symbol (format "reduced-arity-~a" (object-name proc)))))
+   reduced-arity-name))
 
 (module+ test
   (require rackunit)
