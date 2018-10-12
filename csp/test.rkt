@@ -87,10 +87,10 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 |#
 (define nickels (make-csp))
 (add-vars! nickels '(n d q) (range 33))
-(add-constraint! nickels (λ (n d q) (= 33 (+ n d q))) '(n d q))
-(add-constraint! nickels (λ (n d q) (= 330 (+ (* n 5) (* d 10) (* q 25)))) '(n d q))
-(add-constraint! nickels (λ (n q) (= (* 3 q) n)) '(n q))
-(add-constraint! nickels (λ (d n) (= (* 2 d) n)) '(d n))
+(add-constraint! nickels (λ (n d q) (= 33 (+ n d q))) '(n d q) 'count-33)
+(add-constraint! nickels (λ (n d q) (= 330 (+ (* n 5) (* d 10) (* q 25)))) '(n d q) 'total-3.30)
+(add-constraint! nickels (λ (n q) (= (* 3 q) n)) '(n q) 'triple-nickel)
+(add-constraint! nickels (λ (d n) (= (* 2 d) n)) '(d n) 'double-nickel)
 (check-equal? (time (solve nickels))
               ($csp (list ($var 'n '(18)) ($var 'd '(9)) ($var 'q '(6))) '()))
 
@@ -131,13 +131,13 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 |#
 
 (define smm (make-csp))
-(add-vars! smm '(s e n d m o r y) (range 10))
+(add-vars! smm '(s e n d m o r y) (λ () (shuffle (range 10))))
 (add-constraint! smm positive? '(s))
 (add-constraint! smm positive? '(m))
 (add-constraint! smm (λ (s e n d m o r y)
                        (= (+ (word-value s e n d) (word-value m o r e))
                           (word-value m o n e y))) '(s e n d m o r y))
-(add-constraint! smm alldiff= '(s e n d m o r y))
+(add-pairwise-constraint! smm alldiff= '(s e n d m o r y))
 
 ;; todo: too slow
 ;(solve smm)
@@ -158,5 +158,5 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
                           (not (= qa-row qb-row)))) ; same row?
                        (list qa qb)))
 
-(check-equal? 92 (length (solve* queens-problem)))
+(check-equal? 92 (length (time (solve* queens-problem))))
 
