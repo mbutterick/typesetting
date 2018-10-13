@@ -7,6 +7,13 @@
 (define (make-csp) ($csp null null))
 (define debug (make-parameter #false))
 
+(define (in-cartesian xss)
+  (in-generator (let loop ([xss xss][args empty])
+                  (if (null? xss)
+                      (yield (reverse args))
+                      (for ([x (in-list (car xss))])
+                        (loop (cdr xss) (cons x args)))))))
+
 (struct $var (name vals) #:transparent)
 (define $var-name? symbol?)
 (struct $constraint (names proc) #:transparent
@@ -14,14 +21,9 @@
   (λ (constraint csp)
     (unless ($csp? csp)
       (raise-argument-error '$constraint-proc "$csp" csp))
-    (match-define ($constraint names proc) constraint)
-    (cond
-      [(empty? names) (proc)]
-      [else
-       (match-define (cons name other-names) names)
-       (for/and ([val (in-list ($csp-vals csp name))])
-         ;; todo: reconsider efficiency of currying every value
-         (($constraint other-names (curry proc val)) csp))])))
+    ;; apply proc in many-to-many style
+    (for/and ([args (in-cartesian (map (λ (cname) ($csp-vals csp cname)) ($constraint-names constraint)))])
+      (apply ($constraint-proc constraint) args))))
 
 (define/contract (check-name-in-csp! caller csp name)
   (symbol? $csp? $var-name? . -> . void?)
@@ -77,8 +79,7 @@
 
 (define/contract (no-solutions? csp)
   ($csp? . -> . boolean?)
-  (for/or ([var (in-list ($csp-vars csp))])
-    (zero? (remaining-values var))))
+  (zero? (state-count csp)))
 
 (struct inconsistency-signal () #:transparent)
 

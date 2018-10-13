@@ -20,7 +20,7 @@
 (define (word-value . xs)
   (let ([xs (reverse xs)])
     (for/sum ([i (in-range (length xs))])
-             (* (list-ref xs i) (expt 10 i)))))
+      (* (list-ref xs i) (expt 10 i)))))
 
 (add-pairwise-constraint! ttf alldiff= '(t w o f u r))
 (add-constraint! ttf (λ (o r) (= (modulo (+ o o) 10) r)) '(o r))
@@ -136,13 +136,13 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 (add-constraint! smm positive? '(m))
 (add-constraint! smm (λ (d e y) (= (modulo (+ d e) 10) y)) '(d e y))
 (add-constraint! smm (λ (n d r e y)
-                                 (= (modulo (+ (word-value n d) (word-value r e)) 100)
-                                    (word-value e y))) '(n d r e y))
+                       (= (modulo (+ (word-value n d) (word-value r e)) 100)
+                          (word-value e y))) '(n d r e y))
 (add-constraint! smm (λ (e n d o r y)
-                                 (= (modulo (+ (word-value e n d) (word-value o r e)) 1000) (word-value n e y))) '(e n d o r y))
+                       (= (modulo (+ (word-value e n d) (word-value o r e)) 1000) (word-value n e y))) '(e n d o r y))
 (add-constraint! smm (λ (s e n d m o r y)
-                       (= (+ (word-value s e n d) (word-value m o r e))
-                          (word-value m o n e y))) '(s e n d m o r y))
+                         (= (+ (word-value s e n d) (word-value m o r e))
+                            (word-value m o n e y))) '(s e n d m o r y))
 (add-pairwise-constraint! smm alldiff= '(s e n d m o r y))
 
 ;; todo: too slow
@@ -150,19 +150,20 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 
 ;; queens problem
 ;; place queens on chessboard so they do not intersect
-(define queens-problem (make-csp))
-(define queens '(q0 q1 q2 q3 q4 q5 q6 q7))
-(define rows (range 8))
-(add-vars! queens-problem queens rows)
-(for* ([(qa qa-col) (in-indexed queens)]
-       [(qb qb-col) (in-indexed queens)]
-       #:when (< qa-col qb-col))
-      (add-constraint! queens-problem
-                       (λ (qa-row qb-row)
-                         (and 
-                          (not (= (abs (- qa-row qb-row)) (abs (- qa-col qb-col)))) ; same diagonal?
-                          (not (= qa-row qb-row)))) ; same row?
-                       (list qa qb)))
+(define queens (make-csp))
+(define qs (for/list ([q 8]) (string->symbol (format "q~a" q))))
+(define rows (range (length qs)))
+(add-vars! queens qs rows)
+(define (q-col q) (string->number (string-trim (symbol->string q) "q")))
+(for* ([qs (in-combinations qs 2)])
+  (match-define (list qa qb) qs)
+  (match-define (list qa-col qb-col) (map q-col qs))
+  (add-constraint! queens
+                   (λ (qa-row qb-row)
+                     (and 
+                      (not (= (abs (- qa-row qb-row)) (abs (- qa-col qb-col)))) ; same diagonal?
+                      (not (= qa-row qb-row)))) ; same row?
+                   (list qa qb)))
 
-(check-equal? 92 (length (time (solve* queens-problem))))
+(check-equal? 92 (length (time (solve* queens))))
 
