@@ -131,9 +131,15 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 |#
 
 (define smm (make-csp))
-(add-vars! smm '(s e n d m o r y) (λ () (shuffle (range 10))))
+(add-vars! smm '(s e n d m o r y) (range 10))
 (add-constraint! smm positive? '(s))
 (add-constraint! smm positive? '(m))
+(add-constraint! smm (λ (d e y) (= (modulo (+ d e) 10) y)) '(d e y))
+(add-constraint! smm (λ (n d r e y)
+                                 (= (modulo (+ (word-value n d) (word-value r e)) 100)
+                                    (word-value e y))) '(n d r e y))
+(add-constraint! smm (λ (e n d o r y)
+                                 (= (modulo (+ (word-value e n d) (word-value o r e)) 1000) (word-value n e y))) '(e n d o r y))
 (add-constraint! smm (λ (s e n d m o r y)
                        (= (+ (word-value s e n d) (word-value m o r e))
                           (word-value m o n e y))) '(s e n d m o r y))
