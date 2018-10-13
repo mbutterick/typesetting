@@ -329,3 +329,8 @@
 (define/contract (alldiff= x y)
   (any/c any/c . -> . boolean?)
   (not (= x y)))
+
+(define/contract (state-count csp)
+  ($csp? . -> . exact-nonnegative-integer?)
+  (for/product ([var (in-list ($csp-vars csp))])
+    (length ($var-vals var))))
