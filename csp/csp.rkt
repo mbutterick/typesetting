@@ -7,12 +7,12 @@
 (define (make-csp) ($csp null null))
 (define debug (make-parameter #false))
 
-(define (in-cartesian xss)
-  (in-generator (let loop ([xss xss][args empty])
-                  (if (null? xss)
-                      (yield (reverse args))
-                      (for ([x (in-list (car xss))])
-                        (loop (cdr xss) (cons x args)))))))
+(define (in-cartesian argss)
+  (in-generator (let loop ([argss argss][acc empty])
+                  (if (null? argss)
+                      (yield (reverse acc))
+                      (for ([arg (in-list (car argss))])
+                        (loop (cdr argss) (cons arg acc)))))))
 
 (struct $var (name vals) #:transparent)
 (define $var-name? symbol?)
@@ -48,12 +48,11 @@
              #:result (set-$csp-vars! csp vars))
             ([name (in-list names)])
     (when (memq name (map $var-name vars))
-      (raise-argument-error 'add-vars! "var that doesn't exist" name))
-    (append vars
-            (let ([vals (if (procedure? vals-or-procedure)
-                            (vals-or-procedure)
-                            vals-or-procedure)])
-              (list ($var name vals))))))
+      (raise-argument-error 'add-vars! "var that doesn't already exist" name))
+    (define vals (if (procedure? vals-or-procedure)
+                     (vals-or-procedure)
+                     vals-or-procedure))
+    (append vars (list ($var name vals)))))
 
 (define/contract (add-var! csp name [vals-or-procedure empty])
   (($csp? $var-name?) ((or/c (listof any/c) procedure?)) . ->* . void?)
@@ -64,7 +63,7 @@
   (set-$csp-constraints! csp (append ($csp-constraints csp) 
                                      (for/list ([names (in-list namess)])
                                        (for ([name (in-list names)])
-                                         (check-name-in-csp! 'add-constraint! csp name))
+                                         (check-name-in-csp! 'add-constraints! csp name))
                                        ($constraint names (if proc-name
                                                               (procedure-rename proc proc-name)
                                                               proc))))))
@@ -88,19 +87,21 @@
   (match-define ($constraint (list cname) proc) constraint)
   (define new-csp ($csp (for/list ([var (in-list ($csp-vars csp))])
                           (match-define ($var name vals) var)
-                          (if (eq? name cname)
-                              ;; special rule: use promise for a constant value
-                              ;; to skip the filtering
-                              ($var name (if (promise? proc)
-                                             (force proc)
-                                             (filter proc vals)))
-                              var))
+                          (cond
+                            [(eq? name cname)
+                             ;; special rule: use promise for a constant value
+                             ;; to skip the filtering
+                             ($var name (if (promise? proc)
+                                            (force proc)
+                                            (filter proc vals)))]
+                            [else var]))
                         ;; once the constraint is applied, it can go away
                         ;; ps this is not the same as an "assigned" constraint
                         ;; because the var may still have multiple values
                         (remove constraint ($csp-constraints csp))))
-  (when (no-solutions? new-csp) (raise (inconsistency-signal)))
-  new-csp)
+  (if (assigned-name? new-csp cname)
+      (validate-assignments (make-arcs-consistent new-csp #:mac cname))
+      new-csp))
 
 (define/contract (make-nodes-consistent csp)
   ($csp? . -> . $csp?)
@@ -162,13 +163,22 @@
 (define (remove-assigned-binary-constraints csp)
   (remove-assigned-constraints csp 2))
 
-(define/contract (ac-3 csp)
-  ($csp? . -> . $csp?)
-  ;; as described by AIMA @ 265
-  (define all-arcs (binary-constraints->arcs (filter binary-constraint? ($csp-constraints csp))))
+(define/contract (make-arcs-consistent csp #:mac [mac-name #f])
+  (($csp?) (#:mac (or/c $var-name? #f)) . ->* . $csp?)
+  ;; csp is arc-consistent if every pair of variables (x y)
+  ;; has values in their domain that satisfy every binary constraint
+  ;; AC-3 as described by AIMA @ 265
+  (define (mac-condition? arc)
+    (and
+     (constraint-contains-name? ($arc-constraint arc) mac-name)
+     (memq ($arc-name arc) (map $var-name (unassigned-vars csp))))) 
+  (define starting-arcs
+    (for/list ([arc (in-list (binary-constraints->arcs (filter binary-constraint? ($csp-constraints csp))))]
+               #:when ((if mac-name mac-condition? values) arc))
+      arc))
   (for/fold ([csp csp]
-             [arcs all-arcs]
-             #:result (remove-assigned-binary-constraints csp))
+             [arcs starting-arcs]
+             #:result csp)
             ([i (in-naturals)]
              #:break (empty? arcs))
     (match-define (cons arc other-arcs) arcs)
@@ -178,13 +188,7 @@
                             ;; revision did not reduce the domain, so keep going
                             other-arcs
                             ;; revision reduced the domain, so supplement the list of arcs
-                            (remove-duplicates (append (all-arcs . terminating-at . name) other-arcs))))))
-
-(define/contract (make-arcs-consistent csp)
-  ($csp? . -> . $csp?)
-  ;; csp is arc-consistent if every pair of variables (x y)
-  ;; has values in their domain that satisfy every binary constraint
-  (ac-3 csp))
+                            (remove-duplicates (append (starting-arcs . terminating-at . name) other-arcs))))))
 
 (define/contract (var-assigned? var)
   ($var? . -> . boolean?)
@@ -232,6 +236,7 @@
 (define/contract (order-domain-values vals)
   ((listof any/c) . -> . (listof any/c))
   ;; todo: least constraining value sort
+  
   vals)
 
 (define/contract (constraint-contains-name? constraint name)
@@ -249,7 +254,7 @@
 (define/contract (assign-val csp name val)
   ($csp? $var-name? any/c . -> . $csp?)
   (define assignment-constraint ($constraint (list name) (delay (list val))))
-  (validate-assignments (apply-unary-constraint csp assignment-constraint)))
+  (apply-unary-constraint csp assignment-constraint))
 
 (define (reduce-arity proc pattern)
   (unless (match (procedure-arity proc)
@@ -282,25 +287,29 @@
   (check-equal? 10 ((reduce-arity f '(1 b 3 d)) 2 4))
   (check-equal? 10 ((reduce-arity f '(a b 3 d)) 1 2 4)))
 
+(define/contract (assigned-name? csp name)
+  ($csp? $var-name? . -> . boolean?)
+  (and (memq name (map $var-name (assigned-vars csp))) #true))
+
 (define/contract (reduce-constraint-arity csp [minimum-arity 3])
   (($csp?) (exact-nonnegative-integer?) . ->* . $csp?)
-  (define (assigned-name? cname) (memq cname (map $var-name (assigned-vars csp))))
-  (define (partially-assigned? constraint)
-    (ormap assigned-name? ($constraint-names constraint)))
-  ($csp ($csp-vars csp)
-        (for/list ([constraint (in-list ($csp-constraints csp))])
-          (cond
-            [(and (<= minimum-arity (constraint-arity constraint))
-                  (partially-assigned? constraint))
-             (match-define ($constraint cnames proc) constraint)
-             ($constraint (filter-not assigned-name? cnames)
-                          ;; pattern is mix of values and symbols (indicating variables to persist)
-                          (let ([reduce-arity-pattern (for/list ([cname (in-list cnames)])
-                                                        (if (assigned-name? cname)
-                                                            ($csp-ref csp cname)
-                                                            cname))])
-                            (reduce-arity proc reduce-arity-pattern)))]
-            [else constraint]))))
+  (let ([assigned-name? (curry assigned-name? csp)])
+    (define (partially-assigned? constraint)
+      (ormap assigned-name? ($constraint-names constraint)))
+    ($csp ($csp-vars csp)
+          (for/list ([constraint (in-list ($csp-constraints csp))])
+            (cond
+              [(and (<= minimum-arity (constraint-arity constraint))
+                    (partially-assigned? constraint))
+               (match-define ($constraint cnames proc) constraint)
+               ($constraint (filter-not assigned-name? cnames)
+                            ;; pattern is mix of values and symbols (indicating variables to persist)
+                            (let ([reduce-arity-pattern (for/list ([cname (in-list cnames)])
+                                                          (if (assigned-name? cname)
+                                                              ($csp-ref csp cname)
+                                                              cname))])
+                              (reduce-arity proc reduce-arity-pattern)))]
+              [else constraint])))))
 
 (module+ test
   (define creduce (assign-val ($csp (list ($var 'a '(1 2 3)) ($var 'b '(2 3)) ($var 'c '(1 2 3 4 5))) (list ($constraint '(a b c) (procedure-rename (λ (a b c) (= (+ a b c) 4)) 'summer)))) 'a 1))
@@ -308,13 +317,10 @@
    (make-arcs-consistent (reduce-constraint-arity creduce))
    ($csp (list ($var 'a '(1)) ($var 'b '(2)) ($var 'c '(1))) '())))
 
-;; todo: inferences between assignments
-(define/contract (infer csp)
-  ($csp? . -> . $csp?)
-  (validate-assignments (make-arcs-consistent csp)))
 
 (define/contract (backtracking-solver csp)
   ($csp? . -> . generator?)
+  ;; as described by AIMA @ 271
   (generator ()
              (let backtrack ([csp (make-arcs-consistent (make-nodes-consistent csp))])
                (cond
@@ -323,7 +329,7 @@
                   (match-define ($var name vals) (select-unassigned-var csp))
                   (for ([val (in-list (order-domain-values vals))])
                     (with-handlers ([inconsistency-signal? void])
-                      (backtrack (infer (assign-val csp name val)))))]))))
+                      (backtrack (assign-val csp name val))))]))))
 
 (define/contract (solve* csp [finish-proc values][solution-limit +inf.0])
   (($csp?) (procedure? integer?) . ->* . (listof any/c))
