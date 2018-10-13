@@ -220,9 +220,9 @@
   (define uvars-by-rv (sort uvars < #:key remaining-values))
   (define minimum-remaining-values (remaining-values (first uvars-by-rv)))
   (match (takef uvars-by-rv (λ (var) (= minimum-remaining-values (remaining-values var))))
-    [(list sole-winner) sole-winner] 
-    [(list mrv-vars ...) ;; use degree as tiebreaker
-     (first (sort mrv-vars > #:key (λ (var) (var-degree csp var))))]))
+    [(list winning-uvar) winning-uvar] 
+    [(list mrv-uvars ...) ;; use degree as tiebreaker
+     (argmax (λ (var) (var-degree csp var)) mrv-uvars)]))
 
 (define/contract (order-domain-values vals)
   ((listof any/c) . -> . (listof any/c))
