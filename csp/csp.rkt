@@ -328,35 +328,35 @@
 (define/contract (select-k names krecs)
   ((listof $var-name?) (listof (cons/c $var-name? continuation?)) . -> . continuation?)
   ;; select the most recent (ie topmost) k that is in the signal
+  ;; todo: repair backjumping
   (cdr (or #;(for/first ([krec (in-list krecs)]
-                       #:when (let ([name (car krec)])
-                                (memq name names)))
-             krec)
+                         #:when (let ([name (car krec)])
+                                  (memq name names)))
+               krec)
            (first krecs))))
 
 (define/contract (backtrack-solution-generator csp)
   ($csp? . -> . generator?)
   ;; as described by AIMA @ 271
-  (generator () (let ((max-places (processor-count))) 
-                  (let backtrack ([csp (make-arcs-consistent (make-nodes-consistent csp))]
-                                  [backjump-krecs null])
-                    (match (select-unassigned-var csp)
-                      [#f (yield ($csp (for/list ([v (in-list ($csp-vars csp))])
-                                         (match v
-                                           [($varc name vals _) ($var name vals)]
-                                           [(? $var? v) v]))
-                                       ($csp-constraints csp)))]
-                      [($var name vals)
-                       (call/prompt
-                        (λ ()
-                          (for ([val (in-list (order-domain-values vals))])
-                            (let/cc backjump-k
-                              (let ([backjump-krecs (cons (cons name backjump-k) backjump-krecs)])
-                                (with-handlers ([inconsistency-signal?
-                                                 (λ (sig)
-                                                   (define backjump-k (select-k (inconsistency-signal-names sig) backjump-krecs))
-                                                   (backjump-k))])
-                                  (backtrack (assign-val csp name val) backjump-krecs)))))))])))))
+  (generator () (let backtrack ([csp (make-arcs-consistent (make-nodes-consistent csp))]
+                                [backjump-krecs null])
+                  (match (select-unassigned-var csp)
+                    [#f (yield ($csp (for/list ([v (in-list ($csp-vars csp))])
+                                       (match v
+                                         [($varc name vals _) ($var name vals)]
+                                         [(? $var? v) v]))
+                                     ($csp-constraints csp)))]
+                    [($var name vals)
+                     (call/prompt
+                      (thunk
+                       (for ([val (in-list (order-domain-values vals))])
+                         (let/cc backjump-k
+                           (let ([backjump-krecs (cons (cons name backjump-k) backjump-krecs)])
+                             (with-handlers ([inconsistency-signal?
+                                              (λ (sig)
+                                                (define backjump-k (select-k (inconsistency-signal-names sig) backjump-krecs))
+                                                (backjump-k))])
+                               (backtrack (assign-val csp name val) backjump-krecs)))))))]))))
 
 (define/contract (solve* csp [finish-proc values][solution-limit +inf.0])
   (($csp?) (procedure? integer?) . ->* . (non-empty-listof any/c))
