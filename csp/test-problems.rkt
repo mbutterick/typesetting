@@ -14,14 +14,14 @@
 
 
 ;; TWO + TWO = FOUR
-(define ttf (make-csp))
-(add-vars! ttf '(t w o f u r) (reverse (range 10)))
 
 (define (word-value . xs)
   (let ([xs (reverse xs)])
     (for/sum ([i (in-range (length xs))])
       (* (list-ref xs i) (expt 10 i)))))
 
+(define ttf (make-csp))
+(add-vars! ttf '(t w o f u r) (reverse (range 10)))
 (add-pairwise-constraint! ttf alldiff= '(t w o f u r))
 (add-constraint! ttf (λ (o r) (= (modulo (+ o o) 10) r)) '(o r))
 (add-constraint! ttf (λ (t w o f u r) (= (+ (word-value t w o) (word-value t w o))
