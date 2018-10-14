@@ -15,7 +15,11 @@
 (check-equal? 10 ((reduce-arity f '(a b 3 d)) 1 2 4))
 |#
 
-(make-nodes-consistent ($csp (list ($var 'a '(1)) ($var 'b '(0 1))) (list ($constraint '(b) zero?))))
+(define c1 ($csp (list ($var 'a '(1 2)) ($var 'b '(1 2 3)) ($var 'c '(1 3 4 5))) (list ($constraint '(a b c) alldiff))))
+(assign-val c1 'b 3)
 
-(remove-assigned-constraints ($csp (list ($var 'a '(1)) ($var 'b '(0 1))) (list ($constraint '(b) zero?))))
+(define c2 ($csp (list ($var 'a '(1 2)) ($var 'b '(1 2 3)) ($var 'c '(1 3 4 5))) null))
+(add-pairwise-constraint! c2 alldiff '(a b c))
+(assign-val c2 'b 3)
+
 

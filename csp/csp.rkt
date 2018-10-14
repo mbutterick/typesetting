@@ -229,18 +229,14 @@
     [(list) #f]
     [(list uvars ...)
      ;; minimum remaining values (MRV) rule
-     (define uvars-by-rv (sort uvars < #:key remaining-values))
-     (define minimum-remaining-values (remaining-values (first uvars-by-rv)))
-     (match (takef uvars-by-rv (λ (var) (= minimum-remaining-values (remaining-values var))))
+     (define mrv-arg (argmin remaining-values uvars))
+     (match (filter (λ (var) (= (remaining-values mrv-arg) (remaining-values var))) uvars)
        [(list winning-uvar) winning-uvar] 
        [(list mrv-uvars ...)
         ;; use degree as tiebreaker for mrv
-        (define uvars-by-degree (sort mrv-uvars > #:key (λ (var) (var-degree csp var))))
-        (define max-degree (var-degree csp (first uvars-by-degree)))
+        (define max-degree-arg (argmax (λ (var) (var-degree csp var)) mrv-uvars))
         ;; use random tiebreaker for degree
-        (match (takef uvars-by-degree (λ (var) (= max-degree (var-degree csp var))))
-          [(list winning-uvar) winning-uvar]
-          [(list degree-uvars ...) (first (shuffle degree-uvars))])])]))
+        (first (shuffle (filter (λ (var) (= (var-degree csp max-degree-arg) (var-degree csp var))) mrv-uvars)))])]))
 
 (define/contract (order-domain-values vals)
   ((listof any/c) . -> . (listof any/c))
@@ -268,6 +264,7 @@
   (unless (match (procedure-arity proc)
             [(arity-at-least val) (<= val (length pattern))]
             [(? number? val) (= val (length pattern))])
+    #R proc
     (raise-argument-error 'reduce-arity (format "list of length ~a, same as procedure arity" (procedure-arity proc)) pattern))
   (define reduced-arity-name (string->symbol (format "reduced-arity-~a" (object-name proc))))
   (define-values (id-names vals) (partition symbol? pattern))
@@ -313,13 +310,14 @@
 (define/contract (in-solutions csp)
   ($csp? . -> . sequence?)
   ;; as described by AIMA @ 271
-  (in-generator (let backtrack ([csp (make-arcs-consistent (make-nodes-consistent csp))])
-                  (match (select-unassigned-var csp)
-                    [#f (yield csp)]
-                    [($var name vals)
-                     (for ([val (in-list (order-domain-values vals))])
-                       (with-handlers ([inconsistency-signal? void])
-                         (backtrack (assign-val csp name val))))]))))
+  (in-generator (let ((max-places (processor-count))) 
+                  (let backtrack ([csp (make-arcs-consistent (make-nodes-consistent csp))])
+                    (match (select-unassigned-var csp)
+                      [#f (yield csp)]
+                      [($var name vals)
+                       (for ([val (in-list (order-domain-values vals))])
+                         (with-handlers ([inconsistency-signal? void])
+                           (backtrack (assign-val csp name val))))])))))
 
 (define/contract (solve* csp [finish-proc values][solution-limit +inf.0])
   (($csp?) (procedure? integer?) . ->* . (non-empty-listof any/c))
@@ -336,9 +334,9 @@
 
 (define ($csp-ref csp name) (first ($csp-vals csp name)))
 
-(define/contract (alldiff x y)
+(define/contract (alldiff . xs)
   (any/c any/c . -> . boolean?)
-  (not (equal? x y)))
+  (= (length (remove-duplicates xs)) (length xs)))
 
 (define/contract (alldiff= x y)
   (any/c any/c . -> . boolean?)

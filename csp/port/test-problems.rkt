@@ -110,6 +110,28 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 |#
 
 
+(define smm (new problem%))
+(send smm add-variables '(s e n d m o r y) (range 10))
+(send smm add-constraint (λ(x) (> x 0)) '(s))
+(send smm add-constraint (λ(x) (> x 0)) '(m))
+(send smm add-constraint (λ(d e y) (= (modulo (+ d e) 10) y)) '(d e y))
+(send smm add-constraint (λ(n d r e y)
+                                 (= (modulo (+ (word-value n d) (word-value r e)) 100)
+                                    (word-value e y))) '(n d r e y))
+(send smm add-constraint (λ(e n d o r y)
+                                 (= (modulo (+ (word-value e n d) (word-value o r e)) 1000) (word-value n e y))) '(e n d o r y))
+(send smm add-constraint (λ(s e n d m o r y) (=
+                                                    (+ (word-value s e n d)
+                                                       (word-value m o r e))
+                                                    (word-value m o n e y))) '(s e n d m o r y))
+#;(send smm add-constraint (new all-different-constraint%))
+(send smm add-constraint (λ xs (= (length (remove-duplicates xs)) (length xs))) '(s e n d m o r y))
+
+(check-hash-items (send smm get-solution) '#hash((m . 1) (e . 5) (r . 8) (n . 6) (y . 2) (o . 0) (d . 7) (s . 9)))
+
+
+
+
 ;; queens problem
 ;; place queens on chessboard so they do not intersect
 
