@@ -59,22 +59,23 @@
     (set-$csp-curr_domains! csp h)))
       
 (define/contract (suppose csp var value)
-  ($csp? variable? any/c . -> . (listof removal?))
+  ($csp? variable? any/c . -> . (box/c (listof removal?)))
   ;; Start accumulating inferences from assuming var=value
   (support_pruning csp)
-  (define removals
-    (for/list ([a (hash-ref ($csp-curr_domains csp) var)]
-               #:when (not (equal? a value)))
-      (cons var a)))
-  (hash-set! ($csp-curr_domains csp) var (list value))
-  removals)
+  (begin0
+    (box (for/list ([a (hash-ref ($csp-curr_domains csp) var)]
+                    #:when (not (equal? a value)))
+           (cons var a)))
+    (hash-set! ($csp-curr_domains csp) var (list value))))
 
 ;; todo: update uses of `prune` to be functional on removals
 (define/contract (prune csp var value removals)
-  ($csp? variable? any/c (or/c #f (listof removal?)) . -> . (listof removal?))
+  ($csp? variable? any/c (or/c #f (box/c (listof removal?))) . -> . (box/c (listof removal?)))
   ;; Rule out var=value
   (hash-update! ($csp-curr_domains csp) var (λ (vals) (remove value vals)))
-  (and removals (append removals (list (cons var value)))))
+  (and removals
+       (set-box! removals (append (unbox removals) (list (cons var value))))
+       removals))
 
 (define/contract (choices csp var)
   ($csp? variable? . -> . (listof any/c))
@@ -93,9 +94,9 @@
   assignment)
 
 (define/contract (restore csp removals)
-  ($csp? (listof removal?) . -> . void?)
+  ($csp? (box/c (listof removal?)) . -> . void?)
   ;; Undo a supposition and all inferences from it.
-  (for ([removal (in-list removals)])
+  (for ([removal (in-list (unbox removals))])
     (match removal
       [(cons B b) (hash-update! ($csp-curr_domains csp) B
                                 (λ (vals) (append vals (list b))))])))
@@ -150,23 +151,19 @@
 ;; Inference
 
 (define/contract (no_inference csp var value assignment removals)
-  ($csp? variable? any/c assignment? (listof removal?) . -> . boolean?)
+  ($csp? variable? any/c assignment? (box/c (listof removal?)) . -> . boolean?)
   #true)
 
 (define/contract (forward_checking csp var value assignment removals)
-  ($csp? variable? any/c assignment? (listof removal?) . -> . boolean?)
+  ($csp? variable? any/c assignment? (box/c (listof removal?)) . -> . boolean?)
   ;; Prune neighbor values inconsistent with var=value.
   (support_pruning csp) ;; necessary to set up curr_domains
-  #R var #R value
   (for/and ([B (in-list (hash-ref ($csp-neighbors csp) var))]
             #:unless (hash-has-key? assignment B))
-    (report B 'pruning-var)
-    (for/fold ([removals removals])
-              ([b (in-list (hash-ref ($csp-curr_domains csp) B))]
-               #:unless (($csp-constraints csp) var value B b))
-      (report b 'pruning-val)
+    (for ([b (in-list (hash-ref ($csp-curr_domains csp) B))]
+          #:unless (($csp-constraints csp) var value B b))
       (prune csp B b removals))
-    (not (empty? #R (hash-ref ($csp-curr_domains csp) B)))))
+    (not (empty? (hash-ref ($csp-curr_domains csp) B)))))
 
 (define current-select-variable (make-parameter first_unassigned_variable))
 (define current-order-values (make-parameter unordered_domain_values))
@@ -206,7 +203,7 @@
       [(? pair? solutions) solutions]
       [else #false])
     (when (current-reset)
-    (set-$csp-curr_domains! csp #f))))
+      (set-$csp-curr_domains! csp #f))))
 
 (define/contract (solve csp [solver backtracking_search] [finish-proc values])
   (($csp?) (procedure? procedure?) . ->* . any/c)
@@ -238,23 +235,23 @@
 (support_pruning csp)
 (check-true (hash? ($csp-curr_domains csp)))
 
-(check-equal? (suppose csp 'wa 'red) '((wa . green) (wa . blue)))
+(check-equal? (suppose csp 'wa 'red) '#&((wa . green) (wa . blue)))
 (check-equal?
  (hash-ref ($csp-curr_domains csp) 'wa) '(red))
 
-(check-equal? (prune csp 'v 'red empty) '((v . red)))
+(check-equal? (prune csp 'v 'red (box empty)) '#&((v . red)))
 
 (check-equal? (choices csp 'v) '(green blue))
 (check-equal? (choices csp 'wa) '(red))
 (check-equal? (infer_assignment csp)
               (make-hasheq '((wa . red))))
-(check-equal? (suppose csp 'v 'blue) '((v . green)))
+(check-equal? (suppose csp 'v 'blue) '#&((v . green)))
 (check-equal? (infer_assignment csp)
               (make-hasheq '((v . blue) (wa . red))))
-(restore csp '((wa . green)))
+(restore csp '#&((wa . green)))
 (check-equal? (infer_assignment csp)
               (make-hasheq '((v . blue))))
-(restore csp '((v . blue)))
+(restore csp '#&((v . blue)))
 (check-equal? (infer_assignment csp) (make-hasheq))
 
 (check-equal? (first_unassigned_variable (hash) csp) 'wa)
@@ -265,11 +262,11 @@
               (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
 (check-equal? (length (solve* csp)) 18)
 
-(check-equal? (suppose csp 'nsw 'red) '((nsw . green) (nsw . blue)))
+(check-equal? (suppose csp 'nsw 'red) '#&((nsw . green) (nsw . blue)))
 (check-equal? (solve csp)
               (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . blue) (v . green) (wa . green))))
 
-(check-equal? (suppose csp 'nsw 'red) '((nsw . green) (nsw . blue)))
+(check-equal? (suppose csp 'nsw 'red) '#&((nsw . green) (nsw . blue)))
 (check-equal? (length (solve* csp)) 6)
 
 (parameterize ([current-select-variable mrv]
@@ -283,8 +280,8 @@
    (solve csp)
    (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red)))))
 
-#;(parameterize ([current-inference forward_checking])
-    (forward_checking csp 'sa 'blue (make-hasheq) null)
+(parameterize ([current-inference forward_checking])
+    (forward_checking csp 'sa 'blue (make-hasheq) (box null))
     (check-equal? ($csp-curr_domains csp)
                   (make-hasheq '((nsw . (red green)) (nt . (red green)) (q . (red green)) (sa . (red green blue)) (t . (red green blue)) (v . (red green)) (wa . (red green))))))
 
@@ -292,5 +289,7 @@
 (parameterize ([current-inference forward_checking]
                [current-reset #f])
   (support_pruning csp)
-  (solve csp))
+  (check-equal?
+   (solve csp)
+   (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red)))))
 
