@@ -5,7 +5,6 @@
 (define assignment? hash?)
 (define variable? symbol?)
 (define removal? (cons/c variable? any/c))
-(define current-removals (make-parameter empty))
 
 (define/contract (make-csp variables domains neighbors constraints)
   ((listof variable?) hash? hash? procedure? . -> . $csp?)
@@ -71,11 +70,11 @@
   removals)
 
 ;; todo: update uses of `prune` to be functional on removals
-(define/contract (prune csp var value)
-  ($csp? variable? any/c . -> . void?)
+(define/contract (prune csp var value removals)
+  ($csp? variable? any/c (or/c #f (listof removal?)) . -> . (listof removal?))
   ;; Rule out var=value
   (hash-update! ($csp-curr_domains csp) var (λ (vals) (remove value vals)))
-  (current-removals (append (current-removals) (list (cons var value)))))
+  (and removals (append removals (list (cons var value)))))
 
 (define/contract (choices csp var)
   ($csp? variable? . -> . (listof any/c))
@@ -93,10 +92,10 @@
       [else #f]))
   assignment)
 
-(define/contract (restore csp)
-  ($csp? . -> . void?)
+(define/contract (restore csp removals)
+  ($csp? (listof removal?) . -> . void?)
   ;; Undo a supposition and all inferences from it.
-  (for ([removal (in-list (current-removals))])
+  (for ([removal (in-list removals)])
     (match removal
       [(cons B b) (hash-update! ($csp-curr_domains csp) B
                                 (λ (vals) (append vals (list b))))])))
@@ -150,22 +149,23 @@
 
 ;; Inference
 
-(define/contract (no_inference csp var value assignment)
-  ($csp? variable? any/c assignment? . -> . boolean?)
+(define/contract (no_inference csp var value assignment removals)
+  ($csp? variable? any/c assignment? (listof removal?) . -> . boolean?)
   #true)
 
-(define/contract (forward_checking csp var value assignment)
-  ($csp? variable? any/c assignment? . -> . boolean?)
+(define/contract (forward_checking csp var value assignment removals)
+  ($csp? variable? any/c assignment? (listof removal?) . -> . boolean?)
   ;; Prune neighbor values inconsistent with var=value.
   (support_pruning csp) ;; necessary to set up curr_domains
   #R var #R value
   (for/and ([B (in-list (hash-ref ($csp-neighbors csp) var))]
             #:unless (hash-has-key? assignment B))
     (report B 'pruning-var)
-    (for ([b (in-list (hash-ref ($csp-curr_domains csp) B))]
-          #:unless (($csp-constraints csp) var value B b))
+    (for/fold ([removals removals])
+              ([b (in-list (hash-ref ($csp-curr_domains csp) B))]
+               #:unless (($csp-constraints csp) var value B b))
       (report b 'pruning-val)
-      (prune csp B b))
+      (prune csp B b removals))
     (not (empty? #R (hash-ref ($csp-curr_domains csp) B)))))
 
 (define current-select-variable (make-parameter first_unassigned_variable))
@@ -188,10 +188,10 @@
                   (for ([val (in-list (order_domain_values var assignment csp))]
                         #:when (zero? (nconflicts csp var val assignment)))
                     (assign csp var val assignment)
-                    (parameterize ([current-removals (suppose csp var val)])
-                      (when (inference csp var val assignment)
-                        (backtrack assignment))
-                      (restore csp)))
+                    (define removals (suppose csp var val))
+                    (when (inference csp var val assignment removals)
+                      (backtrack assignment))
+                    (restore csp removals))
                   (unassign csp var assignment)]))))
 
 (define current-reset (make-parameter #t))
@@ -206,7 +206,7 @@
       [(? pair? solutions) solutions]
       [else #false])
     (when (current-reset)
-      (set-$csp-curr_domains! csp #f))))
+    (set-$csp-curr_domains! csp #f))))
 
 (define/contract (solve csp [solver backtracking_search] [finish-proc values])
   (($csp?) (procedure? procedure?) . ->* . any/c)
@@ -242,24 +242,23 @@
 (check-equal?
  (hash-ref ($csp-curr_domains csp) 'wa) '(red))
 
-#;(check-equal? (prune csp 'v 'red) '((v . red)))
+(check-equal? (prune csp 'v 'red empty) '((v . red)))
 
-#;(check-equal? (choices csp 'v) '(green blue))
+(check-equal? (choices csp 'v) '(green blue))
 (check-equal? (choices csp 'wa) '(red))
 (check-equal? (infer_assignment csp)
               (make-hasheq '((wa . red))))
-#;(check-equal? (suppose csp 'v 'blue) '((v . green)))
-#;(check-equal? (infer_assignment csp)
+(check-equal? (suppose csp 'v 'blue) '((v . green)))
+(check-equal? (infer_assignment csp)
               (make-hasheq '((v . blue) (wa . red))))
-#|
 (restore csp '((wa . green)))
 (check-equal? (infer_assignment csp)
               (make-hasheq '((v . blue))))
 (restore csp '((v . blue)))
 (check-equal? (infer_assignment csp) (make-hasheq))
-|#
+
 (check-equal? (first_unassigned_variable (hash) csp) 'wa)
-#;(check-equal? (unordered_domain_values 'wa (hash) csp) '(red green))
+(check-equal? (unordered_domain_values 'wa (hash) csp) '(red green))
 
 (set-$csp-curr_domains! csp #f) ; reset current domains
 (check-equal? (solve csp)
