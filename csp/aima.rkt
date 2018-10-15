@@ -157,13 +157,16 @@
   ($csp? variable? any/c assignment? (listof removal?) . -> . boolean?)
   ;; Prune neighbor values inconsistent with var=value.
   (support_pruning csp) ;; necessary to set up curr_domains
+  #R var #R value
   (for/and ([B (in-list (hash-ref ($csp-neighbors csp) var))]
             #:unless (hash-has-key? assignment B))
+    (report B 'pruning-var)
     (for/fold ([removals removals])
               ([b (in-list (hash-ref ($csp-curr_domains csp) B))]
                #:unless (($csp-constraints csp) var value B b))
+      (report b 'pruning-val)
       (prune csp B b removals))
-    (not (empty? (hash-ref ($csp-curr_domains csp) B)))))
+    (not (empty? #R (hash-ref ($csp-curr_domains csp) B)))))
 
 (define current-select-variable (make-parameter first_unassigned_variable))
 (define current-order-values (make-parameter unordered_domain_values))
@@ -191,6 +194,8 @@
                     (restore csp removals))
                   (unassign csp var assignment)]))))
 
+(define current-reset (make-parameter #t))
+
 (define/contract (solve* csp [solver backtracking_search] [finish-proc values]
                          #:count [solution-limit +inf.0])
   (($csp?) (procedure? procedure? #:count integer?) . ->* . (or/c #f (non-empty-listof any/c)))
@@ -200,7 +205,8 @@
              (finish-proc solution))
       [(? pair? solutions) solutions]
       [else #false])
-    (set-$csp-curr_domains! csp #f)))
+    (when (current-reset)
+    (set-$csp-curr_domains! csp #f))))
 
 (define/contract (solve csp [solver backtracking_search] [finish-proc values])
   (($csp?) (procedure? procedure?) . ->* . any/c)
@@ -277,12 +283,14 @@
    (solve csp)
    (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red)))))
 
-(parameterize ([current-inference forward_checking])
-  (forward_checking csp 'sa 'blue (make-hasheq) null)
-  (check-equal? ($csp-curr_domains csp)
-                (make-hasheq '((nsw . (red green)) (nt . (red green)) (q . (red green)) (sa . (red green blue)) (t . (red green blue)) (v . (red green)) (wa . (red green))))))
+#;(parameterize ([current-inference forward_checking])
+    (forward_checking csp 'sa 'blue (make-hasheq) null)
+    (check-equal? ($csp-curr_domains csp)
+                  (make-hasheq '((nsw . (red green)) (nt . (red green)) (q . (red green)) (sa . (red green blue)) (t . (red green blue)) (v . (red green)) (wa . (red green))))))
 
-(parameterize ([current-inference forward_checking])
+(set-$csp-curr_domains! csp #f)
+(parameterize ([current-inference forward_checking]
+               [current-reset #f])
   (support_pruning csp)
   (solve csp))
 
