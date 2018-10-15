@@ -1,6 +1,12 @@
 #lang at-exp racket
 (require "csp.rkt" rackunit)
 
+(use-mrv? #t)
+(use-reduce-arity? #t)
+(use-mac? #t)
+(use-remove-constraints? #t)
+(use-validate-assignments? #t)
+
 (define demo (make-csp))
 (add-vars! demo '(t w) (range 7))
 (add-var! demo 'o '(2 6 7))
@@ -16,9 +22,8 @@
 ;; TWO + TWO = FOUR
 
 (define (word-value . xs)
-  (let ([xs (reverse xs)])
-    (for/sum ([i (in-range (length xs))])
-      (* (list-ref xs i) (expt 10 i)))))
+  (for/sum ([(x idx) (in-indexed (reverse xs))])
+    (* x (expt 10 idx))))
 
 (define ttf (make-csp))
 (add-vars! ttf '(t w o f u r) (reverse (range 10)))
@@ -131,9 +136,9 @@ A collection of 33 coins, consisting of nickels, dimes, and quarters, has a valu
 |#
 
 (define smm (make-csp))
-(add-vars! smm '(s e n d m o r y) (λ () (reverse (range 10))))
+(add-vars! smm '(s e n d m o r y) (λ () (range 10)))
 (add-constraint! smm positive? '(s))
-(add-constraint! smm positive? '(m))
+(add-constraint! smm (curry = 1) '(m))
 (add-constraint! smm (λ (d e y) (= (modulo (+ d e) 10) y)) '(d e y))
 (add-constraint! smm (λ (n d r e y)
                        (= (modulo (+ (word-value n d) (word-value r e)) 100)

@@ -1,6 +1,7 @@
 #lang debug racket
 (require racket/generator racket/control sugar/debug)
 (provide (all-defined-out))
+
 (struct $csp ([vars #:mutable]
               [constraints #:mutable]) #:transparent)
 
@@ -90,7 +91,12 @@
   ($csp? . -> . boolean?)
   (zero? (state-count csp)))
 
-(struct inconsistency-signal (names) #:transparent)
+(struct inconsistency-signal (csp) #:transparent)
+
+(define use-reduce-arity? (make-parameter #t))
+(define use-mac? (make-parameter #t))
+(define use-remove-constraints? (make-parameter #t))
+(define use-validate-assignments? (make-parameter #t))
 
 (define/contract (apply-unary-constraint csp constraint #:culprit [culprit #f])
   (($csp? unary-constraint?) (#:culprit (or/c #f $var-name?)) . ->* . $csp?)
@@ -106,20 +112,24 @@
   (match (if (promise? proc)
              (force proc)
              (filter proc ($csp-vals csp name)))
-    [(list) (raise (inconsistency-signal ($varc-culprits ($csp-var csp name))))]
-    [(list assigned-val) (make-nodes-consistent
-                          (remove-assigned-constraints
-                           (reduce-constraint-arity
-                            (validate-assignments
-                             (make-arcs-consistent
-                              ($csp
-                               (update-csp-vars name (list assigned-val))
-                               ($csp-constraints csp)) #:mac name)))))]
+    [(list) (raise (inconsistency-signal csp))]
+    [(list assigned-val) ((if (use-validate-assignments?) make-nodes-consistent values)
+                          ((if (use-remove-constraints?) remove-assigned-constraints values)
+                           ((if (use-reduce-arity?) reduce-constraint-arity values)
+                            ((if (use-validate-assignments?) validate-assignments values)
+                             (let ([csp ($csp
+                                         (update-csp-vars name (list assigned-val))
+                                         ($csp-constraints csp))])
+                               (if (use-mac?)
+                                   (make-arcs-consistent csp #:mac name)
+                                   csp))))))]
     [(list new-vals ...) ($csp (update-csp-vars name new-vals)
                                ;; once the constraint is applied, it can go away
                                ;; ps this is not the same as an "assigned" constraint
                                ;; because the var may still have multiple values
-                               (remove constraint ($csp-constraints csp)))]))
+                               (if (use-remove-constraints?)
+                                   (remove constraint ($csp-constraints csp))
+                                   ($csp-constraints csp)))]))
 
 (define/contract (make-nodes-consistent csp)
   ($csp? . -> . $csp?)
@@ -215,7 +225,7 @@
   (= 1 (remaining-values var)))
 
 (define/contract (solution-complete? csp)
-  ($csp? . -> . boolean?)
+  ($csp? . -> . 'lean?)
   (and (andmap var-assigned? ($csp-vars csp)) (empty? ($csp-constraints csp))))
 
 (define (assigned-helper csp) (partition var-assigned? ($csp-vars csp)))
@@ -240,20 +250,24 @@
             #:when (constraint-contains-name? constraint ($var-name var)))
     1))
 
+(define use-mrv? (make-parameter #t))
 (define/contract (select-unassigned-var csp)
   ($csp? . -> . (or/c #f $var?))
   (match (unassigned-vars csp)
     [(list) #f]
     [(list uvars ...)
-     ;; minimum remaining values (MRV) rule
-     (define mrv-arg (argmin remaining-values uvars))
-     (match (filter (λ (var) (= (remaining-values mrv-arg) (remaining-values var))) uvars)
-       [(list winning-uvar) winning-uvar] 
-       [(list mrv-uvars ...)
-        ;; use degree as tiebreaker for mrv
-        (define max-degree-arg (argmax (λ (var) (var-degree csp var)) mrv-uvars))
-        ;; use random tiebreaker for degree
-        (first (shuffle (filter (λ (var) (= (var-degree csp max-degree-arg) (var-degree csp var))) mrv-uvars)))])]))
+     (cond
+       [(use-mrv?)
+        ;; minimum remaining values (MRV) rule
+        (define mrv-arg (argmin remaining-values uvars))
+        (match (filter (λ (var) (= (remaining-values mrv-arg) (remaining-values var))) uvars)
+          [(list winning-uvar) winning-uvar] 
+          [(list mrv-uvars ...)
+           ;; use degree as tiebreaker for mrv
+           (define max-degree-arg (argmax (λ (var) (var-degree csp var)) mrv-uvars))
+           ;; use random tiebreaker for degree
+           (first (shuffle (filter (λ (var) (= (var-degree csp max-degree-arg) (var-degree csp var))) mrv-uvars)))])]
+       [else (first uvars)])]))
 
 (define/contract (order-domain-values vals)
   ((listof any/c) . -> . (listof any/c))
@@ -269,15 +283,21 @@
   (define assigned-constraints (filter (λ (c) (constraint-assigned? csp c)) ($csp-constraints csp)))
   (for ([constraint (in-list (sort assigned-constraints < #:key constraint-arity))]
         #:unless (constraint csp))
-    (raise (inconsistency-signal (for*/list ([name (in-list ($constraint-names constraint))]
-                                             [culprit (in-list ($varc-culprits ($csp-var csp name)))])
-                                   culprit))))
+    (raise (inconsistency-signal csp)))
   csp)
 
 (define/contract (assign-val csp name val)
   ($csp? $var-name? any/c . -> . $csp?)
+  (check-name-in-csp! 'assign-val csp name)
   (define assignment-constraint ($constraint (list name) (delay (list val))))
   (apply-unary-constraint csp assignment-constraint))
+
+(define/contract (assign-val! csp name val)
+  ($csp? $var-name? any/c . -> . void?)
+  (check-name-in-csp! 'assign-val! csp name)
+  (define new-csp (assign-val csp name val))
+  (set-$csp-vars! csp ($csp-vars new-csp))
+  (set-$csp-constraints! csp ($csp-constraints new-csp)))
 
 (define (reduce-arity proc pattern)
   (unless (match (procedure-arity proc)
@@ -325,15 +345,39 @@
                               (reduce-arity proc reduce-arity-pattern)))]
               [else constraint])))))
 
-(define/contract (select-k names krecs)
-  ((listof $var-name?) (listof (cons/c $var-name? continuation?)) . -> . continuation?)
+(define/contract (conflict-set csp name)
+  ($csp? $var-name? . -> .  (listof $var-name?))
+  ;; earlier assigned variables that participate in constraints with name
+  (define assigned-names (reverse (map $var-name (assigned-vars csp))))
+  (define earlier-assigned-names (memq name assigned-names))
+  (for*/list ([constraint (in-list ($csp-constraints csp))]
+              [cnames (in-value ($constraint-names constraint))]
+              #:when (and (andmap (λ (cname) (memq cname earlier-assigned-names)) cnames)
+                          (constraint-contains-name? constraint name))
+              [cname (in-list cnames)]
+              #:unless (eq? cname name))
+    cname))
+
+(define use-cdj? (make-parameter #f))
+(define/contract (select-k sig name krecs)
+  (inconsistency-signal? $var-name? (listof (cons/c $var-name? continuation?)) . -> . continuation?)
   ;; select the most recent (ie topmost) k that is in the signal
   ;; todo: repair backjumping
-  (cdr (or #;(for/first ([krec (in-list krecs)]
-                         #:when (let ([name (car krec)])
-                                  (memq name names)))
-               krec)
-           (first krecs))))
+  (cond
+   [(use-cdj?)
+    (define assigned-names (map car krecs)) ; already in reverse chron order
+    (define csp (inconsistency-signal-csp sig))
+    (define backjump-dest
+      (let loop ([name name][cset (conflict-set csp name)])
+        (define next-name (for/first ([previously-assigned-name (in-list (memq name assigned-names))]
+                                      #:when (memq previously-assigned-name cset))
+                            previously-assigned-name))
+        (define next-cset (conflict-set csp next-name))
+        (if (empty? next-cset)
+            next-name
+            (loop next-name (remq next-name (remove-duplicates (append next-cset cset) eq?))))))
+    (cdr (assq backjump-dest krecs))]
+   [else (cdr (first krecs))]))
 
 (define/contract (backtrack-solution-generator csp)
   ($csp? . -> . generator?)
@@ -354,7 +398,7 @@
                            (let ([backjump-krecs (cons (cons name backjump-k) backjump-krecs)])
                              (with-handlers ([inconsistency-signal?
                                               (λ (sig)
-                                                (define backjump-k (select-k (inconsistency-signal-names sig) backjump-krecs))
+                                                (define backjump-k (select-k sig name backjump-krecs))
                                                 (backjump-k))])
                                (backtrack (assign-val csp name val) backjump-krecs)))))))]))))
 
@@ -364,7 +408,7 @@
     (for/list ([solution (in-producer (backtrack-solution-generator csp) (void))]
                [idx (in-range solution-limit)])
       (finish-proc solution)))
-  (unless (pair? solutions) (raise (inconsistency-signal null)))
+  (unless (pair? solutions) (raise (inconsistency-signal csp)))
   solutions)
 
 (define/contract (solve csp [finish-proc values])
