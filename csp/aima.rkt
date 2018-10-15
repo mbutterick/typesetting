@@ -132,6 +132,7 @@
                                       [inference no_inference])
   (($csp?) (procedure? procedure? procedure?) . ->* . generator?)
   (generator ()
+             ;; todo: incorporate `yield`
              (let backtrack ([assignment (make-hasheq)])
                (match (select_unassigned_variable assignment csp)
                  [#false (and (goal_test csp assignment) assignment)]
@@ -146,8 +147,9 @@
                          [else (restore csp removals) #false]))]
                     [else (unassign csp var assignment) #false])]))))
 
-(define/contract (solve* csp [solver backtracking_search] [finish-proc values][solution-limit +inf.0])
-  (($csp?) (procedure? procedure? integer?) . ->* . (non-empty-listof any/c))
+(define/contract (solve* csp [solver backtracking_search] [finish-proc values]
+                         #:count [solution-limit +inf.0])
+  (($csp?) (procedure? procedure? #:count integer?) . ->* . (or/c #f (non-empty-listof any/c)))
   (match (for/list ([solution (in-producer (solver csp) (void))]
                     [idx (in-range solution-limit)])
            (finish-proc solution))
@@ -156,7 +158,9 @@
 
 (define/contract (solve csp [solver backtracking_search] [finish-proc values])
   (($csp?) (procedure? procedure?) . ->* . any/c)
-  (first (solve* csp solver finish-proc 1)))
+  (match (solve* csp solver finish-proc #:count 1)
+    [(list solution) solution]
+    [else #f]))
 
 (require rackunit)
 (define vs '(wa nsw t q nt v sa))
