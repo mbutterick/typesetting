@@ -10,6 +10,10 @@
   ((listof variable?) hash? hash? procedure? . -> . $csp?)
   ($csp variables domains neighbors constraints null #f 0))
 
+(define/contract (reset-nassigns! csp)
+  ($csp? . -> . void?)
+  (set-$csp-nassigns! csp 0))
+
 (define/contract (assign csp var val assignment)
   ($csp? variable? any/c assignment? . -> . void?)
   ;; Add {var: val} to assignment; Discard the old value if any.
@@ -260,30 +264,35 @@
 (set-$csp-curr_domains! csp #f) ; reset current domains
 (check-equal? (solve csp)
               (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
+(check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 40)
 (check-equal? (length (solve* csp)) 18)
 
 (check-equal? (suppose csp 'nsw 'red) '#&((nsw . green) (nsw . blue)))
 (check-equal? (solve csp)
               (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . blue) (v . green) (wa . green))))
+(check-equal? ($csp-nassigns csp) 368)
 
 (check-equal? (suppose csp 'nsw 'red) '#&((nsw . green) (nsw . blue)))
 (check-equal? (length (solve* csp)) 6)
+(check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 479)
 
 (parameterize ([current-select-variable mrv]
                [current-shuffle #f])
   (check-equal?
    (solve csp)
-   (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red)))))
+   (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
+  (check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 39))
 
 (parameterize ([current-order-values lcv])
   (check-equal?
    (solve csp)
-   (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red)))))
+   (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
+  (check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 39))
 
 (parameterize ([current-inference forward_checking])
-    (forward_checking csp 'sa 'blue (make-hasheq) (box null))
-    (check-equal? ($csp-curr_domains csp)
-                  (make-hasheq '((nsw . (red green)) (nt . (red green)) (q . (red green)) (sa . (red green blue)) (t . (red green blue)) (v . (red green)) (wa . (red green))))))
+  (forward_checking csp 'sa 'blue (make-hasheq) (box null))
+  (check-equal? ($csp-curr_domains csp)
+                (make-hasheq '((nsw . (red green)) (nt . (red green)) (q . (red green)) (sa . (red green blue)) (t . (red green blue)) (v . (red green)) (wa . (red green))))))
 
 (set-$csp-curr_domains! csp #f)
 (parameterize ([current-inference forward_checking]
@@ -291,5 +300,6 @@
   (support_pruning csp)
   (check-equal?
    (solve csp)
-   (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red)))))
+   (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
+  (check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 25))
 
