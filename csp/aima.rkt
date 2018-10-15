@@ -135,7 +135,7 @@
              ;; todo: incorporate `yield`
              (let backtrack ([assignment (make-hasheq)])
                (match (select_unassigned_variable assignment csp)
-                 [#false (and (goal_test csp assignment) assignment)]
+                 [#false (and (goal_test csp assignment) (yield assignment))]
                  [var
                   (cond
                     [(for/or ([val (in-list (order_domain_values var assignment csp))]
@@ -147,6 +147,7 @@
                          [else (restore csp removals) #false]))]
                     [else (unassign csp var assignment) #false])]))))
 
+;; todo: make multiple results work
 (define/contract (solve* csp [solver backtracking_search] [finish-proc values]
                          #:count [solution-limit +inf.0])
   (($csp?) (procedure? procedure? #:count integer?) . ->* . (or/c #f (non-empty-listof any/c)))
