@@ -130,28 +130,35 @@
                                       [select_unassigned_variable first_unassigned_variable]
                                       [order_domain_values unordered_domain_values]
                                       [inference no_inference])
-  (($csp?) (procedure? procedure? procedure?) . ->* . generator?)
-  (generator ()
-             ;; todo: incorporate `yield`
-             (let backtrack ([assignment (make-hasheq)])
-               (match (select_unassigned_variable assignment csp)
-                 [#false (and (goal_test csp assignment) (yield assignment))]
-                 [var
-                  (cond
-                    [(for/or ([val (in-list (order_domain_values var assignment csp))]
-                              #:when (zero? (nconflicts csp var val assignment)))
-                       (assign csp var val assignment)
-                       (define removals (suppose csp var val))
-                       (cond
-                         [(and (inference csp var val assignment removals) (backtrack assignment))]
-                         [else (restore csp removals) #false]))]
-                    [else (unassign csp var assignment) #false])]))))
+  (($csp?) (procedure? procedure? procedure?) . ->* . (or/c #f assignment?))
+  (define (backtrack [assignment (make-hasheq)])
+    ;; todo: convert to generator with `yield`
+    (let/ec return
+      (when (all-variables-assigned? csp assignment)
+        (return assignment))
+      (define var (select_unassigned_variable assignment csp))
+      (for ([val (in-list (order_domain_values var assignment csp))]
+            #:when (zero? (nconflicts csp var val assignment)))
+        (assign csp var val assignment)
+        (define removals (suppose csp var val))
+        (when (inference csp var val assignment removals)
+          (define result (backtrack assignment))
+          (when result
+            (return result))
+          (restore csp removals)))
+      (unassign csp var assignment)
+      (return #false)))
+
+  (define result (backtrack))
+  (unless (or (false? result) (goal_test csp result))
+    (error 'whut))
+  result)
 
 ;; todo: make multiple results work
 (define/contract (solve* csp [solver backtracking_search] [finish-proc values]
                          #:count [solution-limit +inf.0])
   (($csp?) (procedure? procedure? #:count integer?) . ->* . (or/c #f (non-empty-listof any/c)))
-  (match (for/list ([solution (in-producer (solver csp) (void))]
+  (match (for/list ([solution (in-value (solver csp))] ; needs generator here
                     [idx (in-range solution-limit)])
            (finish-proc solution))
     [(? pair? solutions) solutions]
