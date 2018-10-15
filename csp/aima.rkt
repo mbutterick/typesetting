@@ -10,6 +10,18 @@
   ((listof variable?) hash? hash? procedure? . -> . $csp?)
   ($csp variables domains neighbors constraints null #f 0))
 
+(define/contract (curr_domain csp var)
+  ($csp? variable? . -> . (listof any/c))
+  (hash-ref ($csp-curr_domains csp) var))
+
+(define/contract (neighbors csp var)
+  ($csp? variable? . -> . (listof variable?))
+  (hash-ref ($csp-neighbors csp) var))
+
+(define/contract (assigns? assignment var)
+  (assignment? variable? . -> . boolean?)
+  (hash-has-key? assignment var))
+
 (define/contract (reset-nassigns! csp)
   ($csp? . -> . void?)
   (set-$csp-nassigns! csp 0))
@@ -31,8 +43,8 @@
   ($csp? variable? any/c assignment? . -> . number?)
   ;; Return the number of conflicts var=val has with other variables."""
   ;; Subclasses may implement this more efficiently
-  (for/sum ([v (in-list (hash-ref ($csp-neighbors csp) var))]
-            #:when (hash-has-key? assignment v))
+  (for/sum ([v (in-list (neighbors csp var))]
+            #:when (assignment . assigns? . v))
     (if (($csp-constraints csp) var val v (hash-ref assignment v)) 0 1)))
 
 (define (display csp assignment)
@@ -67,9 +79,9 @@
   ;; Start accumulating inferences from assuming var=value
   (support_pruning csp)
   (begin0
-    (box (for/list ([a (hash-ref ($csp-curr_domains csp) var)]
-                    #:when (not (equal? a value)))
-           (cons var a)))
+    (box (for/list ([val (in-list (curr_domain csp var))]
+                    #:when (not (equal? val value)))
+           (cons var val)))
     (hash-set! ($csp-curr_domains csp) var (list value))))
 
 ;; todo: update uses of `prune` to be functional on removals
@@ -92,7 +104,7 @@
   (support_pruning csp)
   (define assignment (make-hasheq))
   (for ([v (in-list ($csp-variables csp))])
-    (match (hash-ref ($csp-curr_domains csp) v)
+    (match (curr_domain csp v)
       [(list one-value) (hash-set! assignment v one-value)]
       [else #f]))
   assignment)
@@ -115,7 +127,7 @@
   (assignment? $csp? . -> . (or/c #false variable?))
   ;; The default variable order.
   (for/first ([var (in-list ($csp-variables csp))]
-              #:unless (hash-has-key? assignment var))
+              #:unless (assignment . assigns? . var))
     var))
 
 (define current-shuffle (make-parameter #t))
@@ -126,7 +138,7 @@
   ;; with random tiebreaker.
   (define (num_legal_values var)
     (if ($csp-curr_domains csp)
-        (length (hash-ref ($csp-curr_domains csp) var))
+        (length (curr_domain csp var))
         ;; todo: is this the same as python `count`?
         (for/sum ([val (in-list (hash-ref ($csp-domains csp) var))]
                   #:when (zero? (nconflicts csp var val assignment)))
@@ -134,7 +146,7 @@
   (struct $mrv-rec (var num) #:transparent)
   (define recs (sort
                 (for/list ([var (in-list ($csp-variables csp))]
-                           #:unless (hash-has-key? assignment var))
+                           #:unless (assignment . assigns? . var))
                   ($mrv-rec var (num_legal_values var)))
                 < #:key $mrv-rec-num))
   (first ((if (current-shuffle) shuffle values) (map $mrv-rec-var (takef recs (λ (rec) (= ($mrv-rec-num (first recs))
@@ -162,12 +174,12 @@
   ($csp? variable? any/c assignment? (box/c (listof removal?)) . -> . boolean?)
   ;; Prune neighbor values inconsistent with var=value.
   (support_pruning csp) ;; necessary to set up curr_domains
-  (for/and ([B (in-list (hash-ref ($csp-neighbors csp) var))]
-            #:unless (hash-has-key? assignment B))
-    (for ([b (in-list (hash-ref ($csp-curr_domains csp) B))]
+  (for/and ([B (in-list (neighbors csp var))]
+            #:unless (assignment . assigns? . B))
+    (for ([b (in-list (curr_domain csp B))]
           #:unless (($csp-constraints csp) var value B b))
       (prune csp B b removals))
-    (not (empty? (hash-ref ($csp-curr_domains csp) B)))))
+    (not (empty? (curr_domain csp B)))))
 
 (define current-select-variable (make-parameter first_unassigned_variable))
 (define current-order-values (make-parameter unordered_domain_values))
@@ -240,8 +252,7 @@
 (check-true (hash? ($csp-curr_domains csp)))
 
 (check-equal? (suppose csp 'wa 'red) '#&((wa . green) (wa . blue)))
-(check-equal?
- (hash-ref ($csp-curr_domains csp) 'wa) '(red))
+(check-equal? (curr_domain csp 'wa) '(red))
 
 (check-equal? (prune csp 'v 'red (box empty)) '#&((v . red)))
 
@@ -297,7 +308,6 @@
 (set-$csp-curr_domains! csp #f)
 (parameterize ([current-inference forward_checking]
                [current-reset #f])
-  (support_pruning csp)
   (check-equal?
    (solve csp)
    (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
