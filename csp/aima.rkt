@@ -50,11 +50,18 @@
   (assignment? variable? . -> . boolean?)
   (hash-has-key? assignment var))
 
+(define/contract (assignment-ref assignment name-or-names)
+  (assignment? (or/c (listof variable?) variable?) . -> . (or/c any/c (listof any/c)))
+  (let loop ([name-or-names name-or-names])
+  (match name-or-names
+    [(? variable? name) (hash-ref assignment name)]
+    [(list names ...)  (map loop names)])))
+
 (define nassigns $csp-nassigns)
 (define nchecks $csp-nchecks)
 
-(define/contract (check-constraint csp varval-hash [limit #f])
-  (($csp? hash?) ((or/c #f variable?)) . ->* . any/c)
+(define/contract (check-constraint csp varval-hash [limit #f] #:conflicts [count-conflicts? #f])
+  (($csp? hash?) ((or/c #f variable?) #:conflicts boolean?) . ->* . any/c)
   (define relevant-constraints
     (for/list ([constraint (in-list ($csp-constraints csp))]
                #:when (let ([cnames ($constraint-names constraint)])
@@ -63,12 +70,19 @@
                          (for/and ([cname (in-list cnames)])
                            (memq cname (hash-keys varval-hash))))))
       constraint))
-  (begin0
-    (for/and ([constraint (in-list relevant-constraints)])
-      (define vals (for/list ([cname (in-list ($constraint-names constraint))])
-                     (hash-ref varval-hash cname)))
-      (apply ($constraint-proc constraint) vals))
-    (set-$csp-nchecks! csp (add1 ($csp-nchecks csp)))))
+  (begin
+    ;; ordinary: behave like for/and, stop if #false result.
+    ;; count-conflicts mode: behave like for/sum, don't stop till end.
+    (define-values (result check-count)
+      (for/fold ([result (if count-conflicts? 0 #true)]
+                 [check-count 0])
+                ([constraint (in-list relevant-constraints)]
+                 #:break (false? result)) ; only breaks early in ordinary mode, when #f is result value
+        (define vals (assignment-ref varval-hash ($constraint-names constraint)))
+        (define res (apply ($constraint-proc constraint) vals))
+        (values (if count-conflicts? (+ (if res 0 1) result) res) (add1 check-count))))
+    (set-$csp-nchecks! csp (+ check-count ($csp-nchecks csp)))
+    result))
 
 (define/contract (reset-counters! csp)
   ($csp? . -> . void?)
@@ -93,19 +107,14 @@
   (= (length (hash-keys assignment)) (length ($csp-variables csp))))
 
 (define asses (make-parameter #f))
+(define ncon (make-parameter #f))
 
 (define/contract (nconflicts csp var val assignment)
   ($csp? variable? any/c assignment? . -> . number?)
   ;; Return the number of conflicts var=val has with other variables."""
   ;; Subclasses may implement this more efficiently
   (define ass (update-assignment assignment var val))
-  (for/sum ([v (in-list (neighbors csp var))]
-            #:when (assignment . assigns? . v))
-    (if (check-constraint csp (if (asses)
-                                  ass
-                                  (hasheq var val v (hash-ref assignment v))) var)
-        0
-        1)))
+  (check-constraint csp ass var #:conflicts #t))
 
 
 (define (display csp assignment)
@@ -422,23 +431,14 @@
 (define csp (make-csp vds cs))
 
 (define (one)
-  (parameterize ([current-select-variable mrv]
-                 [current-order-values lcv]
-                 [current-inference mac]
-                 [current-reset #f]
-                 [current-shuffle #f])
-    (set-$csp-curr_domains! csp #f)
-    (check-equal? (solve csp)
-                  (make-hasheq
-                   '((nsw . green)
-                     (nt . green)
-                     (q . red)
-                     (sa . blue)
-                     (t . red)
-                     (v . red)
-                     (wa . red))))
+  (set-$csp-curr_domains! csp #f)
+  (parameterize ([current-shuffle #f]
+                 [current-solver min_conflicts])
+    (check-equal?
+     (solve csp)
+     (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . red) (v . green) (wa . green))))
+    (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(9 220))))
 
-    (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(7 97))))
 
 (define (test)
   (begin
@@ -539,8 +539,8 @@
       (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(9 220)))))
 
 (define tri (make-csp (list ($vd 'a '(1 2 3))
-                       ($vd 'b '(4 5 6))
-                       ($vd 'c '(7 8 9)))
-                 (list ($constraint '(a b c) (λ (a b c) (= (+ a b c) 18))))))
+                            ($vd 'b '(4 5 6))
+                            ($vd 'c '(7 8 9)))
+                      (list ($constraint '(a b c) (λ (a b c) (= (+ a b c) 18))))))
 
-(solve tri)
+#;(solve tri)
