@@ -49,15 +49,15 @@
 (define nchecks $csp-nchecks)
 
 (define/contract (check-constraint csp . varvals)
-  ($csp? variable? any/c variable? any/c . -> . any/c)
-  (define varval-hash (apply hasheq #R varvals))
+  (($csp?) #:rest (listof any/c) . ->* . any/c)
+  (define varval-hash (apply hasheq varvals))
   (define relevant-constraints
     (for/list ([constraint (in-list ($csp-constraints csp))]
                #:when (for/and ([cname (in-list ($constraint-names constraint))])
                         (memq cname (hash-keys varval-hash))))
       constraint))
   (begin0
-    (for/and ([constraint (in-list #R relevant-constraints)])
+    (for/and ([constraint (in-list relevant-constraints)])
       (define vals (for/list ([cname (in-list ($constraint-names constraint))])
                      (hash-ref varval-hash cname)))
       (apply ($constraint-proc constraint) vals))
@@ -85,15 +85,21 @@
   ($csp? assignment? . -> . boolean?)
   (= (length (hash-keys assignment)) (length ($csp-variables csp))))
 
+
 (define/contract (nconflicts csp var val assignment)
   ($csp? variable? any/c assignment? . -> . number?)
   ;; Return the number of conflicts var=val has with other variables."""
   ;; Subclasses may implement this more efficiently
   (for/sum ([v (in-list (neighbors csp var))]
             #:when (assignment . assigns? . v))
-    (if (check-constraint csp var val v (hash-ref assignment v))
+    #;(define this (apply check-constraint csp (append (list var val) (flatten (for/list ([(k v) (in-hash assignment)]
+                                                                               #:unless (eq? var k))
+                                                                      (list k v))))))
+    (define that (check-constraint csp var val v (hash-ref assignment v)))
+    (if that
         0
         1)))
+
 
 (define (display csp assignment)
   (displayln csp))
@@ -389,7 +395,7 @@
 
 (require rackunit)
 
-#;(begin
+(begin
     (define vs '(wa nsw t q nt v sa))
     (define vds (for/list ([k vs])
                   ($vd k '(red green blue))))
