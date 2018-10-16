@@ -8,6 +8,11 @@
 (define variable? symbol?)
 (define removal? (cons/c variable? any/c))
 
+(define (update-assignment assignment var val)
+  (define h (hash-copy assignment))
+  (hash-set! h var val)
+  h)
+
 (struct $constraint (names proc) #:transparent)
 (struct $vd (name vals) #:transparent)
 
@@ -48,13 +53,15 @@
 (define nassigns $csp-nassigns)
 (define nchecks $csp-nchecks)
 
-(define/contract (check-constraint csp . varvals)
-  (($csp?) #:rest (listof any/c) . ->* . any/c)
-  (define varval-hash (apply hasheq varvals))
+(define/contract (check-constraint csp varval-hash [limit #f])
+  (($csp? hash?) ((or/c #f variable?)) . ->* . any/c)
   (define relevant-constraints
     (for/list ([constraint (in-list ($csp-constraints csp))]
-               #:when (for/and ([cname (in-list ($constraint-names constraint))])
-                        (memq cname (hash-keys varval-hash))))
+               #:when (let ([cnames ($constraint-names constraint)])
+                        (and
+                         (if limit (memq limit cnames) #true)
+                         (for/and ([cname (in-list cnames)])
+                           (memq cname (hash-keys varval-hash))))))
       constraint))
   (begin0
     (for/and ([constraint (in-list relevant-constraints)])
@@ -85,18 +92,17 @@
   ($csp? assignment? . -> . boolean?)
   (= (length (hash-keys assignment)) (length ($csp-variables csp))))
 
-
+(define asses (make-parameter #f))
 (define/contract (nconflicts csp var val assignment)
   ($csp? variable? any/c assignment? . -> . number?)
   ;; Return the number of conflicts var=val has with other variables."""
   ;; Subclasses may implement this more efficiently
+  (define ass (update-assignment assignment var val))
   (for/sum ([v (in-list (neighbors csp var))]
             #:when (assignment . assigns? . v))
-    #;(define this (apply check-constraint csp (append (list var val) (flatten (for/list ([(k v) (in-hash assignment)]
-                                                                               #:unless (eq? var k))
-                                                                      (list k v))))))
-    (define that (check-constraint csp var val v (hash-ref assignment v)))
-    (if that
+    (if (check-constraint csp (if asses
+                                  ass
+                                  (hasheq var val v (hash-ref assignment v))))
         0
         1)))
 
@@ -242,7 +248,7 @@
     (cond
       [(not
         (for/or ([y (in-list (curr_domain csp Xj))])
-          (check-constraint csp Xi x Xj y)))
+          (check-constraint csp (hasheq Xi x Xj y))))
        (prune csp Xi x removals)
        #true]
       [else revised])))
@@ -305,10 +311,11 @@
   ($csp? variable? any/c assignment? (box/c (listof removal?)) . -> . boolean?)
   ;; Prune neighbor values inconsistent with var=value.
   (support_pruning csp) ;; necessary to set up curr_domains
+  (define ass (update-assignment assignment var value))
   (for/and ([B (in-list (neighbors csp var))]
             #:unless (assignment . assigns? . B))
     (for ([b (in-list (curr_domain csp B))]
-          #:unless (check-constraint csp var value B b))
+          #:unless (check-constraint csp (if asses ass (hasheq var value B b))))
       (prune csp B b removals))
     (not (empty? (curr_domain csp B)))))
 
@@ -394,23 +401,44 @@
     [else #false]))
 
 (require rackunit)
+(define vs '(wa nsw t q nt v sa))
+(define vds (for/list ([k vs])
+              ($vd k '(red green blue))))
+(define (neq? a b) (not (eq? a b)))
+(define cs (list
+            ($constraint '(wa nt) neq?)
+            ($constraint '(wa sa) neq?)
+            ($constraint '(nt sa) neq?)
+            ($constraint '(nt q) neq?)
+            ($constraint '(q sa) neq?)
+            ($constraint '(q nsw) neq?)
+            ($constraint '(nsw sa) neq?)
+            ($constraint '(nsw v) neq?)
+            ($constraint '(v sa) neq?)))
+(define csp (make-csp vds cs))
 
-(begin
-    (define vs '(wa nsw t q nt v sa))
-    (define vds (for/list ([k vs])
-                  ($vd k '(red green blue))))
-    (define (neq? a b) (not (eq? a b)))
-    (define cs (list
-                ($constraint '(wa nt) neq?)
-                ($constraint '(wa sa) neq?)
-                ($constraint '(nt sa) neq?)
-                ($constraint '(nt q) neq?)
-                ($constraint '(q sa) neq?)
-                ($constraint '(q nsw) neq?)
-                ($constraint '(nsw sa) neq?)
-                ($constraint '(nsw v) neq?)
-                ($constraint '(v sa) neq?)))
-    (define csp (make-csp vds cs))
+(define (one)
+  (parameterize ([current-select-variable mrv]
+                 [current-order-values lcv]
+                 [current-inference mac]
+                 [current-reset #f]
+                 [current-shuffle #f])
+    (set-$csp-curr_domains! csp #f)
+    (check-equal? (solve csp)
+                  (make-hasheq
+                   '((nsw . green)
+                     (nt . green)
+                     (q . red)
+                     (sa . blue)
+                     (t . red)
+                     (v . red)
+                     (wa . red))))
+
+    (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(7 97))))
+
+(define (test)
+  (begin
+    (set-$csp-curr_domains! csp #f)
     (check-true ($csp? csp))
     (define a (make-hasheq))
     (assign csp 'key 42 a)
@@ -504,7 +532,7 @@
       (check-equal?
        (solve csp)
        (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . red) (v . green) (wa . green))))
-      (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(9 220))))
+      (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(9 220)))))
 
 (solve (make-csp (list ($vd 'a '(1 2 3))
                        ($vd 'b '(4 5 6))
