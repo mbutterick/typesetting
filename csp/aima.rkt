@@ -48,15 +48,19 @@
 (define nassigns $csp-nassigns)
 (define nchecks $csp-nchecks)
 
-(define/contract (check-constraint csp A a B b)
+(define/contract (check-constraint csp . varvals)
   ($csp? variable? any/c variable? any/c . -> . any/c)
-  (define AB-constraints (for/list ([constraint (in-list ($csp-constraints csp))]
-                                    #:when (for/and ([name (in-list (list A B))])
-                                             (memq name ($constraint-names constraint))))
-                           constraint))
+  (define varval-hash (apply hasheq varvals))
+  (define relevant-constraints
+    (for/list ([constraint (in-list ($csp-constraints csp))]
+               #:when (for/and ([name (in-list (hash-keys varval-hash))])
+                        (memq name ($constraint-names constraint))))
+      constraint))
   (begin0
-    (for/and ([constraint (in-list AB-constraints)])
-      (($constraint-proc constraint) a b))
+    (for/and ([constraint (in-list relevant-constraints)])
+      (define vals (for/list ([cname (in-list ($constraint-names constraint))])
+                     (hash-ref varval-hash cname)))
+      (apply ($constraint-proc constraint) vals))
     (set-$csp-nchecks! csp (add1 ($csp-nchecks csp)))))
 
 (define/contract (reset-counters! csp)
@@ -494,3 +498,8 @@
    (solve csp)
    (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . red) (v . green) (wa . green))))
   (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(9 220)))
+
+(solve (make-csp (list ($vd 'a '(1 2 3))
+                       ($vd 'b '(4 5 6))
+                       ($vd 'c '(7 8 9)))
+                 (list ($constraint '(a b c) (λ (a b c) (= (+ a b c) 18))))))
