@@ -2,14 +2,14 @@
 (require racket/generator sugar)
 (provide (all-defined-out))
 
-(struct $csp (variables domains neighbors constraints initial curr_domains nassigns nchecks) #:transparent #:mutable)
+(struct $csp (variables domains neighbors constraints initial curr_domains nassigns nchecks current) #:transparent #:mutable)
 (define assignment? hash?)
 (define variable? symbol?)
 (define removal? (cons/c variable? any/c))
 
 (define/contract (make-csp variables domains neighbors constraints)
   ((listof variable?) hash? hash? procedure? . -> . $csp?)
-  ($csp variables domains neighbors constraints null #f 0 0))
+  ($csp variables domains neighbors constraints null #f 0 0 #f))
 
 (define/contract (curr_domain csp var)
   ($csp? variable? . -> . (listof any/c))
@@ -50,6 +50,10 @@
   ;; just call assign for that.
   (hash-remove! assignment var))
 
+(define/contract (all-variables-assigned? csp assignment)
+  ($csp? assignment? . -> . boolean?)
+  (= (length (hash-keys assignment)) (length ($csp-variables csp))))
+
 (define/contract (nconflicts csp var val assignment)
   ($csp? variable? any/c assignment? . -> . number?)
   ;; Return the number of conflicts var=val has with other variables."""
@@ -63,14 +67,43 @@
 (define (display csp assignment)
   (displayln csp))
 
-(define/contract (all-variables-assigned? csp assignment)
-  ($csp? assignment? . -> . boolean?)
-  (= (length (hash-keys assignment)) (length ($csp-variables csp))))
+;; These methods are for the tree and graph-search interface:
 
+(struct $action (var val) #:transparent #:mutable)
+(define/contract (state->assignment state)
+  ((listof $action?) . -> . assignment?)
+  (for/hasheq ([action (in-list state)])
+    (match action
+      [($action var val) (values var val)])))
+
+;; todo: test that this works
+(define/contract (actions csp state)
+  ($csp? (listof $action?) . -> . any/c)
+  ;; Return a list of applicable actions: nonconflicting
+  ;; assignments to an unassigned variable.
+  (cond
+    [(all-variables-assigned? csp state) empty]
+    [else
+     (define assignment (state->assignment state))
+     (define var (for/first ([v (in-list ($csp-variables csp))]
+                             #:unless (assignment . assigns? . v))
+                   v))
+     (for/list ([val (in-list (hash-ref ($csp-domains csp) var))]
+                #:when (zero? (nconflicts csp var val assignment)))
+       ($action var val))]))
+
+;; todo: test that this works
+(define/contract (result csp state action)
+  ($csp? (listof $action?) $action? . -> . assignment?)
+  ;; Perform an action and return the new state.
+  (match-define ($action var val) action)
+  (append state (list action)))
+
+;; todo: test that this works
 (define/contract (goal_test csp state)
-  ($csp? assignment? . -> . boolean?)
+  ($csp? (or/c assignment? (listof $action?)) . -> . boolean?)
   ;; The goal is to assign all variables, with all constraints satisfied.
-  (define assignment state)
+  (define assignment (if (assignment? state) state (state->assignment state)))
   (and (all-variables-assigned? csp assignment)
        (for/and ([variable ($csp-variables csp)])
          (zero? (nconflicts csp variable (hash-ref assignment variable) assignment)))))
@@ -97,14 +130,13 @@
            (cons var val)))
     (hash-set! ($csp-curr_domains csp) var (list value))))
 
-;; todo: update uses of `prune` to be functional on removals
 (define/contract (prune csp var value removals)
   ($csp? variable? any/c (or/c #f (box/c (listof removal?))) . -> . (box/c (listof removal?)))
   ;; Rule out var=value
   (hash-update! ($csp-curr_domains csp) var (λ (vals) (remove value vals)))
-  (and removals
-       (set-box! removals (append (unbox removals) (list (cons var value))))
-       removals))
+  (when removals
+    (set-box! removals (append (unbox removals) (list (cons var value)))))
+  removals)
 
 (define/contract (choices csp var)
   ($csp? variable? . -> . (listof any/c))
@@ -129,6 +161,14 @@
     (match removal
       [(cons B b) (hash-update! ($csp-curr_domains csp) B
                                 (λ (vals) (append vals (list b))))])))
+
+;; This is for min_conflicts search
+(define/contract (conflicted_vars csp current)
+  ($csp? hash? . -> . (listof variable?))
+  ;; Return a list of variables in current assignment that are in conflict
+  (for/list ([var (in-list ($csp-variables csp))]
+             #:when (positive? (nconflicts csp var (hash-ref current var) current)))
+    var))
 
 ;; ______________________________________________________________________________
 ;; Constraint Propagation with AC-3
@@ -182,6 +222,12 @@
 
 (define current-shuffle (make-parameter #t))
 
+(define/contract (argmin_random_tie proc xs)
+  (procedure? (listof any/c) . -> . any/c)
+  (define ordered-xs (sort xs < #:key proc))
+  (first ((if (current-shuffle) shuffle values)
+          (takef ordered-xs (λ (x) (= (proc (car ordered-xs)) (proc x)))))))
+
 (define/contract (mrv assignment csp)
   (assignment? $csp? . -> . any/c)
   ;; Minimum-remaining-values heuristic.
@@ -193,13 +239,11 @@
                   #:when (zero? (nconflicts csp var val assignment)))
           1)))
   (struct $mrv-rec (var num) #:transparent)
-  (define recs (sort
-                (for/list ([var (in-list ($csp-variables csp))]
-                           #:unless (assignment . assigns? . var))
-                  ($mrv-rec var (num_legal_values var)))
-                < #:key $mrv-rec-num))
-  (first ((if (current-shuffle) shuffle values) (map $mrv-rec-var (takef recs (λ (rec) (= ($mrv-rec-num (first recs))
-                                                                                          ($mrv-rec-num rec))))))))
+  (argmin_random_tie
+   (λ (var) (num_legal_values var))
+   (for/list ([var (in-list ($csp-variables csp))]
+              #:unless (assignment . assigns? . var))
+     var)))
 
 ;; Value ordering
 
@@ -241,10 +285,11 @@
 (define current-order-values (make-parameter #f))
 (define current-inference (make-parameter #f))
 
-(define/contract (backtracking_search csp
-                                      [select_unassigned_variable (or (current-select-variable) first_unassigned_variable)]
-                                      [order_domain_values (or (current-order-values) unordered_domain_values)]
-                                      [inference (or (current-inference) no_inference)])
+(define/contract (backtracking_search
+                  csp
+                  [select_unassigned_variable (or (current-select-variable) first_unassigned_variable)]
+                  [order_domain_values (or (current-order-values) unordered_domain_values)]
+                  [inference (or (current-inference) no_inference)])
   (($csp?) (procedure? procedure? procedure?) . ->* . generator?)
   (generator ()
              (let backtrack ([assignment (make-hasheq)])
@@ -262,6 +307,35 @@
                       (backtrack assignment))
                     (restore csp removals))
                   (unassign csp var assignment)]))))
+;; ______________________________________________________________________________
+;; Min-conflicts hillclimbing search for CSPs
+
+(define (min_conflicts csp [max_steps (expt 10 5)])
+  (($csp?) (integer?) . ->* . (or/c #f assignment?))
+  ;; Solve a CSP by stochastic hillclimbing on the number of conflicts.
+  ;; Generate a complete assignment for all variables (probably with conflicts)
+  (define current (make-hasheq))
+  (set-$csp-current! csp current)
+  (for ([var (in-list ($csp-variables csp))])
+    (define val (min_conflicts_value csp var current))
+    (assign csp var val current))
+  ;; Now repeatedly choose a random conflicted variable and change it
+  (with-handlers ([hash? values])
+    (for ([i (in-range max_steps)])
+      (define conflicted (conflicted_vars csp current))
+      (unless (pair? conflicted)
+        (raise current))
+      (define var (first ((if (current-shuffle) shuffle values) conflicted)))
+      (define val (min_conflicts_value csp var current))
+      (assign csp var val current))
+    #false))
+  
+(define/contract (min_conflicts_value csp var current)
+  ($csp? variable? hash? . -> . any/c)
+  ;; Return the value that will give var the least number of conflicts.
+  ;; If there is a tie, choose at random.
+  (argmin_random_tie (λ (val) (nconflicts csp var val current)) (hash-ref ($csp-domains csp) var)))
+
 
 (define current-reset (make-parameter #t))
 
@@ -383,3 +457,9 @@
   (check-equal? (solve csp)
                 (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
   (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(7 45)))
+
+(set-$csp-curr_domains! csp #f)
+(parameterize ([current-shuffle #f])
+  (check-equal?
+   (min_conflicts csp)
+   (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . red) (v . green) (wa . green)))))
