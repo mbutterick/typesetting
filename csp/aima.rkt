@@ -1,14 +1,15 @@
 #lang debug racket
-(require racket/generator sugar/debug)
+(require racket/generator sugar)
+(provide (all-defined-out))
 
-(struct $csp (variables domains neighbors constraints initial curr_domains nassigns) #:transparent #:mutable)
+(struct $csp (variables domains neighbors constraints initial curr_domains nassigns nchecks) #:transparent #:mutable)
 (define assignment? hash?)
 (define variable? symbol?)
 (define removal? (cons/c variable? any/c))
 
 (define/contract (make-csp variables domains neighbors constraints)
   ((listof variable?) hash? hash? procedure? . -> . $csp?)
-  ($csp variables domains neighbors constraints null #f 0))
+  ($csp variables domains neighbors constraints null #f 0 0))
 
 (define/contract (curr_domain csp var)
   ($csp? variable? . -> . (listof any/c))
@@ -22,9 +23,19 @@
   (assignment? variable? . -> . boolean?)
   (hash-has-key? assignment var))
 
-(define/contract (reset-nassigns! csp)
+(define nassigns $csp-nassigns)
+(define nchecks $csp-nchecks)
+
+(define/contract (check-constraint csp A a B b)
+  ($csp? variable? any/c variable? any/c . -> . any/c)
+  (begin0
+    (($csp-constraints csp) A a B b)
+    (set-$csp-nchecks! csp (add1 ($csp-nchecks csp)))))
+
+(define/contract (reset-counters! csp)
   ($csp? . -> . void?)
-  (set-$csp-nassigns! csp 0))
+  (set-$csp-nassigns! csp 0)
+  (set-$csp-nchecks! csp 0))
 
 (define/contract (assign csp var val assignment)
   ($csp? variable? any/c assignment? . -> . void?)
@@ -45,7 +56,9 @@
   ;; Subclasses may implement this more efficiently
   (for/sum ([v (in-list (neighbors csp var))]
             #:when (assignment . assigns? . v))
-    (if (($csp-constraints csp) var val v (hash-ref assignment v)) 0 1)))
+    (if (check-constraint csp var val v (hash-ref assignment v))
+        0
+        1)))
 
 (define (display csp assignment)
   (displayln csp))
@@ -117,7 +130,44 @@
       [(cons B b) (hash-update! ($csp-curr_domains csp) B
                                 (λ (vals) (append vals (list b))))])))
 
+;; ______________________________________________________________________________
+;; Constraint Propagation with AC-3
 
+(struct $arc (start end) #:transparent)
+(define/contract (AC3 csp [queue #f][removals #f])
+  (($csp?) ((or/c #f (listof any/c)) (box/c (listof removal?))) . ->* . boolean?)
+  (support_pruning csp)
+  (with-handlers ([boolean? values])
+    (for/fold ([queue (or queue
+                          (for*/list ([Xi (in-list ($csp-variables csp))]
+                                      [Xk (in-list (neighbors csp Xi))])
+                            ($arc Xi Xk)))]
+               #:result #true)
+              ([i (in-naturals)]
+               #:break (empty? queue))
+      (match-define (cons ($arc Xi Xj) other-arcs) queue)
+      (cond
+        [(revise csp Xi Xj removals)
+         (when (empty? (curr_domain csp Xi))
+           (raise #false))
+         (append other-arcs
+                 (for/list ([Xk (in-list (neighbors csp Xi))]
+                            #:unless (eq? Xk Xj))
+                   ($arc Xk Xi)))]
+        [else other-arcs]))))
+
+(define/contract (revise csp Xi Xj removals)
+  ($csp? variable? variable? (box/c (listof removal?)) . -> . boolean?)
+  ;; Return true if we remove a value.
+  (for/fold ([revised #false])
+            ([x (in-list (curr_domain csp Xi))])
+    ;; If Xi=x conflicts with Xj=y for every possible y, eliminate Xi=x
+    (cond
+      [(for/and ([y (in-list (curr_domain csp Xj))])
+         (not (check-constraint csp Xi x Xj y)))
+       (prune csp Xi x removals)
+       #true]
+      [else revised])))
 ;; ______________________________________________________________________________
 ;; CSP Backtracking Search
 
@@ -139,7 +189,6 @@
   (define (num_legal_values var)
     (if ($csp-curr_domains csp)
         (length (curr_domain csp var))
-        ;; todo: is this the same as python `count`?
         (for/sum ([val (in-list (hash-ref ($csp-domains csp) var))]
                   #:when (zero? (nconflicts csp var val assignment)))
           1)))
@@ -177,18 +226,25 @@
   (for/and ([B (in-list (neighbors csp var))]
             #:unless (assignment . assigns? . B))
     (for ([b (in-list (curr_domain csp B))]
-          #:unless (($csp-constraints csp) var value B b))
+          #:unless (check-constraint csp var value B b))
       (prune csp B b removals))
     (not (empty? (curr_domain csp B)))))
 
-(define current-select-variable (make-parameter first_unassigned_variable))
-(define current-order-values (make-parameter unordered_domain_values))
-(define current-inference (make-parameter no_inference))
+(define/contract (mac csp var value assignment removals)
+  ($csp? variable? any/c assignment? (box/c (listof removal?)) . -> . boolean?)
+  ;; Maintain arc consistency.
+  (AC3 csp (for/list ([X (in-list (neighbors csp var))])
+             ($arc X var)) removals))
+  
+
+(define current-select-variable (make-parameter #f))
+(define current-order-values (make-parameter #f))
+(define current-inference (make-parameter #f))
 
 (define/contract (backtracking_search csp
-                                      [select_unassigned_variable (current-select-variable)]
-                                      [order_domain_values (current-order-values)]
-                                      [inference (current-inference)])
+                                      [select_unassigned_variable (or (current-select-variable) first_unassigned_variable)]
+                                      [order_domain_values (or (current-order-values) unordered_domain_values)]
+                                      [inference (or (current-inference) no_inference)])
   (($csp?) (procedure? procedure? procedure?) . ->* . generator?)
   (generator ()
              (let backtrack ([assignment (make-hasheq)])
@@ -216,7 +272,7 @@
     (match (for/list ([solution (in-producer (solver csp) (void))]
                       [idx (in-range solution-limit)])
              (finish-proc solution))
-      [(? pair? solutions) solutions]
+      [(list solutions ...) solutions]
       [else #false])
     (when (current-reset)
       (set-$csp-curr_domains! csp #f))))
@@ -240,7 +296,7 @@
                                   (sa wa nt q nsw v)
                                   (t)))])
              (values i ns)))
-(define csp (make-csp vs ds ns (λ (A a B b) (not (equal? a b)))))
+(define csp (make-csp vs ds ns (λ (A a B b) (not (eq? a b)))))
 (check-true ($csp? csp))
 (define a (make-hasheq))
 (assign csp 'key 42 a)
@@ -275,7 +331,7 @@
 (set-$csp-curr_domains! csp #f) ; reset current domains
 (check-equal? (solve csp)
               (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
-(check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 40)
+(check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(40 321))
 (check-equal? (length (solve* csp)) 18)
 
 (check-equal? (suppose csp 'nsw 'red) '#&((nsw . green) (nsw . blue)))
@@ -283,22 +339,23 @@
               (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . blue) (v . green) (wa . green))))
 (check-equal? ($csp-nassigns csp) 368)
 
+(reset-counters! csp)
 (check-equal? (suppose csp 'nsw 'red) '#&((nsw . green) (nsw . blue)))
 (check-equal? (length (solve* csp)) 6)
-(check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 479)
+(check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(111 1035))
 
 (parameterize ([current-select-variable mrv]
                [current-shuffle #f])
   (check-equal?
    (solve csp)
    (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
-  (check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 39))
+  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(39 321)))
 
 (parameterize ([current-order-values lcv])
   (check-equal?
    (solve csp)
    (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
-  (check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 39))
+  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(39 1040)))
 
 (parameterize ([current-inference forward_checking])
   (forward_checking csp 'sa 'blue (make-hasheq) (box null))
@@ -306,10 +363,23 @@
                 (make-hasheq '((nsw . (red green)) (nt . (red green)) (q . (red green)) (sa . (red green blue)) (t . (red green blue)) (v . (red green)) (wa . (red green))))))
 
 (set-$csp-curr_domains! csp #f)
-(parameterize ([current-inference forward_checking]
-               [current-reset #f])
+(parameterize ([current-inference forward_checking])
   (check-equal?
    (solve csp)
    (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
-  (check-equal? (begin0 ($csp-nassigns csp) (reset-nassigns! csp)) 25))
+  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(25 123)))
 
+(set-$csp-curr_domains! csp #f)
+(parameterize ([current-inference mac]
+               [current-reset #f])
+  (check-equal? (solve csp)
+                (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
+  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(17 159)))
+
+(parameterize ([current-select-variable mrv]
+               [current-order-values lcv]
+               [current-inference mac]
+               [current-reset #f])
+  (check-equal? (solve csp)
+                (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
+  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(7 45)))
