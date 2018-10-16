@@ -1,5 +1,5 @@
 #lang debug racket
-(require racket/generator sugar)
+(require racket/generator sugar graph)
 (provide (all-defined-out))
 
 (struct $csp (variables domains neighbors constraints initial curr_domains nassigns nchecks current) #:transparent #:mutable)
@@ -10,9 +10,19 @@
 
 (struct $constraint (names proc) #:transparent)
 
-(define/contract (make-csp variables domains neighbors constraints newconstraints)
-  ((listof variable?) hash? hash? procedure? (listof $constraint?) . -> . $csp?)
-  ($csp variables domains neighbors constraints null #f 0 0 #f))
+(define (constraint-graph variables constraints)
+  (for*/fold ([g (unweighted-graph/undirected variables)])
+             ([constraint (in-list constraints)]
+              [edge (in-combinations ($constraint-names constraint) 2)])
+    (apply add-edge! g edge)
+    g))
+
+(define/contract (make-csp variables domains constraints)
+  ((listof variable?) hash? (listof $constraint?) . -> . $csp?)
+  (define g (constraint-graph variables constraints))
+  (define ns (for/hasheq ([v (in-list variables)])
+               (values v (get-neighbors g v))))
+  ($csp variables domains ns constraints null #f 0 0 #f))
 
 (define/contract (domain csp var)
   ($csp? variable? . -> . (listof any/c))
@@ -35,8 +45,13 @@
 
 (define/contract (check-constraint csp A a B b)
   ($csp? variable? any/c variable? any/c . -> . any/c)
+  (define AB-constraints (for/list ([constraint (in-list ($csp-constraints csp))]
+                                    #:when (for/and ([name (in-list (list A B))])
+                                             (memq name ($constraint-names constraint))))
+                           constraint))
   (begin0
-    (($csp-constraints csp) A a B b)
+    (for/and ([constraint (in-list AB-constraints)])
+      (($constraint-proc constraint) a b))
     (set-$csp-nchecks! csp (add1 ($csp-nchecks csp)))))
 
 (define/contract (reset-counters! csp)
@@ -367,17 +382,7 @@
 (define vs '(wa nsw t q nt v sa))
 (define ds (for/hash ([k vs])
              (values k '(red green blue))))
-(define ns (for*/hash ([(i ns) (in-dict
-                                '((wa nt sa)
-                                  (nt wa sa q)
-                                  (q nt sa nsw)
-                                  (nsw q sa v)
-                                  (v sa nsw)
-                                  (sa wa nt q nsw v)
-                                  (t)))])
-             (values i ns)))
 (define (neq? a b) (not (eq? a b)))
-(define c (λ (A a B b) (neq? a b)))
 (define ncs (list
              ($constraint '(wa nt) neq?)
              ($constraint '(wa sa) neq?)
@@ -388,7 +393,7 @@
              ($constraint '(nsw sa) neq?)
              ($constraint '(nsw v) neq?)
              ($constraint '(v sa) neq?)))
-(define csp (make-csp vs ds ns c ncs))
+(define csp (make-csp vs ds ncs))
 (check-true ($csp? csp))
 (define a (make-hasheq))
 (assign csp 'key 42 a)
@@ -459,14 +464,14 @@
   (check-equal?
    (solve csp)
    (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
-  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(25 123)))
+  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(25 121)))
 
 (set-$csp-curr_domains! csp #f)
 (parameterize ([current-inference mac]
                [current-reset #f])
   (check-equal? (solve csp)
                 (make-hasheq '((nsw . green) (nt . green) (q . red) (sa . blue) (t . blue) (v . red) (wa . red))))
-  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(17 159)))
+  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(17 175)))
 
 (parameterize ([current-select-variable mrv]
                [current-order-values lcv]
