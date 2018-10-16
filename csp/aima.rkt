@@ -9,6 +9,7 @@
 (define removal? (cons/c variable? any/c))
 
 (struct $constraint (names proc) #:transparent)
+(struct $vd (name vals) #:transparent)
 
 (define (constraint-graph variables constraints)
   (for*/fold ([g (unweighted-graph/undirected variables)])
@@ -17,11 +18,15 @@
     (apply add-edge! g edge)
     g))
 
-(define/contract (make-csp variables domains constraints)
-  ((listof variable?) hash? (listof $constraint?) . -> . $csp?)
+(define/contract (make-csp variables vds constraints)
+  ((listof variable?) (listof $vd?) (listof $constraint?) . -> . $csp?)
   (define g (constraint-graph variables constraints))
   (define ns (for/hasheq ([v (in-list variables)])
                (values v (get-neighbors g v))))
+  (define domains (for/hasheq ([vd (in-list vds)])
+                    (match vd
+                      [($vd name vals) (values name vals)])))
+      
   ($csp variables domains ns constraints null #f 0 0 #f))
 
 (define/contract (domain csp var)
@@ -380,10 +385,10 @@
 
 (require rackunit)
 (define vs '(wa nsw t q nt v sa))
-(define ds (for/hash ([k vs])
-             (values k '(red green blue))))
+(define ds (for/list ([k vs])
+             ($vd k '(red green blue))))
 (define (neq? a b) (not (eq? a b)))
-(define ncs (list
+(define cs (list
              ($constraint '(wa nt) neq?)
              ($constraint '(wa sa) neq?)
              ($constraint '(nt sa) neq?)
@@ -393,7 +398,7 @@
              ($constraint '(nsw sa) neq?)
              ($constraint '(nsw v) neq?)
              ($constraint '(v sa) neq?)))
-(define csp (make-csp vs ds ncs))
+(define csp (make-csp vs ds cs))
 (check-true ($csp? csp))
 (define a (make-hasheq))
 (assign csp 'key 42 a)
