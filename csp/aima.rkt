@@ -311,24 +311,23 @@
 ;; Min-conflicts hillclimbing search for CSPs
 
 (define (min_conflicts csp [max_steps (expt 10 5)])
-  (($csp?) (integer?) . ->* . (or/c #f assignment?))
+  (($csp?) (integer?) . ->* . generator?)
   ;; Solve a CSP by stochastic hillclimbing on the number of conflicts.
   ;; Generate a complete assignment for all variables (probably with conflicts)
-  (define current (make-hasheq))
-  (set-$csp-current! csp current)
-  (for ([var (in-list ($csp-variables csp))])
-    (define val (min_conflicts_value csp var current))
-    (assign csp var val current))
-  ;; Now repeatedly choose a random conflicted variable and change it
-  (with-handlers ([hash? values])
-    (for ([i (in-range max_steps)])
-      (define conflicted (conflicted_vars csp current))
-      (unless (pair? conflicted)
-        (raise current))
-      (define var (first ((if (current-shuffle) shuffle values) conflicted)))
-      (define val (min_conflicts_value csp var current))
-      (assign csp var val current))
-    #false))
+  (generator ()
+             (define current (make-hasheq))
+             (set-$csp-current! csp current)
+             (for ([var (in-list ($csp-variables csp))])
+               (define val (min_conflicts_value csp var current))
+               (assign csp var val current))
+             ;; Now repeatedly choose a random conflicted variable and change it
+             (for ([i (in-range max_steps)])
+               (define conflicted (conflicted_vars csp current))
+               (when (empty? conflicted)
+                 (yield current))
+               (define var (first ((if (current-shuffle) shuffle values) conflicted)))
+               (define val (min_conflicts_value csp var current))
+               (assign csp var val current))))
   
 (define/contract (min_conflicts_value csp var current)
   ($csp? variable? hash? . -> . any/c)
@@ -338,22 +337,22 @@
 
 
 (define current-reset (make-parameter #t))
+(define current-solver (make-parameter backtracking_search))
 
-(define/contract (solve* csp [solver backtracking_search] [finish-proc values]
-                         #:count [solution-limit +inf.0])
-  (($csp?) (procedure? procedure? #:count integer?) . ->* . (or/c #f (non-empty-listof any/c)))
+(define/contract (solve* csp [solution-limit +inf.0])
+  (($csp?) (integer?) . ->* . (or/c #f (non-empty-listof any/c)))
   (begin0
-    (match (for/list ([solution (in-producer (solver csp) (void))]
+    (match (for/list ([solution (in-producer ((current-solver) csp) (void))]
                       [idx (in-range solution-limit)])
-             (finish-proc solution))
+             solution)
       [(list solutions ...) solutions]
       [else #false])
     (when (current-reset)
       (set-$csp-curr_domains! csp #f))))
 
-(define/contract (solve csp [solver backtracking_search] [finish-proc values])
-  (($csp?) (procedure? procedure?) . ->* . any/c)
-  (match (solve* csp solver finish-proc #:count 1)
+(define/contract (solve csp)
+  ($csp? . -> . any/c)
+  (match (solve* csp 1)
     [(list solution) solution]
     [else #false]))
 
@@ -459,7 +458,9 @@
   (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(7 45)))
 
 (set-$csp-curr_domains! csp #f)
-(parameterize ([current-shuffle #f])
+(parameterize ([current-shuffle #f]
+               [current-solver min_conflicts])
   (check-equal?
-   (min_conflicts csp)
-   (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . red) (v . green) (wa . green)))))
+   (solve csp)
+   (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . red) (v . green) (wa . green))))
+  (check-equal? (begin0 (list ($csp-nassigns csp) ($csp-nchecks csp)) (reset-counters! csp)) '(9 220)))
