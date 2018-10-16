@@ -11,6 +11,10 @@
   ((listof variable?) hash? hash? procedure? . -> . $csp?)
   ($csp variables domains neighbors constraints null #f 0 0 #f))
 
+(define/contract (domain csp var)
+  ($csp? variable? . -> . (listof any/c))
+  (hash-ref ($csp-domains csp) var))
+
 (define/contract (curr_domain csp var)
   ($csp? variable? . -> . (listof any/c))
   (hash-ref ($csp-curr_domains csp) var))
@@ -85,10 +89,10 @@
     [(all-variables-assigned? csp state) empty]
     [else
      (define assignment (state->assignment state))
-     (define var (for/first ([v (in-list ($csp-variables csp))]
-                             #:unless (assignment . assigns? . v))
-                   v))
-     (for/list ([val (in-list (hash-ref ($csp-domains csp) var))]
+     (define var (for/first ([var (in-list ($csp-variables csp))]
+                             #:unless (assignment . assigns? . var))
+                   var))
+     (for/list ([val (in-list (domain csp var))]
                 #:when (zero? (nconflicts csp var val assignment)))
        ($action var val))]))
 
@@ -201,10 +205,11 @@
   ;; Return true if we remove a value.
   (for/fold ([revised #false])
             ([x (in-list (curr_domain csp Xi))])
-    ;; If Xi=x conflicts with Xj=y for every possible y, eliminate Xi=x
+    ;; If Xi=x is consistent with Xj=y for any y, keep Xi=x, otherwise prune
     (cond
-      [(for/and ([y (in-list (curr_domain csp Xj))])
-         (not (check-constraint csp Xi x Xj y)))
+      [(not
+        (for/or ([y (in-list (curr_domain csp Xj))])
+          (check-constraint csp Xi x Xj y)))
        (prune csp Xi x removals)
        #true]
       [else revised])))
@@ -235,7 +240,7 @@
   (define (num_legal_values var)
     (if ($csp-curr_domains csp)
         (length (curr_domain csp var))
-        (for/sum ([val (in-list (hash-ref ($csp-domains csp) var))]
+        (for/sum ([val (in-list (domain csp var))]
                   #:when (zero? (nconflicts csp var val assignment)))
           1)))
   (struct $mrv-rec (var num) #:transparent)
@@ -277,10 +282,9 @@
 (define/contract (mac csp var value assignment removals)
   ($csp? variable? any/c assignment? (box/c (listof removal?)) . -> . boolean?)
   ;; Maintain arc consistency.
-  (AC3 csp (for/list ([X (in-list (neighbors csp var))])
-             ($arc X var)) removals))
+  (AC3 csp (for/list ([neighbor (in-list (neighbors csp var))])
+             ($arc neighbor var)) removals))
   
-
 (define current-select-variable (make-parameter #f))
 (define current-order-values (make-parameter #f))
 (define current-inference (make-parameter #f))
@@ -333,16 +337,16 @@
   ($csp? variable? hash? . -> . any/c)
   ;; Return the value that will give var the least number of conflicts.
   ;; If there is a tie, choose at random.
-  (argmin_random_tie (λ (val) (nconflicts csp var val current)) (hash-ref ($csp-domains csp) var)))
-
+  (argmin_random_tie (λ (val) (nconflicts csp var val current)) (domain csp var)))
 
 (define current-reset (make-parameter #t))
-(define current-solver (make-parameter backtracking_search))
+(define current-solver (make-parameter #f))
 
 (define/contract (solve* csp [solution-limit +inf.0])
   (($csp?) (integer?) . ->* . (or/c #f (non-empty-listof any/c)))
+  (define solver (or (current-solver) backtracking_search))
   (begin0
-    (match (for/list ([solution (in-producer ((current-solver) csp) (void))]
+    (match (for/list ([solution (in-producer (solver csp) (void))]
                       [idx (in-range solution-limit)])
              solution)
       [(list solutions ...) solutions]
