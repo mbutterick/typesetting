@@ -3,12 +3,15 @@
 (provide (all-defined-out))
 
 (struct $csp (variables domains neighbors constraints initial curr_domains nassigns nchecks current) #:transparent #:mutable)
+;; `current` = current assignment
 (define assignment? hash?)
 (define variable? symbol?)
 (define removal? (cons/c variable? any/c))
 
-(define/contract (make-csp variables domains neighbors constraints)
-  ((listof variable?) hash? hash? procedure? . -> . $csp?)
+(struct $constraint (names proc) #:transparent)
+
+(define/contract (make-csp variables domains neighbors constraints newconstraints)
+  ((listof variable?) hash? hash? procedure? (listof $constraint?) . -> . $csp?)
   ($csp variables domains neighbors constraints null #f 0 0 #f))
 
 (define/contract (domain csp var)
@@ -373,7 +376,19 @@
                                   (sa wa nt q nsw v)
                                   (t)))])
              (values i ns)))
-(define csp (make-csp vs ds ns (λ (A a B b) (not (eq? a b)))))
+(define (neq? a b) (not (eq? a b)))
+(define c (λ (A a B b) (neq? a b)))
+(define ncs (list
+             ($constraint '(wa nt) neq?)
+             ($constraint '(wa sa) neq?)
+             ($constraint '(nt sa) neq?)
+             ($constraint '(nt q) neq?)
+             ($constraint '(q sa) neq?)
+             ($constraint '(q nsw) neq?)
+             ($constraint '(nsw sa) neq?)
+             ($constraint '(nsw v) neq?)
+             ($constraint '(v sa) neq?)))
+(define csp (make-csp vs ds ns c ncs))
 (check-true ($csp? csp))
 (define a (make-hasheq))
 (assign csp 'key 42 a)
