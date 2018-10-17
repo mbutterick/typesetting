@@ -5,26 +5,42 @@
 ;+ MORE
 ;------
 ; MONEY
+
+
 (define (word-value . xs)
   (for/sum ([(x idx) (in-indexed (reverse xs))])
     (* x (expt 10 idx))))
 
 (define vs '(s e n d m o r y))
-(define ds (for/hash ([k vs])
-             (values k (range 10))))
-(define ns (for*/hash ([v (in-list vs)])
-             (values v (remove v vs))))
+(define vds (for/list ([k vs])
+              ($vd k (range 10))))
 
-(define (smm-constraint A a B b)
-  (and
-   (not (eq? a b))
-   (when (eq? A 's) (= 1 a))))
+(define (not= x y) (not (= x y)))
 
-(define csp (make-csp vs ds ns smm-constraint))
+(define alldiffs
+  (for/list ([pr (in-combinations vs 2)])
+    ($constraint pr not=)))
+
+(define (smm-func s e n d m o r y)
+  (= (+ (word-value s e n d) (word-value m o r e)) (word-value m o n e y)))
+
+(define csp (make-csp vds (append
+                           
+                           alldiffs
+                           (list
+                            ($constraint vs smm-func)
+                            ($constraint '(s) positive?)
+                            ($constraint '(m) (λ (x) (= 1 x)))
+                            ($constraint '(d e y) (λ (d e y) (= (modulo (+ d e) 10) y)))
+                            ($constraint '(n d r e y) (λ (n d r e y)
+                                                        (= (modulo (+ (word-value n d) (word-value r e)) 100)
+                                                           (word-value e y))))
+                            ($constraint '(e n d o r y) (λ (e n d o r y)
+                                                          (= (modulo (+ (word-value e n d) (word-value o r e)) 1000) (word-value n e y))))))))
 (parameterize ([current-select-variable mrv]
                [current-order-values lcv]
-               [current-inference mac]
-               [current-reset #f])
-  (solve csp))
+               [current-inference mac])
+  (time (solve csp)))
 (nassigns csp)
 (nchecks csp)
+(reset! csp)
