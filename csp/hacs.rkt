@@ -161,7 +161,7 @@
                  [#false (yield csp)]
                  [($var name vals _ _)
                   (for/fold ([conflicts null]
-                             #:result (void))
+                             #:result (void conflicts))
                             ([val (in-list (order-domain-values vals))])
                     (with-handlers ([inconsistency-signal?
                                      (λ (sig)
@@ -202,7 +202,7 @@
                                ($constraint '(x z) <>)
                                ($constraint '(y z) <>)))))) 6)
 
-#;(parameterize ([current-inference forward-check])
+(parameterize ([current-inference forward-check])
     (define vds (for/list ([k '(wa nsw t q nt v sa)])
                   (+$var k '(red green blue))))
     (define cs (list
