@@ -6,14 +6,16 @@
               [constraints #:mutable]) #:transparent)
 (struct $constraint (names proc) #:transparent)
 (struct $var (name vals past conflicts) #:transparent)
-(define (+$var name vals [past null] [conflicts null])
+(define (+var name vals [past null] [conflicts null])
   ($var name vals past conflicts))
   
 (define $var-name? symbol?)
 (struct $avar $var () #:transparent)
-(define (+$avar name vals [past null] [conflicts null])
+(define (+avar name vals [past null] [conflicts null])
   ($avar name vals past conflicts))
 (struct inconsistency-signal (csp) #:transparent)
+
+(struct $conflict (names) #:transparent)
 
 (define current-select-variable (make-parameter #f))
 (define current-order-values (make-parameter #f))
@@ -45,7 +47,7 @@
   ($csp
    (for/list ([var ($csp-vars csp)])
      (if (eq? name ($var-name var))
-         (+$avar name (list val) ($var-past var) ($var-conflicts var))
+         (+avar name (list val) ($var-past var) ($var-conflicts var))
          var))
    ($csp-constraints csp)))
 
@@ -55,7 +57,7 @@
    (for/list ([var ($csp-vars csp)])
      (match var
        [($var (? (λ (x) (eq? x name))) vals past _)
-        (+$avar name vals past conflicts)]
+        (+avar name vals past conflicts)]
        [else var]))
    ($csp-constraints csp)))
 
@@ -65,11 +67,11 @@
               #:unless ($avar? var))
     var))
 
-(check-equal? (first-unassigned-variable ($csp (list (+$var 'a (range 3)) (+$var 'b (range 3))) null))
-              (+$var 'a (range 3)))
-(check-equal? (first-unassigned-variable ($csp (list (+$avar 'a (range 3)) (+$var 'b (range 3))) null))
-              (+$var 'b (range 3)))
-(check-false (first-unassigned-variable ($csp (list (+$avar 'a (range 3)) (+$avar 'b (range 3))) null)))
+(check-equal? (first-unassigned-variable ($csp (list (+var 'a (range 3)) (+var 'b (range 3))) null))
+              (+var 'a (range 3)))
+(check-equal? (first-unassigned-variable ($csp (list (+avar 'a (range 3)) (+var 'b (range 3))) null))
+              (+var 'b (range 3)))
+(check-false (first-unassigned-variable ($csp (list (+avar 'a (range 3)) (+avar 'b (range 3))) null)))
 
 (define first-domain-value values)
 
@@ -100,8 +102,8 @@
                                    (proc aval val)))))
            val))
        (unless (pair? new-vals)
-         (raise (inconsistency-signal past)))
-       (+$var name new-vals (cons aname past) conflicts)]))
+         (raise ($conflict past)))
+       (+var name new-vals (cons aname past) conflicts)]))
 
   ($csp
    (for/list ([var (in-list ($csp-vars csp))])
@@ -112,41 +114,41 @@
 
 (check-equal?
  ;; no forward checking when no constraints
- ($csp-vars (forward-check ($csp (list (+$avar 'a '(1)) (+$var 'b (range 2))) null) 'a))
- (list (+$avar 'a '(1)) (+$var 'b '(0 1))))
+ ($csp-vars (forward-check ($csp (list (+avar 'a '(1)) (+var 'b (range 2))) null) 'a))
+ (list (+avar 'a '(1)) (+var 'b '(0 1))))
 
 (check-equal?
- ($csp-vars (forward-check (forward-check ($csp (list (+$avar 'a '(1))  (+$avar 'b '(0)) (+$var 'c '(0 1 2)))
+ ($csp-vars (forward-check (forward-check ($csp (list (+avar 'a '(1))  (+avar 'b '(0)) (+var 'c '(0 1 2)))
                                                 (list ($constraint '(a c) (negate =))
                                                       ($constraint '(b c) (negate =)))) 'a) 'b))
- (list (+$avar 'a '(1)) (+$avar 'b '(0) '()) (+$var 'c '(2) '(b a))))
+ (list (+avar 'a '(1)) (+avar 'b '(0) '()) (+var 'c '(2) '(b a))))
 
 (check-equal?
  ;; no inconsistency: b≠c not checked when fc is relative to a
- ($csp-vars (forward-check ($csp (list (+$avar 'a '(1))  (+$var 'b (range 2)) (+$var 'c '(0)))
+ ($csp-vars (forward-check ($csp (list (+avar 'a '(1))  (+var 'b (range 2)) (+var 'c '(0)))
                                  (list ($constraint '(a b) (negate =))
                                        ($constraint '(b c) (negate =)))) 'a))
- (list (+$avar 'a '(1)) (+$var 'b '(0) '(a)) (+$var 'c '(0))))
+ (list (+avar 'a '(1)) (+var 'b '(0) '(a)) (+var 'c '(0))))
 
 (check-equal?
  ;; no inconsistency: a≠b not checked when fc ignores a, which is already assigned
- ($csp-vars (forward-check ($csp (list (+$avar 'a '(1))  (+$avar 'b '(1)) (+$var 'c (range 2)))
+ ($csp-vars (forward-check ($csp (list (+avar 'a '(1))  (+avar 'b '(1)) (+var 'c (range 2)))
                                  (list ($constraint '(a b) (negate =))
                                        ($constraint '(b c) (negate =)))) 'b))
- (list (+$avar 'a '(1)) (+$avar 'b '(1)) (+$var 'c '(0) '(b))))
+ (list (+avar 'a '(1)) (+avar 'b '(1)) (+var 'c '(0) '(b))))
 
-(check-exn inconsistency-signal?
-           (λ () ($csp-vars (forward-check ($csp (list (+$avar 'a '(1))
-                                                       (+$var 'b '(1)))
+(check-exn $conflict?
+           (λ () ($csp-vars (forward-check ($csp (list (+avar 'a '(1))
+                                                       (+var 'b '(1)))
                                                  (list ($constraint '(a b) (negate =)))) 'a))))
 
 
-(check-equal? ($csp-vars (forward-check ($csp (list (+$avar 'a (range 3))
-                                                    (+$var 'b (range 3)))
+(check-equal? ($csp-vars (forward-check ($csp (list (+avar 'a (range 3))
+                                                    (+var 'b (range 3)))
                                               (list ($constraint '(a b) <)
                                                     ($constraint '(a b) <)
                                                     ($constraint '(a b) <))) 'a))
-              (list (+$avar 'a '(0 1 2)) (+$var 'b '(1 2) '(a))))
+              (list (+avar 'a '(0 1 2)) (+var 'b '(1 2) '(a))))
 
 
 (define/contract (backtracking-solver
@@ -163,11 +165,14 @@
                   (for/fold ([conflicts null]
                              #:result (void conflicts))
                             ([val (in-list (order-domain-values vals))])
-                    (with-handlers ([inconsistency-signal?
-                                     (λ (sig)
-                                       (match sig
-                                         [(inconsistency-signal new-conflicts)
-                                          (append new-conflicts conflicts)]))])
+                    (with-handlers ([$conflict?
+                                     (λ (c)
+                                       (match c
+                                         [($conflict names) (cond
+                                                              [(empty? names) conflicts]
+                                                              [(memq name names)
+                                                                (append conflicts (remq name names))]
+                                                              [else (raise c)])]))])
                       (let* ([csp (assign-val csp name val)]
                              [csp (inference csp name)])
                         (backtrack csp))
@@ -195,16 +200,16 @@
 
 (check-equal?
  (parameterize ([current-inference forward-check])
-   (length (solve* ($csp (list (+$var 'x (range 3))
-                               (+$var 'y (range 3))
-                               (+$var 'z (range 3)))
+   (length (solve* ($csp (list (+var 'x (range 3))
+                               (+var 'y (range 3))
+                               (+var 'z (range 3)))
                          (list ($constraint '(x y) <>)
                                ($constraint '(x z) <>)
                                ($constraint '(y z) <>)))))) 6)
 
 (parameterize ([current-inference forward-check])
     (define vds (for/list ([k '(wa nsw t q nt v sa)])
-                  (+$var k '(red green blue))))
+                  (+var k '(red green blue))))
     (define cs (list
                 ($constraint '(wa nt) neq?)
                 ($constraint '(wa sa) neq?)
