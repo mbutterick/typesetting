@@ -5,14 +5,13 @@
 (struct $csp ([vars #:mutable]
               [constraints #:mutable]) #:transparent)
 (struct $constraint (names proc) #:transparent)
-(struct $var (name domain past) #:transparent)
-(define (+var name vals [past null])
-  ($var name vals past))
-  
+
+(struct $var (name domain) #:transparent) 
 (define $var-name? symbol?)
+
+(struct $cvar $var (past) #:transparent)
 (struct $avar $var () #:transparent)
-(define (+avar name vals [past null])
-  ($avar name vals past))
+
 (struct inconsistency-signal (csp) #:transparent)
 
 (struct $backtrack (names) #:transparent)
@@ -42,23 +41,14 @@
   ($var-domain ($csp-var csp name)))
 
 (define order-domain-values values)
+
 (define/contract (assign-val csp name val)
   ($csp? $var-name? any/c . -> . $csp?)
   ($csp
    (for/list ([var ($csp-vars csp)])
      (if (eq? name ($var-name var))
-         (+avar name (list val) ($var-past var))
+         ($avar name (list val))
          var))
-   ($csp-constraints csp)))
-
-(define/contract (update-conflicts csp name conflicts)
-  ($csp? $var-name? (listof $var-name?) . -> . $csp?)
-  ($csp
-   (for/list ([var ($csp-vars csp)])
-     (match var
-       [($var (? (λ (x) (eq? x name))) vals past)
-        (+avar name vals past conflicts)]
-       [else var]))
    ($csp-constraints csp)))
 
 (define (unassigned-vars csp)
@@ -102,8 +92,10 @@
   (define aval (first ($csp-vals csp aname)))
   (define (check-var var)
     (match var
-      [(? $avar?) var]
-      [($var name vals past)
+      ;; don't check against assigned vars, or the reference var
+      ;; (which is probably assigned but maybe not)
+      [(? (λ (x) (or ($avar? x) (eq? ($var-name x) aname)))) var]
+      [($var name vals)
        (match (($csp-constraints csp) . relating . (list aname name))
          [(? empty?) var]
          [constraints
@@ -115,12 +107,14 @@
                                       (proc val aval)
                                       (proc aval val)))))
               val))
-          (+var name new-vals (cons aname past))])]))
+          ($cvar name new-vals (cons aname (if ($cvar? var)
+                                               ($cvar-past var)
+                                               null)))])]))
   (define checked-vars (map check-var ($csp-vars csp)))
   ;; conflict-set will be empty if there are no empty domains
   (define conflict-set (for*/list ([var (in-list checked-vars)]
                                    #:when (empty? ($var-domain var))
-                                   [name (in-list ($var-past var))])
+                                   [name (in-list ($cvar-past var))])
                          name))
   ;; for conflict-directed backjumping it's essential to forward-check ALL vars
   ;; (even after an empty domain is generated) and combine their conflicts
@@ -142,7 +136,7 @@
              (let loop ([csp csp])
                (match (select-unassigned-variable csp)
                  [#false (yield csp)]
-                 [($var name domain _)
+                 [($var name domain)
                   (define (wants-backtrack? exn)
                     (and ($backtrack? exn) (memq name ($backtrack-names exn))))
                   (for/fold ([conflicts null]
@@ -162,8 +156,14 @@
                                             #:when (eq? name ($var-name var)))
                                   (first ($var-domain var))))))
 
+(define/contract ($csp-assocs csp)
+  ($csp? . -> . (listof (cons/c $var-name? any/c)))
+  (for/list ([var (in-list ($csp-vars csp))])
+    (match var
+      [($var name domain) (cons name (first domain))])))
+
 (define/contract (solve* csp
-                         #:finish-proc [finish-proc $csp-vars]
+                         #:finish-proc [finish-proc $csp-assocs]
                          #:solver [solver (or (current-solver) backtracking-solver)]
                          #:count [max-solutions +inf.0])
   (($csp?) (#:finish-proc procedure? #:solver procedure? #:count integer?) . ->* . (listof any/c))
@@ -174,7 +174,7 @@
     (finish-proc solution)))
 
 (define/contract (solve csp
-                        #:finish-proc [finish-proc $csp-vars]
+                        #:finish-proc [finish-proc $csp-assocs]
                         #:solver [solver (or (current-solver) backtracking-solver)])
   (($csp?) (#:finish-proc procedure? #:solver procedure?) . ->* . (or/c #false any/c))
   (match (solve* csp #:finish-proc finish-proc #:solver solver #:count 1)

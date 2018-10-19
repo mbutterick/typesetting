@@ -5,7 +5,7 @@
 (define (map-coloring-csp colors neighbors)
   (define variables (remove-duplicates (flatten neighbors) eq?))
   (define vds (for/list ([var (in-list variables)])
-                ($var var colors null)))
+                ($var var colors)))
   (define cs (for*/list ([neighbor neighbors]
                          [target (cdr neighbor)])
                ($constraint (list (car neighbor) target) neq?)))
@@ -23,6 +23,8 @@
 
 (current-inference forward-check)
 (current-select-variable minimum-remaining-values)
+(current-order-values shuffle)
+
 (define aus (map-coloring-csp (parse-colors "RGB")
                               (parse-neighbors "SA: WA NT Q NSW V; NT: WA Q; NSW: Q V; T: ")))
 
