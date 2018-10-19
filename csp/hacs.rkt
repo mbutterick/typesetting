@@ -5,9 +5,14 @@
 (struct $csp ([vars #:mutable]
               [constraints #:mutable]) #:transparent)
 (struct $constraint (names proc) #:transparent)
-(struct $var (name vals) #:transparent)
+(struct $var (name vals past conflicts) #:transparent)
+(define (+$var name vals [past null] [conflicts null])
+  ($var name vals past conflicts))
+  
 (define $var-name? symbol?)
 (struct $avar $var () #:transparent)
+(define (+$avar name vals [past null] [conflicts null])
+  ($avar name vals past conflicts))
 (struct inconsistency-signal (csp) #:transparent)
 
 (define current-select-variable (make-parameter #f))
@@ -40,7 +45,7 @@
   ($csp
    (for/list ([var ($csp-vars csp)])
      (if (eq? name ($var-name var))
-         ($avar name (list val))
+         (+$avar name (list val))
          var))
    ($csp-constraints csp)))
 
@@ -50,11 +55,11 @@
               #:unless ($avar? var))
     var))
 
-(check-equal? (first-unassigned-variable ($csp (list ($var 'a (range 3)) ($var 'b (range 3))) null))
-              ($var 'a (range 3)))
-(check-equal? (first-unassigned-variable ($csp (list ($avar 'a (range 3)) ($var 'b (range 3))) null))
-              ($var 'b (range 3)))
-(check-false (first-unassigned-variable ($csp (list ($avar 'a (range 3)) ($avar 'b (range 3))) null)))
+(check-equal? (first-unassigned-variable ($csp (list (+$var 'a (range 3)) (+$var 'b (range 3))) null))
+              (+$var 'a (range 3)))
+(check-equal? (first-unassigned-variable ($csp (list (+$avar 'a (range 3)) (+$var 'b (range 3))) null))
+              (+$var 'b (range 3)))
+(check-false (first-unassigned-variable ($csp (list (+$avar 'a (range 3)) (+$avar 'b (range 3))) null)))
 
 (define first-domain-value values)
 
@@ -72,59 +77,59 @@
   ($csp? $var-name? . -> . $csp?)
   (define aval (first ($csp-vals csp aname)))
   (define (filter-vals var)
-    (match-define ($var name vals) var)
-    (define new-vals
-      (match (($csp-constraints csp) . relating . (list aname name))
-        [(? empty?) vals]
-        [constraints
+    (match-define ($var name vals _ _) var)
+    (match (($csp-constraints csp) . relating . (list aname name))
+      [(? empty?) var]
+      [constraints
+       (define new-vals
          (for/list ([val (in-list vals)]
                     #:when (for/and ([constraint (in-list constraints)])
                              (let ([proc ($constraint-proc constraint)])
                                (if (eq? name (first ($constraint-names constraint)))
                                    (proc val aval)
                                    (proc aval val)))))
-           val)]))
-    (unless (pair? new-vals)
-      (raise (inconsistency-signal csp)))
-    new-vals)
+           val))
+       (unless (pair? new-vals)
+         (raise (inconsistency-signal csp)))
+       (+$var name new-vals (cons aname ($var-past var)) ($var-conflicts var))]))
 
   ($csp
    (for/list ([var (in-list ($csp-vars csp))])
      (if ($avar? var)
          var
-         ($var ($var-name var) (filter-vals var))))
+         (filter-vals var)))
    ($csp-constraints csp)))
 
 (check-equal?
- ($csp-vars (forward-check ($csp (list ($avar 'a '(1)) ($var 'b (range 2))) null) 'a))
- (list ($avar 'a '(1)) ($var 'b '(0 1))))
+ ($csp-vars (forward-check ($csp (list (+$avar 'a '(1)) (+$var 'b (range 2))) null) 'a))
+ (list (+$avar 'a '(1)) (+$var 'b '(0 1))))
 
 (check-equal?
  ;; no inconsistency: b≠c not checked when fc is relative to a
- ($csp-vars (forward-check ($csp (list ($avar 'a '(1))  ($var 'b (range 2)) ($var 'c '(0)))
+ ($csp-vars (forward-check ($csp (list (+$avar 'a '(1))  (+$var 'b (range 2)) (+$var 'c '(0)))
                                  (list ($constraint '(a b) (negate =))
                                        ($constraint '(b c) (negate =)))) 'a))
- (list ($avar 'a '(1)) ($var 'b '(0)) ($var 'c '(0))))
+ (list (+$avar 'a '(1)) (+$var 'b '(0) '(a)) (+$var 'c '(0))))
 
 (check-equal?
  ;; no inconsistency: a≠b not checked when fc ignores a, which is already assigned
- ($csp-vars (forward-check ($csp (list ($avar 'a '(1))  ($avar 'b '(1)) ($var 'c (range 2)))
+ ($csp-vars (forward-check ($csp (list (+$avar 'a '(1))  (+$avar 'b '(1)) (+$var 'c (range 2)))
                                  (list ($constraint '(a b) (negate =))
                                        ($constraint '(b c) (negate =)))) 'b))
- (list ($avar 'a '(1)) ($avar 'b '(1)) ($var 'c '(0))))
+ (list (+$avar 'a '(1)) (+$avar 'b '(1)) (+$var 'c '(0) '(b))))
 
 (check-exn inconsistency-signal?
-           (λ () ($csp-vars (forward-check ($csp (list ($avar 'a '(1))
-                                                       ($var 'b '(1)))
+           (λ () ($csp-vars (forward-check ($csp (list (+$avar 'a '(1))
+                                                       (+$var 'b '(1)))
                                                  (list ($constraint '(a b) (negate =)))) 'a))))
 
 
-(check-equal? ($csp-vars (forward-check ($csp (list ($avar 'a (range 3))
-                                                    ($var 'b (range 3)))
+(check-equal? ($csp-vars (forward-check ($csp (list (+$avar 'a (range 3))
+                                                    (+$var 'b (range 3)))
                                               (list ($constraint '(a b) <)
                                                     ($constraint '(a b) <)
                                                     ($constraint '(a b) <))) 'a))
-              (list ($avar 'a '(0 1 2)) ($var 'b '(1 2))))
+              (list (+$avar 'a '(0 1 2)) (+$var 'b '(1 2) '(a))))
 
 
 (define/contract (backtracking-solver
@@ -137,7 +142,7 @@
              (let backtrack ([csp csp])
                (match (select-unassigned-variable csp)
                  [#false (yield csp)]
-                 [($var name vals)
+                 [($var name vals _ _)
                   (for ([val (in-list (order-domain-values vals))])
                     (with-handlers ([inconsistency-signal? void])
                       (let* ([csp (assign-val csp name val)]
@@ -165,16 +170,16 @@
 (define (neq? a b) (not (eq? a b)))
 
 #;(parameterize ([current-inference forward-check])
-    (time (solve* ($csp (list ($var 'a (range 3))
-                              ($var 'b (range 3))
-                              ($var 'c (range 3)))
+    (time (solve* ($csp (list (+$var 'a (range 3))
+                              (+$var 'b (range 3))
+                              (+$var 'c (range 3)))
                         (list ($constraint '(a b) <>)
                               ($constraint '(a c) <>)
                               ($constraint '(b c) <>))))))
 
 (parameterize ([current-inference forward-check])
   (define vds (for/list ([k '(wa nsw t q nt v sa)])
-                ($var k '(red green blue))))
+                (+$var k '(red green blue))))
   (define cs (list
               ($constraint '(wa nt) neq?)
               ($constraint '(wa sa) neq?)
