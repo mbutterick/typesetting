@@ -45,7 +45,7 @@
   ($csp
    (for/list ([var ($csp-vars csp)])
      (if (eq? name ($var-name var))
-         (+$avar name (list val))
+         (+$avar name (list val) ($var-past var) ($var-conflicts var))
          var))
    ($csp-constraints csp)))
 
@@ -85,7 +85,6 @@
 
 (define/contract (forward-check csp aname)
   ($csp? $var-name? . -> . $csp?)
-  #R csp
   (define aval (first ($csp-vals csp aname)))
   (define (filter-vals var)
     (match-define ($var name vals past conflicts) var)
@@ -164,7 +163,6 @@
                   (for/fold ([conflicts null]
                              #:result (void))
                             ([val (in-list (order-domain-values vals))])
-                    #R conflicts
                     (with-handlers ([inconsistency-signal?
                                      (λ (sig)
                                        (match sig
@@ -195,26 +193,27 @@
 (define (<> a b) (not (= a b)))
 (define (neq? a b) (not (eq? a b)))
 
-(parameterize ([current-inference forward-check])
-    (time (solve* ($csp (list (+$var 'a '(1))
-                              (+$var 'b '(1))
-                              (+$var 'c '(1)))
-                        (list ($constraint '(a b) <>)
-                              ($constraint '(a c) <>)
-                              ($constraint '(b c) <>))))))
+(check-equal?
+ (parameterize ([current-inference forward-check])
+   (length (solve* ($csp (list (+$var 'x (range 3))
+                               (+$var 'y (range 3))
+                               (+$var 'z (range 3)))
+                         (list ($constraint '(x y) <>)
+                               ($constraint '(x z) <>)
+                               ($constraint '(y z) <>)))))) 6)
 
-(parameterize ([current-inference forward-check])
-  (define vds (for/list ([k '(wa nsw t q nt v sa)])
-                (+$var k '(red green blue))))
-  (define cs (list
-              ($constraint '(wa nt) neq?)
-              ($constraint '(wa sa) neq?)
-              ($constraint '(nt sa) neq?)
-              ($constraint '(nt q) neq?)
-              ($constraint '(q sa) neq?)
-              ($constraint '(q nsw) neq?)
-              ($constraint '(nsw sa) neq?)
-              ($constraint '(nsw v) neq?)
-              ($constraint '(v sa) neq?)))
-  (define csp ($csp vds cs))
-  (check-equal? (time (length (solve* csp))) 18))
+#;(parameterize ([current-inference forward-check])
+    (define vds (for/list ([k '(wa nsw t q nt v sa)])
+                  (+$var k '(red green blue))))
+    (define cs (list
+                ($constraint '(wa nt) neq?)
+                ($constraint '(wa sa) neq?)
+                ($constraint '(nt sa) neq?)
+                ($constraint '(nt q) neq?)
+                ($constraint '(q sa) neq?)
+                ($constraint '(q nsw) neq?)
+                ($constraint '(nsw sa) neq?)
+                ($constraint '(nsw v) neq?)
+                ($constraint '(v sa) neq?)))
+    (define csp ($csp vds cs))
+    (check-equal? (time (length (solve* csp))) 18))
