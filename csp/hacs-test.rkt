@@ -275,7 +275,7 @@
 (define (finish x)
   (apply map list (slice-at x 5)))
 
-(equal? (parameterize ([current-select-variable mrv]
+(check-equal? (parameterize ([current-select-variable mrv]
                        [current-shuffle #f])
           (finish (time (solve zebra))))
         '(((nationality-0 . norwegian) (color-0 . yellow) (drink-0 . water) (smoke-0 . kools) (pet-0 . foxes))
