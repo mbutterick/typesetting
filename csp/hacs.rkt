@@ -185,7 +185,6 @@
   (procedure? (non-empty-listof any/c) . -> . any/c)
   (let* ([xs (sort xs < #:key proc)]
          [xs (takef xs (λ (x) (= (proc (car xs)) (proc x))))]
-         ;; don't shuffle short lists, not worth it
          [xs ((if (current-shuffle) shuffle values) xs)])
     (first xs)))
 
@@ -196,7 +195,6 @@
     [xs (argmin-random-tie (λ (var) (length ($var-domain var))) xs)]))
 
 (define mrv minimum-remaining-values)
-
 
 (define/contract (var-degree csp var)
   (csp? $var? . -> . exact-nonnegative-integer?)
