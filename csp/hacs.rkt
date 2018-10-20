@@ -111,18 +111,19 @@
             [(? number? val) (= val (length pattern))])
     (raise-argument-error 'reduce-arity (format "list of length ~a, same as procedure arity" (procedure-arity proc)) pattern))
   (define reduced-arity-name (string->symbol (format "reduced-arity-~a" (object-name proc))))
-  (define-values (id-names vals) (partition symbol? pattern))
+  (define-values (boxed-id-names vals) (partition box? pattern))
+  (define id-names (map unbox boxed-id-names))
   (define new-arity (length id-names))
   (procedure-rename
    (λ xs
-     (unless (= (length xs) new-arity)
+     (unless (=  (length xs) new-arity)
        (apply raise-arity-error reduced-arity-name new-arity xs))
      (apply proc (for/fold ([acc empty]
                             [xs xs]
                             [vals vals]
                             #:result (reverse acc))
                            ([pat-item (in-list pattern)])
-                   (if (symbol? pat-item)
+                   (if (box? pat-item)
                        (values (cons (car xs) acc) (cdr xs) vals)
                        (values (cons (car vals) acc) xs (cdr vals))))))
    reduced-arity-name))
@@ -139,11 +140,12 @@
                     (partially-assigned? constraint))
                (match-define ($constraint cnames proc) constraint)
                ($constraint (filter-not assigned-name? cnames)
-                            ;; pattern is mix of values and symbols (indicating variables to persist)
+                            ;; pattern is mix of values and boxed symbols (indicating variables to persist)
+                            ;; use boxes here as cheap way to distinguish id symbols from value symbols
                             (let ([reduce-arity-pattern (for/list ([cname (in-list cnames)])
                                                           (if (assigned-name? cname)
                                                               (first ($csp-vals csp cname))
-                                                              cname))])
+                                                              (box cname)))])
                               (reduce-arity proc reduce-arity-pattern)))]
               [else constraint])))))
 
@@ -171,9 +173,11 @@
 
 (define/contract (argmin-random-tie proc xs)
   (procedure? (non-empty-listof any/c) . -> . any/c)
-  (define ordered-xs (sort xs < #:key proc))
-  (first ((if (current-shuffle) shuffle values)
-          (takef ordered-xs (λ (x) (= (proc (car ordered-xs)) (proc x)))))))
+  (let* ([xs (sort xs < #:key proc)]
+         [xs (takef xs (λ (x) (= (proc (car xs)) (proc x))))]
+         ;; don't shuffle short lists, not worth it
+         [xs ((if (current-shuffle) shuffle values) xs)])
+    (first xs)))
 
 (define/contract (minimum-remaining-values csp)
   ($csp? . -> . (or/c #false (and/c $var? (not/c $avar?))))
@@ -310,7 +314,7 @@
 
 (define/contract (make-nodes-consistent csp)
   ($csp? . -> . $csp?)
-  ;; todo: why does this function make searches so much slower?
+  ;; todo: why does this function slow down searches?
   ($csp
    (for/list ([var (in-list ($csp-vars csp))])
      (match-define ($var name vals) var)
@@ -352,6 +356,8 @@
                              [csp (check-constraints csp)])
                         (loop csp)))
                     conflicts)]))))
+
+;; todo: min-conflicts solver
 
 (define/contract ($csp-assocs csp)
   ($csp? . -> . (listof (cons/c $var-name? any/c)))
