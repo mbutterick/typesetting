@@ -115,7 +115,7 @@
 
 (define/contract (assigned-name? csp name)
   (csp? name? . -> . any/c)
-  (for/first ([var (in-vars csp)]
+  (for/or ([var (in-vars csp)]
               #:when (assigned-var? var))
     (eq? name (var-name var))))
 
