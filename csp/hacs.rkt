@@ -1,5 +1,5 @@
 #lang debug racket
-(require racket/generator)
+(require racket/generator graph)
 (provide (all-defined-out))
 
 (define-syntax-rule (in-cartesian x)
@@ -30,7 +30,22 @@
 (define (make-constraint [names null] [proc values])
   ($constraint names proc))
 
-(struct $var (name domain) #:transparent) 
+(define constraint-names $constraint-names)
+(define constraint? $constraint?)
+
+(define (csp->graphviz csp)
+  (define g (csp->graph csp))
+  (graphviz g #:colors (coloring/brelaz g)))
+
+(define (csp->graph csp)
+  (for*/fold ([g (unweighted-graph/undirected (map var-name (vars csp)))])
+             ([constraint (in-constraints csp)]
+              [edge (in-combinations (constraint-names constraint) 2)])
+    (apply add-edge! g edge)
+    g))
+
+(struct $var (name domain) #:transparent)
+(define var? $var?)
 (define name? symbol?)
 (define $var-vals $var-domain)
 (define var-name $var-name)
@@ -39,7 +54,8 @@
 (struct $avar $var () #:transparent)
 (define assigned-var? $avar?)
 
-(define (make-csp [vars null] [constraints null])
+(define/contract (make-csp [vars null] [constraints null])
+  (() ((listof var?) (listof constraint?)) . ->* . csp?)
   ($csp vars constraints))
 
 (define/contract (add-vars! csp names-or-procedure [vals-or-procedure empty])
@@ -82,8 +98,6 @@
   (any/c any/c . -> . boolean?)
   (not (= x y)))
 
-(struct inconsistency-signal (csp) #:transparent)
-
 (struct $backtrack (names) #:transparent)
 (define (backtrack! [names null]) (raise ($backtrack names)))
 
@@ -116,10 +130,10 @@
 (define/contract (assigned-name? csp name)
   (csp? name? . -> . any/c)
   (for/or ([var (in-vars csp)]
-              #:when (assigned-var? var))
+           #:when (assigned-var? var))
     (eq? name (var-name var))))
 
-(define (reduce-arity proc pattern)
+(define (reduce-function-arity proc pattern)
   (unless (match (procedure-arity proc)
             [(arity-at-least val) (<= val (length pattern))]
             [(? number? val) (= val (length pattern))])
@@ -159,7 +173,7 @@
                                                               (if (assigned-name? cname)
                                                                   (first ($csp-vals csp cname))
                                                                   (box cname)))])
-                                  (reduce-arity proc reduce-arity-pattern)))]
+                                  (reduce-function-arity proc reduce-arity-pattern)))]
                   [else constraint])))))
 
 (define/contract (assign-val csp name val)
@@ -249,7 +263,7 @@
   (= 2 (constraint-arity constraint)))
 
 (define (constraint-relates? constraint name)
-  (and (memq name ($constraint-names constraint)) #true))
+  (memq name ($constraint-names constraint)))
 
 (define/contract (forward-check csp aname)
   (csp? name? . -> . csp?)
@@ -294,16 +308,15 @@
                #:unless (and
                          (binary-constraint? constraint)
                          (constraint-relates? constraint aname)
-                         (let ([other-name (first (remq aname ($constraint-names constraint)))]) ; and something else
-                           (= (length ($csp-vals csp other-name)) 1)))) ; that has only one value
+                         (let ([other-name (first (remq aname ($constraint-names constraint)))])
+                           (singleton-var? (csp-var csp other-name)))))
       constraint))
   (make-csp checked-vars nonsingleton-constraints))
 
 (define/contract (constraint-checkable? c names)
-  ($constraint? (listof name?) . -> . boolean?)
-  (and (for/and ([cname (in-list ($constraint-names c))])
-         (memq cname names))
-       #true))
+  ($constraint? (listof name?) . -> . any/c)
+  (for/and ([cname (in-list ($constraint-names c))])
+         (memq cname names)))
 
 (define/contract (constraint-arity constraint)
   ($constraint? . -> . exact-nonnegative-integer?)
@@ -325,12 +338,13 @@
   (for ([constraint (in-list (sort checkable-constraints < #:key constraint-arity))]
         #:unless (constraint csp))
     (backtrack!))
+  ;; discard checked constraints, since they have no further reason to live
   (make-csp (vars csp) other-constraints))
 
 (define/contract (make-nodes-consistent csp)
   (csp? . -> . csp?)
   ;; todo: why does this function slow down searches?
-  ($csp
+  (make-csp
    (for/list ([var (in-vars csp)])
      (match-define ($var name vals) var)
      (define procs (for*/list ([constraint (in-constraints csp)]

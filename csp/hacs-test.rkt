@@ -79,7 +79,7 @@
 (add-constraint! quarters (λ (d q) (= 26 (+ d q))) '(dollars quarters))
 (add-constraint! quarters (λ (d q) (= 17 (+ d (* 0.25 q)))) '(dollars quarters))
 (check-equal? (time (solve quarters))
-               '((dollars . 14) (quarters . 12)))
+              '((dollars . 14) (quarters . 12)))
 
 
 ;; xsum
@@ -157,6 +157,9 @@
                    (list qa qb)))
 
 (check-equal? 92 (length (time (solve* queens))))
+
+#;(parameterize ([current-solver min-conflicts])
+  (solve queens))
 
 
 #|
@@ -277,10 +280,10 @@
   (apply map list (slice-at x 5)))
 
 (check-equal? (parameterize ([current-select-variable mrv]
-                       [current-shuffle #f])
-          (finish (time (solve zebra))))
-        '(((nationality-0 . norwegian) (color-0 . yellow) (drink-0 . water) (smoke-0 . kools) (pet-0 . foxes))
-  ((nationality-1 . ukrainian) (color-1 . blue) (drink-1 . tea) (smoke-1 . chesterfields) (pet-1 . horses))
-  ((nationality-2 . englishman) (color-2 . red) (drink-2 . milk) (smoke-2 . oldgold) (pet-2 . snails))
-  ((nationality-3 . japanese) (color-3 . green) (drink-3 . coffee) (smoke-3 . parliaments) (pet-3 . zebra))
-  ((nationality-4 . spaniard) (color-4 . ivory) (drink-4 . orange-juice) (smoke-4 . luckystrike) (pet-4 . dogs))))
+                             [current-shuffle #f])
+                (finish (time (solve zebra))))
+              '(((nationality-0 . norwegian) (color-0 . yellow) (drink-0 . water) (smoke-0 . kools) (pet-0 . foxes))
+                ((nationality-1 . ukrainian) (color-1 . blue) (drink-1 . tea) (smoke-1 . chesterfields) (pet-1 . horses))
+                ((nationality-2 . englishman) (color-2 . red) (drink-2 . milk) (smoke-2 . oldgold) (pet-2 . snails))
+                ((nationality-3 . japanese) (color-3 . green) (drink-3 . coffee) (smoke-3 . parliaments) (pet-3 . zebra))
+                ((nationality-4 . spaniard) (color-4 . ivory) (drink-4 . orange-juice) (smoke-4 . luckystrike) (pet-4 . dogs))))
