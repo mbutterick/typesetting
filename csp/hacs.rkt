@@ -8,7 +8,7 @@
                     (if (null? argss)
                         (yield (reverse acc))
                         (for ([arg (in-list (car argss))])
-                             (loop (cdr argss) (cons arg acc))))))))
+                          (loop (cdr argss) (cons arg acc))))))))
 
 (struct $csp ([vars #:mutable]
               [constraints #:mutable]) #:transparent)
@@ -19,7 +19,7 @@
       (raise-argument-error '$constraint-proc "$csp" csp))
     ;; apply proc in many-to-many style
     (for/and ([args (in-cartesian (map (λ (cname) ($csp-vals csp cname)) ($constraint-names constraint)))])
-             (apply ($constraint-proc constraint) args))))
+      (apply ($constraint-proc constraint) args))))
 
 (struct $var (name domain) #:transparent) 
 (define $var-name? symbol?)
@@ -27,7 +27,6 @@
 
 (struct $cvar $var (past) #:transparent)
 (struct $avar $var () #:transparent)
-
 
 (define (make-csp [vds null] [constraints null])
   ($csp vds constraints))
@@ -54,11 +53,11 @@
   (($csp? procedure? (listof (listof $var-name?))) ((or/c #false $var-name?)) . ->* . void?)
   (set-$csp-constraints! csp (append ($csp-constraints csp) 
                                      (for/list ([names (in-list namess)])
-                                               (for ([name (in-list names)])
-                                                    (check-name-in-csp! 'add-constraints! csp name))
-                                               ($constraint names (if proc-name
-                                                                      (procedure-rename proc proc-name)
-                                                                      proc))))))
+                                       (for ([name (in-list names)])
+                                         (check-name-in-csp! 'add-constraints! csp name))
+                                       ($constraint names (if proc-name
+                                                              (procedure-rename proc proc-name)
+                                                              proc))))))
 
 (define/contract (add-pairwise-constraint! csp proc var-names [proc-name #false])
   (($csp? procedure? (listof $var-name?)) ($var-name?) . ->* . void?)
@@ -93,7 +92,7 @@
   (check-name-in-csp! '$csp-var csp name)
   (for/first ([var (in-list ($csp-vars csp))]
               #:when (eq? name ($var-name var)))
-             var))
+    var))
 
 (define/contract ($csp-vals csp name)
   ($csp? $var-name? . -> . (listof any/c))
@@ -135,34 +134,34 @@
       (ormap assigned-name? ($constraint-names constraint)))
     ($csp ($csp-vars csp)
           (for/list ([constraint (in-list ($csp-constraints csp))])
-                    (cond
-                      [(and (if minimum-arity (<= minimum-arity (constraint-arity constraint)) #true)
-                            (partially-assigned? constraint))
-                       (match-define ($constraint cnames proc) constraint)
-                       ($constraint (filter-not assigned-name? cnames)
-                                    ;; pattern is mix of values and symbols (indicating variables to persist)
-                                    (let ([reduce-arity-pattern (for/list ([cname (in-list cnames)])
-                                                                          (if (assigned-name? cname)
-                                                                              (first ($csp-vals csp cname))
-                                                                              cname))])
-                                      (reduce-arity proc reduce-arity-pattern)))]
-                      [else constraint])))))
+            (cond
+              [(and (if minimum-arity (<= minimum-arity (constraint-arity constraint)) #true)
+                    (partially-assigned? constraint))
+               (match-define ($constraint cnames proc) constraint)
+               ($constraint (filter-not assigned-name? cnames)
+                            ;; pattern is mix of values and symbols (indicating variables to persist)
+                            (let ([reduce-arity-pattern (for/list ([cname (in-list cnames)])
+                                                          (if (assigned-name? cname)
+                                                              (first ($csp-vals csp cname))
+                                                              cname))])
+                              (reduce-arity proc reduce-arity-pattern)))]
+              [else constraint])))))
 
 (define/contract (assign-val csp name val)
   ($csp? $var-name? any/c . -> . $csp?)
   (define assigned-csp ($csp
                         (for/list ([var ($csp-vars csp)])
-                                  (if (eq? name ($var-name var))
-                                      ($avar name (list val))
-                                      var))
+                          (if (eq? name ($var-name var))
+                              ($avar name (list val))
+                              var))
                         ($csp-constraints csp)))
-  (reduce-constraint-arity assigned-csp))
+  assigned-csp)
 
 (define/contract (unassigned-vars csp)
   ($csp? . -> . (listof (and/c $var? (not/c $avar?))))
   (for/list ([var (in-list ($csp-vars csp))]
              #:unless ($avar? var))
-            var))
+    var))
 
 (define/contract (first-unassigned-variable csp)
   ($csp? . -> . (or/c #false (and/c $var? (not/c $avar?))))
@@ -188,7 +187,7 @@
   ($csp? $var? . -> . exact-nonnegative-integer?)
   (for/sum ([constraint (in-list ($csp-constraints csp))]
             #:when (memq ($var-name var) ($constraint-names constraint)))
-           1))
+    1))
 
 (define/contract (blended-variable-selector csp)
   ($csp? . -> . (or/c #false (and/c $var? (not/c $avar?))))
@@ -199,6 +198,26 @@
     [else (first (let* ([uvars-by-mrv (sort uvars < #:key (λ (var) (length ($var-domain var))))]
                         [uvars-by-degree (sort uvars-by-mrv > #:key (λ (var) (var-degree csp var)))])
                    uvars-by-degree))]))
+
+(define/contract (remaining-values var)
+  ($var? . -> . exact-nonnegative-integer?)
+  (length ($var-vals var)))
+
+(define/contract (mrv-degree-hybrid csp)
+  ($csp? . -> . (or/c #f $var?))
+  (define uvars (unassigned-vars csp))
+  (cond
+    [(empty? uvars) #false]
+    [else
+     ;; minimum remaining values (MRV) rule
+     (define mrv-arg (argmin remaining-values uvars))
+     (match (filter (λ (var) (= (remaining-values mrv-arg) (remaining-values var))) uvars)
+       [(list winning-uvar) winning-uvar] 
+       [(list mrv-uvars ...)
+        ;; use degree as tiebreaker for mrv
+        (define max-degree-arg (argmax (λ (var) (var-degree csp var)) mrv-uvars))
+        ;; use random tiebreaker for degree
+        (first (shuffle (filter (λ (var) (= (var-degree csp max-degree-arg) (var-degree csp var))) mrv-uvars)))])]))
   
 (define first-domain-value values)
 
@@ -210,8 +229,8 @@
               [cnames (in-value ($constraint-names constraint))]
               #:when (and (= (length names) (length cnames))
                           (for/and ([name (in-list names)])
-                                   (memq name cnames))))
-             constraint))
+                            (memq name cnames))))
+    constraint))
 
 (define/contract (forward-check csp aname)
   ($csp? $var-name? . -> . $csp?)
@@ -228,11 +247,11 @@
           (define new-vals
             (for/list ([val (in-list vals)]
                        #:when (for/and ([constraint (in-list constraints)])
-                                       (let ([proc ($constraint-proc constraint)])
-                                         (if (eq? name (first ($constraint-names constraint)))
-                                             (proc val aval)
-                                             (proc aval val)))))
-                      val))
+                                (let ([proc ($constraint-proc constraint)])
+                                  (if (eq? name (first ($constraint-names constraint)))
+                                      (proc val aval)
+                                      (proc aval val)))))
+              val))
           ($cvar name new-vals (cons aname (if ($cvar? var)
                                                ($cvar-past var)
                                                null)))])]))
@@ -241,7 +260,7 @@
   (define conflict-set (for*/list ([var (in-list checked-vars)]
                                    #:when (empty? ($var-domain var))
                                    [name (in-list ($cvar-past var))])
-                                  name))
+                         name))
   ;; for conflict-directed backjumping it's essential to forward-check ALL vars
   ;; (even after an empty domain is generated) and combine their conflicts
   ;; so we can discover the *most recent past var* that could be the culprit.
@@ -253,18 +272,18 @@
   ;; (they have no further use)
   (define nonsingleton-constraints
     (for/list ([constraint (in-list ($csp-constraints csp))]
-                #:unless (and
-                          (= 2 (constraint-arity constraint)) ; binary constraint
-                          (memq aname ($constraint-names constraint)) ; includes target name
-                          (let ([other-name (first (remq aname ($constraint-names constraint)))]) ; and something else
-                          (= (length ($csp-vals csp other-name)) 1)))) ; that has only one value
-               constraint))
+               #:unless (and
+                         (= 2 (constraint-arity constraint)) ; binary constraint
+                         (memq aname ($constraint-names constraint)) ; includes target name
+                         (let ([other-name (first (remq aname ($constraint-names constraint)))]) ; and something else
+                           (= (length ($csp-vals csp other-name)) 1)))) ; that has only one value
+      constraint))
   ($csp checked-vars nonsingleton-constraints))
 
 (define/contract (constraint-checkable? c names)
   ($constraint? (listof $var-name?) . -> . boolean?)
   (and (for/and ([cname (in-list ($constraint-names c))])
-                (memq cname names))
+         (memq cname names))
        #true))
 
 (define/contract (constraint-arity constraint)
@@ -281,13 +300,29 @@
   ;; we also want to use "singleton" vars (that is, vars that have been reduced to a single domain value by forward checking)
   (define singleton-varnames (for/list ([var (in-list ($csp-vars csp))]
                                         #:when (singleton-var? var))
-                                       ($var-name var)))
+                               ($var-name var)))
   (define-values (checkable-constraints other-constraints)
     (partition (λ (c) (constraint-checkable? c singleton-varnames)) ($csp-constraints csp)))
   (for ([constraint (in-list (sort checkable-constraints < #:key constraint-arity))]
         #:unless (constraint csp))
-       (raise ($backtrack null)))
+    (raise ($backtrack null)))
   ($csp ($csp-vars csp) other-constraints))
+
+(define/contract (make-nodes-consistent csp)
+  ($csp? . -> . $csp?)
+  ;; todo: why does this function make searches so much slower?
+  ($csp
+   (for/list ([var (in-list ($csp-vars csp))])
+     (match-define ($var name vals) var)
+     (define procs (for*/list ([constraint (in-list ($csp-constraints csp))]
+                               [cnames (in-value ($constraint-names constraint))]
+                               #:when (and (= 1 (length cnames)) (eq? name (car cnames))))
+                     ($constraint-proc constraint)))
+     ($var name
+           (for*/fold ([vals vals])
+                      ([proc (in-list procs)])
+             (filter proc vals))))
+   ($csp-constraints csp)))
 
 (define/contract (backtracking-solver
                   csp
@@ -310,18 +345,19 @@
                     (with-handlers ([wants-backtrack?
                                      (λ (bt) (append conflicts (remq name ($backtrack-names bt))))])
                       (let* ([csp (assign-val csp name val)]
+                             ;; reduce constraints before inference,
+                             ;; to create more forward-checkable (binary) constraints
+                             [csp (reduce-constraint-arity csp)]
                              [csp (inference csp name)]
                              [csp (check-constraints csp)])
                         (loop csp)))
                     conflicts)]))))
 
-
-
 (define/contract ($csp-assocs csp)
   ($csp? . -> . (listof (cons/c $var-name? any/c)))
   (for/list ([var (in-list ($csp-vars csp))])
-            (match var
-              [($var name domain) (cons name (first domain))])))
+    (match var
+      [($var name domain) (cons name (first domain))])))
 
 (define/contract (solve* csp
                          #:finish-proc [finish-proc $csp-assocs]
@@ -330,7 +366,7 @@
   (($csp?) (#:finish-proc procedure? #:solver procedure? #:count integer?) . ->* . (listof any/c))
   (for/list ([solution (in-producer (solver csp) (void))]
              [idx (in-range max-solutions)])
-            (finish-proc solution)))
+    (finish-proc solution)))
 
 (define/contract (solve csp
                         #:finish-proc [finish-proc $csp-assocs]
