@@ -210,8 +210,10 @@
 (for ([vars (list ns cs ds ss ps)])
      (add-pairwise-constraint! zebra neq? vars))
 
+(define (xnor lcond rcond)
+  (or (and lcond rcond) (and (not lcond) (not rcond))))
 (define (paired-with lval left rval right)
-  (add-constraint! zebra (λ (left right) (or (not (eq? left lval)) (eq? rval right))) (list left right)))
+  (add-constraint! zebra (λ (left right) (xnor (eq? left lval) (eq? rval right))) (list left right)))
 
 (define (paired-with* lval lefts rval rights)
   (for ([left lefts][right rights])
@@ -255,7 +257,7 @@
                         (list left righta rightb)))
   (for ([left (list (first lefts) (last lefts))]
         [right (list (second rights) (fourth rights))])
-       (add-constraint! zebra (λ (left right) (or (not (eq? left lval)) (eq? rval right)))
+       (add-constraint! zebra (λ (left right) (xnor (eq? left lval) (eq? rval right)))
                         (list left right))))
 
 ;# 10. The man who smokes chesterfields lives next to the one who keeps foxes.
