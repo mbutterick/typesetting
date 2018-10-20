@@ -68,3 +68,15 @@
               ($constraint '(v sa) neq?)))
   (define csp ($csp vds cs))
   (check-equal? (length (solve* csp)) 18))
+
+
+(define quarters (make-csp))
+(add-vars! quarters '(dollars quarters) (range 26))
+(add-constraint! quarters (λ (d q) (= 26 (+ d q))) '(dollars quarters))
+(add-constraint! quarters (λ (d q) (= 17 (+ d (* 0.25 q)))) '(dollars quarters))
+(check-equal? (time (solve quarters))
+               '((dollars . 14) (quarters . 12)))
+
+
+
+#;(check-equal? (length (time (solve* xsum))) 8)

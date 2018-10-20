@@ -20,7 +20,6 @@
                                                                                            (car tail)
                                                                                            ""))))))))
   
-
 (current-inference forward-check)
 (current-select-variable minimum-remaining-values)
 (current-order-values shuffle)
