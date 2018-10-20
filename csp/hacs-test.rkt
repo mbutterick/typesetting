@@ -135,7 +135,8 @@
                        (= (+ (word-value s e n d) (word-value m o r e))
                           (word-value m o n e y))) '(s e n d m o r y))
 (add-pairwise-constraint! smm alldiff= '(s e n d m o r y))
-(check-equal? (time (solve smm)) '((s . 9) (e . 5) (n . 6) (d . 7) (m . 1) (o . 0) (r . 8) (y . 2)))
+(check-equal? (parameterize ([current-select-variable mrv-degree-hybrid]) ; todo: why is plain mrv so bad on this problem?
+                (time (solve smm))) '((s . 9) (e . 5) (n . 6) (d . 7) (m . 1) (o . 0) (r . 8) (y . 2)))
 
 
 ;; queens problem
