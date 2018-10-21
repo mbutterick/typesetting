@@ -21,11 +21,10 @@
   (match-define (list qa-col qb-col) (map q-col qs))
   (add-constraint! queens
                    (λ (qa-row qb-row)
-                     (nor
-                      (= (abs (- qa-row qb-row)) (abs (- qa-col qb-col))) ; same diagonal?
-                      (= qa-row qb-row))) ; same row?
-                   (list qa qb)))
+                     (not (= (abs (- qa-row qb-row)) (abs (- (q-col qa) (q-col qb)))))) ; same diag?
+                   (list qa qb))
+  (add-constraint! queens (negate =) (list qa qb)))
 
 (time-avg 10 (solve queens))
-(parameterize ([current-solver min-conflicts])
+(parameterize ([current-solver min-conflicts-solver])
   (time-named (solve queens)))
