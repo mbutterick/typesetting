@@ -4,7 +4,7 @@
 (current-inference forward-check)
 (current-select-variable mrv-degree-hybrid)
 (current-order-values shuffle)
-(current-shuffle #true)
+(current-random #true)
 
 (check-equal? (first-unassigned-variable ($csp (list ($var 'a (range 3)) ($var 'b (range 3))) null))
               ($var 'a (range 3)))
@@ -278,7 +278,7 @@
   (apply map list (slice-at x 5)))
 
 (check-equal? (parameterize ([current-select-variable mrv]
-                             [current-shuffle #f])
+                             [current-random #f])
                 (finish (time-named (solve zebra))))
               '(((nationality-0 . norwegian) (color-0 . yellow) (drink-0 . water) (smoke-0 . kools) (pet-0 . foxes))
                 ((nationality-1 . ukrainian) (color-1 . blue) (drink-1 . tea) (smoke-1 . chesterfields) (pet-1 . horses))
