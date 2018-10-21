@@ -479,7 +479,34 @@
   (csp? . -> . (listof (cons/c name? any/c)))
   (for/list ([var (in-vars csp)])
     (match var
-      [($var name domain) (cons name (first domain))])))
+      [($var name (list val)) (cons name val)])))
+
+(define/contract (combine-csps csps)
+  ((listof $csp?) . -> . $csp?)
+  (make-csp
+   (apply append (map $csp-vars csps))
+   (apply append (map $csp-constraints csps))))
+
+(define/contract (make-cartesian-generator solgens)
+  ((listof generator?) . -> . generator?)
+  (generator ()
+             (let loop ([solgens solgens][sols empty])
+               (cond
+                 [(empty? solgens) (yield (combine-csps (reverse sols)))]
+                 [else (match-define (cons solgen others) solgens)
+                       (for ([sol (in-producer solgen (void))])
+                         (loop others (cons sol sols)))]))))
+
+(define/contract (extract-subcsp csp names)
+  ($csp? (listof name?) . -> . $csp?)
+  (make-csp
+   (for/list ([var (in-vars csp)]
+              #:when (memq (var-name var) names))
+     var)
+   (for/list ([constraint (in-constraints csp)]
+              #:when (for/and ([cname (in-list ($constraint-names constraint))])
+                       (memq cname names)))
+     constraint)))
 
 (define/contract (solve* csp
                          #:finish-proc [finish-proc csp->assocs]
@@ -487,11 +514,12 @@
                          #:limit [max-solutions +inf.0])
   ((csp?) (#:finish-proc procedure? #:solver procedure? #:limit exact-nonnegative-integer?)
           . ->* . (listof any/c))
-  (when-debug
-   (reset-assns!)
-   (reset-nfcs!)
-   (reset-nchecks!))
-  (for/list ([solution (in-producer (solver csp) (void))]
+  (when-debug (reset-assns!) (reset-nfcs!) (reset-nchecks!))          
+
+  (define subproblems (for/list ([nodeset (in-list (cc (csp->graph csp)))])
+                        (extract-subcsp csp nodeset)))
+  
+  (for/list ([solution (in-producer (make-cartesian-generator (map solver subproblems)) (void))]
              [idx (in-range max-solutions)])
     (finish-proc solution)))
 
