@@ -118,6 +118,7 @@
 (define current-inference (make-parameter #f))
 (define current-solver (make-parameter #f))
 (define current-random (make-parameter #t))
+(define current-decompose (make-parameter #t))
 
 (define/contract (check-name-in-csp! caller csp name)
   (symbol? csp? name? . -> . void?)
@@ -490,12 +491,19 @@
 (define/contract (make-cartesian-generator solgens)
   ((listof generator?) . -> . generator?)
   (generator ()
-             (let loop ([solgens solgens][sols empty])
-               (cond
-                 [(empty? solgens) (yield (combine-csps (reverse sols)))]
-                 [else (match-define (cons solgen others) solgens)
-                       (for ([sol (in-producer solgen (void))])
-                         (loop others (cons sol sols)))]))))
+             (define solcache (make-hasheqv))
+             (let loop ([solgens solgens][idx 0][sols empty])
+               (match solgens
+                 [(? empty?) (yield (combine-csps (reverse sols)))]
+                 [(cons solgen rest)
+                  (cond
+                    [(eq? (generator-state solgen) 'done)
+                     (for ([sol (in-list (reverse (hash-ref solcache idx)))])
+                       (loop rest (add1 idx) (cons sol sols)))]
+                    [else
+                     (for ([sol (in-producer solgen (void))])
+                       (hash-update! solcache idx (λ (vals) (cons sol vals)) null)
+                       (loop rest (add1 idx) (cons sol sols)))])]))))
 
 (define/contract (extract-subcsp csp names)
   ($csp? (listof name?) . -> . $csp?)
@@ -516,10 +524,13 @@
           . ->* . (listof any/c))
   (when-debug (reset-assns!) (reset-nfcs!) (reset-nchecks!))          
 
-  (define subproblems (for/list ([nodeset (in-list (cc (csp->graph csp)))])
-                        (extract-subcsp csp nodeset)))
+  (define subcsps ; decompose into independent csps. `cc` determines "connected components"
+    (if (current-decompose)
+        (for/list ([nodeset (in-list (cc (csp->graph csp)))])
+          (extract-subcsp csp nodeset))
+        (list csp)))
   
-  (for/list ([solution (in-producer (make-cartesian-generator (map solver subproblems)) (void))]
+  (for/list ([solution (in-producer (make-cartesian-generator (map solver subcsps)) (void))]
              [idx (in-range max-solutions)])
     (finish-proc solution)))
 

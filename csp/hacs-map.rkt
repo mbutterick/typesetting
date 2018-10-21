@@ -1,6 +1,7 @@
 #lang debug racket
-(require "hacs.rkt")
+(require "hacs.rkt" sugar/debug)
 (module+ test (require rackunit))
+
 
 (define (map-coloring-csp colors neighbors)
   (define variables (remove-duplicates (flatten neighbors) eq?))
@@ -55,5 +56,4 @@
 (module+ test
 (check-true (pair? (solve fr))))
 
-(module+ main
-  (solve aus))
+(module+ main)
