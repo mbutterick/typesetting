@@ -415,26 +415,34 @@
 (define (random-pick xs)
   (list-ref xs (random (length xs))))
 
+(define (assign-random-vals csp)
+  (for/fold ([new-csp csp])
+            ([name (in-var-names csp)])
+    (assign-val new-csp name (random-pick ($csp-vals csp name)))))
+
+(define (make-min-conflcts-thread csp0 max-steps [main-thread (current-thread)])
+  (thread
+   (λ ()
+     ;; Generate a complete assignment for all variables (probably with conflicts)
+     (for/fold ([csp (assign-random-vals csp0)])
+               ([nth-step (in-range max-steps)])
+       ;; Now repeatedly choose a random conflicted variable and change it
+       (match (conflicted-var-names csp)
+         [(? empty?) (thread-send main-thread csp) csp]
+         [names
+          (define name (random-pick names))
+          (define val (min-conflicts-value csp name ($csp-vals csp0 name)))
+          (assign-val csp name val)])))))
+
 (define/contract (min-conflicts csp [max-steps 100])
   (($csp?) (integer?) . ->* . generator?)
-  ;; Solve a CSP by stochastic hillclimbing on the number of conflicts.
+  ;; Solve a CSP by stochastic hillclimbing on the number of conflicts.  
   (generator ()
-             (let loop ([csp0 csp])
-               ;; Generate a complete assignment for all variables (probably with conflicts)
-               (define starting-assignment
-                 (for/fold ([csp csp0])
-                                 ([var (in-vars csp0)])
-                         (define name (var-name var))
-                         (assign-val csp name (random-pick ($csp-vals csp0 name)))))
-               ;; Now repeatedly choose a random conflicted variable and change it
-               (for/fold ([csp starting-assignment])
-                         ([i (in-range max-steps)])
-                 (match (conflicted-var-names csp)
-                   [(? empty?) (yield csp) (loop csp0)]
-                   [names
-                    (define name (random-pick names))
-                    (define val (min-conflicts-value csp name ($csp-vals csp0 name)))
-                    (assign-val csp name val)])))))
+             (for ([thread-count 4]) ; todo: what is ideal thread quantity?
+               (make-min-conflcts-thread csp max-steps))
+             (let loop ()
+               (yield (thread-receive))
+               (loop))))
 
 (define/contract (conflicted-var-names csp)
   ($csp? . -> . (listof name?))
