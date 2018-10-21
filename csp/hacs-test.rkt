@@ -158,10 +158,6 @@
 
 (check-equal? 92 (length (time-named (solve* queens))))
 
-#;(parameterize ([current-solver min-conflicts])
-    (solve queens))
-
-
 #|
 # There are no tricks, just pure logic, so good luck and don't give up. 
 # 

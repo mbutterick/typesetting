@@ -1,5 +1,5 @@
 #lang debug racket
-(require racket/generator graph)
+(require racket/generator graph sugar/debug)
 (provide (all-defined-out))
 
 (define-syntax when-debug
@@ -345,8 +345,8 @@
 
 (define nchecks 0)
 (define (reset-nchecks!) (set! nchecks 0))
-(define/contract (check-constraints csp)
-  (csp? . -> . csp?)
+(define/contract (check-constraints csp [mandatory-names #f] #:conflicts [conflict-count? #f])
+  ((csp?) ((listof name?) #:conflicts boolean?) . ->* . (or/c csp? exact-nonnegative-integer?))
   ;; this time, we're not limited to assigned variables
   ;; (that is, vars that have been deliberately assigned in the backtrack process thus far)
   ;; we also want to use "singleton" vars (that is, vars that have been reduced to a single domain value by forward checking)
@@ -354,13 +354,24 @@
                                         #:when (singleton-var? var))
                                        (var-name var)))
   (define-values (checkable-constraints other-constraints)
-    (partition (λ (c) (constraint-checkable? c singleton-varnames)) (constraints csp)))
-  (for ([(constraint idx) (in-indexed (sort checkable-constraints < #:key constraint-arity))]
-        #:unless (constraint csp))
-       (when-debug (set! nchecks (+ (add1 idx) nchecks)))
-       (backtrack!))
-  ;; discard checked constraints, since they have no further reason to live
-  (make-csp (vars csp) other-constraints))
+    (partition (λ (c) (and (constraint-checkable? c singleton-varnames)
+                           (if mandatory-names
+                               (for/and ([name (in-list mandatory-names)])
+                                        (constraint-relates? c name))
+                               #true))) (constraints csp)))
+  (cond
+    [conflict-count? (define conflict-count
+                       (for/sum ([constraint (in-list checkable-constraints)]
+                                 #:unless (constraint csp))
+                                1))
+                     (when-debug (set! nchecks (+ conflict-count nchecks)))
+                     conflict-count]
+    [else (for ([(constraint idx) (in-indexed (sort checkable-constraints < #:key constraint-arity))]
+                #:unless (constraint csp))
+               (when-debug (set! nchecks (+ (add1 idx) nchecks)))
+               (backtrack!))
+          ;; discard checked constraints, since they have no further reason to live
+          (make-csp (vars csp) other-constraints)]))
 
 (define/contract (make-nodes-consistent csp)
   (csp? . -> . csp?)
@@ -407,7 +418,49 @@
                         (loop csp)))
                     conflicts)]))))
 
-;; todo: min-conflicts solver
+
+(define/contract (min-conflicts csp [max-steps (expt 10 3)])
+  (($csp?) (integer?) . ->* . generator?)
+  ;; Solve a CSP by stochastic hillclimbing on the number of conflicts.
+  (generator ()
+             (let loop ([csp0 csp])
+               ;; Generate a complete assignment for all variables (probably with conflicts)
+               (define starting-assignment
+                 (for/fold ([csp csp0])
+                           ([var (in-vars csp0)])
+                   (define name (var-name var))
+                   (assign-val csp name (first (shuffle ($csp-vals csp0 name))))))
+               ;; Now repeatedly choose a random conflicted variable and change it
+               (for/fold ([csp starting-assignment])
+                         ([i (in-range max-steps)])
+                 (match (conflicted-var-names csp)
+                   [(? empty?) (when (check-constraints csp) (report i 'steps-taken) (yield csp))]
+                   [cvar-names
+                    (define cvar-name (first ((if (current-shuffle) shuffle values) cvar-names)))
+                    (define val (min-conflicts-value csp cvar-name ($csp-vals csp0 cvar-name)))
+                    (assign-val csp cvar-name val)]))
+               (loop csp0))))
+
+(define/contract (conflicted-var-names csp)
+  ($csp? . -> . (listof name?))
+  ;; Return a list of variables in current assignment that are conflicted
+  (for/list ([var (in-vars csp)]
+             #:when (positive? (nconflicts csp (var-name var))))
+            (var-name var)))
+ 
+(define/contract (min-conflicts-value csp name vals)
+  ($csp? name? (listof any/c) . -> . any/c)
+  ;; Return the value that will give var the least number of conflicts
+  (argmin-random-tie (λ (val) (nconflicts csp name val)) vals))
+
+(define no-value-sig (gensym))
+
+(define/contract (nconflicts csp name [val no-value-sig])
+  (($csp? name?) (any/c) . ->* . exact-nonnegative-integer?)
+  ;; How many conflicts var: val assignment has with other variables.
+  (check-constraints (if (eq? val no-value-sig)
+                         csp
+                         (assign-val csp name val)) (list name) #:conflicts #t))
 
 (define/contract (csp->assocs csp)
   (csp? . -> . (listof (cons/c name? any/c)))
@@ -418,8 +471,8 @@
 (define/contract (solve* csp
                          #:finish-proc [finish-proc csp->assocs]
                          #:solver [solver (or (current-solver) backtracking-solver)]
-                         #:count [max-solutions +inf.0])
-  ((csp?) (#:finish-proc procedure? #:solver procedure? #:count integer?) . ->* . (listof any/c))
+                         #:limit [max-solutions +inf.0])
+  ((csp?) (#:finish-proc procedure? #:solver procedure? #:limit integer?) . ->* . (listof any/c))
   (when-debug
    (reset-assns!)
    (reset-nfcs!)
@@ -432,7 +485,7 @@
                         #:finish-proc [finish-proc csp->assocs]
                         #:solver [solver (or (current-solver) backtracking-solver)])
   ((csp?) (#:finish-proc procedure? #:solver procedure?) . ->* . (or/c #false any/c))
-  (match (solve* csp #:finish-proc finish-proc #:solver solver #:count 1)
+  (match (solve* csp #:finish-proc finish-proc #:solver solver #:limit 1)
     [(list solution) solution]
     [else #false]))
 

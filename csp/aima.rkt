@@ -370,7 +370,8 @@
 ;; ______________________________________________________________________________
 ;; Min-conflicts hillclimbing search for CSPs
 
-(define (min_conflicts csp [max_steps (expt 10 5)])
+(require sugar/debug)
+(define (min-conflicts csp [max_steps (expt 10 5)])
   (($csp?) (integer?) . ->* . generator?)
   ;; Solve a CSP by stochastic hillclimbing on the number of conflicts.
   ;; Generate a complete assignment for all variables (probably with conflicts)
@@ -384,6 +385,7 @@
              (for ([i (in-range max_steps)])
                (define conflicted (conflicted_vars csp current))
                (when (empty? conflicted)
+                 (report i)
                  (yield current))
                (define var (first ((if (current-shuffle) shuffle values) conflicted)))
                (define val (min_conflicts_value csp var current))
@@ -527,7 +529,7 @@
 
   (set-$csp-curr_domains! csp #f)
   (parameterize ([current-shuffle #f]
-                 [current-solver min_conflicts])
+                 [current-solver min-conflicts])
     (check-equal?
      (solve csp)
      (make-hasheq '((nsw . red) (nt . red) (q . green) (sa . blue) (t . red) (v . green) (wa . green))))
