@@ -175,7 +175,7 @@
     (make-csp (vars csp)
               (for/list ([constraint (in-constraints csp)])
                 (cond
-                  [(and (if minimum-arity (<= minimum-arity (constraint-arity constraint)) #true)
+                  [(and (or (not minimum-arity) (<= minimum-arity (constraint-arity constraint)))
                         (partially-assigned? constraint))
                    (match-define ($constraint cnames proc) constraint)
                    ($constraint (filter-not assigned-name? cnames)
@@ -327,6 +327,8 @@
 
 (define/contract (constraint-checkable? c names)
   ($constraint? (listof name?) . -> . any/c)
+  ;; constraint is checkable if all constraint names
+  ;; are in target list of names.
   (for/and ([cname (in-list ($constraint-names c))])
     (memq cname names)))
 
@@ -349,10 +351,10 @@
                                (var-name var)))
   (define-values (checkable-constraints other-constraints)
     (partition (λ (c) (and (constraint-checkable? c singleton-varnames)
-                           (if mandatory-names
+                           (or (not mandatory-names)
                                (for/and ([name (in-list mandatory-names)])
-                                 (constraint-relates? c name))
-                               #true))) (constraints csp)))
+                                 (constraint-relates? c name)))))
+               (constraints csp)))
   (cond
     [conflict-count? (define conflict-count
                        (for/sum ([constraint (in-list checkable-constraints)]
@@ -440,9 +442,8 @@
   (generator ()
              (for ([thread-count 4]) ; todo: what is ideal thread quantity?
                (make-min-conflcts-thread csp max-steps))
-             (let loop ()
-               (yield (thread-receive))
-               (loop))))
+             (for ([i (in-naturals)])
+               (yield (thread-receive)))))
 
 (define/contract (conflicted-var-names csp)
   ($csp? . -> . (listof name?))
@@ -457,7 +458,7 @@
   (define vals-by-conflict (sort vals < #:key (λ (val) (nconflicts csp name val))
                                  #:cache-keys? #true))
   (for/first ([val (in-list vals-by-conflict)]
-              #:unless (equal? val (first ($csp-vals csp name))))
+              #:unless (equal? val (first ($csp-vals csp name)))) ;; but change the value
     val))
 
 (define no-value-sig (gensym))

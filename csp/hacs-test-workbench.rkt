@@ -9,7 +9,7 @@
 ;; queens problem
 ;; place queens on chessboard so they do not intersect
 
-(define board-size 12)
+(define board-size 8)
 
 (define queens (make-csp))
 (define qs (for/list ([q board-size]) (string->symbol (format "q~a" q))))
@@ -26,6 +26,6 @@
                       (= qa-row qb-row))) ; same row?
                    (list qa qb)))
 
-#;(time-avg 10 (solve queens))
+(time-avg 10 (solve queens))
 (parameterize ([current-solver min-conflicts])
   (time-named (solve queens)))
