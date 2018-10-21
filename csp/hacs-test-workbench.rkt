@@ -9,7 +9,7 @@
 ;; queens problem
 ;; place queens on chessboard so they do not intersect
 (define queens (make-csp))
-(define qs (for/list ([q 10]) (string->symbol (format "q~a" q))))
+(define qs (for/list ([q 8]) (string->symbol (format "q~a" q))))
 (define rows (range (length qs)))
 (add-vars! queens qs rows)
 (define (q-col q) (string->number (string-trim (symbol->string q) "q")))

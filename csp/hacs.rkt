@@ -28,6 +28,7 @@
 (define constraints $csp-constraints)
 (define-syntax-rule (in-constraints csp) (in-list ($csp-constraints csp)))
 (define-syntax-rule (in-vars csp) (in-list ($csp-vars csp)))
+(define-syntax-rule (in-var-names csp) (in-list (map $var-name ($csp-vars csp))))
 
 (struct $constraint (names proc) #:transparent
   #:property prop:procedure
@@ -209,18 +210,11 @@
     [(? empty?) #false]
     [(cons x _) x]))
 
-(define/contract (argmin-random-tie proc xs)
-  (procedure? (non-empty-listof any/c) . -> . any/c)
-  (let* ([xs (sort xs < #:key proc)]
-         [xs (takef xs (λ (x) (= (proc (car xs)) (proc x))))]
-         [xs ((if (current-shuffle) shuffle values) xs)])
-    (first xs)))
-
 (define/contract (minimum-remaining-values csp)
   (csp? . -> . (or/c #false (and/c $var? (not/c assigned-var?))))
   (match (unassigned-vars csp)
     [(? empty?) #false]
-    [xs (argmin-random-tie (λ (var) (length ($var-domain var))) xs)]))
+    [xs (argmin (λ (var) (length ($var-domain var))) (shuffle xs))]))
 
 (define mrv minimum-remaining-values)
 
@@ -419,7 +413,7 @@
                     conflicts)]))))
 
 
-(define/contract (min-conflicts csp [max-steps (expt 10 3)])
+(define/contract (min-conflicts csp [max-steps 64])
   (($csp?) (integer?) . ->* . generator?)
   ;; Solve a CSP by stochastic hillclimbing on the number of conflicts.
   (generator ()
@@ -434,7 +428,7 @@
                (for/fold ([csp starting-assignment])
                          ([i (in-range max-steps)])
                  (match (conflicted-var-names csp)
-                   [(? empty?) (when (check-constraints csp) (report i 'steps-taken) (yield csp))]
+                   [(? empty?) (when (check-constraints csp) (yield csp)) (loop csp0)]
                    [cvar-names
                     (define cvar-name (first ((if (current-shuffle) shuffle values) cvar-names)))
                     (define val (min-conflicts-value csp cvar-name ($csp-vals csp0 cvar-name)))
@@ -444,14 +438,14 @@
 (define/contract (conflicted-var-names csp)
   ($csp? . -> . (listof name?))
   ;; Return a list of variables in current assignment that are conflicted
-  (for/list ([var (in-vars csp)]
-             #:when (positive? (nconflicts csp (var-name var))))
-            (var-name var)))
+  (for/list ([name (in-var-names csp)]
+             #:when (positive? (nconflicts csp name)))
+            name))
  
 (define/contract (min-conflicts-value csp name vals)
   ($csp? name? (listof any/c) . -> . any/c)
   ;; Return the value that will give var the least number of conflicts
-  (argmin-random-tie (λ (val) (nconflicts csp name val)) vals))
+  (argmin (λ (val) (nconflicts csp name val)) (shuffle vals)))
 
 (define no-value-sig (gensym))
 
@@ -460,7 +454,7 @@
   ;; How many conflicts var: val assignment has with other variables.
   (check-constraints (if (eq? val no-value-sig)
                          csp
-                         (assign-val csp name val)) (list name) #:conflicts #t))
+                         (assign-val csp name val)) (list name) #:conflicts #true))
 
 (define/contract (csp->assocs csp)
   (csp? . -> . (listof (cons/c name? any/c)))
