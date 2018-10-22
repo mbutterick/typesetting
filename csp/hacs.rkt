@@ -491,19 +491,14 @@
 (define/contract (make-cartesian-generator solgens)
   ((listof generator?) . -> . generator?)
   (generator ()
-             (define solcache (make-hasheqv))
-             (let loop ([solgens solgens][idx 0][sols empty])
-               (match solgens
-                 [(? empty?) (yield (combine-csps (reverse sols)))]
-                 [(cons solgen rest)
-                  (cond
-                    [(eq? (generator-state solgen) 'done)
-                     (for ([sol (in-list (reverse (hash-ref solcache idx)))])
-                       (loop rest (add1 idx) (cons sol sols)))]
-                    [else
-                     (for ([sol (in-producer solgen (void))])
-                       (hash-update! solcache idx (λ (vals) (cons sol vals)) null)
-                       (loop rest (add1 idx) (cons sol sols)))])]))))
+             (define solstreams (for/list ([solgen (in-list solgens)])
+                                          (for/stream ([sol (in-producer solgen (void))]) 
+                                                      sol))) 
+             (let loop ([solstreams solstreams][sols empty])
+               (if (null? solstreams)
+                   (yield (combine-csps (reverse sols)))
+                   (for ([sol (in-stream (car solstreams))])
+                        (loop (cdr solstreams) (cons sol sols)))))))
 
 (define/contract (extract-subcsp csp names)
   ($csp? (listof name?) . -> . $csp?)
