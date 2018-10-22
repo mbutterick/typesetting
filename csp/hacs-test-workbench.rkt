@@ -25,6 +25,7 @@
                    (list qa qb))
   (add-constraint! queens (negate =) (list qa qb)))
 
+(current-multithreaded #t)
 (time-avg 10 (solve queens))
 (parameterize ([current-solver min-conflicts-solver])
-  (time-named (solve queens)))
+  (time-avg 10 (solve queens)))

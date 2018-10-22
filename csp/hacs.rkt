@@ -119,6 +119,7 @@
 (define current-solver (make-parameter #f))
 (define current-random (make-parameter #t))
 (define current-decompose (make-parameter #t))
+(define current-multithreaded (make-parameter #t))
 
 (define/contract (check-name-in-csp! caller csp name)
   (symbol? csp? name? . -> . void?)
@@ -446,7 +447,7 @@
   (($csp?) (integer?) . ->* . generator?)
   ;; Solve a CSP by stochastic hillclimbing on the number of conflicts.  
   (generator ()
-             (for ([thread-count 4]) ; todo: what is ideal thread count?
+             (for ([thread-count (if (current-multithreaded) 4 1)]) ; todo: what is ideal thread count?
                (make-min-conflcts-thread csp thread-count max-steps))
              (for ([i (in-naturals)])
                (yield (thread-receive)))))
@@ -457,10 +458,21 @@
   (for/list ([name (in-var-names csp)]
              #:when (positive? (nconflicts csp name)))
     name))
+
+(define/contract (optimal-stop-min proc xs)
+  (procedure? (listof any/c) . -> . any/c)
+  (define-values (sample candidates) (split-at xs (inexact->exact (floor (* .458 (length xs))))))
+  (define threshold (argmin proc sample))
+  (or (for/first ([c (in-list candidates)]
+                  #:when (<= (proc c) threshold))
+        c)
+      (last candidates)))
+  
  
 (define/contract (min-conflicts-value csp name vals)
   ($csp? name? (listof any/c) . -> . any/c)
   ;; Return the value that will give var the least number of conflicts
+  #;(optimal-stop-min (λ (val) (nconflicts csp name val)) vals)
   (define vals-by-conflict (sort vals < #:key (λ (val) (nconflicts csp name val))
                                  #:cache-keys? #true))
   (for/first ([val (in-list vals-by-conflict)]
@@ -492,13 +504,13 @@
   ((listof generator?) . -> . generator?)
   (generator ()
              (define solstreams (for/list ([solgen (in-list solgens)])
-                                          (for/stream ([sol (in-producer solgen (void))]) 
-                                                      sol))) 
+                                  (for/stream ([sol (in-producer solgen (void))]) 
+                                    sol))) 
              (let loop ([solstreams solstreams][sols empty])
                (if (null? solstreams)
                    (yield (combine-csps (reverse sols)))
                    (for ([sol (in-stream (car solstreams))])
-                        (loop (cdr solstreams) (cons sol sols)))))))
+                     (loop (cdr solstreams) (cons sol sols)))))))
 
 (define/contract (extract-subcsp csp names)
   ($csp? (listof name?) . -> . $csp?)
