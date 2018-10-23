@@ -5,15 +5,15 @@
 @(define my-eval (make-base-eval))
 @(my-eval `(require csp))
 
-
-@title{csp}
+@title{Constraint-satisfaction problems}
 
 @author[(author+email "Matthew Butterick" "mb@mbtype.com")]
 
-
 @defmodule[csp]
 
-A simple hyphenation engine that uses the Knuth–Liang hyphenation algorithm originally developed for TeX. I have added little to their work. Accordingly, I take little credit.
+@margin-note{This package is in development. I make no commitment to maintaining the public interface documented below.}
+
+A simple solver for constraint-satisfaction problems.
 
 @section{Installation}
 
