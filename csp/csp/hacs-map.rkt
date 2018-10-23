@@ -2,7 +2,6 @@
 (require "hacs.rkt" sugar/debug)
 (module+ test (require rackunit))
 
-
 (define (map-coloring-csp colors neighbors)
   (define names (remove-duplicates (flatten neighbors) eq?))
   (define vds (for/list ([name (in-list names)])
