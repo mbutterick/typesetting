@@ -5,6 +5,8 @@
 (current-select-variable mrv-degree-hybrid)
 (current-order-values shuffle)
 (current-random #true)
+(current-node-consistency #f)
+(current-arity-reduction #t)
 
 (check-equal? (first-unassigned-variable (csp (list (var 'a (range 3)) (var 'b (range 3))) null))
               (var 'a (range 3)))
@@ -287,7 +289,7 @@
                 ((nationality-4 . spaniard) (color-4 . ivory) (drink-4 . orange-juice) (smoke-4 . luckystrike) (pet-4 . dogs))))
 
 (module+ main
-  (when-debug
+  (begin
    (define-syntax n (λ (stx) #'10))
    (time-avg n (void (solve quarters)))
    (time-avg n (void (solve* xsum)))

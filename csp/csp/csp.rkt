@@ -177,7 +177,9 @@
 (define/contract (terminating-at arcs name)
   ((listof $arc?) $var-name? . -> . (listof $arc?))
   (for/list ([arc (in-list arcs)]
-             #:when (eq? name (second ($constraint-names ($arc-constraint arc)))))
+             #:when (and
+                     (memq name ($constraint-names ($arc-constraint arc)))
+                     (not (eq? name ($arc-name arc)))))
     arc))
 
 (define/contract (constraint-assigned? csp constraint)
