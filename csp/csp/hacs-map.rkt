@@ -4,13 +4,13 @@
 
 
 (define (map-coloring-csp colors neighbors)
-  (define variables (remove-duplicates (flatten neighbors) eq?))
-  (define vds (for/list ([var (in-list variables)])
-                ($var var colors)))
+  (define names (remove-duplicates (flatten neighbors) eq?))
+  (define vds (for/list ([name (in-list names)])
+                (var name colors)))
   (define cs (for*/list ([neighbor neighbors]
                          [target (cdr neighbor)])
-               ($constraint (list (car neighbor) target) neq?)))
-  ($csp vds cs))
+               (constraint (list (car neighbor) target) neq?)))
+  (csp vds cs))
 
 (define (parse-colors str) (map string->symbol (map string-downcase (regexp-match* "." str))))
 (define(parse-neighbors str)
