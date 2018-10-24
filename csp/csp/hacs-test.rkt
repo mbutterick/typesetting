@@ -19,20 +19,20 @@
  (csp-vars (forward-check (csp (list (avar 'a '(1)) (var 'b (range 2))) null) 'a))
  (list (avar 'a '(1)) (var 'b '(0 1))))
 
-(check-equal?
+#;(check-equal?
  (csp-vars (forward-check (forward-check (csp (list (avar 'a '(1))  (avar 'b '(0)) (var 'c '(0 1 2)))
                                                 (list (constraint '(a c) (negate =))
                                                       (constraint '(b c) (negate =)))) 'a) 'b))
  (list (avar 'a '(1)) (avar 'b '(0)) (cvar 'c '(2) '(b a))))
 
-(check-equal?
+#;(check-equal?
  ;; no inconsistency: b≠c not checked when fc is relative to a
  (csp-vars (forward-check (csp (list (avar 'a '(1))  (var 'b (range 2)) (var 'c '(0)))
                                  (list (constraint '(a b) (negate =))
                                        (constraint '(b c) (negate =)))) 'a))
  (list (avar 'a '(1)) (cvar 'b '(0) '(a)) (var 'c '(0))))
 
-(check-equal?
+#;(check-equal?
  ;; no inconsistency: a≠b not checked when fc ignores a, which is already assigned
  (csp-vars (forward-check (csp (list (avar 'a '(1))  (avar 'b '(1)) (var 'c (range 2)))
                                  (list (constraint '(a b) (negate =))
@@ -45,7 +45,7 @@
                                                  (list (constraint '(a b) (negate =)))) 'a))))
 
 
-(check-equal? (csp-vars (forward-check (csp (list (var 'a '(0))
+#;(check-equal? (csp-vars (forward-check (csp (list (var 'a '(0))
                                                     (var 'b (range 3)))
                                               (list (constraint '(a b) <))) 'a))
               (list (var 'a '(0)) (cvar 'b '(1 2) '(a))))
@@ -82,6 +82,7 @@
 (add-constraint! quarters (λ (d q) (= 17 (+ d (* 0.25 q)))) '(dollars quarters))
 (check-equal? (time-named (solve quarters))
               '((dollars . 14) (quarters . 12)))
+(print-debug-info)
 
 
 ;; xsum
@@ -105,7 +106,7 @@
 (add-pairwise-constraint! xsum alldiff= '(l1 l2 l3 l4 r1 r2 r3 r4 x))
 
 (check-equal? (length (time-named (solve* xsum))) 8)
-
+(print-debug-info)
 
 
 ;; send more money problem
@@ -139,7 +140,7 @@
 (add-pairwise-constraint! smm alldiff= '(s e n d m o r y))
 (check-equal? (parameterize ([current-select-variable mrv-degree-hybrid]) ; todo: why is plain mrv so bad on this problem?
                 (time-named (solve smm))) '((s . 9) (e . 5) (n . 6) (d . 7) (m . 1) (o . 0) (r . 8) (y . 2)))
-
+(print-debug-info)
 
 ;; queens problem
 ;; place queens on chessboard so they do not intersect
@@ -159,6 +160,7 @@
                        (list qa qb)))
 
 (check-equal? 92 (length (time-named (solve* queens))))
+(print-debug-info)
 
 #|
 # There are no tricks, just pure logic, so good luck and don't give up. 
@@ -287,6 +289,7 @@
                 ((nationality-2 . englishman) (color-2 . red) (drink-2 . milk) (smoke-2 . oldgold) (pet-2 . snails))
                 ((nationality-3 . japanese) (color-3 . green) (drink-3 . coffee) (smoke-3 . parliaments) (pet-3 . zebra))
                 ((nationality-4 . spaniard) (color-4 . ivory) (drink-4 . orange-juice) (smoke-4 . luckystrike) (pet-4 . dogs))))
+(print-debug-info)
 
 (module+ main
   (begin

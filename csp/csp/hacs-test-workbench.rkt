@@ -28,11 +28,7 @@
                        (= (+ (word-value s e n d) (word-value m o r e))
                           (word-value m o n e y))) '(s e n d m o r y))
 (add-pairwise-constraint! smm alldiff= '(s e n d m o r y))
-(parameterize ([current-select-variable mrv-degree-hybrid]
-               [current-node-consistency make-nodes-consistent]) ; todo: why is plain mrv so bad on this problem?
+(parameterize ([current-select-variable mrv-degree-hybrid] ; todo: why is plain mrv bad here?
+               #;[current-node-consistency make-nodes-consistent]) ; todo: why is node consistency bad here?
   (time-named (solve smm)))
-
-nassns
-nfchecks
-nchecks
-
+(print-debug-info)
