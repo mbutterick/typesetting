@@ -315,19 +315,22 @@
                      (not (eq? name (arc-name arc)))))
             arc))
 
-(define/contract (ac-3 prob . _)
-  ((csp?) (any/c) . ->* . csp?)
+(define/contract (ac-3 prob ref-name)
+  (csp? name? . -> . csp?)
   ;; csp is arc-consistent if every pair of variables (x y)
   ;; has values in their domain that satisfy every binary constraint
-  (define starting-arcs (two-arity-constraints->arcs (filter two-arity? (constraints prob))))
+  (define checkable-names (cons ref-name (filter-not (λ (vn) (assigned-name? prob vn)) (map var-name (vars prob)))))
+  (define starting-arcs (two-arity-constraints->arcs (for/list ([const (in-constraints prob)]
+                                                                #:when (and (two-arity? const)
+                                                                            (for/and ([cname (in-list (constraint-names const))])
+                                                                                     (memq cname checkable-names))))
+                                                               const)))
   (for/fold ([prob prob]
-             [arcs starting-arcs]
+             [arcs (sort starting-arcs < #:key (λ (a) (length (find-domain prob (arc-name a)))) #:cache-keys? #true)]
              #:result (prune-singleton-constraints prob))
             ([i (in-naturals)]
              #:break (empty? arcs))
-    (length starting-arcs)
     (match-define (cons (arc name proc) other-arcs) arcs)
-    (length other-arcs)
     (define reduced-csp (reduce-domain prob (arc name proc)))
     (values reduced-csp (if (= (length (find-domain prob name)) (length (find-domain reduced-csp name)))
                             ;; revision did not reduce the domain, so keep going
