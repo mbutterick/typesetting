@@ -25,7 +25,14 @@
                    (list qa qb))
   (add-constraint! queens (negate =) (list qa qb)))
 
+(define (sol->string sol)
+  (define assocs (csp->assocs sol))
+   (string-join (for/list ([q (in-list (sort assocs string<? #:key (compose1 symbol->string car)))])
+    (apply string (add-between (for/list ([idx (in-range board-size)])
+      (if (= idx (cdr q)) #\@ #\·)) #\space))) "\n"))
+
 (current-thread-count 4)
-(time-avg 10 (solve queens))
+(displayln (solve queens #:finish-proc sol->string))
 (parameterize ([current-solver min-conflicts-solver])
-  (time-avg 10 (solve queens)))
+    (time (solve queens)))
+

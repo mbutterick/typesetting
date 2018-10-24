@@ -514,6 +514,7 @@
 (define/contract (min-conflicts-solver prob [max-steps 100])
   ((csp?) (integer?) . ->* . generator?)
   (generator ()
+             
              (for ([thread-count (or (current-thread-count) 1)]) ; todo: what is ideal thread count?
                   (make-min-conflcts-thread prob thread-count max-steps))
              (for ([i (in-naturals)])
@@ -553,11 +554,16 @@
                          prob
                          (assign-val prob name val)) (list name) #:conflicts #true))
 
-(define/contract (csp->assocs prob)
-  (csp? . -> . (listof (cons/c name? any/c)))
-  (for/list ([vr (in-vars prob)])
+(define/contract (csp->assocs prob [keys #f])
+  ((csp?) ((listof name?)) . ->* . (listof (cons/c name? any/c)))
+  (define assocs
+    (for/list ([vr (in-vars prob)])
             (match vr
               [(var name (list val)) (cons name val)])))
+  (if keys
+      (for/list ([key (in-list keys)])
+        (assq key assocs))
+      assocs))
 
 (define/contract (combine-csps probs)
   ((listof csp?) . -> . csp?)
@@ -578,7 +584,7 @@
              const)))
 
 (define/contract (solve* prob
-                         #:finish-proc [finish-proc csp->assocs]
+                         #:finish-proc [finish-proc (λ (p) (csp->assocs p (map var-name (vars prob))))]
                          #:solver [solver (or (current-solver) backtracking-solver)]
                          #:limit [max-solutions +inf.0])
   ((csp?) (#:finish-proc procedure? #:solver procedure? #:limit natural?)
@@ -601,7 +607,7 @@
             (finish-proc (combine-csps solution-pieces))))
 
 (define/contract (solve prob
-                        #:finish-proc [finish-proc csp->assocs]
+                        #:finish-proc [finish-proc (λ (p) (csp->assocs p (map var-name (vars prob))))]
                         #:solver [solver (or (current-solver) backtracking-solver)]
                         #:limit [max-solutions 1])
   ((csp?) (#:finish-proc procedure? #:solver procedure? #:limit natural?)
