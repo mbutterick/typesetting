@@ -1,3 +1,3 @@
 #lang info
 
-(define scribblings '(("scribblings/csp.scrbl")))
+(define scribblings '(("scribblings/csp.scrbl" ())))
