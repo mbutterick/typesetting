@@ -244,6 +244,11 @@
   (var? . -> . natural?)
   (length (domain var)))
 
+(define/contract (state-count csp)
+  (csp? . -> . natural?)
+  (for/product ([var (in-vars csp)])
+    (domain-length var)))
+
 (define/contract (mrv-degree-hybrid prob)
   (csp? . -> . (or/c #f var?))
   (match (unassigned-vars prob)
@@ -649,8 +654,8 @@
           . ->* . (or/c #false any/c))
   (match (solve* prob #:finish-proc finish-proc #:solver solver #:limit max-solutions)
     [(list solution) solution]
-    [(list solutions ...) solutions]
-    [else #false]))
+    [(list) #false]
+    [(list solutions ...) solutions]))
 
 (define (<> a b) (not (= a b)))
 (define (neq? a b) (not (eq? a b)))
