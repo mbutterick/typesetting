@@ -136,6 +136,8 @@ Of course, when we use ordinary @racket[solve], we don't know how many assignmen
 
 Disappointing but accurate.
 
+
+
 @section{Making & solving CSPs}
 
 

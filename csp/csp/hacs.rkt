@@ -57,7 +57,7 @@
     (apply add-edge! gr edge)
     gr))
 
-(struct var (name domain) #:transparent)
+(struct var (name domain) #:transparent #:mutable)
 (define domain var-domain)
 
 (struct checked-variable var (history) #:transparent)
@@ -246,13 +246,14 @@
 
 (define/contract (state-count csp)
   (csp? . -> . natural?)
-  (for/product ([var (in-vars csp)])
-    (domain-length var)))
+  (for/product ([vr (in-vars csp)])
+               (domain-length vr)))
 
 (define/contract (mrv-degree-hybrid prob)
   (csp? . -> . (or/c #f var?))
   (match (unassigned-vars prob)
     [(? empty?) #false]
+    [(cons (? singleton-var? uvar) _) uvar]
     [uvars
      ;; minimum remaining values (MRV) rule
      (define mrv-arg (argmin domain-length uvars))
@@ -476,6 +477,12 @@
 (define (history->constraint hst)
   (constraint (map car hst) (make-hist-proc hst)))
 
+(define/contract (assign-singletons prob)
+  (csp? . -> . csp?)
+  (for/fold ([prob prob])
+            ([vr (in-vars prob)]
+             #:when (singleton-var? vr))
+    (assign-val prob (var-name vr) (first (var-domain vr)))))
 
 (define/contract (backtracking-solver
                   prob
@@ -488,45 +495,47 @@
              (define reduce-arity-proc (if (current-arity-reduction) reduce-constraint-arity values))
              (define learned-constraints null)
              (define learning? (current-learning))
-             (let loop ([prob ((if (current-node-consistency) make-nodes-consistent values) prob)])
-               (match (select-unassigned-variable prob)
-                 [#false (yield prob)]
-                 [(var name domain)
-                  (define (wants-backtrack? exn)
-                    (and (backtrack? exn) (or (let ([bths (backtrack-histories exn)])
-                                                (or (empty? bths) (for*/or ([bth bths]
-                                                                            [rec bth])
-                                                                           (eq? name (car rec))))))))
-                  (for/fold ([conflicts null]
-                             #:result (void))
-                            ([val (in-list (order-domain-values domain))])
-                    (with-handlers ([wants-backtrack?
-                                     (λ (bt)
-                                       (define bths (backtrack-histories bt))
-                                       (when learning?
-                                         (set! learned-constraints (append
-                                                                    (map history->constraint (filter (λ (bth) (<= 2 (length bth) 4)) bths))
-                                                                    learned-constraints)))
-                                       (append conflicts (remq name (remove-duplicates
-                                                                     (for*/list ([bth bths]
-                                                                                 [rec bth])
-                                                                                (car rec)) eq?))))])
-                      (let* ([prob (assign-val prob name val)]
-                             [prob (if learning?
-                                       (and (for ([lc learned-constraints]
-                                                  #:when (for/and ([cname (constraint-names lc)])
-                                                                  (memq cname (map var-name (filter assigned-var? (vars prob))))))
-                                                 (unless (lc prob)
-                                                   (println 'boing)
-                                                   (backtrack!))) prob)
-                                       prob)]
-                             ;; reduce constraints before inference,
-                             ;; to create more forward-checkable (binary) constraints
-                             [prob (reduce-arity-proc prob)]
-                             [prob (inference prob name)]
-                             [prob (check-constraints prob)])
-                        (loop prob)))
-                    conflicts)]))))
+             (let* ([prob ((if (current-node-consistency) make-nodes-consistent values) prob)]
+                    [prob (assign-singletons prob)])
+               (let loop ([prob prob])
+                 (match (select-unassigned-variable prob)
+                   [#false (yield prob)]
+                   [(var name domain)
+                    (define (wants-backtrack? exn)
+                      (and (backtrack? exn) (or (let ([bths (backtrack-histories exn)])
+                                                  (or (empty? bths) (for*/or ([bth bths]
+                                                                              [rec bth])
+                                                                             (eq? name (car rec))))))))
+                    (for/fold ([conflicts null]
+                               #:result (void))
+                              ([val (in-list (order-domain-values domain))])
+                      (with-handlers ([wants-backtrack?
+                                       (λ (bt)
+                                         (define bths (backtrack-histories bt))
+                                         (when learning?
+                                           (set! learned-constraints (append
+                                                                      (map history->constraint (filter (λ (bth) (<= 2 (length bth) 4)) bths))
+                                                                      learned-constraints)))
+                                         (append conflicts (remq name (remove-duplicates
+                                                                       (for*/list ([bth bths]
+                                                                                   [rec bth])
+                                                                                  (car rec)) eq?))))])
+                        (let* ([prob (assign-val prob name val)]
+                               [prob (if learning?
+                                         (and (for ([lc learned-constraints]
+                                                    #:when (for/and ([cname (constraint-names lc)])
+                                                                    (memq cname (map var-name (filter assigned-var? (vars prob))))))
+                                                   (unless (lc prob)
+                                                     (println 'boing)
+                                                     (backtrack!))) prob)
+                                         prob)]
+                               ;; reduce constraints before inference,
+                               ;; to create more forward-checkable (binary) constraints
+                               [prob (reduce-arity-proc prob)]
+                               [prob (inference prob name)]
+                               [prob (check-constraints prob)])
+                          (loop prob)))
+                      conflicts)])))))
 
 (define (random-pick xs)
   (list-ref xs (random (length xs))))
