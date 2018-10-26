@@ -38,9 +38,7 @@
     (for*/list ([str strs]
                 [c (in-port read-char (open-input-string str))]
                 #:unless (memv c '(#\- #\|)))
-               (match (string c)
-                 [(? string->number num) (string->number num)]
-                 [else #f])))
+               (string->number (string c))))
   (for ([name names]
         [val vals]
         #:when val)
@@ -99,6 +97,23 @@
 (current-random #true)
 (current-node-consistency #t)
 (current-arity-reduction #t)
-(time-avg 10 (solve b1 #:finish-proc print-grid))
-(time-avg 10 (solve b2 #:finish-proc print-grid))
-(time-avg 10 (solve b3 #:finish-proc print-grid))
+#;(time-avg 10 (solve b1 #:finish-proc print-grid))
+#;(time-avg 10 (solve b2 #:finish-proc print-grid))
+#;(time-avg 10 (solve b3 #:finish-proc print-grid))
+
+;; https://projecteuler.net/problem=96
+;; todo: parsing of these is wrong
+(define bstrs
+  (for/list ([puz (in-slice 10 (string-split (port->string (open-input-file "euler-sudoku-grids.txt")) "\n"))])
+          (map (λ (str) (string-replace str "0" " ")) (cdr puz))))
+
+(car bstrs)
+(define bboard (apply board (car bstrs)))
+(solve bboard #:finish-proc print-grid)
+
+#;(for/fold ([sum 0])
+          ([(bstr idx) (in-indexed bstrs)])    
+  (define sol (solve (apply board bstr)))
+  (+ sum #R (+ (* 100 (cdr (assq 'c0 sol)))
+            (* 10 (cdr (assq 'c1 sol)))
+            (* 1 (cdr (assq 'c2 sol))))))

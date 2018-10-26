@@ -489,7 +489,7 @@
                   #:select-variable [select-unassigned-variable
                                      (or (current-select-variable) first-unassigned-variable)]
                   #:order-values [order-domain-values (or (current-order-values) first-domain-value)]
-                  #:inference [inference (or (current-inference) forward-check)])
+                  #:inference [inference (or (current-inference) no-inference)])
   ((csp?) (#:select-variable procedure? #:order-values procedure? #:inference procedure?) . ->* . generator?)
   (generator ()
              (define reduce-arity-proc (if (current-arity-reduction) reduce-constraint-arity values))
