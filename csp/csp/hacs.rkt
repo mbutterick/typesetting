@@ -73,19 +73,23 @@
   (() ((listof var?) (listof constraint?)) . ->* . csp?)
   (csp vars consts))
 
+(define/contract (make-var name [vals null])
+  ((name?) ((listof any/c)) . ->* . var?)
+  (var name vals))
+
 (define/contract (add-vars! prob names-or-procedure [vals-or-procedure empty])
   ((csp? (or/c (listof name?) procedure?)) ((or/c (listof any/c) procedure?)) . ->* . void?)
   (for/fold ([vrs (vars prob)]
-             #:result (set-csp-vars! prob vrs))
+             #:result (set-csp-vars! prob (reverse vrs)))
             ([name (in-list (match names-or-procedure
                               [(? procedure? proc) (proc)]
                               [names names]))])
     (when (memq name (map var-name vrs))
       (raise-argument-error 'add-vars! "var that doesn't already exist" name))
-    (append vrs (list (var name
-                           (if (procedure? vals-or-procedure)
-                               (vals-or-procedure)
-                               vals-or-procedure))))))
+    (cons (make-var name
+                    (match vals-or-procedure
+                      [(? procedure? proc) (proc)]
+                      [vals vals])) vrs)))
 
 (define/contract (add-var! prob name [vals-or-procedure empty])
   ((csp? name?) ((or/c (listof any/c) procedure?)) . ->* . void?)
@@ -206,33 +210,34 @@
 
 (define/contract (assign-val prob name val)
   (csp? name? any/c . -> . csp?)
-  (when-debug (set! nassns (add1 nassns)))
-  (make-csp
-   (for/list ([vr (in-vars prob)])
-     (if (eq? name (var-name vr))
-         (assigned-var name (list val))
-         vr))
-   (constraints prob)))
+  (begin0
+    (make-csp
+     (for/list ([vr (in-vars prob)])
+       (if (eq? name (var-name vr))
+           (assigned-var name (list val))
+           vr))
+     (constraints prob))
+    (when-debug (set! nassns (add1 nassns)))))
 
-(define/contract (assigned-vars prob)
-  (csp? . -> . (listof var?))
-  (filter assigned-var? (vars prob)))
+(define/contract (assigned-vars prob [invert? #f])
+  ((csp?) (any/c) . ->* . (listof var?))
+  ((if invert? filter-not filter) assigned-var? (vars prob)))
 
 (define/contract (unassigned-vars prob)
   (csp? . -> . (listof var?))
-  (filter-not assigned-var? (vars prob)))
+  (assigned-vars prob 'invert))
 
 (define/contract (first-unassigned-variable csp)
   (csp? . -> . (or/c #false (and/c var? (not/c assigned-var?))))
   (match (unassigned-vars csp)
-    [(? empty?) #false]
+    [(== empty) #false]
     [xs (first xs)]))
 
 (define/contract (argmin* proc xs [max-style? #f])
   ((procedure? (listof any/c)) (any/c) . ->* . (listof any/c))
   ;; return all elements that have min value.
   (match xs
-    [(? empty?) xs]
+    [(== empty) xs]
     [(list x) xs]
     [xs
      (define vals (map proc xs))
@@ -250,13 +255,13 @@
 (define/contract (minimum-remaining-values prob)
   (csp? . -> . (or/c #false (and/c var? (not/c assigned-var?))))
   (match (unassigned-vars prob)
-    [(? empty?) #false]
+    [(== empty) #false]
     [uvars (random-pick (argmin* domain-length uvars))]))
 
 (define/contract (max-degree prob)
   (csp? . -> . (or/c #false (and/c var? (not/c assigned-var?))))
   (match (unassigned-vars prob)
-    [(? empty?) #false]
+    [(== empty) #false]
     [uvars (random-pick (argmax* (λ (var) (var-degree prob var)) uvars))]))
 
 (define mrv minimum-remaining-values)
@@ -279,7 +284,7 @@
 (define/contract (mrv-degree-hybrid prob)
   (csp? . -> . (or/c #f var?))
   (match (unassigned-vars prob)
-    [(? empty?) #false]
+    [(== empty) #false]
     [uvars
      (max-degree (make-csp (argmin* domain-length uvars) (constraints prob)))]))
   
@@ -326,9 +331,9 @@
      (cond
        [(assigned-var? vr) vr]
        [(eq? name (var-name vr))
-        (var name (match (filter satisfies-arc? (domain vr))
-                    [(? empty?) (backtrack!)]
-                    [vals vals]))]
+        (make-var name (match (filter satisfies-arc? (domain vr))
+                         [(? empty?) (backtrack!)]
+                         [vals vals]))]
        [else vr]))
    (constraints prob)))
 
@@ -472,10 +477,10 @@
        (for/list ([vr (in-vars prob)])
          (match-define (var name vals) vr)
          (define name-constraints (filter (λ (const) (constraint-relates? const name)) unary-constraints))
-         (var name (for/list ([val (in-list vals)]
-                              #:when (for/and ([const (in-list name-constraints)])
-                                       ((constraint-proc const) val)))
-                     val)))
+         (make-var name (for/list ([val (in-list vals)]
+                                   #:when (for/and ([const (in-list name-constraints)])
+                                            ((constraint-proc const) val)))
+                          val)))
        other-constraints)))
 
 (define ((make-hist-proc assocs) . xs)
@@ -494,32 +499,32 @@
   (generator ()
              (define reduce-arity-proc (if (current-arity-reduction) reduce-constraint-arity values))
              (let loop ([prob ((if (current-node-consistency) make-nodes-consistent values) prob)])
-                 (match (select-unassigned-variable prob)
-                   [#false (yield prob)]
-                   [(var name domain)
-                    (define (wants-backtrack? exn)
-                      (and (backtrack? exn) (or (let ([bths (backtrack-histories exn)])
-                                                  (or (empty? bths) (for*/or ([bth bths]
-                                                                              [rec bth])
-                                                                      (eq? name (car rec))))))))
-                    (for/fold ([conflicts null]
-                               #:result (void))
-                              ([val (in-list (order-domain-values domain))])
-                      (with-handlers ([wants-backtrack?
-                                       (λ (bt)
-                                         (define bths (backtrack-histories bt))
-                                         (append conflicts (remq name (remove-duplicates
-                                                                       (for*/list ([bth bths]
-                                                                                   [rec bth])
-                                                                         (car rec)) eq?))))])
-                        (let* ([prob (assign-val prob name val)]
-                               ;; reduce constraints before inference,
-                               ;; to create more forward-checkable (binary) constraints
-                               [prob (reduce-arity-proc prob)]
-                               [prob (inference prob name)]
-                               [prob (check-constraints prob)])
-                          (loop prob)))
-                      conflicts)]))))
+               (match (select-unassigned-variable prob)
+                 [#false (yield prob)]
+                 [(var name domain)
+                  (define (wants-backtrack? exn)
+                    (and (backtrack? exn) (or (let ([bths (backtrack-histories exn)])
+                                                (or (empty? bths) (for*/or ([bth bths]
+                                                                            [rec bth])
+                                                                    (eq? name (car rec))))))))
+                  (for/fold ([conflicts null]
+                             #:result (void))
+                            ([val (in-list (order-domain-values domain))])
+                    (with-handlers ([wants-backtrack?
+                                     (λ (bt)
+                                       (define bths (backtrack-histories bt))
+                                       (append conflicts (remq name (remove-duplicates
+                                                                     (for*/list ([bth bths]
+                                                                                 [rec bth])
+                                                                       (car rec)) eq?))))])
+                      (let* ([prob (assign-val prob name val)]
+                             ;; reduce constraints before inference,
+                             ;; to create more forward-checkable (binary) constraints
+                             [prob (reduce-arity-proc prob)]
+                             [prob (inference prob name)]
+                             [prob (check-constraints prob)])
+                        (loop prob)))
+                    conflicts)]))))
 
 (define/contract (random-pick xs)
   ((non-empty-listof any/c) . -> . any/c)

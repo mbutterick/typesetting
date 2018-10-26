@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require racket/match
          racket/list
          racket/set)
@@ -25,43 +25,18 @@
   (= (cell-y l) (cell-y r)))
 
 ;; a grid is a list of cells
-
-(define hrule "-----------")
-
 ;; board : string ... -> grid
 (define (board . ss)
-  (match-define
-   (list r1 r2 r3 (== hrule)
-         r4 r5 r6 (== hrule)
-         r7 r8 r9)
-   ss)
-  (define rs
-    (list r1 r2 r3 r4 r5 r6 r7 r8 r9))
-  (flatten
-   (for/list ([r (in-list rs)]
-              [y (in-naturals)])
-     (parse-row y r))))
+  (for*/fold ([cells null]
+              #:result (reverse cells))
+             ([str (in-list ss)]
+              [c (in-port read-char (open-input-string str))]
+              #:unless (memv c '(#\- #\|)))
+    (define-values (row col) (quotient/remainder (length cells) 9))
+    (cons (cell col row (cond
+                          [(string->number (string c)) => seteq]
+                          [else anything])) cells)))
 
-(define (parse-row y r)
-  (for/list ([c (in-string r)]
-             [i (in-naturals)])
-    (cond
-      [(or (= i 3) (= i 7))
-       (if (char=? c #\|)
-         empty
-         (error 'parse-row))]
-      [else
-       (define x
-         (cond [(< i 3) (- i 0)]
-               [(< i 7) (- i 1)]
-               [   else (- i 2)]))
-       (parse-cell y x c)])))
-
-(define (parse-cell y x c)
-  (cell x y
-        (if (char=? #\space c)
-          anything
-          (seteq (string->number (string c))))))
 
 (define (propagate-one top cs)
   (let/ec return
@@ -69,7 +44,7 @@
     (when (cell-solved? top)
       (define-values (changed? ncs)
         (for/fold ([changed? #f] [ncs empty])
-            ([c (in-list cs)])
+                  ([c (in-list cs)])
           (cond
             [(neighbor-of? top c)
              (define before
@@ -78,12 +53,12 @@
                (set-subtract before (cell-can-be top)))
              (if (= (set-count before)
                     (set-count after))
-               (values changed?
-                       (cons c ncs))
-               (values #t
-                       (cons (struct-copy cell c
-                                          [can-be after])
-                             ncs)))]
+                 (values changed?
+                         (cons c ncs))
+                 (values #t
+                         (cons (struct-copy cell c
+                                            [can-be after])
+                               ncs)))]
             [else
              (values changed? (cons c ncs))])))
       (return changed? top ncs))
@@ -94,10 +69,10 @@
       (define before (cell-can-be top))
       (define after
         (for/fold ([before before])
-            ([c (in-list cs)])
+                  ([c (in-list cs)])
           (if (same-x? top c)
-            (set-subtract before (cell-can-be c))
-            before)))
+              (set-subtract before (cell-can-be c))
+              before)))
       (when (= (set-count after) 1)
         (return #t
                 (struct-copy cell top
@@ -153,8 +128,8 @@
        (define-values (changed? ntop nmore)
          (f top (append tried more)))
        (if changed?
-         (values #t (cons ntop nmore))
-         (loop (cons top tried) more))])))
+           (values #t (cons ntop nmore))
+           (loop (cons top tried) more))])))
 
 (define (propagate g)
   (find-pivot propagate-one g))
@@ -162,12 +137,12 @@
 (define (until-fixed-point f o bad? end-f)
   (define-values (changed? no) (f o))
   (if changed?
-    (cons
-     no
-     (if (bad? no)
-       (end-f no)
-       (until-fixed-point f no bad? end-f)))
-    (end-f o)))
+      (cons
+       no
+       (if (bad? no)
+           (end-f no)
+           (until-fixed-point f no bad? end-f)))
+      (end-f o)))
 
 (define (solved? g)
   (andmap (λ (c) (= (set-count (cell-can-be c)) 1)) g))
@@ -178,10 +153,10 @@
 ;; solve-it : grid -> (listof grid)
 (define (solve-it g)
   (let solve-loop
-      ([g g]
-       [backtrack!
-        (λ (i)
-          (error 'solve-it "Failed!"))])
+    ([g g]
+     [backtrack!
+      (λ (i)
+        (error 'solve-it "Failed!"))])
     (define (done? g)
       (cond
         [(solved? g)
@@ -236,14 +211,14 @@
   (define (draw-can-be can-be)
     (define (figi i)
       (if (set-member? can-be i)
-        (fig (number->string i))
-        (fig " ")))
+          (fig (number->string i))
+          (fig " ")))
     (place-image/align
      (if (= 1 (set-count can-be))
-       (scale 3 (fig (number->string (set-first can-be))))
-       (above (beside (figi 1) (figi 2) (figi 3))
-              (beside (figi 4) (figi 5) (figi 6))
-              (beside (figi 7) (figi 8) (figi 9))))
+         (scale 3 (fig (number->string (set-first can-be))))
+         (above (beside (figi 1) (figi 2) (figi 3))
+                (beside (figi 4) (figi 5) (figi 6))
+                (beside (figi 7) (figi 8) (figi 9))))
      0 0
      "left" "top"
      (rectangle CELL-W CELL-H
@@ -254,7 +229,7 @@
     (for/fold ([i
                 (empty-scene (* CELL-W 11)
                              (* CELL-H 11))])
-        ([c (in-list g)])
+              ([c (in-list g)])
       (match-define (cell x y can-be) c)
       (place-image/align
        (draw-can-be can-be)
@@ -269,60 +244,58 @@
        "left" "top"
        i)))
   (big-bang (draw-state 0 empty gs)
-            (on-tick move-right 1/8)
-            (on-draw draw-draw-state)))
+    (on-tick move-right 1/8)
+    (on-draw draw-draw-state)))
 
 ;; Wikipedia Example
-  (define b1
-    (board
-     "53 | 7 |   "
-     "6  |195|   "
-     " 98|   | 6 "
-     "-----------"
-     "8  | 6 |  3"
-     "4  |8 3|  1"
-     "7  | 2 |  6"
-     "-----------"
-     " 6 |   |28 "
-     "   |419|  5"
-     "   | 8 | 79"))
+(define b1
+  (board
+   "53 | 7 |   "
+   "6  |195|   "
+   " 98|   | 6 "
+   "-----------"
+   "8  | 6 |  3"
+   "4  |8 3|  1"
+   "7  | 2 |  6"
+   "-----------"
+   " 6 |   |28 "
+   "   |419|  5"
+   "   | 8 | 79"))
 
-  ;; "Hard" example
-  (define b2
-    (board
-     " 7 | 2 |  5"
-     "  9| 87|  3"
-     " 6 |   | 4 "
-     "-----------"
-     "   | 6 | 17"
-     "9 4|   |8 6"
-     "71 | 5 |   "
-     "-----------"
-     " 9 |   | 8 "
-     "5  |21 |4  "
-     "4  | 9 | 6 "))
+;; "Hard" example
+(define b2
+  (board
+   " 7 | 2 |  5"
+   "  9| 87|  3"
+   " 6 |   | 4 "
+   "-----------"
+   "   | 6 | 17"
+   "9 4|   |8 6"
+   "71 | 5 |   "
+   "-----------"
+   " 9 |   | 8 "
+   "5  |21 |4  "
+   "4  | 9 | 6 "))
 
-  ;; "Evil" example
-  (define b3
-    (board
-     "  8|   | 45"
-     "   | 8 |9  "
-     "  2|4  |   "
-     "-----------"
-     "5  |  1|76 "
-     " 1 | 7 | 8 "
-     " 79|5  |  1"
-     "-----------"
-     "   |  7|4  "
-     "  7| 6 |   "
-     "65 |   |3  "))
+;; "Evil" example
+(define b3
+  (board
+   "  8|   | 45"
+   "   | 8 |9  "
+   "  2|4  |   "
+   "-----------"
+   "5  |  1|76 "
+   " 1 | 7 | 8 "
+   " 79|5  |  1"
+   "-----------"
+   "   |  7|4  "
+   "  7| 6 |   "
+   "65 |   |3  "))
 
-  #;(draw-state-i
+#;(draw-state-i
    (draw-it!
     (solve-it
      b2)))
-
-
 (require sugar/debug)
 (time-avg 10 (void (solve-it b1)))
 (time-avg 10 (void (solve-it b2)))
