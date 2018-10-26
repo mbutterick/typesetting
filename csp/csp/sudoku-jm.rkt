@@ -272,8 +272,7 @@
             (on-tick move-right 1/8)
             (on-draw draw-draw-state)))
 
-(module+ main
-  ;; Wikipedia Example
+;; Wikipedia Example
   (define b1
     (board
      "53 | 7 |   "
@@ -318,7 +317,13 @@
      "  7| 6 |   "
      "65 |   |3  "))
 
-  (draw-state-i
+  #;(draw-state-i
    (draw-it!
     (solve-it
-     b2))))
+     b2)))
+
+
+(require sugar/debug)
+(time-avg 10 (void (solve-it b1)))
+(time-avg 10 (void (solve-it b2)))
+(time-avg 10 (void (solve-it b3)))

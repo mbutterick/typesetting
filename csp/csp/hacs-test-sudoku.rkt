@@ -2,7 +2,7 @@
 (require sugar/debug "hacs.rkt")
 
 (define names (for/list ([i (in-range 81)])
-                        (string->symbol (format "c~a" i))))
+                (string->symbol (format "c~a" i))))
 
 (define (make-sudoku)
   (define sudoku (make-csp))
@@ -11,26 +11,26 @@
   (define (not= . xs) (= (length xs) (length (remove-duplicates xs =)))) 
 
   (for ([i (in-range 9)])
-       (define row-cells (for/list ([(name idx) (in-indexed names)]
-                                    #:when (= (quotient idx 9) i))
-                                   name))
-       (add-pairwise-constraint! sudoku not= row-cells)
-       (define col-cells (for/list ([(name idx) (in-indexed names)]
-                                    #:when (= (remainder idx 9) i))
-                                   name))
-       (add-pairwise-constraint! sudoku not= col-cells))
+    (define row-cells (for/list ([(name idx) (in-indexed names)]
+                                 #:when (= (quotient idx 9) i))
+                        name))
+    (add-pairwise-constraint! sudoku not= row-cells)
+    (define col-cells (for/list ([(name idx) (in-indexed names)]
+                                 #:when (= (remainder idx 9) i))
+                        name))
+    (add-pairwise-constraint! sudoku not= col-cells))
   
   (for ([i '(0 3 6 27 30 33 54 57 60)])
-       (define box-cells (for/list ([j '(0 1 2 9 10 11 18 19 20)])
-                                   (string->symbol (format "c~a" (+ i j)))))
-       (add-pairwise-constraint! sudoku not= box-cells))
+    (define box-cells (for/list ([j '(0 1 2 9 10 11 18 19 20)])
+                        (string->symbol (format "c~a" (+ i j)))))
+    (add-pairwise-constraint! sudoku not= box-cells))
   
   sudoku)
 
 (require racket/sequence)
 (define (print-grid sol)
   (displayln (string-join (map ~a (for/list ([row (in-slice 9 (csp->assocs sol))])
-                                 (map cdr row))) "\n")))
+                                    (map cdr row))) "\n")))
 
 (define (board . strs)
   (define sudoku (make-sudoku))
@@ -38,11 +38,11 @@
     (for*/list ([str strs]
                 [c (in-port read-char (open-input-string str))]
                 #:unless (memv c '(#\- #\|)))
-               (string->number (string c))))
+      (string->number (string c))))
   (for ([name names]
         [val vals]
         #:when val)
-       (add-constraint! sudoku (curry = val) (list name) (string->symbol (format "is-~a" val))))
+    (add-constraint! sudoku (curry = val) (list name) (string->symbol (format "is-~a" val))))
   sudoku)
 
 ;; http://jeapostrophe.github.io/2013-10-23-sudoku-post.html
@@ -97,23 +97,27 @@
 (current-random #true)
 (current-node-consistency #t)
 (current-arity-reduction #t)
-#;(time-avg 10 (solve b1 #:finish-proc print-grid))
-#;(time-avg 10 (solve b2 #:finish-proc print-grid))
-#;(time-avg 10 (solve b3 #:finish-proc print-grid))
+(time-avg 10 (void (solve b1)))
+(time-avg 10 (void (solve b2)))
+(time-avg 10 (void (solve b3)))
+
+
+(define (euler-value sol)
+  (match sol
+    [(list (cons (== 'c0) h) (cons (== 'c1) t) (cons (== 'c2) d) _ ...) 
+     (+ (* 100 h) (* 10 t) d)]))
+
+
+(require rackunit)
+(check-equal? (euler-value (solve b1)) 534)
+(check-equal? (euler-value (solve b2)) 378)
+(check-equal? (euler-value (solve b3)) 938)
 
 ;; https://projecteuler.net/problem=96
-;; todo: parsing of these is wrong
-(define bstrs
-  (for/list ([puz (in-slice 10 (string-split (port->string (open-input-file "euler-sudoku-grids.txt")) "\n"))])
-          (map (λ (str) (string-replace str "0" " ")) (cdr puz))))
-
-(car bstrs)
-(define bboard (apply board (car bstrs)))
-(solve bboard #:finish-proc print-grid)
-
-#;(for/fold ([sum 0])
-          ([(bstr idx) (in-indexed bstrs)])    
-  (define sol (solve (apply board bstr)))
-  (+ sum #R (+ (* 100 (cdr (assq 'c0 sol)))
-            (* 10 (cdr (assq 'c1 sol)))
-            (* 1 (cdr (assq 'c2 sol))))))
+;; answer 24702
+(define (do-euler)
+  (define bstrs
+    (for/list ([puz (in-slice 10 (string-split (port->string (open-input-file "euler-sudoku-grids.txt")) "\n"))])
+      (map (λ (str) (string-replace str "0" " ")) (cdr puz))))
+  (for/sum ([bstr bstrs])
+    (euler-value (solve (apply board bstr)))))
