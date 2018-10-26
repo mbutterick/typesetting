@@ -97,9 +97,13 @@
 (current-random #true)
 (current-node-consistency #t)
 (current-arity-reduction #t)
-(time-avg 10 (void (solve b1)))
-(time-avg 10 (void (solve b2)))
-(time-avg 10 (void (solve b3)))
+(define trials 5)
+(time-avg trials (void (solve b1)))
+(print-debug-info)
+(time-avg trials (void (solve b2)))
+(print-debug-info)
+(time-avg trials (void (solve b3)))
+(print-debug-info)
 
 
 (define (euler-value sol)

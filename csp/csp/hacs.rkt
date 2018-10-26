@@ -226,11 +226,36 @@
     [(? empty?) #false]
     [xs (first xs)]))
 
+(define/contract (argmin* proc xs [max-style? #f])
+  ((procedure? (listof any/c)) (any/c) . ->* . (listof any/c))
+  ;; return all elements that have min value.
+  (match xs
+    [(? empty?) xs]
+    [(list x) xs]
+    [xs
+     (define vals (map proc xs))
+     (define target-val (apply (if max-style? max min) vals))
+     (for/list ([x (in-list xs)]
+                [val (in-list vals)]
+                #:when (= val target-val))
+       x)]))
+
+(define/contract (argmax* proc xs)
+  (procedure? (listof any/c) . -> . (listof any/c))
+  ;; return all elements that have max value.
+  (argmin* proc xs 'max-mode!))
+
 (define/contract (minimum-remaining-values prob)
   (csp? . -> . (or/c #false (and/c var? (not/c assigned-var?))))
   (match (unassigned-vars prob)
     [(? empty?) #false]
-    [xs (argmin (λ (var) (length (domain var))) xs)]))
+    [uvars (random-pick (argmin* domain-length uvars))]))
+
+(define/contract (max-degree prob)
+  (csp? . -> . (or/c #false (and/c var? (not/c assigned-var?))))
+  (match (unassigned-vars prob)
+    [(? empty?) #false]
+    [uvars (random-pick (argmax* (λ (var) (var-degree prob var)) uvars))]))
 
 (define mrv minimum-remaining-values)
 
@@ -253,21 +278,8 @@
   (csp? . -> . (or/c #f var?))
   (match (unassigned-vars prob)
     [(? empty?) #false]
-    [(cons (? singleton-var? uvar) _) uvar]
     [uvars
-     ;; minimum remaining values (MRV) rule
-     (define mrv-arg (argmin domain-length uvars))
-     (match (filter (λ (var) (= (domain-length mrv-arg) (domain-length var))) uvars)
-       [(list winning-uvar) winning-uvar] 
-       [(list mrv-uvars ...)
-        ;; use degree as tiebreaker for mrv
-        (define degrees (map (λ (var) (var-degree prob var)) mrv-uvars))
-        (define max-degree (apply max degrees))
-        ;; use random tiebreaker for degree
-        (random-pick (for/list ([uv (in-list mrv-uvars)]
-                                [degree (in-list degrees)]
-                                #:when (= max-degree degree))
-                       uv))])]))
+     (max-degree (make-csp (argmin* domain-length uvars) (constraints prob)))]))
   
 (define first-domain-value values)
 
@@ -514,7 +526,9 @@
                       conflicts)])))))
 
 (define (random-pick xs)
-  (list-ref xs (random (length xs))))
+  (match xs
+    [(list x) x]
+    [xs (list-ref xs (random (length xs)))]))
 
 (define (assign-random-vals prob)
   (for/fold ([new-csp prob])
@@ -539,7 +553,6 @@
 (define/contract (min-conflicts-solver prob [max-steps 100])
   ((csp?) (integer?) . ->* . generator?)
   (generator ()
-             
              (for ([thread-count (or (current-thread-count) 1)]) ; todo: what is ideal thread count?
                (make-min-conflcts-thread prob thread-count max-steps))
              (for ([i (in-naturals)])
