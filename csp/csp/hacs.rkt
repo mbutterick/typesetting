@@ -231,7 +231,7 @@
   (csp? . -> . (or/c #false (and/c var? (not/c assigned-var?))))
   (match (unassigned-vars csp)
     [(== empty) #false]
-    [xs (first xs)]))
+    [uvars (first uvars)]))
 
 (define/contract (argmin* proc xs [max-style? #f])
   ((procedure? (listof any/c)) (any/c) . ->* . (listof any/c))
@@ -497,6 +497,8 @@
                   #:inference [inference (or (current-inference) no-inference)])
   ((csp?) (#:select-variable procedure? #:order-values procedure? #:inference procedure?) . ->* . generator?)
   (generator ()
+             (define starting-state-count (state-count prob))
+             (define states-examined 0)
              (define reduce-arity-proc (if (current-arity-reduction) reduce-constraint-arity values))
              (let loop ([prob ((if (current-node-consistency) make-nodes-consistent values) prob)])
                (match (select-unassigned-variable prob)
