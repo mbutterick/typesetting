@@ -149,9 +149,7 @@
 
 (define/contract (assigned-name? prob name)
   (csp? name? . -> . any/c)
-  (for/or ([vr (in-vars prob)]
-           #:when (assigned-var? vr))
-    (eq? name (var-name vr))))
+  (assigned-var? (find-var prob name)))
 
 (define/contract (reduce-function-arity proc pattern)
   (procedure? (listof any/c) . -> . procedure?)
@@ -474,10 +472,11 @@
       (make-csp
        (for/list ([vr (in-vars prob)])
          (match-define (var name vals) vr)
-         (var name (for/fold ([vals vals])
-                             ([const (in-list unary-constraints)]
-                              #:when (constraint-relates? const name))
-                     (filter (constraint-proc const) vals))))
+         (define name-constraints (filter (λ (const) (constraint-relates? const name)) unary-constraints))
+         (var name (for/list ([val (in-list vals)]
+                              #:when (for/and ([const (in-list name-constraints)])
+                                       ((constraint-proc const) val)))
+                     val)))
        other-constraints)))
 
 (define ((make-hist-proc assocs) . xs)
@@ -495,9 +494,7 @@
   ((csp?) (#:select-variable procedure? #:order-values procedure? #:inference procedure?) . ->* . generator?)
   (generator ()
              (define reduce-arity-proc (if (current-arity-reduction) reduce-constraint-arity values))
-             (define learning? (current-learning))
-             (let* ([prob ((if (current-node-consistency) make-nodes-consistent values) prob)])
-               (let loop ([prob prob])
+             (let loop ([prob ((if (current-node-consistency) make-nodes-consistent values) prob)])
                  (match (select-unassigned-variable prob)
                    [#false (yield prob)]
                    [(var name domain)
@@ -523,9 +520,10 @@
                                [prob (inference prob name)]
                                [prob (check-constraints prob)])
                           (loop prob)))
-                      conflicts)])))))
+                      conflicts)]))))
 
-(define (random-pick xs)
+(define/contract (random-pick xs)
+  ((non-empty-listof any/c) . -> . any/c)
   (match xs
     [(list x) x]
     [xs (list-ref xs (random (length xs)))]))
