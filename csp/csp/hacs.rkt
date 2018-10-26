@@ -214,8 +214,12 @@
          vr))
    (constraints prob)))
 
+(define/contract (assigned-vars prob)
+  (csp? . -> . (listof var?))
+  (filter assigned-var? (vars prob)))
+
 (define/contract (unassigned-vars prob)
-  (csp? . -> . (listof (and/c var? (not/c assigned-var?))))
+  (csp? . -> . (listof var?))
   (filter-not assigned-var? (vars prob)))
 
 (define/contract (first-unassigned-variable csp)
@@ -435,14 +439,9 @@
 
 (define/contract (check-constraints prob [mandatory-names #f] #:conflicts [conflict-count? #f])
   ((csp?) ((listof name?) #:conflicts boolean?) . ->* . (or/c csp? natural?))
-  ;; this time, we're not limited to assigned variables
-  ;; (that is, vars that have been deliberately assigned in the backtrack process thus far)
-  ;; we also want to use "singleton" vars (that is, vars that have been reduced to a single domain value by forward checking)
-  (define singleton-varnames (for/list ([vr (in-vars prob)]
-                                        #:when (singleton-var? vr))
-                               (var-name vr)))
+  (define assigned-varnames (map var-name (assigned-vars prob)))
   (define-values (checkable-consts other-consts)
-    (partition (λ (const) (and (constraint-checkable? const singleton-varnames)
+    (partition (λ (const) (and (constraint-checkable? const assigned-varnames)
                                (or (not mandatory-names)
                                    (for/and ([name (in-list mandatory-names)])
                                      (constraint-relates? const name)))))
