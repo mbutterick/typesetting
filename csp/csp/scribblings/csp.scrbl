@@ -8,7 +8,7 @@
 @(define-syntax-rule (my-examples ARG ...)
 (examples #:label #f #:eval my-eval ARG ...))
 
-@title{Constraint-satisfaction problems}
+@title{Constraint-satisfaction problems (and how to solve them)}
 
 @author[(author+email "Matthew Butterick" "mb@mbtype.com")]
 
@@ -120,11 +120,11 @@ We should use @racket[solve*] with care. It can't finish until the CSP solver e
 (state-count triples)
 ]
 
-It's easy for a CSP to have a state count in the zillions. For this reason we can supply @racket[solve*] with an optional @racket[#:count] argument that will only generate a certain number of solutions: 
+It's easy for a CSP to have a state count in the zillions. For this reason we can supply @racket[solve*] with an optional argument that will only generate a certain number of solutions: 
 
 @examples[#:label #f #:eval my-eval
 (time (solve* triples))
-(time (solve* triples #:count 2))
+(time (solve* triples 2))
 ]
 
 Here, the answers are the same. But the second call to @racket[solve*] finishes sooner, because it quits as soon as it's found two solutions.
@@ -159,7 +159,7 @@ The whole example in one block:
 
 (add-constraint! triples <= '(a b))
 
-(solve* triples #:count 2)
+(solve* triples 2)
 ]
 
 @section{Interlude}
@@ -282,19 +282,21 @@ TK
 }
 
 @defproc[(solve 
-[prob csp?] 
-[#:count count natural? 1])
+[prob csp?] )
 (or/c #false any/c (listof any/c))]{
 TK
 }
 
 @defproc[(solve* 
 [prob csp?] 
-[#:count count natural? +inf.0])
+[count natural? +inf.0])
 (listof any/c)]{
 TK
 }
 
+@defform[(in-solutions prob)]{
+TK
+}
 
 
 @section{Sideshows}
