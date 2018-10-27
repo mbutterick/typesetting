@@ -2,6 +2,9 @@
 (require racket/generator graph)
 (provide (all-defined-out))
 
+(define-syntax-rule (define/contract EXPR CONTRACT . BODY)
+  (define EXPR . BODY))
+
 (define-syntax when-debug
   (let ()
     (define debug #t)
