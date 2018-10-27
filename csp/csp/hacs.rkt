@@ -348,11 +348,12 @@
   ;; csp is arc-consistent if every pair of variables (x y)
   ;; has values in their domain that satisfy every binary constraint
   (define checkable-names (cons ref-name (filter-not (λ (vn) (assigned-name? prob vn)) (map var-name (vars prob)))))
-  (define starting-arcs (two-arity-constraints->arcs (for/list ([const (in-constraints prob)]
-                                                                #:when (and (two-arity? const)
-                                                                            (for/and ([cname (in-list (constraint-names const))])
-                                                                              (memq cname checkable-names))))
-                                                       const)))
+  (define starting-arcs
+    (two-arity-constraints->arcs (for/list ([const (in-constraints prob)]
+                                            #:when (and (two-arity? const)
+                                                        (for/and ([cname (in-list (constraint-names const))])
+                                                          (memq cname checkable-names))))
+                                   const)))
   (for/fold ([prob prob]
              [arcs (sort starting-arcs < #:key (λ (a) (length (find-domain prob (arc-name a)))) #:cache-keys? #true)]
              #:result (prune-singleton-constraints prob))
@@ -360,22 +361,21 @@
              #:break (empty? arcs))
     (match-define (cons (arc name proc) other-arcs) arcs)
     (define reduced-csp (reduce-domain prob (arc name proc)))
-    (values reduced-csp (if (= (length (find-domain prob name)) (length (find-domain reduced-csp name)))
-                            ;; revision did not reduce the domain, so keep going
-                            other-arcs
-                            ;; revision reduced the domain, so supplement the list of arcs
-                            (remove-duplicates (append (starting-arcs . terminating-at? . name) other-arcs))))))
+    (define (domain-reduced? name)
+      (= (length (find-domain prob name)) (length (find-domain reduced-csp name))))
+    (values reduced-csp (if (domain-reduced? name)
+                            (remove-duplicates (append (starting-arcs . terminating-at? . name) other-arcs))
+                            other-arcs))))
 
 
 (define/contract (forward-check-var prob ref-name vr)
   (csp? name? var? . -> . var?)
-  (cond
+  (match vr
     ;; don't check against assigned vars, or the reference var
     ;; (which is probably assigned but maybe not)
-    [(assigned-var? vr) vr]
-    [(eq? (var-name vr) ref-name) vr]
-    [else
-     (match-define (var name vals) vr)
+    [(? assigned-var? vr) vr]
+    [(var (== ref-name eq?) _) vr]
+    [(var name vals)
      (match ((constraints prob) . relating-only . (list ref-name name))
        [(? empty?) vr]
        [constraints
@@ -383,14 +383,13 @@
         (define new-vals
           (for/list ([val (in-list vals)]
                      #:when (for/and ([const (in-list constraints)])
-                              (let ([proc (constraint-proc const)])
-                                (if (eq? name (first (constraint-names const)))
-                                    (proc val ref-val)
-                                    (proc ref-val val)))))
+                              (match const
+                                  [(constraint (list (== name eq?) _) proc) (proc val ref-val)]
+                                  [(constraint _ proc) (proc ref-val val)])))
             val))
         (checked-variable name new-vals (cons (cons ref-name ref-val) (match vr
                                                                         [(checked-variable _ _ history) history]
-                                                                        [else null])))])]))
+                                                                        [_ null])))])]))
 
 (define/contract (prune-singleton-constraints prob [ref-name #false])
   ((csp?) ((or/c #false name?)) . ->* . csp?)
@@ -419,7 +418,7 @@
   ;; so we can discover the *most recent past var* that could be the culprit.
   ;; If we just bail out at the first conflict, we may backjump too far based on its history
   ;; (and thereby miss parts of the search tree)
-  (when (pair? conflict-set)
+  (unless (empty? conflict-set)
     (backtrack! conflict-set))
   ;; Discard constraints that have produced singleton domains
   ;; (they have no further use)
@@ -514,8 +513,8 @@
                                      (λ (bt)
                                        (define bths (backtrack-histories bt))
                                        (append conflicts (remq name (remove-duplicates
-                                                                     (for*/list ([bth bths]
-                                                                                 [rec bth])
+                                                                     (for*/list ([bth (in-list bths)]
+                                                                                 [rec (in-list bth)])
                                                                        (car rec)) eq?))))])
                       (let* ([prob (assign-val prob name val)]
                              ;; reduce constraints before inference,
