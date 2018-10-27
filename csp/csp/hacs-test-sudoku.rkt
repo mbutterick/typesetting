@@ -1,28 +1,28 @@
 #lang debug br
 (require sugar/debug "hacs.rkt")
 
-(define names (for/list ([i (in-range 81)])
+(define cells (for/list ([i (in-range 81)])
                 (string->symbol (format "c~a" i))))
 
 (define (make-sudoku)
   (define sudoku (make-csp))
-  (add-vars! sudoku names (range 1 10))
+  (add-vars! sudoku cells (range 1 10))
 
-  (define (not= . xs) (= (length xs) (length (remove-duplicates xs =)))) 
+  (define (not= . xs) (not (check-duplicates xs =))) 
 
   (for ([i (in-range 9)])
-    (define row-cells (for/list ([(name idx) (in-indexed names)]
+    (define row-cells (for/list ([(name idx) (in-indexed cells)]
                                  #:when (= (quotient idx 9) i))
                         name))
     (add-pairwise-constraint! sudoku not= row-cells)
-    (define col-cells (for/list ([(name idx) (in-indexed names)]
+    (define col-cells (for/list ([(name idx) (in-indexed cells)]
                                  #:when (= (remainder idx 9) i))
                         name))
     (add-pairwise-constraint! sudoku not= col-cells))
   
   (for ([i '(0 3 6 27 30 33 54 57 60)])
-    (define box-cells (for/list ([j '(0 1 2 9 10 11 18 19 20)])
-                        (string->symbol (format "c~a" (+ i j)))))
+    (define box-cells (for/list ([offset '(0 1 2 9 10 11 18 19 20)])
+                        (string->symbol (format "c~a" (+ i offset)))))
     (add-pairwise-constraint! sudoku not= box-cells))
   
   sudoku)
@@ -35,11 +35,11 @@
 (define (board . strs)
   (define sudoku (make-sudoku))
   (define vals
-    (for*/list ([str strs]
-                [c (in-port read-char (open-input-string str))]
+    (for*/list ([str (in-list strs)]
+                [c (in-string str)]
                 #:unless (memv c '(#\- #\|)))
       (string->number (string c))))
-  (for ([name names]
+  (for ([name cells]
         [val vals]
         #:when val)
     (add-constraint! sudoku (curry = val) (list name) (string->symbol (format "is-~a" val))))

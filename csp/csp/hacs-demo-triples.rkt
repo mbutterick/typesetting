@@ -18,12 +18,9 @@
 
 (time-avg 10 (solve* triples))
 
-(define (f)
-  (for*/list ([a (in-range 10 50)]
-              [b (in-range 10 50)]
-              #:when (<= a b)
-              [c (in-range 10 50)]
-              #:when (and (coprime? a b c) (valid-triple? a b c)))
-             `((a . ,a) (b . ,b) (c . ,c))))
-
-(time-avg 10 (f))
+(for*/list ([a (in-range 10 50)]
+            [b (in-range 10 50)]
+            #:when (<= a b)
+            [c (in-range 10 50)]
+            #:when (and (coprime? a b c) (valid-triple? a b c)))
+           (map cons '(a b c) (list a b c)))
