@@ -623,8 +623,7 @@
               #:when (memq (var-name vr) names))
              vr)
    (for/list ([const (in-constraints prob)]
-              #:when (for/and ([cname (in-list (constraint-names const))])
-                              (memq cname names)))
+              #:when (constraint-checkable? const names))
              const)))
 
 (define (decompose-prob prob)
