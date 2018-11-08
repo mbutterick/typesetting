@@ -4,10 +4,10 @@
 
 (define index? (λ (x) (and (number? x) (integer? x) (not (negative? x)))))
 
-(define-runtime-path charter-path "../pitfall/test/assets/charter.ttf")
-(define-runtime-path charter-italic-path "../pitfall/test/assets/charter-italic.ttf")
-(define-runtime-path fira-path "../pitfall/test/assets/fira.ttf")
-(define-runtime-path fira-otf-path "../pitfall/test/assets/fira.otf")
+(define-runtime-path charter-path "../ptest/assets/charter.ttf")
+(define-runtime-path charter-italic-path "../ptest/assets/charter-italic.ttf")
+(define-runtime-path fira-path "../ptest/assets/fira.ttf")
+(define-runtime-path fira-otf-path "../ptest/assets/fira.otf")
 (define-runtime-path charter-directory-path "charter-directory.rktd")
 (define-runtime-path charter-italic-directory-path "charter-italic-directory.rktd")
 
