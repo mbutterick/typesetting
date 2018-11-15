@@ -1,4 +1,5 @@
-#lang reader (submod "racket.rkt" reader)
+#lang racket/base
+(require "racket.rkt")
 (provide type-sizes get-type-size)
 
 (define-values (int-keys byte-values) (for*/lists (int-keys byte-values)

@@ -1,4 +1,5 @@
-#lang reader (submod "racket.rkt" reader)
+#lang racket/base
+(require "racket.rkt")
 
 (define Person
   (make-object Struct

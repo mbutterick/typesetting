@@ -1,4 +1,5 @@
-#lang reader (submod "racket.rkt" reader)
+#lang racket/base
+(require "racket.rkt")
 (require "sizes.rkt" (for-syntax "sizes.rkt" racket/match))
 (provide (all-defined-out))
 

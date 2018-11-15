@@ -1,4 +1,5 @@
-#lang reader (submod "racket.rkt" reader)
+#lang racket/base
+(require "racket.rkt")
 (require racket/generic racket/private/generic-methods)
 (provide (all-defined-out))
 

@@ -1,3 +1,5 @@
-#lang reader (submod "private/racket.rkt" reader)
+#lang racket/base
+(require "private/racket.rkt")
+
 
 (r+p "private/versioned-struct.rkt")

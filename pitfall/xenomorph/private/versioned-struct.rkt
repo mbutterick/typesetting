@@ -1,4 +1,5 @@
-#lang reader (submod "racket.rkt" reader)
+#lang racket/base
+(require "racket.rkt")
 (require racket/dict "struct.rkt")
 (provide (all-defined-out))
 
