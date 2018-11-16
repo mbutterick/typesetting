@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "glyph.rkt" xenomorph)
 (provide (all-defined-out))
 #|

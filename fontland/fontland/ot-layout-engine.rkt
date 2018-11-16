@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "gsub-processor.rkt" "gpos-processor.rkt" "glyphinfo.rkt" (prefix-in Shapers- "shapers.rkt") "shaping-plan.rkt")
 (provide (all-defined-out))
 

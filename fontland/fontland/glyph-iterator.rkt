@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require br/cond)
 (provide (all-defined-out))
 

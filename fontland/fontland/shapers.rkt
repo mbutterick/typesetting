@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "default-shaper.rkt")
 (provide (all-defined-out))
 

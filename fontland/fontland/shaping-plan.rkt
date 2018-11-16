@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require (prefix-in Script- "script.rkt"))
 (provide (all-defined-out))
 

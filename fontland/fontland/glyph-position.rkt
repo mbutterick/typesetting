@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (provide (all-defined-out))
 
 ;; Represents positioning information for a glyph in a GlyphRun.

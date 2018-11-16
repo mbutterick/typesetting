@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require xenomorph "tables.rkt" describe)
 
 (provide (all-defined-out))

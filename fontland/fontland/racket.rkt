@@ -18,12 +18,12 @@
      racket/port
      racket/function
      br/define
-     sugar/class
-     sugar/js
-     sugar/dict
-     sugar/stub
-     sugar/port
-     sugar/contract
+     sugar/unstable/class
+     sugar/unstable/js
+     sugar/unstable/dict
+     sugar/unstable/stub
+     sugar/unstable/port
+     sugar/unstable/contract
      describe)
 
 

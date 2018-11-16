@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "ot-processor.rkt")
 (provide (all-defined-out))
 

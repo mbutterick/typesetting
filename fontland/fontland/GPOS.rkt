@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require xenomorph br/cond "opentype.rkt")
 (provide (all-defined-out))
 

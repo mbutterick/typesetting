@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 
 (r+p "font.rkt"
      "glyph-position.rkt"

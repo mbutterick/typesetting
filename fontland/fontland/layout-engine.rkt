@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require (prefix-in Script- "script.rkt") "glyph.rkt" "glyphrun.rkt" "glyph-position.rkt" "ot-layout-engine.rkt")
 (provide (all-defined-out))
 

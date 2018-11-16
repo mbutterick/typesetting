@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require fontkit fontkit/gpos-processor "subset.rkt" rackunit xenomorph racket/serialize)
 
 (define fira-path "../pitfall/test/assets/fira.ttf")

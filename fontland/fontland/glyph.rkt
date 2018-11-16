@@ -1,4 +1,6 @@
-#lang fontkit/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "freetype-ffi.rkt")
 (provide (all-defined-out))
 (module+ test (require rackunit))
