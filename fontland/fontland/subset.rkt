@@ -1,4 +1,5 @@
-#lang debug fontkit/racket
+#lang debug racket/base
+(require "racket.rkt")
 (require "clone.rkt" "ttfglyphencoder.rkt" "loca.rkt" "directory.rkt" xenomorph)
 (provide Subset CFFSubset TTFSubset)
 

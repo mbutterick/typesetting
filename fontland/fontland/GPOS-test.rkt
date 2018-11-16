@@ -1,7 +1,7 @@
 #lang racket/base
 (require "racket.rkt")
 
-(require fontkit fontkit/gpos-processor "subset.rkt" rackunit xenomorph racket/serialize)
+(require fontland fontland/gpos-processor "subset.rkt" rackunit xenomorph racket/serialize)
 
 (define fira-path "../pitfall/test/assets/fira.ttf")
 (define f (openSync fira-path))

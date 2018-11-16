@@ -25,10 +25,3 @@
      sugar/unstable/port
      sugar/unstable/contract
      describe)
-
-
-(module reader syntax/module-reader
-  #:language 'fontkit/racket
-  #:read @-read
-  #:read-syntax @-read-syntax
-  (require (prefix-in @- scribble/reader)))
