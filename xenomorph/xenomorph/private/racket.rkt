@@ -15,12 +15,12 @@
      racket/function
      br/define
      sugar/define
-     sugar/class
-     sugar/js
-     sugar/dict
-     sugar/stub
-     sugar/port
-     sugar/case)
+     sugar/unstable/class
+     sugar/unstable/js
+     sugar/unstable/dict
+     sugar/unstable/stub
+     sugar/unstable/port
+     sugar/unstable/case)
 
 (provide define-procedures)
 (define-macro (define-procedures (NEW ...) (OLD ...))
