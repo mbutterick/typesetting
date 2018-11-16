@@ -1,6 +1,6 @@
 #lang racket/base
-(require (for-syntax racket/base br/syntax) racket/class br/define "base.rkt")
-(provide (all-defined-out) (all-from-out "base.rkt"))
+(require (for-syntax racket/base br/syntax) racket/class br/define "../base.rkt")
+(provide (all-defined-out) (all-from-out "../base.rkt"))
 
 
 (define-macro (test-module . EXPRS)

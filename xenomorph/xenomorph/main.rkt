@@ -2,6 +2,7 @@
 (require "private/racket.rkt")
 
 (r+p "array.rkt"
+     "base.rkt"
      "bitfield.rkt"
      "buffer.rkt"
      "enum.rkt"
