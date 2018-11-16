@@ -1,0 +1,1 @@
+("7.1.0.2" chez-scheme ("e075fa3926e1c1f17f9bc704164fdaf11d3232a0" . "a4210f96995e6911d260f14b237be12effed1d98") #"/Users/MB/git/xenomorph/xenomorph/private/base.rkt" (collects #"br" #"define.rkt") (collects #"br" #"syntax.rkt") (collects #"racket" #"base.rkt") (collects #"racket" #"class.rkt") (collects #"racket" #"runtime-config.rkt"))
