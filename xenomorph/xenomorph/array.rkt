@@ -58,8 +58,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       (let* ([items (countable->list array)]
              [item-count (length items)]
              [max-items (if (number? len) len item-count)])
-        (unless (= item-count max-items)
-          (raise-argument-error 'Array:encode (format "list or countable with ~a items" max-items) items))
         (for ([item (in-list items)])
           (send type encode port item ctx))))
 

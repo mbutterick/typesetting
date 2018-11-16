@@ -6,9 +6,9 @@
     (list (cons 'name (make-object StringT uint8 'utf8))
           (cons 'age uint8))))
 
-;; decode a person from a buffer
-(define stream-in (make-object DecodeStream #"\4MikeA"))
-(define x (send Person decode stream-in))
+;; decode a person from a port
+(define ip (open-input-bytes #"\4MikeA"))
+(define x (send Person decode ip))
 
 (test-module
  (check-equal? (dict-ref x 'name) "Mike")
