@@ -1,5 +1,5 @@
 #lang br
-(require racket/file sugar/cache sugar/port racket/dict (prefix-in zlib: pitfall/zlib))
+(require racket/file sugar/cache sugar/unstable/port racket/dict (prefix-in zlib: pitfall/zlib))
 
 (define dict-key-pattern #px"^/[-:\\w]+")
 

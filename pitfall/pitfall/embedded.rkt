@@ -1,5 +1,5 @@
 #lang pitfall/racket
-(require "font.rkt" fontkit "reference.rkt")
+(require "font.rkt" fontland "reference.rkt")
 (provide EmbeddedFont)
 
 #|
@@ -205,7 +205,7 @@ HERE
                  
 
 (module+ test
-  (require rackunit fontkit)
+  (require rackunit fontland)
   (define f (openSync "test/assets/Charter.ttf" #f))
   (define ef (make-object EmbeddedFont #f f #f))
   (check-equal? (send ef widthOfString "f" 1000) 321.0)
