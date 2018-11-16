@@ -1,4 +1,5 @@
-#lang pitfall/pdftest
+#lang racket/base
+(require pitfall/pdftest)
 
 ;; subset font with GPOS table
 (define-runtime-path ttf-path "assets/fira.ttf")

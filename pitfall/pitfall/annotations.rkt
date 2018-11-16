@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (provide annotation-mixin)
 
 (define (annotation-mixin [% mixin-tester%])

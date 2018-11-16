@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (provide deflate inflate)
 
 ;; see https://groups.google.com/d/topic/racket-users/3CvjHLAmwSQ/discussion

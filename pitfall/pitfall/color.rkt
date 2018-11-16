@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (provide color-mixin)
 
 (define (color-mixin [% mixin-tester%])

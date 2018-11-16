@@ -1,5 +1,7 @@
-#lang pitfall/racket
-(provide (all-from-out pitfall/racket))
+#lang racket/base
+(require "racket.rkt")
+
+(provide (all-from-out "racket.rkt"))
 (provide check-copy-equal? check-pdfkit? make-doc)
 
 (test-mode #t)

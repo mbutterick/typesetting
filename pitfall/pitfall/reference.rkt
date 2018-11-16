@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "object.rkt" "zlib.rkt")
 (provide PDFReference)
 

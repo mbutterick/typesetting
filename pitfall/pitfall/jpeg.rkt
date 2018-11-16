@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (provide JPEG)
 
 (define MARKERS '(#xffc0 #xffc1 #xffc2 #xffc3 #xffc5 #xffc6 #xffc7

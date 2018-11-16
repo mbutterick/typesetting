@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require brag/support sugar/list)
 (provide parse-svg-path)
 

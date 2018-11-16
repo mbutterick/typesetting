@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang at-exp racket/base
+(require "racket.rkt")
+
 (provide AFMFont AFMFont-open)
 
 (define AFMFont

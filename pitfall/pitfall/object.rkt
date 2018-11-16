@@ -1,5 +1,7 @@
-#lang pitfall/racket
-(require srfi/19)
+#lang racket/base
+(require "racket.rkt")
+
+(require (only-in srfi/19 date->string))
 (provide PDFObject convert)
 
 (define PDFObject

@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "standard-font.rkt" "font.rkt" fontland "embedded.rkt")
 (provide PDFFont-open)
 

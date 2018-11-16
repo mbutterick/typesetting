@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "afm-font.rkt" "font.rkt" fontland)
 (require racket/runtime-path)
 (provide isStandardFont standard-fonts StandardFont)

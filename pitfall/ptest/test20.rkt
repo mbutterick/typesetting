@@ -1,4 +1,5 @@
-#lang pitfall/pdftest
+#lang racket/base
+(require pitfall/pdftest)
 
 ;; subset OTF font
 (define-runtime-path otf-path "assets/charter.otf")

@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang racket/base
+(require "racket.rkt")
+
 (require "path.rkt")
 (provide vector-mixin default-ctm-value)
 

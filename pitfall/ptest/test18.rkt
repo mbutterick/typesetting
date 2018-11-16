@@ -1,4 +1,5 @@
-#lang pitfall/pdftest
+#lang racket/base
+(require pitfall/pdftest)
 
 ;; multiple lines
 

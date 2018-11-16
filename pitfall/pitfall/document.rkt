@@ -1,4 +1,6 @@
-#lang pitfall/racket
+#lang at-exp racket/base
+(require "racket.rkt")
+
 (require "reference.rkt" "object.rkt" "page.rkt")
 (require "vector.rkt" "color.rkt" "fonts.rkt" "text.rkt" "images.rkt" "annotations.rkt")
 (provide PDFDocument)
