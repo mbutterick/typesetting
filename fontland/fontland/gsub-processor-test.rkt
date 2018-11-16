@@ -1,9 +1,9 @@
 #lang racket/base
 (require "racket.rkt")
 
-(require fontkit "gsub-processor.rkt" rackunit xenomorph racket/serialize describe)
+(require fontland "gsub-processor.rkt" rackunit xenomorph racket/serialize describe)
 
-(define fira-path "../pitfall/test/assets/fira.ttf")
+(define fira-path "assets/fira.ttf")
 (define f (openSync fira-path))
 (define gsub (· f GSUB))
 
