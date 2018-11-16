@@ -12,6 +12,8 @@
 
 @defmodule[xenomorph]
 
+@margin-note{This package is in development. I make no commitment to maintaining the public interface documented below.}
+
 Hands up: who likes parsing and writing binary formats?
 
 OK, just a few of you, in the back. You're free to go. 
@@ -166,7 +168,7 @@ For those familiar with programming-language lingo, an encoding somewhat resembl
 [template (is-a?/c xenomorph-base%)]
 [byte-source (or/c bytes? input-port?) (current-input-port)])
 any/c]{
-Hello
+TK
 }
 
 @defproc[
@@ -175,7 +177,7 @@ Hello
 [v any/c]
 [byte-dest (or/c output-port? #f) (current-output-port)])
 (or/c void? bytes?)]{
-Hello
+TK
 }
 
 @defproc[
@@ -183,7 +185,7 @@ Hello
 [template (is-a?/c xenomorph-base%)]
 [v any/c])
 exact-nonnegative-integer?]{
-Hello
+TK
 }
 
 
@@ -242,7 +244,7 @@ Hello
 (array?
 [type any/c])
 void?]{
-Hello
+TK
 }
 
 
