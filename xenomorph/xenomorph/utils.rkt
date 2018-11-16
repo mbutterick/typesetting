@@ -1,5 +1,5 @@
 #lang racket/base
-(require "racket.rkt")
+(require "private/racket.rkt")
 (provide (all-defined-out))
 (require "number.rkt")
 
