@@ -24,9 +24,7 @@ SOFTWARE.
 
 Pitfall contains substantial portions of the following software:
 
-[PDFKit](https://github.com/devongovett/pdfkit)  
-[fontkit](https://github.com/devongovett/fontkit)  
-[Restructure](https://github.com/devongovett/restructure)
+[PDFKit](https://github.com/devongovett/pdfkit) 
 
 MIT LICENSE
 Copyright (c) 2014 Devon Govett
