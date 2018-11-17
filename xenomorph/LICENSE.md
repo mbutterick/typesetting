@@ -22,7 +22,7 @@ SOFTWARE.
 
 ---
 
-Pitfall contains substantial portions of the following software:
+Xenomorph contains substantial portions of the following software:
 
 [Restructure](https://github.com/devongovett/restructure)
 
