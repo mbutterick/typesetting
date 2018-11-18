@@ -1,6 +1,6 @@
 #lang debug racket
 (require rackunit)
-(provide check-pdfs-equal?)
+(provide (all-defined-out))
 
 (define (xref-offset bs)
   (match (regexp-match #px"(?<=startxref\n)\\d+" bs)
@@ -21,7 +21,13 @@
   (pat-lex x
            ["\\s+" (parse-1 x)] ; whitespace
            ["\\d+ 0 obj" (parse-1 x)] ;; obj name
-           ["stream\n(.*?)\nendstream" => cadr] ;; stream
+           ["(<<\n.*\n>>)\\s*stream\n" ; dict with stream
+            => (λ (m)
+                 (define d (parse-1 (open-input-bytes (cadr m))))
+                 (define stream-length
+                   (read (open-input-bytes (cdr (assoc #"/Length" d)))))
+                 (define stream (read-bytes stream-length x))
+                 (append d (list (cons 'stream stream))))]
            ["<<\n(.*)\n>>" ;; dict
             => (λ (m)
                  (define items (parse-pdf-bytes (cadr m)))
