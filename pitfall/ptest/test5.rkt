@@ -11,7 +11,7 @@
   [image death 100 160 (hash 'width 412)]))
 
 (define-runtime-path this "test5rkt.pdf")
-(make-doc this #f proc #:test #t)
+(make-doc this #f proc)
 
 (define-runtime-path that "test5crkt.pdf")
-(make-doc that #t proc)
+(make-doc that 'compress proc)

@@ -19,5 +19,5 @@
 (make-doc this #f proc)
 
 (define-runtime-path that "test6crkt.pdf")
-(make-doc that #t proc)
+(make-doc that 'compress proc)
 
