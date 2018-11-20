@@ -1,5 +1,5 @@
 #lang racket/base
-(require "racket.rkt")
+(require "racket.rkt" "check-pdf.rkt")
 
 (provide (all-from-out "racket.rkt"))
 (provide check-copy-equal? check-pdfkit? make-doc)
@@ -11,7 +11,7 @@
 (define (this->control this) (path-add-extension this #"" #" copy."))
 
 (define (this->pdfkit-control this)
-  (string->path (string-replace (path->string this) "rkt." ".")))
+  (string->path (string-replace ((if (string? this) values path->string) this) "rkt." ".")))
 
 (module+ test
   (require rackunit)
@@ -27,18 +27,12 @@
 (define-syntax-rule (check-pdfkit? this)
   (check-equal? (file-size this) (file-size (this->pdfkit-control this))))
 
-(define (make-doc ps compress? [proc (λ (doc) doc)] #:test [test? #t] #:pdfkit [pdfkit? #t])
+(define (make-doc ps [compress? #false] [proc (λ (doc) doc)] #:test [test? #t] #:pdfkit [pdfkit? #t])
   (define doc (make-object PDFDocument (hash 'compress compress?)))
   (send doc pipe (open-output-file ps #:exists 'replace))
   (proc doc)
   (send doc end)
   (when test?
-    (check-copy-equal? ps)
+    (check-pdfs-equal? ps (this->control ps))
     (when pdfkit?
-      (check-pdfkit? ps))))
-
-
-(module reader syntax/module-reader
-  #:language 'pitfall/pdftest
-  #:read read
-  #:read-syntax read-syntax)
+      (check-pdfs-equal? ps (this->pdfkit-control ps)))))

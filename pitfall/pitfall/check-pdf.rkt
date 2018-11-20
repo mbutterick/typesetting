@@ -60,7 +60,9 @@
      (unless (even? (length items)) (raise items))
      (define dic
        (sort ; put hash into order so it's comparable
-        (for/list ([kv (in-slice 2 items)])
+        (for/list ([kv (in-slice 2 items)]
+                   ;; suppress these keys so we can compare pdfkit & pitfall output
+                   #:unless (member (car kv) (list #"/Producer" #"/Creator" #"/CreationDate")))
                   (apply cons kv))
         bytes<?
         #:key car))
@@ -108,7 +110,8 @@
 (define-simple-check (check-pdfs-equal? ps1 ps2)
   (equal? (pdf->dict ps1) (pdf->dict ps2)))
 
-(for ([p (in-directory)]
-      #:when (path-has-extension? p #"pdf"))
-     (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
-       (pdf->dict p)))
+#;(module+ main
+  (for ([p (in-directory)]
+        #:when (path-has-extension? p #"pdf"))
+       (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
+         (pdf->dict p))))
