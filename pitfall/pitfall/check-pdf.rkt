@@ -78,7 +78,8 @@
               ["\\s+" (parse-1 ip)] ; whitespace
               ["\\d+ 0 obj" (parse-1 ip)] ;; obj name
               ["\\d+ 0 R"] ; xref
-              ["[-]?\\d+"] ; number
+              ["[-]?\\d*\\.\\d+"] ; real
+              ["[-]?\\d+\\.?"] ; integer
               ["\\(.*?\\)"] ; parenstring
               ["/\\S+"] ; keystring
               [else eof])]))
@@ -107,11 +108,24 @@
                (cons idx (parse-pdf-bytes (peek-bytes (- end start) start)))))
    < #:key car))
 
+(define (dict-compare d1 d2)
+  (and (dict? d1) (dict? d2)
+       (= (length d1) (length d2))
+       (for/and ([(k1 v1) (in-dict d1)]
+                 [(k2 v2) (in-dict d2)])
+                (unless (equal? k1 k2)
+                  (error (format "keys unequal: ~a ~a" k1 k2)))
+                (unless (equal? v1 v2)
+                  (error (format "values unequal: ~a ~a" v1 v2)))
+                (when (dict? v1)
+                  (dict-compare v1 v2))
+                #true)))
+
 (define-simple-check (check-pdfs-equal? ps1 ps2)
-  (equal? (pdf->dict ps1) (pdf->dict ps2)))
+  (dict-compare (pdf->dict ps1) (pdf->dict ps2)))
 
 #;(module+ main
-  (for ([p (in-directory)]
-        #:when (path-has-extension? p #"pdf"))
-       (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
-         (pdf->dict p))))
+    (for ([p (in-directory)]
+          #:when (path-has-extension? p #"pdf"))
+         (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
+           (pdf->dict p))))
