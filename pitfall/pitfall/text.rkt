@@ -115,7 +115,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (send this _fragment text (· this x) (· this y) options)
   (define lineGap (or (· options lineGap) (· this _lineGap) 0))
   ;; 180325 suppress the size tracking: we'll do our own line measurement
-  #;(if (not wrapper)
+  (if (not wrapper)
         (increment-field! x this (send this widthOfString text))
         (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
   (void))
