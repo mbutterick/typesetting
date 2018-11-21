@@ -22,4 +22,4 @@
 (make-doc this #f proc)
 
 (define-runtime-path that "test19crkt.pdf")
-(make-doc that #t proc #:pdfkit #f)
+(make-doc that #t proc)

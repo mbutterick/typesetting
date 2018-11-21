@@ -22,3 +22,6 @@ doc = new PDFDocument({compress: no})
 doc.pipe(fs.createWriteStream('test18.pdf'))
 make doc
 
+doc = new PDFDocument({compress: yes})
+doc.pipe(fs.createWriteStream('test18c.pdf'))
+make doc
