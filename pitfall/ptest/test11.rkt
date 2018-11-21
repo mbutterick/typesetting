@@ -12,7 +12,7 @@
                                      'width #f)]))
 
 (define-runtime-path this "test11rkt.pdf")
-(make-doc this #f proc #:pdfkit #f)
+(make-doc this #f proc)
 
 (define-runtime-path that "test11crkt.pdf")
 (make-doc that #t proc)

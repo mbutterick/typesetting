@@ -22,7 +22,7 @@
             (send doc fill (hash-ref part 'stroke)))))))
 
 (define-runtime-path this "test10rkt.pdf")
-(make-doc this #f proc #:pdfkit #f)
+(make-doc this #f proc)
 
-(define-runtime-path that "test10crkt.pdf")
-(make-doc that #t proc #:pdfkit #f)
+#;(define-runtime-path that "test10crkt.pdf")
+#;(make-doc that #t proc)
