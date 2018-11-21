@@ -1,5 +1,5 @@
 #lang debug racket
-(require rackunit)
+(require rackunit (prefix-in zlib: pitfall/zlib))
 (provide (all-defined-out))
 
 (define (xref-offset bs)
@@ -66,12 +66,14 @@
                   (apply cons kv))
         bytes<?
         #:key car))
-     (cond
+     (cond ;; might have a stream
        [(regexp-try-match #px"^\\s*stream\n" ip)
         (define stream-length
           (read (open-input-bytes (cdr (assoc #"/Length" dic)))))
         (define stream (read-bytes stream-length ip))
-        (append dic (list (cons 'stream stream)))]
+        (append dic (list (cons 'stream (if #R (dict-ref dic '/FlateDecode #f)
+                                            (zlib:inflate stream)
+                                            stream))))]
        [else dic])]
     [else
      (pat-lex ip
@@ -116,7 +118,13 @@
                 (unless (equal? k1 k2)
                   (error (format "keys unequal: ~a ~a" k1 k2)))
                 (unless (equal? v1 v2)
-                  (error (format "values unequal: ~a ~a" v1 v2)))
+                  (define val1 (if (and (bytes? v1) (> (bytes-length v1) 200))
+                                   (subbytes v1 0 200)
+                                   v1))
+                  (define val2 (if (and (bytes? v2) (> (bytes-length v2) 200))
+                                   (subbytes v2 0 200)
+                                   v2))
+                  (error (format "values unequal: ~a ~a" val1 val2)))
                 (when (dict? v1)
                   (dict-compare v1 v2))
                 #true)))
