@@ -70,15 +70,17 @@
        [(regexp-try-match #px"^\\s*stream\n" ip)
         (define stream-length
           (read (open-input-bytes (cdr (assoc #"/Length" dic)))))
-        (define stream (read-bytes stream-length ip))
         (define compressed? (equal? (dict-ref dic #"/Filter" #f) #"/FlateDecode"))
+        (define stream ((if compressed? zlib:inflate values) (read-bytes stream-length ip)))
+        ;; font subsets have their own interior structure, so ignore (maybe too lenient)
+        (define font? (equal? (subbytes stream 0 4) #"true"))
         (dict-update
          (append dic
-                 (list (cons 'stream (if compressed?
-                                         (zlib:inflate stream)
-                                         stream))))
+                 (list (cons 'stream (if font? #"0" stream))))
          ;; compressed length may vary, so just set to #"0"
-         #"/Length" (λ (val) (if compressed? #"0" val)))]
+         #"/Length" (λ (val) (cond
+                               [(or font? compressed?) #"0"]
+                               [else val])))]
        [else dic])]
     [else
      (pat-lex ip
@@ -88,6 +90,7 @@
               ["[-]?\\d*\\.\\d+"] ; real
               ["[-]?\\d+\\.?"] ; integer
               ["\\(.*?\\)"] ; parenstring
+              ["/[A-Z]{6}(\\+\\w+)" => cadr] ; font keystring. prefix is random, so ignore
               ["/\\S+"] ; keystring
               [else eof])]))
 
