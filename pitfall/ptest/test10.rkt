@@ -24,5 +24,5 @@
 (define-runtime-path this "test10rkt.pdf")
 (make-doc this #f proc)
 
-#;(define-runtime-path that "test10crkt.pdf")
-#;(make-doc that #t proc)
+(define-runtime-path that "test10crkt.pdf")
+(make-doc that #t proc)

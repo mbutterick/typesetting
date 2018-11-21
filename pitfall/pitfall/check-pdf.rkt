@@ -63,7 +63,7 @@
         (for/list ([kv (in-slice 2 items)]
                    ;; suppress these keys so we can compare pdfkit & pitfall output
                    #:unless (member (car kv) (list #"/Producer" #"/Creator" #"/CreationDate")))
-                  (apply cons kv))
+          (apply cons kv))
         bytes<?
         #:key car))
      (cond ;; might have a stream
@@ -71,9 +71,14 @@
         (define stream-length
           (read (open-input-bytes (cdr (assoc #"/Length" dic)))))
         (define stream (read-bytes stream-length ip))
-        (append dic (list (cons 'stream (if #R (dict-ref dic '/FlateDecode #f)
-                                            (zlib:inflate stream)
-                                            stream))))]
+        (define compressed? (equal? (dict-ref dic #"/Filter" #f) #"/FlateDecode"))
+        (dict-update
+         (append dic
+                 (list (cons 'stream (if compressed?
+                                         (zlib:inflate stream)
+                                         stream))))
+         ;; compressed length may vary, so just set to #"0"
+         #"/Length" (λ (val) (if compressed? #"0" val)))]
        [else dic])]
     [else
      (pat-lex ip
@@ -88,7 +93,7 @@
 
 (define (parse-pdf-bytes bs)
   (for/list ([tok (in-port parse-1 (open-input-bytes bs))])
-            tok))
+    tok))
 
 (define (pdf->dict pdf)
   (define pdf-bs (file->bytes pdf))
@@ -100,14 +105,14 @@
      (sort ; sort by byte offset
       (cdr ; drop zeroth record: there is no zeroth object
        (for/list ([i (in-range ref-count)])
-                 (cons i (read (open-input-bytes (car (regexp-match #px"\\d{10}" xref-ip)))))))
+         (cons i (read (open-input-bytes (car (regexp-match #px"\\d{10}" xref-ip)))))))
       < #:key cdr)
      (list (cons #f xoff))))
   (sort ; sort by index
    (parameterize ([current-input-port (open-input-bytes pdf-bs)])
      (for/list ([(idx start) (in-dict obj-locations)]
                 [(_ end) (in-dict (cdr obj-locations))])
-               (cons idx (parse-pdf-bytes (peek-bytes (- end start) start)))))
+       (cons idx (parse-pdf-bytes (peek-bytes (- end start) start)))))
    < #:key car))
 
 (define (dict-compare d1 d2)
@@ -115,19 +120,19 @@
        (= (length d1) (length d2))
        (for/and ([(k1 v1) (in-dict d1)]
                  [(k2 v2) (in-dict d2)])
-                (unless (equal? k1 k2)
-                  (error (format "keys unequal: ~a ~a" k1 k2)))
-                (unless (equal? v1 v2)
-                  (define val1 (if (and (bytes? v1) (> (bytes-length v1) 200))
-                                   (subbytes v1 0 200)
-                                   v1))
-                  (define val2 (if (and (bytes? v2) (> (bytes-length v2) 200))
-                                   (subbytes v2 0 200)
-                                   v2))
-                  (error (format "values unequal: ~a ~a" val1 val2)))
-                (when (dict? v1)
-                  (dict-compare v1 v2))
-                #true)))
+         (unless (equal? k1 k2)
+           (error (format "keys unequal: ~a ~a" k1 k2)))
+         (unless (equal? v1 v2)
+           (define val1 (if (and (bytes? v1) (> (bytes-length v1) 200))
+                            (subbytes v1 0 200)
+                            v1))
+           (define val2 (if (and (bytes? v2) (> (bytes-length v2) 200))
+                            (subbytes v2 0 200)
+                            v2))
+           (error (format "values unequal: ~a ~a" val1 val2)))
+         (when (dict? v1)
+           (dict-compare v1 v2))
+         #true)))
 
 (define-simple-check (check-pdfs-equal? ps1 ps2)
   (dict-compare (pdf->dict ps1) (pdf->dict ps2)))
@@ -135,5 +140,5 @@
 #;(module+ main
     (for ([p (in-directory)]
           #:when (path-has-extension? p #"pdf"))
-         (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
-           (pdf->dict p))))
+      (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
+        (pdf->dict p))))
