@@ -16,7 +16,7 @@
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test14rkt.pdf")
-(make-doc this #f proc )
+(make-doc this #f proc)
 
 (define-runtime-path that "test14crkt.pdf")
-(make-doc that #t proc #:pdfkit #f)
+(make-doc that #t proc)

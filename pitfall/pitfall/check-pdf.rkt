@@ -79,7 +79,7 @@
                  (list (cons 'stream (if font? #"0" stream))))
          ;; compressed length may vary, so just set to #"0"
          #"/Length" (λ (val) (cond
-                               [(or font? compressed?) #"0"]
+                               [(or font? compressed?) (bytes-length stream)]
                                [else val])))]
        [else dic])]
     [else
@@ -90,7 +90,7 @@
               ["[-]?\\d*\\.\\d+"] ; real
               ["[-]?\\d+\\.?"] ; integer
               ["\\(.*?\\)"] ; parenstring
-              ["/[A-Z]{6}(\\+\\w+)" => cadr] ; font keystring. prefix is random, so ignore
+              ["/[A-Z]{6}(\\+\\S+)" => cadr] ; font keystring. prefix is random, so ignore
               ["/\\S+"] ; keystring
               [else eof])]))
 
@@ -118,13 +118,15 @@
        (cons idx (parse-pdf-bytes (peek-bytes (- end start) start)))))
    < #:key car))
 
-(define (dict-compare d1 d2)
+(define (dict-compare arg1 arg2)
+  (define d1 (if (dict? arg1) arg1 (pdf->dict arg1)))
+  (define d2 (if (dict? arg2) arg2 (pdf->dict arg2)))
   (and (dict? d1) (dict? d2)
        (= (length d1) (length d2))
        (for/and ([(k1 v1) (in-dict d1)]
                  [(k2 v2) (in-dict d2)])
          (unless (equal? k1 k2)
-           (error (format "keys unequal: ~a ~a" k1 k2)))
+           (error (format "keys unequal in ~a and ~a: ~a ≠ ~a" arg1 arg2 k1 k2)))
          (unless (equal? v1 v2)
            (define val1 (if (and (bytes? v1) (> (bytes-length v1) 200))
                             (subbytes v1 0 200)
@@ -132,13 +134,13 @@
            (define val2 (if (and (bytes? v2) (> (bytes-length v2) 200))
                             (subbytes v2 0 200)
                             v2))
-           (error (format "values unequal: ~a ~a" val1 val2)))
+           (error (format "values unequal in ~a and ~a: ~a ≠ ~a" arg1 arg2 val1 val2)))
          (when (dict? v1)
            (dict-compare v1 v2))
          #true)))
 
 (define-simple-check (check-pdfs-equal? ps1 ps2)
-  (dict-compare (pdf->dict ps1) (pdf->dict ps2)))
+  (dict-compare ps1 ps2))
 
 #;(module+ main
     (for ([p (in-directory)]
