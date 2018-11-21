@@ -2,11 +2,11 @@
 %ÿÿÿÿ
 5 0 obj
 <<
-/Parent 1 0 R
 /Resources 4 0 R
 /Contents 3 0 R
 /MediaBox [0 0 612 792]
 /Type /Page
+/Parent 1 0 R
 >>
 endobj
 4 0 obj
@@ -37,15 +37,15 @@ endobj
 7 0 obj
 <<
 /CreationDate (D:19700101000000Z)
-/Creator (PITKIT)
 /Producer (PITKIT)
+/Creator (PITKIT)
 >>
 endobj
 6 0 obj
 <<
-/BaseFont /Helvetica
-/Encoding /WinAnsiEncoding
 /Subtype /Type1
+/Encoding /WinAnsiEncoding
+/BaseFont /Helvetica
 /Type /Font
 >>
 endobj
@@ -58,8 +58,8 @@ endobj
 1 0 obj
 <<
 /Kids [5 0 R]
-/Count 1
 /Type /Pages
+/Count 1
 >>
 endobj
 xref
@@ -74,9 +74,9 @@ xref
 0000000382 00000 n 
 trailer
 <<
-/Info 7 0 R
-/Root 2 0 R
 /Size 8
+/Root 2 0 R
+/Info 7 0 R
 >>
 startxref
 677
