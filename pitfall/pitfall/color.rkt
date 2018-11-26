@@ -74,7 +74,9 @@
                              [(3) "DeviceRGB"]
                              [else (raise-argument-error '_setColor "color of length 3 or 4" color)]))
        (_setColorSpace this color-space stroke)
-       (send this addContent (format "~a ~a" (string-join (map number color) " ") op))
+       
+       ;; 181126 don't round, to be consistent with pdfkit behavior
+       (send this addContent (format "~a ~a" (string-join (map (λ (num) (number num #:round #false)) color) " ") op))
        #t])))
 
     

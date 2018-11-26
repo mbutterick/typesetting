@@ -129,7 +129,6 @@
   (number? number? number? number? . ->m . object?)
   (send this addContent (format "~a re" (string-join (map number (list x y w h)) " "))))
 
-
 (define/contract (ellipse this x y r1 [r2 r1])
   ((number? number? number?) (number?) . ->*m . object?)
   ;; based on http://stackoverflow.com/questions/2172798/how-to-draw-an-oval-in-html5-canvas/2173084#2173084

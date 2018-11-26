@@ -28,10 +28,12 @@
   (check-equal? (file-size this) (file-size (this->pdfkit-control this))))
 
 (define (make-doc ps [compress? #false] [proc (λ (doc) doc)] #:test [test? #t] #:pdfkit [pdfkit? #t])
-  (define doc (make-object PDFDocument (hash 'compress compress?)))
-  (send doc pipe (open-output-file ps #:exists 'replace))
-  (proc doc)
-  (send doc end)
+  (time
+   (let ()
+     (define doc (make-object PDFDocument (hash 'compress compress?)))
+     (send doc pipe (open-output-file ps #:exists 'replace))
+     (proc doc)
+     (send doc end)))
   (when test?
     (check-pdfs-equal? ps (this->control ps))
     (when pdfkit?
