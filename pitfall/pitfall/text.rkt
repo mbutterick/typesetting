@@ -67,7 +67,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
          (error 'unimplemented-branch-of-_text)] ; todo
       [else ; render paragraphs as single lines
        (for ([line (in-list (string-split text "\n"))])
-         (lineCallback line options))]))
+            (lineCallback line options))]))
   
   this)
 
@@ -93,7 +93,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (when (· this _textOptions)
       (for ([(key val) (in-hash (· this _textOptions))]
             #:unless (equal? (key "continued")))
-        (hash-ref! options key val)))
+           (hash-ref! options key val)))
 
     ;; Update the current position
     (when x (set-field! x this x))
@@ -117,8 +117,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; 180325 suppress the size tracking: we'll do our own line measurement
   ;; 181120 unsuppress the size tracking for now because it breaks test 04
   (if (not wrapper)
-        (increment-field! x this (send this widthOfString text))
-        (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
+      (increment-field! x this (send this widthOfString text))
+      (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
   (void))
 
 
@@ -197,6 +197,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; since the normal Tw operator only works on character code 32, which isn't
   ;; used for embedded fonts.
   ;; 180321: the first call to this operation is very slow from Quad
+  ;; 181126: because `encode` calls `layout`
   (match-define (list encoded-char-strs positions)
     (if (not (zero? wordSpacing))
         (error 'unimplemented-brach) ; todo
