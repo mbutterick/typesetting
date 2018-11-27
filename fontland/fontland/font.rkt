@@ -233,14 +233,28 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                    CFFGlyph
                    TTFGlyph) glyph characters this))
 
+(define current-layout-caching (make-parameter #false))
+(define layout-cache (make-hash))
 
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
 (define/contract (layout this string [userFeatures #f] [script #f] [language #f])
   ((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
   (unless (· this _layoutEngine)
     (set-field! _layoutEngine this (+LayoutEngine this)))
-  #;(report*/file 'in-layout (· this _layoutEngine))
-  (send (· this _layoutEngine) layout string userFeatures script language))
+  (define (get-layout string)
+    (define key (list string (and userFeatures (sort userFeatures symbol<?)) script language))
+    (hash-ref! layout-cache key (λ () (send (· this _layoutEngine) layout . key))))
+  ;; work on substrs to reuse cached pieces
+  ;; caveat: no shaping / positioning that involve word spaces
+  (cond
+    ;; todo: why does caching produce slightly different results in test files
+    ;; theory: because word space is not included in shaping
+    [(current-layout-caching)
+     (define substrs (for/list ([substr (in-list (regexp-match* " " string #:gap-select? #t))]
+                                #:when (positive? (string-length substr)))
+                               substr))
+     (apply append-glyphruns (map get-layout substrs))]
+    [else (get-layout string)]))
 
 
 ;; Returns an array of Glyph objects for the given string.
