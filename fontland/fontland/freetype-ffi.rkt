@@ -298,10 +298,24 @@
                                         -> (err : _FT_Error) 
                                         -> (if (zero? err) ftl (error 'FT_Init_FreeType))))
 
+(define-freetype FT_Set_Char_Size (_fun
+                                   _FT_Face
+                                   _FT_F26Dot6
+                                   _FT_F26Dot6
+                                   _FT_UInt
+                                   _FT_UInt  
+                                   -> (err : _FT_Error)))
+
 (define-freetype FT_New_Face (_fun _FT_Library _full-path _FT_Long 
                                    (ftf : (_ptr o (_or-null _FT_Face)))
                                    -> (err : _FT_Error)
-                                   -> (if (zero? err) ftf (error 'FT_New_Face (format "error ~a" err)))))
+                                   -> (cond
+                                        [(zero? err)
+                                         ;; see https://www.freetype.org/freetype2/docs/tutorial/step1.html
+                                         (FT_Set_Char_Size ftf 0 1000 0 0)
+                                         ftf]
+                                        [(error 'FT_New_Face (format "error ~a" err))])))
+
 
 (define-freetype FT_Done_Face (_fun _FT_Face
                                     -> (err : _FT_Error)
