@@ -5,7 +5,9 @@
          "harfbuzz-helper.rkt"
          racket/string racket/format)
 
-(define-runtime-lib harfbuzz-lib
+(define harfbuzz-lib (ffi-lib "/usr/local/Cellar/harfbuzz/2.1.3/lib/libharfbuzz"))
+
+#;(define-runtime-lib harfbuzz-lib
   [(unix) (ffi-lib "libharfbuzz" '("1" ""))]
   [(macosx) (ffi-lib "libharfbuzz.0.dylib")]
   [(windows) (ffi-lib "libharfbuzz-0.dll")])
