@@ -202,7 +202,7 @@
 
 (define _FT_Face _FT_FaceRec-pointer)
 (provide (struct-out FT_FaceRec)
-         _FT_FaceRec _FT_FaceRec-pointer)
+         _FT_FaceRec _FT_FaceRec-pointer _FT_Face)
 
 
 (define _FT_Sfnt_Tag _FT_ULong)
@@ -376,7 +376,7 @@
 (module+ test
   (require rackunit)
   (define ft-library (FT_Init_FreeType))
-  (define face (FT_New_Face ft-library "../pitfall/test/assets/Charter.ttf" 0))
+  (define face (FT_New_Face ft-library "charter.ttf" 0))
   (check-equal? (FT_Get_Postscript_Name face) "Charter")
   (check-equal? (FT_FaceRec-units_per_EM face) 1000)
   (check-true (FT_Load_Sfnt_Table face (tag->int #"cmap") 0 0 0))
