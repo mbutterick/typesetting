@@ -1,4 +1,4 @@
-#lang racket/base
+ #lang racket/base
 (require ffi/unsafe
          ffi/unsafe/define
          racket/draw/private/libs
@@ -109,8 +109,10 @@
 
   ;; Set the script, language and direction of the buffer.
   (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
+  (hb_buffer_get_direction buf)
   (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
-  (hb_buffer_set_language buf (hb_language_from_string "en" -1))
+  (hb_buffer_get_script buf)
+  (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
 
   ;; Create a face and a font, using FreeType for now.
   (define ft-library (FT_Init_FreeType))

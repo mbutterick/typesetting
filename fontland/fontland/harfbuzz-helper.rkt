@@ -1,18 +1,27 @@
 #lang racket/base
 (provide (all-defined-out))
 
+;; computed enums
+;; https://lazka.github.io/pgi-docs/HarfBuzz-0.0/enums.html
+;; https://github.com/Robmaister/SharpFont.HarfBuzz/blob/master/Source/SharpFont.HarfBuzz/Script.cs
+
 (define hb-direction-values
-  '(HB_DIRECTION_INVALID
-    HB_DIRECTION_LTR
-    HB_DIRECTION_RTL
-    HB_DIRECTION_TTB
-    HB_DIRECTION_BTT))
+  '(HB_DIRECTION_INVALID = 0
+    HB_DIRECTION_LTR = 4
+    HB_DIRECTION_RTL = 5 
+    HB_DIRECTION_TTB = 6
+    HB_DIRECTION_BTT = 7))
+
+(define (->tag bstr)
+  (define bs (bytes->list bstr))
+  (for/sum ([(b i) (in-indexed (reverse bs))])
+    (* b (expt 2 (* i 8)))))
 
 (define hb-script-values
-  '(HB_SCRIPT_COMMON
-    HB_SCRIPT_INHERITED
-    HB_SCRIPT_UNKNOWN
-    HB_SCRIPT_ARABIC
+  `(HB_SCRIPT_COMMON = ,(->tag #"Zyyy")
+    HB_SCRIPT_INHERITED = ,(->tag #"Zinh")
+    HB_SCRIPT_UNKNOWN = ,(->tag #"Zzzz")
+    HB_SCRIPT_ARABIC = ,(->tag #"Arab")
     HB_SCRIPT_ARMENIAN
     HB_SCRIPT_BENGALI
     HB_SCRIPT_CYRILLIC
@@ -28,7 +37,7 @@
     HB_SCRIPT_KANNADA
     HB_SCRIPT_KATAKANA
     HB_SCRIPT_LAO
-    HB_SCRIPT_LATIN
+    HB_SCRIPT_LATIN = ,(->tag #"Latn")
     HB_SCRIPT_MALAYALAM
     HB_SCRIPT_ORIYA
     HB_SCRIPT_TAMIL
