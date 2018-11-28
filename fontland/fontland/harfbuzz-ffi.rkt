@@ -2,7 +2,8 @@
 (require ffi/unsafe
          ffi/unsafe/define
          racket/draw/private/libs
-         "harfbuzz-helper.rkt")
+         "harfbuzz-helper.rkt"
+         racket/string racket/format)
 
 (define-runtime-lib harfbuzz-lib
   [(unix) (ffi-lib "libharfbuzz" '("1" ""))]
@@ -23,6 +24,12 @@
 (define _single_char_array (make-array-type _char 1))
 (define-cstruct _hb_language_impl_t ([s _single_char_array]))
 (define _hb_language_t _hb_language_impl_t-pointer)
+
+(define-harfbuzz hb_version (_fun (major : (_ptr o _uint))
+                                  (minor : (_ptr o _uint))
+                                  (micro : (_ptr o _uint))
+                                  -> _void
+                                  -> (string-join (map ~a (list major minor micro)) ".")))
   
 (define-harfbuzz hb_buffer_create (_fun -> _hb_buffer_t))
 
@@ -93,11 +100,12 @@
 (module+ test
   (require rackunit)
   ;; Create a buffer and put your text in it.
+  (hb_version)
   (define buf (hb_buffer_create))
   (define text "Hello World")
   (hb_buffer_add_utf8 buf text -1 0 -1)
 
-  ;; Guess the script, language and direction of the buffer.
+  ;; Set the script, language and direction of the buffer.
   (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
   (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
   (hb_buffer_set_language buf (hb_language_from_string "en" -1))
@@ -120,5 +128,4 @@
 
   ;; Tidy up.
   (hb_buffer_destroy buf)
-  (hb_font_destroy font)
-  )
+  (hb_font_destroy font))
