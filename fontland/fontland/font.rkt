@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require "racket.rkt")
-(require "freetype-ffi.rkt" (except-in ffi/unsafe -> array?) racket/runtime-path "subset.rkt" "glyph.rkt" "layout-engine.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" xenomorph "tables.rkt" "ttfglyph.rkt")
+(require "freetype-ffi.rkt" (except-in ffi/unsafe -> array?) racket/runtime-path "subset.rkt" "glyph.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" xenomorph "tables.rkt" "ttfglyph.rkt")
 (provide (all-defined-out))
 
 #|
@@ -263,13 +263,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
 (define/contract (layout this string [userFeatures #f] [script #f] [language #f])
   ((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
-  (unless (· this _layoutEngine)
-    (set-field! _layoutEngine this (+LayoutEngine this)))
   (define (get-layout string)
     (define key (list string (and userFeatures (sort userFeatures symbol<?)) script language))
-    (hash-ref! layout-cache key (λ ()
-                                  #;(send (· this _layoutEngine) layout . key)
-                                  (apply harfbuzz-glyphrun this key))))
+    (hash-ref! layout-cache key (λ () (apply harfbuzz-glyphrun this key))))
   ;; work on substrs to reuse cached pieces
   ;; caveat: no shaping / positioning that involve word spaces
   (cond
