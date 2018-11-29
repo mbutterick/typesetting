@@ -188,4 +188,19 @@
    '((249 . 512) (555 . 581) (450 . 332) (514 . 291) (3 . 268) (2017 . 496)))
   (check-equal?
    (shape f test-str (list kern_on liga_on onum_on))
-   '((249 . 432) (555 . 581) (732 . 590) (3 . 268) (2027 . 487)))) 
+   '((249 . 432) (555 . 581) (732 . 590) (3 . 268) (2027 . 487))))
+
+(require racket/match sugar/debug racket/string)
+(define (wrap str limit)
+  (define f (make-font "fira.ttf"))
+  (for/fold ([lines null] ; listof string
+             [current-line ""] ; string
+             #:result (reverse (cons current-line lines)))
+            ([word (in-list (string-split str " "))])
+    (define next-line (string-append current-line " " word))
+    (match (shape f next-line)
+      [(list (cons _ widths) ...) #:when (> (apply + widths) limit)
+                                  (values (cons current-line lines) word)]
+      [_ (values lines next-line)])))
+
+(time-avg 10 (wrap "This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples. This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples. This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples." 30000))
