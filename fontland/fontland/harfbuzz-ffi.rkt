@@ -3,6 +3,7 @@
          ffi/unsafe/define
          racket/draw/private/libs
          "harfbuzz-helper.rkt")
+(provide (all-defined-out))
 
 (define-runtime-lib harfbuzz-lib
   [(unix) (ffi-lib "libharfbuzz" '("1" ""))]
@@ -35,7 +36,21 @@
                                              (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
                                              buf)))
 
-(define-harfbuzz hb_buffer_add_utf8 (_fun _hb_buffer_t _string/utf-8 _int _uint _int -> _void))
+;; using `codepoints` will track clusters by codepoints,
+;; whereas `utf8` will track clusters by bytes (so high-bytes characters will have bigger clusters)
+;; see https://lists.freedesktop.org/archives/harfbuzz/2012-October/002526.html
+(define-harfbuzz hb_buffer_add_utf8 (_fun _hb_buffer_t
+                                          (text : _string/utf-8)
+                                          (text-length : _int = (string-length text))
+                                          (_uint = 0)
+                                          (_int = text-length)
+                                          -> _void))
+(define-harfbuzz hb_buffer_add_codepoints (_fun _hb_buffer_t
+                                                (codepoints : (_list i _hb_codepoint_t))
+                                                (text-length : _int = (length codepoints))
+                                                (_uint = 0)
+                                                (_int = text-length)
+                                                -> _void))
 
 (define _hb_direction_t (_enum hb-direction-values))
 (define-harfbuzz hb_buffer_set_direction (_fun _hb_buffer_t _hb_direction_t -> _void))
@@ -85,7 +100,7 @@
 (define _hb_var_int_t _uint32) ; todo: union type at https://github.com/harfbuzz/harfbuzz/blob/04981ee05d83ed30c9f818106589a4de9c3e9b7f/src/hb-common.h#L96
 
 (define-cstruct _hb_glyph_info_t
-  ([codepoint _hb_codepoint_t]
+  ([codepoint _hb_codepoint_t] ; holds a glyph id after shaping
    [mask _hb_mask_t]
    [cluster _uint32]
    [var1 _hb_var_int_t]
@@ -115,13 +130,16 @@
 (define-harfbuzz hb_font_destroy (_fun _hb_font_t -> _void))
 
 (define ft-lib (FT_Init_FreeType))
+(require racket/runtime-path)
+(define-runtime-path test-font-path "fira.ttf")
 
 (module+ test
   (require rackunit)
   ;; Create a buffer and put your text in it.
   (define buf (hb_buffer_create))
   (define text "Hello World")
-  (hb_buffer_add_utf8 buf text -1 0 -1)
+  #;(hb_buffer_add_utf8 buf text)
+  (hb_buffer_add_codepoints buf (map char->integer (string->list text)))
 
   ;; Set the script, language and direction of the buffer.
   (check-true (eq? 'HB_DIRECTION_LTR (hb_buffer_get_direction buf)))
@@ -129,7 +147,7 @@
   (check-equal? #"en" (hb_language_to_string (hb_buffer_get_language buf))) 
   
   ;; Create a face and a font, using FreeType for now.
-  (define face (FT_New_Face ft-lib "fira.ttf" 0))
+  (define face (FT_New_Face ft-lib test-font-path 0))
   (define font (hb_ft_font_create face #f))
 
   ;; Shape!
@@ -152,11 +170,18 @@
 
 (define HB_FEATURE_GLOBAL_START 0)
 (define HB_FEATURE_GLOBAL_END 4294967295)
-(define liga_on (hb_feature_from_string #"liga"))
+(define (tag->hb-feature tag)
+  (define str (symbol->string tag))
+  (define bs (string->bytes/utf-8 str))
+  (unless (= (bytes-length bs) (string-length str))
+    (error 'invalid-tag-char))
+  (hb_feature_from_string bs))
+  
+(define liga_on (tag->hb-feature 'liga))
 (define liga_off (make-hb_feature_t (->tag #"liga") 0 0 4294967295))
-(define kern_on (hb_feature_from_string #"kern"))
+(define kern_on (tag->hb-feature 'kern))
 (define kern_off (make-hb_feature_t (->tag #"kern") 0 0 4294967295))
-(define onum_on (hb_feature_from_string #"onum"))
+(define onum_on (tag->hb-feature 'onum))
 (define onum_off (make-hb_feature_t (->tag #"onum") 0 0 4294967295))
 
 (define (shape font text [feats null])
@@ -164,7 +189,7 @@
   (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
   (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
   (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
-  (hb_buffer_add_utf8 buf text -1 0 -1)
+  (hb_buffer_add_utf8 buf text)
   (hb_shape font buf feats)
   (begin0
     (map cons (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf))
@@ -175,10 +200,10 @@
 (define (random-string len)
   (define chars (map integer->char (range 65 91)))
   (list->string (for/list ([i (in-range len)])
-                  (list-ref chars (random (length chars))))))
+                          (list-ref chars (random (length chars))))))
 
 (module+ test
-  (define f (make-font "fira.ttf"))
+  (define f (make-font test-font-path))
   (define test-str "Tofl 3")
   (check-equal?
    (shape f test-str)
@@ -192,7 +217,7 @@
 
 (require racket/match sugar/debug racket/string)
 (define (wrap str limit)
-  (define f (make-font "fira.ttf"))
+  (define f (make-font test-font-path))
   (for/fold ([lines null] ; listof string
              [current-line ""] ; string
              #:result (reverse (cons current-line lines)))
@@ -203,4 +228,5 @@
                                   (values (cons current-line lines) word)]
       [_ (values lines next-line)])))
 
-(time-avg 10 (wrap "This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples. This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples. This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples." 30000))
+(module+ main
+  (time-avg 10 (wrap "This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples. This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples. This tutorial provides a brief introduction to the Racket programming language by using one of its picture-drawing libraries. Even if you don’t intend to use Racket for your artistic endeavours, the picture library supports interesting and enlightening examples." 30000)))

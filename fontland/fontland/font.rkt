@@ -23,6 +23,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; This is the base class for all SFNT-based font formats in fontkit.
 ;; (including CFF)
 ;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
+
+(define ft-library (FT_Init_FreeType))
+
 (define-subclass object% (TTFFont port [_src #f])
   (when port (unless (input-port? port)
                (raise-argument-error 'TTFFont "input port" port)))
@@ -33,9 +36,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (field [_directoryPos (pos port)]
          [_tables (mhash)] ; holds decoded tables (loaded lazily)
          [_glyphs (mhash)]
-         [_layoutEngine #f])
-
-  (field [directory #f])
+         [_layoutEngine #f]
+         [directory #f]
+         [ft-face (and _src (FT_New_Face ft-library _src 0))])
   (send this _decodeDirectory)
 
   (define/public (_getTable table-tag)
@@ -64,9 +67,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define/public (_decodeDirectory)
     (set! directory (decode Directory port #:parent (mhash '_startOffset 0)))
     directory)
-
-  (field [ft-library (FT_Init_FreeType)]
-         [ft-face (and _src (FT_New_Face ft-library _src 0))])
 
   (as-methods
    postscriptName
@@ -236,6 +236,30 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define current-layout-caching (make-parameter #false))
 (define layout-cache (make-hash))
 
+(require "harfbuzz-ffi.rkt" "glyph-position.rkt" sugar/list)
+(define (harfbuzz-glyphrun this string userFeatures script language)
+  #;(string? (listof symbol?) symbol? symbol? . ->m . GlyphRun?)
+  (define face (· this ft-face))
+  (define font (hb_ft_font_create face #f))
+  (define buf (hb_buffer_create))
+  (hb_buffer_add_codepoints buf (map char->integer (string->list string)))
+  (define chars (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf)))
+  (hb_shape font buf (map tag->hb-feature (or userFeatures null)))
+  (define-values (gidxs clusters)
+    (for/lists (gs cs)
+               ([gi (in-list (hb_buffer_get_glyph_infos buf))])
+      (values (hb_glyph_info_t-codepoint gi) (hb_glyph_info_t-cluster gi))))
+  (define glyphs (for/list ([gidx (in-list gidxs)]
+                            [char-cluster (in-list (break-at chars clusters))])
+                           (send this getGlyph gidx char-cluster)))
+  (define positions (for/list ([gp (in-list (hb_buffer_get_glyph_positions buf))])
+                              (match (hb_glyph_position_t->list gp)
+                                [(list xad yad xoff yoff _) (+GlyphPosition xad yad xoff yoff)])))
+  (begin0
+    (+GlyphRun glyphs positions)
+    (hb_buffer_destroy buf)
+    (hb_font_destroy font)))
+
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
 (define/contract (layout this string [userFeatures #f] [script #f] [language #f])
   ((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
@@ -243,7 +267,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (set-field! _layoutEngine this (+LayoutEngine this)))
   (define (get-layout string)
     (define key (list string (and userFeatures (sort userFeatures symbol<?)) script language))
-    (hash-ref! layout-cache key (λ () (send (· this _layoutEngine) layout . key))))
+    (hash-ref! layout-cache key (λ ()
+                                  #;(send (· this _layoutEngine) layout . key)
+                                  (apply harfbuzz-glyphrun this key))))
   ;; work on substrs to reuse cached pieces
   ;; caveat: no shaping / positioning that involve word spaces
   (cond
