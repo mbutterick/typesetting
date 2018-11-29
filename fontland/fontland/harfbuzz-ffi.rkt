@@ -1,9 +1,8 @@
-#lang racket/base
+#lang debug racket/base
 (require ffi/unsafe
          ffi/unsafe/define
          racket/draw/private/libs
-         "harfbuzz-helper.rkt"
-         racket/string racket/format)
+         "harfbuzz-helper.rkt")
 
 (define-runtime-lib harfbuzz-lib
   [(unix) (ffi-lib "libharfbuzz" '("1" ""))]
@@ -18,13 +17,10 @@
 ;; types
 (define _void-pointer (_cpointer 'void-pointer))
 (define _char _byte)
-(define _char-pointer (_cpointer 'char-pointer))
-(define _uchar _ubyte)
-(define _hb_buffer_t _pointer)
-(define _one-char-array (make-array-type _char 1))
-(define-cstruct _hb_language_impl_t
-  ([s _one-char-array]))
-(define _hb_language_t _hb_language_impl_t-pointer)
+(define _bstring _bytes)
+(define _hb_buffer_t (_cpointer 'hb_buffer_t))
+(define  _hb_language_t (_cpointer 'hb_language_t))
+(define _hb_bool_t _int)
 
 (define-harfbuzz hb_version (_fun (major : (_ptr o _uint))
                                   (minor : (_ptr o _uint))
@@ -32,7 +28,12 @@
                                   -> _void
                                   -> (format "~a.~a.~a" major minor micro)))
   
-(define-harfbuzz hb_buffer_create (_fun -> _hb_buffer_t))
+(define-harfbuzz hb_buffer_create (_fun -> (buf : _hb_buffer_t)
+                                        -> (let ()
+                                             (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
+                                             (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
+                                             (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
+                                             buf)))
 
 (define-harfbuzz hb_buffer_add_utf8 (_fun _hb_buffer_t _string/utf-8 _int _uint _int -> _void))
 
@@ -44,8 +45,8 @@
 (define-harfbuzz hb_buffer_set_script (_fun _hb_buffer_t _hb_script_t -> _void))
 (define-harfbuzz hb_buffer_get_script (_fun _hb_buffer_t -> _hb_script_t))
 
-(define-harfbuzz hb_language_from_string (_fun _bytes _int -> _hb_language_t))
-(define-harfbuzz hb_language_to_string (_fun _hb_language_t -> _bytes))
+(define-harfbuzz hb_language_from_string (_fun _bstring _int -> _hb_language_t))
+(define-harfbuzz hb_language_to_string (_fun _hb_language_t -> _bstring))
 (define-harfbuzz hb_buffer_set_language (_fun _hb_buffer_t _hb_language_t -> _void))
 (define-harfbuzz hb_buffer_get_language (_fun _hb_buffer_t -> _hb_language_t))
 
@@ -63,7 +64,21 @@
    [end _uint]))
 
 (define _hb_features_t (_or-null _hb_feature_t-pointer))
-(define-harfbuzz hb_shape (_fun _hb_font_t _hb_buffer_t _hb_features_t _uint -> _void))
+(define-harfbuzz hb_shape (_fun _hb_font_t
+                                _hb_buffer_t
+                                (feats : (_list i _hb_feature_t))
+                                (_uint = (length feats))
+                                -> _void))
+(define-harfbuzz hb_feature_from_string (_fun (bstr : _bstring)
+                                              (_int = (bytes-length bstr))
+                                              (fs : (_ptr o _hb_feature_t))
+                                              -> (success? : _hb_bool_t)
+                                              -> (if success? fs (error 'hb_feature_from_string))))
+
+#;(define-harfbuzz hb_feature_to_string (_fun _hb_feature_t 
+                                              (buf : (_ptr o (make-array-type _byte 128)))
+                                              (_int = 128)
+                                              -> _void))
 
 (define _hb_codepoint_t _uint32)
 (define _hb_mask_t _uint32)
@@ -109,12 +124,8 @@
   (hb_buffer_add_utf8 buf text -1 0 -1)
 
   ;; Set the script, language and direction of the buffer.
-  (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
   (check-true (eq? 'HB_DIRECTION_LTR (hb_buffer_get_direction buf)))
-  (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
   (check-true (eq? 'HB_SCRIPT_LATIN  (hb_buffer_get_script buf)))
-  (define buf-lang (hb_language_from_string #"en" -1))
-  (hb_buffer_set_language buf buf-lang)
   (check-equal? #"en" (hb_language_to_string (hb_buffer_get_language buf))) 
   
   ;; Create a face and a font, using FreeType for now.
@@ -122,7 +133,7 @@
   (define font (hb_ft_font_create face #f))
 
   ;; Shape!
-  (hb_shape font buf #f 0)
+  (hb_shape font buf null)
 
   ;; Get the glyph and position information.
   (define glyph_infos (hb_buffer_get_glyph_infos buf))
@@ -139,26 +150,42 @@
   (define face (FT_New_Face ft-lib path-string 0))
   (hb_ft_font_create face #f))
 
-(define (shape font text)
+(define HB_FEATURE_GLOBAL_START 0)
+(define HB_FEATURE_GLOBAL_END 4294967295)
+(define liga_on (hb_feature_from_string #"liga"))
+(define liga_off (make-hb_feature_t (->tag #"liga") 0 0 4294967295))
+(define kern_on (hb_feature_from_string #"kern"))
+(define kern_off (make-hb_feature_t (->tag #"kern") 0 0 4294967295))
+(define onum_on (hb_feature_from_string #"onum"))
+(define onum_off (make-hb_feature_t (->tag #"onum") 0 0 4294967295))
+
+(define (shape font text [feats null])
   (define buf (hb_buffer_create))
   (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
   (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
-  (define buf-lang (hb_language_from_string #"en" -1))
-  (hb_buffer_set_language buf buf-lang)
+  (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
   (hb_buffer_add_utf8 buf text -1 0 -1)
-  (hb_shape font buf #f 0)
+  (hb_shape font buf feats)
   (begin0
-    (list (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf))
-            (map hb_glyph_position_t-x_advance (hb_buffer_get_glyph_positions buf)))
+    (map cons (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf))
+         (map hb_glyph_position_t-x_advance (hb_buffer_get_glyph_positions buf)))
     (hb_buffer_destroy buf)))
 
-
+(require racket/list)
 (define (random-string len)
   (define chars (map integer->char (range 65 91)))
   (list->string (for/list ([i (in-range len)])
-            (list-ref chars (random (length chars))))))
+                  (list-ref chars (random (length chars))))))
 
-(define f (make-font "charter.ttf"))
-(require sugar/debug racket/list)
-(shape f (random-string 10))
- 
+(module+ test
+  (define f (make-font "fira.ttf"))
+  (define test-str "Tofl 3")
+  (check-equal?
+   (shape f test-str)
+   '((249 . 432) (555 . 581) (732 . 590) (3 . 268) (2017 . 496)))
+  (check-equal?
+   (shape f test-str (list kern_off liga_off))
+   '((249 . 512) (555 . 581) (450 . 332) (514 . 291) (3 . 268) (2017 . 496)))
+  (check-equal?
+   (shape f test-str (list kern_on liga_on onum_on))
+   '((249 . 432) (555 . 581) (732 . 590) (3 . 268) (2027 . 487)))) 
