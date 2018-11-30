@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require "racket.rkt")
-(require "clone.rkt" "ttfglyphencoder.rkt" "loca.rkt" "directory.rkt" xenomorph)
+(require racket/serialize "ttfglyphencoder.rkt" "loca.rkt" "directory.rkt" xenomorph)
 (provide Subset CFFSubset TTFSubset)
 
 #|
@@ -131,6 +131,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 ;; head, hhea, loca, maxp, cvt, prep, glyf, hmtx, fpgm
 ;; additional tables required for standalone fonts:
 ;; name, cmap, OS/2, post
+
+(define (cloneDeep val)  (deserialize (serialize val)))
 
 (define/contract (encode this port)
   (output-port? . ->m . void?)
