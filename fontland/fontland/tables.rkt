@@ -25,4 +25,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/index.js
   ;; PostScript outlines
   #;CFF_ #;CFF2 #;VORG
   ;; Advanced OpenType Tables
-  #;BASE #;GDEF GPOS GSUB #;JSTF)
+  #;BASE #;GDEF #;GPOS #;GSUB #;JSTF)
