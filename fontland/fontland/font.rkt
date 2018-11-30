@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require "racket.rkt")
-(require "freetype-ffi.rkt" (except-in ffi/unsafe -> array?) racket/runtime-path "subset.rkt" "glyph.rkt" "bbox.rkt" "glyphrun.rkt" "cmap-processor.rkt" "directory.rkt" xenomorph "tables.rkt" "ttfglyph.rkt")
+(require "freetype-ffi.rkt" (except-in ffi/unsafe -> array?) racket/runtime-path "subset.rkt" "glyph.rkt" "bbox.rkt" "glyphrun.rkt" "directory.rkt" xenomorph "tables.rkt" "ttfglyph.rkt")
 (provide (all-defined-out))
 
 #|
@@ -190,12 +190,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (test-module
  (check-equal? (bbox->list (· f bbox)) '(-161 -236 1193 963)))
-
-
-(define/contract (_cmapProcessor this)
-  (->m (is-a?/c CmapProcessor))
-  (make-object CmapProcessor (· this cmap)))
-
 
 ;; Returns a Subset for this font.
 (define/contract (createSubset this)
