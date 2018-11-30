@@ -22,7 +22,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/index.js
 
 
 #|
-Tables not suppoted:
+Tables not supported:
 cmap name
 PostScript outlines:
 CFF_ CFF2 VORG
