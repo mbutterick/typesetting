@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require "racket.rkt")
-(require "freetype-ffi.rkt" (except-in ffi/unsafe -> array?) racket/runtime-path "subset.rkt" "glyph.rkt" "bbox.rkt" "glyphrun.rkt" "directory.rkt" xenomorph "tables.rkt" "ttfglyph.rkt")
+(require "freetype-ffi.rkt" "subset.rkt" "glyph.rkt" "bbox.rkt" "glyphrun.rkt" "directory.rkt" xenomorph "tables.rkt")
 (provide (all-defined-out))
 
 #|

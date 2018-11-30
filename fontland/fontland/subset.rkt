@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require "racket.rkt")
-(require racket/serialize "ttfglyphencoder.rkt" "table/loca.rkt" "directory.rkt" xenomorph)
+(require racket/serialize "table/loca.rkt" "directory.rkt" xenomorph)
 (provide Subset CFFSubset TTFSubset)
 
 #|
@@ -78,7 +78,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 |#
 
 (define-subclass Subset (TTFSubset)
-  (field [glyphEncoder (make-object TTFGlyphEncoder)])
   (field [glyf #f]
          [offset #f]
          [loca #f]
