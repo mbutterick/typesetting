@@ -1,10 +1,11 @@
 #lang racket/base
-(require "racket.rkt")
+(require racket/contract racket/struct)
 
-(provide BBox bbox->list)
+(provide (struct-out BBox) make-BBox bbox->list)
 
-(define-subclass object% (BBox
-                          ; The minimum X position in the bounding box
+(struct BBox (minX minY maxX maxY) #:transparent #:mutable)
+
+(define (make-BBox ; The minimum X position in the bounding box
                           [minX +inf.0]
                           ; The minimum Y position in the bounding box
                           [minY +inf.0]
@@ -12,41 +13,31 @@
                           [maxX -inf.0]
                           ; The maxmimum Y position in the bounding box
                           [maxY -inf.0])
-
-  (as-methods
-   width
-   height
-   addPoint
-   copy))
+  (BBox minX minY maxX maxY))
 
 ;; The width of the bounding box
-(define/contract (width this)
-  (->m number?)
-  (- (· this maxX) (· this minX)))
+(define/contract (width bb)
+  (BBox? . -> . number?)
+  (- (BBox-maxX bb) (BBox-minX bb)))
 
 
 ;; The height of the bounding box
-(define/contract (height this)
-  (->m number?)
-  (- (· this maxY) (· this minY)))
+(define/contract (height bb)
+  (BBox? . -> . number?)
+  (- (BBox-maxY bb) (BBox-minY bb)))
 
 
-(define/contract (addPoint this x y)
-  (number? number? . ->m . void?)
-  (set-field! minX this (min x (· this minX)))  
-  (set-field! minY this (min y (· this minY)))
-  (set-field! maxX this (max x (· this maxX)))
-  (set-field! maxY this (max y (· this maxY))))
+(define/contract (addPoint bb x y)
+  (BBox? number? number? . -> . void?)
+  (set-BBox-minX! bb (min x (BBox-minX bb)))  
+  (set-BBox-minY! bb (min y (BBox-minY bb)))
+  (set-BBox-maxX! bb (max x (BBox-maxX bb)))
+  (set-BBox-maxY! bb (max y (BBox-maxY bb))))
 
 
-(define/contract (copy this)
-  (->m (is-a?/c BBox))
-  (make-object BBox (· this minX)
-    (· this minY)
-    (· this maxX)
-    (· this maxY)))
+(define/contract (copy bb)
+  (BBox? . -> . BBox?)
+  (apply make-BBox (bbox->list bb)))
 
 
-(define/contract (bbox->list this)
-  ((is-a?/c BBox) . -> . (list/c number? number? number? number?))
-  (list (· this minX) (· this minY) (· this maxX) (· this maxY)))
+(define bbox->list struct->list)

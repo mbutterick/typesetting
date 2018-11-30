@@ -182,8 +182,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
 (define/contract (bbox this)
-  (->m (is-a?/c BBox))
-  (make-object BBox (· this head xMin)
+  (->m BBox?)
+  (make-BBox (· this head xMin)
     (· this head yMin)
     (· this head xMax)
     (· this head yMax)))
