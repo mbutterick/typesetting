@@ -116,8 +116,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                             'FontName name
                             'Flags flags
                             'FontBBox (map (curry * (· this scale))
-                                           (list (· bbox minX) (· bbox minY)
-                                                 (· bbox maxX) (· bbox maxY)))
+                                           (list (BBox-minX bbox) (BBox-minY bbox)
+                                                 (BBox-maxX bbox) (BBox-maxY bbox)))
                             'ItalicAngle (· this font italicAngle)
                             'Ascent (· this ascender)
                             'Descent (· this descender)
@@ -210,7 +210,7 @@ HERE
 
 (module+ test
   (require rackunit fontland)
-  (define f (openSync "test/assets/Charter.ttf" #f))
+  (define f (openSync "../ptest/assets/charter.ttf" #f))
   (define ef (make-object EmbeddedFont #f f #f))
   (check-equal? (send ef widthOfString "f" 1000) 321.0)
   (check-equal? (· ef ascender) 980)
