@@ -11,7 +11,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/index.js
 
 (define-macro (define-table-codecs ID TABLE-ID ...)
   (with-pattern ([(TABLE-ID-STRING ...) (pattern-case-filter #'(TABLE-ID ...)
-                                                        [STX (datum->syntax caller-stx (string-replace (format "~a.rkt" (syntax->datum #'STX)) "/" ""))])]) 
+                                                        [STX (datum->syntax caller-stx
+                                                                            (string-append "table/" (string-replace (format "~a.rkt" (syntax->datum #'STX)) "/" "")))])]) 
                 #'(begin
                     (r+p TABLE-ID-STRING ...)
                     (test-module (require (submod TABLE-ID-STRING test) ...))

@@ -1,5 +1,5 @@
 #lang racket/base
-(require "racket.rkt")
+(require "../racket.rkt")
 
 (require xenomorph)
 (provide (all-defined-out))
@@ -13,9 +13,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/fpgm.js
 ;; is for the definition of functions that are used in many different glyph programs.
 
 
-(define-subclass Struct (fpgm%))
+(define-subclass Struct (Rfpgm))
 
-(define fpgm (make-object fpgm%
+(define fpgm (make-object Rfpgm
                (dictify
                 'instructions (make-object Array uint8))))
 

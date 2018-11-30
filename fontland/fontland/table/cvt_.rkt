@@ -1,5 +1,5 @@
 #lang racket/base
-(require "racket.rkt")
+(require "../racket.rkt")
 
 (require xenomorph)
 (provide (all-defined-out))

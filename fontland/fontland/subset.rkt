@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require "racket.rkt")
-(require racket/serialize "ttfglyphencoder.rkt" "loca.rkt" "directory.rkt" xenomorph)
+(require racket/serialize "ttfglyphencoder.rkt" "table/loca.rkt" "directory.rkt" xenomorph)
 (provide Subset CFFSubset TTFSubset)
 
 #|
