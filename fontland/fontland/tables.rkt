@@ -23,6 +23,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/index.js
   ;; TrueType outlines
   cvt_ fpgm loca prep glyf
   ;; PostScript outlines
-  CFF_ CFF2 #;VORG
+  #;CFF_ #;CFF2 #;VORG
   ;; Advanced OpenType Tables
   #;BASE #;GDEF GPOS GSUB #;JSTF)
