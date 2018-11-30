@@ -5,14 +5,15 @@
 
 (struct BBox (minX minY maxX maxY) #:transparent #:mutable)
 
-(define (make-BBox ; The minimum X position in the bounding box
-                          [minX +inf.0]
-                          ; The minimum Y position in the bounding box
-                          [minY +inf.0]
-                          ; The maxmimum X position in the bounding box
-                          [maxX -inf.0]
-                          ; The maxmimum Y position in the bounding box
-                          [maxY -inf.0])
+(define (make-BBox
+         ; The minimum X position in the bounding box
+         [minX +inf.0]
+         ; The minimum Y position in the bounding box
+         [minY +inf.0]
+         ; The maxmimum X position in the bounding box
+         [maxX -inf.0]
+         ; The maxmimum Y position in the bounding box
+         [maxY -inf.0])
   (BBox minX minY maxX maxY))
 
 ;; The width of the bounding box
