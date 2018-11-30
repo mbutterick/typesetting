@@ -44,7 +44,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define/public (_getTable table-tag)
     (unless (has-table? this table-tag)
       (raise-argument-error '_getTable "table that exists in font" table-tag))
-    (dict-ref! _tables table-tag (_decodeTable table-tag))) ; get table from cache, load if not there
+    (dict-ref! _tables table-tag (λ () (_decodeTable table-tag)))) ; get table from cache, load if not there
 
   (define-table-getters)
 
