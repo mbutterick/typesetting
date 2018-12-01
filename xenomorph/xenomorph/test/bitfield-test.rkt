@@ -1,6 +1,9 @@
 #lang racket/base
-(require "racket.rkt")
-(require racket/match)
+(require rackunit
+         xenomorph
+         sugar/unstable/dict
+         racket/list
+         racket/match)
 
 #|
 approximates
@@ -20,7 +23,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 
 (define bitfield (+Bitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)))
 (match-define (list JACK KACK LACK MACK NACK OACK PACK QUACK)
-  (map (curry arithmetic-shift 1) (range 8)))
+  (map (λ (x) (arithmetic-shift 1 x)) (range 8)))
 
 ;  it 'should have the right size', ->
 (check-equal? (size bitfield) 1)

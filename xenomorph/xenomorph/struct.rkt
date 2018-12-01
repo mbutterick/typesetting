@@ -1,6 +1,14 @@
 #lang racket/base
-(require "private/racket.rkt")
-(require racket/dict racket/private/generic-methods racket/struct)
+(require racket/list
+         sugar/unstable/class
+         sugar/unstable/dict
+         sugar/unstable/js
+         racket/class
+         "private/helper.rkt"
+         "private/generic.rkt"
+         racket/dict
+         racket/private/generic-methods
+         racket/function)
 (provide (all-defined-out) ref* ref*-set! (all-from-out racket/dict))
 (require (prefix-in d: racket/dict))
 

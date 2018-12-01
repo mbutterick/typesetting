@@ -1,5 +1,5 @@
 #lang racket/base
-(require "private/racket.rkt")
+(require "private/helper.rkt")
 (provide type-sizes get-type-size)
 
 (define-values (int-keys byte-values) (for*/lists (int-keys byte-values)

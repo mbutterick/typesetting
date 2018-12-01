@@ -1,7 +1,13 @@
 #lang racket/base
-(require racket/class sugar/unstable/class racket/generic racket/private/generic-methods "private/generic.rkt" racket/port racket/dict racket/function)
-(require sugar/debug)
+(require racket/class
+         sugar/unstable/class
+         racket/generic
+         racket/private/generic-methods
+         "private/generic.rkt"
+         racket/port
+         racket/dict)
 (provide (all-defined-out))
+
 (define-generics posable
   (pos posable [new-pos])
   #:defaults

@@ -1,6 +1,14 @@
 #lang racket/base
-(require "private/racket.rkt")
-(require "sizes.rkt" (for-syntax "sizes.rkt" racket/match))
+(require (for-syntax racket/base
+                     racket/syntax
+                     "sizes.rkt"
+                     racket/match)
+         racket/class
+         racket/list
+         racket/function
+         sugar/unstable/class
+         "private/helper.rkt"
+         "sizes.rkt")
 (provide (all-defined-out))
 
 #|
@@ -48,7 +56,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define bstr (read-bytes _size port))
     (define bs ((if (eq? endian system-endian) identity reverse) (bytes->list bstr)))
     (define unsigned-int (for/sum ([(b i) (in-indexed bs)])
-                           (arithmetic-shift b (* 8 i))))
+                                  (arithmetic-shift b (* 8 i))))
     unsigned-int)
 
   (define/override (post-decode unsigned-val . _)
@@ -155,20 +163,21 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
  (check-equal? (send (+Number 'double) size) 8))
 
 ;; use keys of type-sizes hash to generate corresponding number definitions
-(define-macro (make-int-types)
-  (with-pattern ([((ID BASE ENDIAN) ...) (for*/list ([k (in-hash-keys type-sizes)]
-                                                     [kstr (in-value (format "~a" k))]
-                                                     #:unless (regexp-match #rx"^(float|double)" kstr))
-                                           (match-define (list* prefix suffix _)
-                                             (regexp-split #rx"(?=[bl]e|$)" kstr))
-                                           (map string->symbol
-                                                (list (string-downcase kstr)
-                                                      prefix
-                                                      (if (positive? (string-length suffix))
-                                                          suffix
-                                                          (if (system-big-endian?) "be" "le")))))]
-                 [(ID ...) (suffix-id #'(ID ...) #:context caller-stx)])
-    #'(begin (define-instance ID (make-object Integer 'BASE 'ENDIAN)) ...)))
+(define-syntax (make-int-types stx)
+  (syntax-case stx ()
+    [(_) (with-syntax* ([((ID BASE ENDIAN) ...) (for*/list ([k (in-hash-keys type-sizes)]
+                                                            [kstr (in-value (format "~a" k))]
+                                                            #:unless (regexp-match #rx"^(float|double)" kstr))
+                                                           (match-define (list* prefix suffix _)
+                                                             (regexp-split #rx"(?=[bl]e|$)" kstr))
+                                                           (map string->symbol
+                                                                (list (string-downcase kstr)
+                                                                      prefix
+                                                                      (if (positive? (string-length suffix))
+                                                                          suffix
+                                                                          (if (system-big-endian?) "be" "le")))))]
+                        [(ID ...) (map (λ (s) (datum->syntax stx (syntax->datum s))) (syntax->list #'(ID ...)))])
+           #'(begin (define-instance ID (make-object Integer 'BASE 'ENDIAN)) ...))]))
                                                             
 (make-int-types)
 

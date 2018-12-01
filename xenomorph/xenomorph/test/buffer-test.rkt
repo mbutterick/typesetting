@@ -1,5 +1,7 @@
 #lang racket/base
-(require "racket.rkt")
+(require rackunit
+         xenomorph
+         sugar/unstable/dict)
 
 
 #|

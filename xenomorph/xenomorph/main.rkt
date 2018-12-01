@@ -1,5 +1,7 @@
 #lang racket/base
-(require "private/racket.rkt")
+
+(define-syntax-rule (r+p ID ...)
+  (begin (require ID ...) (provide (all-from-out ID ...))))
 
 (r+p "array.rkt"
      "base.rkt"

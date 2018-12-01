@@ -1,6 +1,11 @@
 #lang racket/base
-(require "private/racket.rkt")
-(require racket/undefined)
+(require racket/class
+         sugar/unstable/class
+         sugar/unstable/case
+         sugar/unstable/dict
+         sugar/unstable/js
+         "private/generic.rkt"
+         "private/helper.rkt")
 (provide (all-defined-out))
 
 #|

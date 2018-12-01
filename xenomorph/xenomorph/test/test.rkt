@@ -1,5 +1,7 @@
 #lang racket/base
-(require "racket.rkt")
+(require rackunit
+         xenomorph
+         racket/class)
 
 (define Person
   (make-object Struct
@@ -10,10 +12,10 @@
 (define ip (open-input-bytes #"\4MikeA"))
 (define x (send Person decode ip))
 
-(test-module
+(module+ test
  (check-equal? (dict-ref x 'name) "Mike")
  (check-equal? (dict-ref x 'age) 65))
 
 ;; encode a person from a hash
-(test-module
+(module+ test
  (check-equal? (send Person encode #f (hasheq 'name "Mike" 'age 65)) #"\4MikeA"))

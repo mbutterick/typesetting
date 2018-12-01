@@ -1,6 +1,16 @@
 #lang racket/base
-(require "private/racket.rkt")
-(require "number.rkt" "utils.rkt")
+(require racket/class
+         racket/list
+         racket/function
+         sugar/unstable/class
+         sugar/unstable/dict
+         sugar/unstable/js
+         racket/dict
+         "struct.rkt"
+         "private/generic.rkt"
+         "private/helper.rkt"
+         "number.rkt"
+         "utils.rkt")
 (provide (all-defined-out))
 
 #|
@@ -30,10 +40,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                          [else +inf.0]))
        (for/list ([i (in-naturals)]
                   #:break (or (eof-object? (peek-byte port)) (= (pos port) end-pos)))
-         (send type decode port ctx))]
+                 (send type decode port ctx))]
       ;; we have decoded-len, which is treated as count of items
       [else (for/list ([i (in-range decoded-len)])
-              (send type decode port ctx))]))
+                      (send type decode port ctx))]))
   
 
   (define/augride (size [val #f] [ctx #f])
@@ -44,7 +54,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                                             (values (mhasheq 'parent ctx) (send len size))
                                             (values ctx 0))])
              (+ len-size (for/sum ([item (in-list (countable->list val))])
-                           (send type size item ctx))))]
+                                  (send type size item ctx))))]
       [else (let ([item-count (resolve-length len #f ctx)]
                   [item-size (send type size #f ctx)])
               (* item-size item-count))]))
@@ -59,7 +69,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
              [item-count (length items)]
              [max-items (if (number? len) len item-count)])
         (for ([item (in-list items)])
-          (send type encode port item ctx))))
+             (send type encode port item ctx))))
 
     (cond
       [(NumberT? len) (define ctx (mhash 'pointers null
@@ -69,8 +79,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                       (send len encode port (length array)) ; encode length at front
                       (encode-items ctx)
                       (for ([ptr (in-list (· ctx pointers))]) ; encode pointer data at end
-                        (send (· ptr type) encode port (· ptr val)))]
+                           (send (· ptr type) encode port (· ptr val)))]
       [else (encode-items parent)])))
+
+(define-syntax-rule (define-procedures (NEW ...) (OLD ...))
+  (define-values (NEW ...)
+    (values (if (procedure? OLD)
+                (procedure-rename OLD 'NEW)
+                OLD) ...)))
 
 (define-procedures (Array Array? +Array) (ArrayT ArrayT? +ArrayT))
 (define-procedures (array% array? array) (ArrayT ArrayT? +ArrayT))

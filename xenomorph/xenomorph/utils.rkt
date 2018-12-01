@@ -1,7 +1,9 @@
 #lang racket/base
-(require "private/racket.rkt")
+(require racket/class
+         "number.rkt"
+         "private/generic.rkt"
+         "private/helper.rkt")
 (provide (all-defined-out))
-(require "number.rkt")
 
 (define (resolve-length len-arg [stream #f] [parent #f])
   (cond

@@ -1,5 +1,9 @@
 #lang racket/base
-(require "racket.rkt")
+(require rackunit
+         xenomorph
+         racket/class
+         "../private/generic.rkt"
+         sugar/unstable/dict)
 
 #|
 approximates

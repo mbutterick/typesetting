@@ -1,5 +1,4 @@
 #lang racket/base
-(require "racket.rkt")
 
 (require "array-test.rkt"
          "bitfield-test.rkt"
