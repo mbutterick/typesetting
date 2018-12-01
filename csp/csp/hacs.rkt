@@ -477,7 +477,7 @@
        (for/list ([vr (in-vars prob)])
                  (match-define (var name vals) vr)
                  (define name-constraints (filter (λ (const) (constraint-relates? const name)) unary-constraints))
-                 (make-var name (for/list ([val (in-list vals)]
+                 (make-var name (for/set ([val (in-set vals)]
                                            #:when (for/and ([const (in-list name-constraints)])
                                                            ((constraint-proc const) val)))
                                           val)))
@@ -511,8 +511,7 @@
                                                                            (eq? name (car rec))))))))
                   (for/fold ([conflicts null]
                              #:result (void))
-                            ([val #;(in-list (order-domain-values domain))
-                                  (in-set domain)])
+                            ([val (in-list (order-domain-values (set->list domain)))])
                     (with-handlers ([wants-backtrack?
                                      (λ (bt)
                                        (define bths (backtrack-histories bt))

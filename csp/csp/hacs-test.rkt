@@ -23,21 +23,21 @@
  (csp-vars (forward-check (forward-check (csp (list (avar 'a '(1))  (avar 'b '(0)) (var 'c '(0 1 2)))
                                                 (list (constraint '(a c) (negate =))
                                                       (constraint '(b c) (negate =)))) 'a) 'b))
- (list (avar 'a '(1)) (avar 'b '(0)) (cvar 'c '(2) '((b . 0) (a . 1)))))
+ (list (avar 'a '(1)) (avar 'b '(0)) (cvar 'c (set 2) '((b . 0) (a . 1)))))
 
 (check-equal?
  ;; no inconsistency: b≠c not checked when fc is relative to a
  (csp-vars (forward-check (csp (list (avar 'a '(1))  (var 'b (range 2)) (var 'c '(0)))
                                  (list (constraint '(a b) (negate =))
                                        (constraint '(b c) (negate =)))) 'a))
- (list (avar 'a '(1)) (cvar 'b '(0) '((a . 1))) (var 'c '(0))))
+ (list (avar 'a '(1)) (cvar 'b (set 0) '((a . 1))) (var 'c '(0))))
 
 (check-equal?
  ;; no inconsistency: a≠b not checked when fc ignores a, which is already assigned
  (csp-vars (forward-check (csp (list (avar 'a '(1))  (avar 'b '(1)) (var 'c (range 2)))
                                  (list (constraint '(a b) (negate =))
                                        (constraint '(b c) (negate =)))) 'b))
- (list (avar 'a '(1)) (avar 'b '(1)) (cvar 'c '(0) '((b . 1)))))
+ (list (avar 'a '(1)) (avar 'b '(1)) (cvar 'c (set 0) '((b . 1)))))
 
 (check-exn backtrack?
            (λ () (csp-vars (forward-check (csp (list (avar 'a '(1))
@@ -48,7 +48,7 @@
 (check-equal? (csp-vars (forward-check (csp (list (var 'a '(0))
                                                     (var 'b (range 3)))
                                               (list (constraint '(a b) <))) 'a))
-              (list (var 'a '(0)) (cvar 'b '(1 2) '((a . 0)))))
+              (list (var 'a '(0)) (cvar 'b (set 1 2) '((a . 0)))))
 
 (check-equal?
  (parameterize ([current-inference forward-check])
