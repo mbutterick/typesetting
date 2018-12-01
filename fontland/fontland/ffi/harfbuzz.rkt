@@ -29,13 +29,15 @@
                                   (micro : (_ptr o _uint))
                                   -> _void
                                   -> (format "~a.~a.~a" major minor micro)))
-  
+
+(define (default-buffer-setup buf)
+  (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
+  (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
+  (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
+  buf)
+
 (define-harfbuzz hb_buffer_create (_fun -> (buf : _hb_buffer_t)
-                                        -> (let ()
-                                             (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
-                                             (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
-                                             (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
-                                             buf)))
+                                        -> (default-buffer-setup buf)))
 
 ;; using `codepoints` will track clusters by codepoints,
 ;; whereas `utf8` will track clusters by bytes (so high-bytes characters will have bigger clusters)
@@ -126,7 +128,16 @@
                                                      -> (res : _hb_glyph_position_t-pointer)
                                                      -> (ptr-ref res (_array/list _hb_glyph_position_t length) 0)))
 
-(define-harfbuzz hb_buffer_reset (_fun _hb_buffer_t -> _void))
+(define-harfbuzz hb_buffer_reset (_fun (buf : _hb_buffer_t)
+                                       -> _void
+                                       -> (let ()
+                                            (default-buffer-setup buf)
+                                            (void))))
+(define-harfbuzz hb_buffer_clear_contents (_fun (buf : _hb_buffer_t)
+                                                -> _void
+                                                -> (let ()
+                                                     (default-buffer-setup buf)
+                                                     (void))))
 (define-harfbuzz hb_buffer_destroy (_fun _hb_buffer_t -> _void))
 (define-harfbuzz hb_font_destroy (_fun _hb_font_t -> _void))
 
