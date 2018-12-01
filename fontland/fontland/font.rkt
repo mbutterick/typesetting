@@ -49,16 +49,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define ft-library (delay (FT_Init_FreeType)))
 
-(define-subclass object% (TTFFont port)
-  (unless (input-port? port)
-    (raise-argument-error 'TTFFont "input port" port))
-  (unless (member (peek-bytes 4 0 port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
+(define-subclass object% (TTFFont _port)
+  (unless (input-port? _port)
+    (raise-argument-error 'TTFFont "input port" _port))
+  (unless (member (peek-bytes 4 0 _port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
     (raise 'probe-fail))
   
   ;; skip variationCoords
   (field [_decoded-tables (mhash)]
-         [_port (open-input-bytes (port->bytes port))]
-         [_src (path->string (object-name port))]
+         [_src (path->string (object-name _port))]
          [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
          [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
          [_hb-font (delay (and _src (hb_ft_font_create (· this ft-face))))]
@@ -83,10 +82,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define/public (_decodeTable table-tag)
     (unless (hash-has-key? table-codecs table-tag)
       (raise-argument-error '_decodeTable "decodable table" table-tag))
-    (pos _port 0)
     (define table (hash-ref (· this directory tables) table-tag))
     ;; todo: possible to avoid copying the bytes here?
-    (define table-bytes (open-input-bytes (peek-bytes (· table length) (· table offset) _port)))
+    (pos _port (· table offset))
+    (define table-bytes (open-input-bytes (peek-bytes (· table length) 0 _port)))
     (define table-decoder (hash-ref table-codecs table-tag))
     (decode table-decoder table-bytes #:parent this))
 
