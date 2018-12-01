@@ -257,7 +257,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define (harfbuzz-glyphrun this string userFeatures script language)
   #;(string? (listof symbol?) symbol? symbol? . ->m . GlyphRun?)
   (define face (· this ft-face))
-  (define font (hb_ft_font_create face #f))
+  (define font (hb_ft_font_create face))
   (define buf (hb_buffer_create))
   (hb_buffer_add_codepoints buf (map char->integer (string->list string)))
   (define chars (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf)))
