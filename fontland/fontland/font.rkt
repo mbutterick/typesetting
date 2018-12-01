@@ -17,6 +17,7 @@
          sugar/unstable/contract
          sugar/unstable/dict
          sugar/unstable/js
+         racket/port
          "ffi/harfbuzz.rkt"
          "glyph-position.rkt"
          sugar/list
@@ -55,37 +56,37 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (raise 'probe-fail))
   
   ;; skip variationCoords
-  (field [_directoryPos (pos port)]
-         [_tables (mhash)] ; holds decoded tables (loaded lazily)
-         [_glyphs (mhash)]
-         [_directory (delay (decode Directory port #:parent (mhash '_startOffset 0)))]
-         [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))])
+  (field [_decoded-tables (mhash)]
+         [_port (open-input-bytes (port->bytes port))]
+         [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
+         [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
+         [_hb-font (delay (and _src (hb_ft_font_create (· this ft-face))))]
+         [_hb-buf (delay (hb_buffer_create))])
  
   (define/public (directory) (force _directory))
-  (define/public (ft-face) (force _ft-face))
+  (define/public (ft-face) (or (force _ft-face) (error 'ft-face-not-available)))
+  (define/public (hb-font) (or (force _hb-font) (error 'hb-font-not-available)))
+  (define/public (hb-buf) (force _hb-buf))
 
   (define/public (_getTable table-tag)
     (unless (has-table? this table-tag)
       (raise-argument-error '_getTable "table that exists in font" table-tag))
-    (dict-ref! _tables table-tag (λ () (_decodeTable table-tag)))) ; get table from cache, load if not there
+    (dict-ref! _decoded-tables table-tag (λ () (_decodeTable table-tag))))
 
   (define-table-getters)
 
   (define/public (_getTableStream tag)
-    (define table (dict-ref (· this directory tables) tag))
-    (cond
-      [table
-       (pos port (· table offset))
-       port]
-      [else #f]))
-
+    (define table (hash-ref (· this directory tables) tag))
+    (and table (pos _port (· table offset)) _port))
+  
   (define/public (_decodeTable table-tag)
-    (define table-decoder (hash-ref table-codecs table-tag
-                                    (λ () (raise-argument-error '_decodeTable "decodable table" table-tag))))
-    (define offset (· (hash-ref (· this directory tables) table-tag) offset))
-    (define len (· (hash-ref (· this directory tables) table-tag) length))
-    (pos port 0)
-    (decode table-decoder (open-input-bytes (peek-bytes len offset port)) #:parent this))
+    (unless (hash-has-key? table-codecs table-tag)
+      (raise-argument-error '_decodeTable "decodable table" table-tag))
+    (pos _port 0)
+    (define table (hash-ref (· this directory tables) table-tag))
+    (define table-bytes (open-input-bytes (peek-bytes (· table length) (· table offset) _port)))
+    (define table-decoder (hash-ref table-codecs table-tag))
+    (decode table-decoder table-bytes #:parent this))
 
   (as-methods
    postscriptName
@@ -213,12 +214,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; Returns a Subset for this font.
 (define/contract (createSubset this)
   (->m (is-a?/c Subset))
-  (make-object
-      ;; no CFF support
-      #;(if (· this has-cff-table?)
-            CFFSubset
-            TTFSubset)
-    TTFSubset this))
+  ;; no CFF support
+  #;(make-object (if (· this has-cff-table?)
+                     CFFSubset
+                     TTFSubset) this)
+  (make-object TTFSubset this))
 
 
 
@@ -254,12 +254,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define (harfbuzz-glyphrun this string userFeatures script language)
   #;(string? (listof symbol?) symbol? symbol? . ->m . GlyphRun?)
-  (define face (· this ft-face))
-  (define font (hb_ft_font_create face))
-  (define buf (hb_buffer_create))
+  (define buf (· this hb-buf))
+  (hb_buffer_reset buf)
   (hb_buffer_add_codepoints buf (map char->integer (string->list string)))
   (define chars (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf)))
-  (hb_shape font buf (map tag->hb-feature (or userFeatures null)))
+  (hb_shape (· this hb-font) buf (map tag->hb-feature (or userFeatures null)))
   (define-values (gidxs clusters)
     (for/lists (gs cs)
                ([gi (in-list (hb_buffer_get_glyph_infos buf))])
@@ -270,10 +269,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define positions (for/list ([gp (in-list (hb_buffer_get_glyph_positions buf))])
                               (match (hb_glyph_position_t->list gp)
                                 [(list xad yad xoff yoff _) (+GlyphPosition xad yad xoff yoff)])))
-  (begin0
-    (+GlyphRun glyphs positions)
-    (hb_buffer_destroy buf)
-    (hb_font_destroy font)))
+  (+GlyphRun glyphs positions))
 
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
 (define/contract (layout this string [userFeatures #f] [script #f] [language #f])
