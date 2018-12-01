@@ -79,7 +79,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
 (define/contract (embed this)
   (->m void?)
-  (define isCFF (is-a? (· this subset) CFFSubset))
+  ;; no CFF support
+  (define isCFF #false) #;(is-a? (· this subset) CFFSubset)
   (define fontFile (· this document ref))
 
   (when isCFF
