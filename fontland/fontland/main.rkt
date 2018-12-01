@@ -1,5 +1,7 @@
 #lang racket/base
-(require "helper.rkt")
+
+(define-syntax-rule (r+p ID ...)
+  (begin (require ID ...) (provide (all-from-out ID ...))))
 
 (r+p "font.rkt"
      "glyph-position.rkt"
