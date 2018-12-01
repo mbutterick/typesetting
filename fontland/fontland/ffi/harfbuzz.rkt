@@ -68,7 +68,8 @@
 
 (define _hb_font_t _pointer)
 (define _hb_destroy_func_t (_or-null _pointer))
-(define-harfbuzz hb_ft_font_create (_fun _FT_Face _hb_destroy_func_t -> _hb_font_t))
+(define-harfbuzz hb_ft_font_create (_fun _FT_Face
+                                         (_hb_destroy_func_t = #false) -> _hb_font_t))
 
 (define _hb_tag_t _uint32)
 
@@ -148,7 +149,7 @@
   
   ;; Create a face and a font, using FreeType for now.
   (define face (FT_New_Face ft-lib test-font-path))
-  (define font (hb_ft_font_create face #f))
+  (define font (hb_ft_font_create face))
 
   ;; Shape!
   (hb_shape font buf null)
@@ -166,7 +167,7 @@
 
 (define (make-font path-string)
   (define face (FT_New_Face ft-lib path-string))
-  (hb_ft_font_create face #f))
+  (hb_ft_font_create face))
 
 (define HB_FEATURE_GLOBAL_START 0)
 (define HB_FEATURE_GLOBAL_END 4294967295)
