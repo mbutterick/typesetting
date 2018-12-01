@@ -49,15 +49,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define ft-library (delay (FT_Init_FreeType)))
 
-(define-subclass object% (TTFFont port [_src #f])
-  (when port (unless (input-port? port)
-               (raise-argument-error 'TTFFont "input port" port)))
+(define-subclass object% (TTFFont port)
+  (unless (input-port? port)
+    (raise-argument-error 'TTFFont "input port" port))
   (unless (member (peek-bytes 4 0 port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
     (raise 'probe-fail))
   
   ;; skip variationCoords
   (field [_decoded-tables (mhash)]
          [_port (open-input-bytes (port->bytes port))]
+         [_src (path->string (object-name port))]
          [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
          [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
          [_hb-font (delay (and _src (hb_ft_font_create (· this ft-face))))]
@@ -264,10 +265,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
       (values (hb_glyph_info_t-codepoint gi) (hb_glyph_info_t-cluster gi))))
   (define glyphs (for/list ([gidx (in-list gidxs)]
                             [char-cluster (in-list (break-at chars clusters))])
-                           (send this getGlyph gidx char-cluster)))
+                   (send this getGlyph gidx char-cluster)))
   (define positions (for/list ([gp (in-list (hb_buffer_get_glyph_positions buf))])
-                              (match (hb_glyph_position_t->list gp)
-                                [(list xad yad xoff yoff _) (+GlyphPosition xad yad xoff yoff)])))
+                      (match (hb_glyph_position_t->list gp)
+                        [(list xad yad xoff yoff _) (+GlyphPosition xad yad xoff yoff)])))
   (+GlyphRun glyphs positions))
 
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
@@ -284,7 +285,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     [(current-layout-caching)
      (define substrs (for/list ([substr (in-list (regexp-match* " " string #:gap-select? #t))]
                                 #:when (positive? (string-length substr)))
-                               substr))
+                       substr))
      (apply append-glyphruns (map get-layout substrs))]
     [else (get-layout string)]))
 
@@ -300,7 +301,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   ;; for now, just use UTF-8
   (define codepoints (map char->integer (string->list string)))
   (for/list ([cp (in-list codepoints)])
-            (send this glyphForCodePoint cp)))
+    (send this glyphForCodePoint cp)))
 
 
 ;; Maps a single unicode code point to a Glyph object.
@@ -323,7 +324,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (string? number? . ->m . number?)
   (/ (* size
         (for/sum ([c (in-string str)])
-                 (measure-char-width this c))) (· this unitsPerEm)))
+          (measure-char-width this c))) (· this unitsPerEm)))
 
 
 #|
@@ -332,7 +333,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/index.js
 |#
 
 ;; Register font formats
-(define formats (list TTFFont))
+(define font-formats (list TTFFont))
 ;;fontkit.registerFormat(WOFFFont); ;; todo
 ;;fontkit.registerFormat(WOFF2Font); ;; todo
 ;;fontkit.registerFormat(TrueTypeCollection); ;; todo
@@ -344,27 +345,22 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/base.js
 |#
 
-(define/contract (openSync str-or-path [postscriptName #f])
-  (((or/c path? string?)) ((option/c string?)) . ->* . TTFFont?)
+(define/contract (openSync str-or-path)
+  ((or/c path? string?) . -> . TTFFont?)
   (define filename (if (path? str-or-path) (path->string str-or-path) str-or-path))
-  (define buffer (file->bytes filename))
-  (create buffer filename postscriptName))
+  (create (open-input-file filename)))
 
+(define (probe-failed? x) (eq? x 'probe-fail))
 
-
-(define/contract (create buffer [filename #f] [postscriptName #f])
-  ((bytes?) ((option/c path-string?) (option/c string?)) . ->* . TTFFont?)
+(define/contract (create port)
+  (input-port? . -> . TTFFont?)
   (or
-   (for*/first ([format (in-list formats)]
-                ;; rather than use a `probe` function,
-                ;; just try making a font with each format and see what happens
-                [font (in-value (with-handlers ([(λ (x) (eq? x 'probe-fail)) (λ (exn) #f)])
-                                  (make-object format (open-input-bytes buffer) filename)))]
-                #:when font)
-               (if postscriptName
-                   (send font getFont postscriptName) ; used to select from collection files like TTC
-                   font))
-   (error 'fontkit:create "unknown font format")))
+   ;; rather than use a `probe` function,
+   ;; just try making a font with each format and see what happens
+   (for/first ([font-format (in-list font-formats)])
+     (with-handlers ([probe-failed? (λ (exn) #f)])
+       (make-object font-format port)))
+   (error 'fontland:create "unknown font format")))
 
 
 (test-module
