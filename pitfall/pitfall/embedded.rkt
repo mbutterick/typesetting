@@ -211,7 +211,7 @@ HERE
 
 (module+ test
   (require rackunit fontland)
-  (define f (openSync "../ptest/assets/charter.ttf" #f))
+  (define f (openSync "../ptest/assets/charter.ttf"))
   (define ef (make-object EmbeddedFont #f f #f))
   (check-equal? (send ef widthOfString "f" 1000) 321.0)
   (check-equal? (· ef ascender) 980)
