@@ -19,7 +19,8 @@
          sugar/unstable/js
          "ffi/harfbuzz.rkt"
          "glyph-position.rkt"
-         sugar/list)
+         sugar/list
+         racket/promise)
 (provide (all-defined-out))
 
 #|
@@ -45,7 +46,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; (including CFF)
 ;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
 
-(define ft-library (FT_Init_FreeType))
+(define ft-library (delay (FT_Init_FreeType)))
 
 (define-subclass object% (TTFFont port [_src #f])
   (when port (unless (input-port? port)
@@ -57,9 +58,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (field [_directoryPos (pos port)]
          [_tables (mhash)] ; holds decoded tables (loaded lazily)
          [_glyphs (mhash)]
-         [directory #f]
-         [ft-face (and _src (FT_New_Face ft-library _src))])
-  (send this _decodeDirectory)
+         [_directory (delay (decode Directory port #:parent (mhash '_startOffset 0)))]
+         [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))])
+ 
+  (define/public (directory) (force _directory))
+  (define/public (ft-face) (force _ft-face))
 
   (define/public (_getTable table-tag)
     (unless (has-table? this table-tag)
@@ -79,14 +82,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define/public (_decodeTable table-tag)
     (define table-decoder (hash-ref table-codecs table-tag
                                     (λ () (raise-argument-error '_decodeTable "decodable table" table-tag))))
-    (define offset (· (hash-ref (· directory tables) table-tag) offset))
-    (define len (· (hash-ref (· directory tables) table-tag) length))
+    (define offset (· (hash-ref (· this directory tables) table-tag) offset))
+    (define len (· (hash-ref (· this directory tables) table-tag) length))
     (pos port 0)
     (decode table-decoder (open-input-bytes (peek-bytes len offset port)) #:parent this))
-
-  (define/public (_decodeDirectory)
-    (set! directory (decode Directory port #:parent (mhash '_startOffset 0)))
-    directory)
 
   (as-methods
    postscriptName
