@@ -57,7 +57,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (field [_directoryPos (pos port)]
          [_tables (mhash)] ; holds decoded tables (loaded lazily)
          [_glyphs (mhash)]
-         [_layoutEngine #f]
          [directory #f]
          [ft-face (and _src (FT_New_Face ft-library _src))])
   (send this _decodeDirectory)
