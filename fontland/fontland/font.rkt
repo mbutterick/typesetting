@@ -71,7 +71,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define/public (_getTable table-tag)
     (unless (has-table? this table-tag)
       (raise-argument-error '_getTable "table that exists in font" table-tag))
-    (dict-ref! _decoded-tables table-tag (λ () (_decodeTable table-tag))))
+    (hash-ref! _decoded-tables table-tag (λ () (_decodeTable table-tag))))
 
   (define-table-getters)
 
@@ -84,6 +84,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
       (raise-argument-error '_decodeTable "decodable table" table-tag))
     (pos _port 0)
     (define table (hash-ref (· this directory tables) table-tag))
+    ;; todo: possible to avoid copying the bytes here?
     (define table-bytes (open-input-bytes (peek-bytes (· table length) (· table offset) _port)))
     (define table-decoder (hash-ref table-codecs table-tag))
     (decode table-decoder table-bytes #:parent this))
@@ -203,10 +204,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
 (define/contract (bbox this)
   (->m BBox?)
-  (make-BBox (· this head xMin)
-             (· this head yMin)
-             (· this head xMax)
-             (· this head yMax)))
+  (make-BBox (· this head xMin) (· this head yMin) (· this head xMax) (· this head yMax)))
 
 (test-module
  (check-equal? (bbox->list (· f bbox)) '(-161 -236 1193 963)))
@@ -221,12 +219,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (make-object TTFSubset this))
 
 
-
 (define/contract (has-table? this tag)
   ((or/c bytes? symbol?) . ->m . boolean?)
-  (dict-has-key? (· this directory tables) (if (bytes? tag)
-                                               (string->symbol (bytes->string/latin-1 tag))
-                                               tag)))
+  (hash-has-key? (· this directory tables) (match tag
+                                             [(? bytes?) (string->symbol (bytes->string/latin-1 tag))]
+                                             [_ tag])))
   
 (define (has-cff-table? x) (has-table? x 'CFF_))
 (define (has-morx-table? x) (has-table? x 'morx))
@@ -245,9 +242,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; your use later, and it will be stored in the glyph object.
 (define/contract (getGlyph this glyph [characters null])
   ((index?) ((listof index?)) . ->*m . (is-a?/c Glyph))
-  (make-object (if (· this has-cff-table?)
-                   CFFGlyph
-                   TTFGlyph) glyph characters this))
+  ;; no CFF
+  #;(make-object (if (· this has-cff-table?)
+                     CFFGlyph
+                     TTFGlyph) glyph characters this)
+  (make-object TTFGlyph glyph characters this))
 
 (define current-layout-caching (make-parameter #false))
 (define layout-cache (make-hash))
@@ -279,9 +278,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (hash-ref! layout-cache key (λ () (apply harfbuzz-glyphrun this key))))
   ;; work on substrs to reuse cached pieces
   ;; caveat: no shaping / positioning that involve word spaces
+  ;; todo: why does caching produce slightly different results in test files
+  ;; theory: because word space is not included in shaping
   (cond
-    ;; todo: why does caching produce slightly different results in test files
-    ;; theory: because word space is not included in shaping
     [(current-layout-caching)
      (define substrs (for/list ([substr (in-list (regexp-match* " " string #:gap-select? #t))]
                                 #:when (positive? (string-length substr)))
