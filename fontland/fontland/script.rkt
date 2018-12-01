@@ -1,5 +1,8 @@
 #lang racket/base
-(require "racket.rkt")
+(require sugar/unstable/dict
+         sugar/unstable/contract
+         sugar/unstable/stub
+         racket/contract)
 
 (provide (all-defined-out))
 

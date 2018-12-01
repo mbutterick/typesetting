@@ -1,7 +1,11 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "ot-processor.rkt")
+(require sugar/unstable/class
+         sugar/unstable/dict
+         sugar/unstable/js
+         racket/class
+         racket/list
+         racket/dict
+         "helper.rkt")
 (provide (all-defined-out))
 
 #|
@@ -41,7 +45,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/opentype/GlyphInfo.js
             (set-field! substituted this #t)
 
             (cond
-              [(and (· this _font GDEF) (· this _font GDEF glyphClassDef))
+              ;; we're out of the GDEF business
+              #;[(and (· this _font GDEF) (· this _font GDEF glyphClassDef))
                (define classID (send (+OTProcessor) getClassID id-in (· this _font GDEF glyphClassDef)))
                (set-field! isMark this (= classID 3))
                (set-field! isLigature this (= classID 2))]

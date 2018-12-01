@@ -1,12 +1,14 @@
 #lang racket/base
-(require "../racket.rkt")
+(require sugar/unstable/class
+         sugar/unstable/dict
+         "../helper.rkt")
 
 (require xenomorph)
 (provide (all-defined-out))
 
 (define-subclass Struct (Rhhea))
 
-(define hhea (make-object Rhhea
+(define hhea (+Rhhea
                (dictify
                 'version              int32be
                 'ascent               int16be   ;; Distance from baseline of highest ascender
@@ -25,6 +27,9 @@
                 )))
 
 (test-module
+ (require racket/serialize
+         sugar/unstable/js
+         sugar/unstable/port)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define offset (· dir tables hhea offset))

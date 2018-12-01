@@ -1,5 +1,8 @@
 #lang racket/base
-(require "../racket.rkt")
+(require sugar/unstable/class
+         sugar/unstable/dict
+         sugar/unstable/js
+         "../helper.rkt")
 
 (require xenomorph)
 (provide (all-defined-out))
@@ -24,6 +27,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
 
 
 (test-module
+ (require racket/class)
  ;; same as hmtx but doesn't require resolution of function to get length
  (define hmtx-test (+Rhmtx
                     (dictify

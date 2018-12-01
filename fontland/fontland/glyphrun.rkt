@@ -1,7 +1,8 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require (prefix-in Script- "script.rkt"))
+(require (prefix-in Script- "script.rkt")
+         sugar/unstable/class
+         sugar/unstable/js
+         racket/class)
 (provide (all-defined-out))
 
 #|

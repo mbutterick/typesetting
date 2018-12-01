@@ -1,12 +1,13 @@
 #lang racket/base
-(require "../racket.rkt")
-
-(require xenomorph)
+(require xenomorph
+         sugar/unstable/class
+         sugar/unstable/dict
+         "../helper.rkt")
 (provide (all-defined-out))
 
 (define-subclass Struct (Rmaxp))
 
-(define maxp (make-object Rmaxp
+(define maxp (+Rmaxp
                (dictify 'version                int32be
                         'numGlyphs              uint16be  ;; The number of glyphs in the font
                         'maxPoints              uint16be  ;; Maximum points in a non-composite glyph
@@ -26,6 +27,9 @@
 
 
 (test-module
+ (require sugar/unstable/js
+          sugar/unstable/port
+          racket/class)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define maxp-offset (· dir tables maxp offset))

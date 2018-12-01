@@ -1,7 +1,16 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require xenomorph "freetype-ffi.rkt")
+(require (for-syntax racket/base)
+         xenomorph
+         racket/class
+         racket/match
+         racket/list
+         racket/contract
+         sugar/unstable/class
+         sugar/unstable/dict
+         sugar/unstable/js
+         sugar/unstable/stub
+         "freetype-ffi.rkt"
+         "helper.rkt")
 (provide (all-defined-out))
 (module+ test (require rackunit))
 
@@ -68,10 +77,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (error 'cff-glyph-unimplemented)
 
   #;(define/override (_getName this)
-    (->m any/c)
-    (if (send (· this _font) _getTable 'CFF2)
-        (super _getName)
-        (send (send (· this _font) _getTable 'CFF_) getGlyphName (· this id))))
+      (->m any/c)
+      (if (send (· this _font) _getTable 'CFF2)
+          (super _getName)
+          (send (send (· this _font) _getTable 'CFF_) getGlyphName (· this id))))
   (as-methods
    #;_getName
    #;bias
@@ -94,8 +103,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
                              'yMax int16be)))
 
 ;; Flags for simple glyphs
-(define-macro (define-flag-series . IDS)
-  #`(match-define (list . IDS) (map (curry expt 2) (range #,(length (syntax->list #'IDS))))))
+(define-syntax (define-flag-series stx)
+  (syntax-case stx ()
+    [(_ . IDS)
+     #`(match-define (list . IDS) (map (λ (x) (expt 2 x)) (range #,(length (syntax->list #'IDS)))))]))
 
 ;; Flags for simple glyphs
 (define-flag-series ON_CURVE
@@ -194,18 +205,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
                    [count (in-range (add1 (if (not (zero? (bitwise-and flag REPEAT)))
                                               (decode uint8 port)
                                               0)))])
-                  flag))
+        flag))
 
     (match-define-values
-     (points _ _)
-     (for/fold ([points empty] [px 0] [py 0])
-               ([(flag i) (in-indexed flags)])
-       (define point (+Point (zero? (bitwise-and flag ON_CURVE)) (and (index-of endPtsOfContours i) #t) 0 0))
-       (define next-px (_parseGlyphCoord port px (not (zero? (bitwise-and flag X_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_X)))))
-       (define next-py (_parseGlyphCoord port py (not (zero? (bitwise-and flag Y_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_Y)))))
-       (set-field! x point next-px)
-       (set-field! y point next-py)
-       (values (cons point points) next-px next-py)))
+      (points _ _)
+      (for/fold ([points empty] [px 0] [py 0])
+                ([(flag i) (in-indexed flags)])
+        (define point (+Point (zero? (bitwise-and flag ON_CURVE)) (and (index-of endPtsOfContours i) #t) 0 0))
+        (define next-px (_parseGlyphCoord port px (not (zero? (bitwise-and flag X_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_X)))))
+        (define next-py (_parseGlyphCoord port py (not (zero? (bitwise-and flag Y_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_Y)))))
+        (set-field! x point next-px)
+        (set-field! y point next-py)
+        (values (cons point points) next-px next-py)))
     (dict-set! glyph 'points (reverse points)))
 
   (define/public (_decodeComposite glyph port [offset 0])
@@ -217,34 +228,34 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
     (dict-set! glyph 'components
                (for/list ([i (in-naturals)]
                           #:break (zero? (bitwise-and flags MORE_COMPONENTS)))
-                 (set! flags (send uint16be decode port))
-                 (define gPos (- (pos port) offset))
-                 (define glyphID (send uint16be decode port))
-                 (unless haveInstructions
-                   (set! haveInstructions (not (zero? (bitwise-and flags WE_HAVE_INSTRUCTIONS)))))
+                         (set! flags (send uint16be decode port))
+                         (define gPos (- (pos port) offset))
+                         (define glyphID (send uint16be decode port))
+                         (unless haveInstructions
+                           (set! haveInstructions (not (zero? (bitwise-and flags WE_HAVE_INSTRUCTIONS)))))
 
-                 (match-define
-                   (list dx dy)
-                   (let ([decoder (if (not (zero? (bitwise-and flags ARG_1_AND_2_ARE_WORDS))) int16be int8)])
-                     (list (send decoder decode port) (send decoder decode port))))
+                         (match-define
+                           (list dx dy)
+                           (let ([decoder (if (not (zero? (bitwise-and flags ARG_1_AND_2_ARE_WORDS))) int16be int8)])
+                             (list (send decoder decode port) (send decoder decode port))))
 
-                 (define component (+Component glyphID dx dy))
-                 (set-field! pos component gPos)
+                         (define component (+Component glyphID dx dy))
+                         (set-field! pos component gPos)
 
-                 (cond
-                   [(not (zero? (bitwise-and flags WE_HAVE_A_SCALE)))
-                    (define scale (read-fixed14 port))
-                    (set-field! scaleX component scale)
-                    (set-field! scaleY component scale)]
-                   [(not (zero? (bitwise-and flags WE_HAVE_AN_X_AND_Y_SCALE)))
-                    (set-field! scaleX component (read-fixed14 port))
-                    (set-field! scaleY component (read-fixed14 port))]
-                   [(not (zero? (bitwise-and flags WE_HAVE_A_TWO_BY_TWO)))
-                    (set-field! scaleX component (read-fixed14 port))
-                    (set-field! scale01 component (read-fixed14 port))
-                    (set-field! scale10 component (read-fixed14 port))
-                    (set-field! scaleY component (read-fixed14 port))])
-                 component))
+                         (cond
+                           [(not (zero? (bitwise-and flags WE_HAVE_A_SCALE)))
+                            (define scale (read-fixed14 port))
+                            (set-field! scaleX component scale)
+                            (set-field! scaleY component scale)]
+                           [(not (zero? (bitwise-and flags WE_HAVE_AN_X_AND_Y_SCALE)))
+                            (set-field! scaleX component (read-fixed14 port))
+                            (set-field! scaleY component (read-fixed14 port))]
+                           [(not (zero? (bitwise-and flags WE_HAVE_A_TWO_BY_TWO)))
+                            (set-field! scaleX component (read-fixed14 port))
+                            (set-field! scale01 component (read-fixed14 port))
+                            (set-field! scale10 component (read-fixed14 port))
+                            (set-field! scaleY component (read-fixed14 port))])
+                         component))
     haveInstructions))
         
 

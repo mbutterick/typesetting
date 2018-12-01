@@ -1,7 +1,9 @@
 #lang racket/base
-(require "../racket.rkt")
-
-(require xenomorph)
+(require xenomorph
+         sugar/unstable/class
+         sugar/unstable/dict
+         sugar/unstable/js
+         "../helper.rkt")
 (provide (all-defined-out))
 
 #|
@@ -12,7 +14,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
 
 (define-subclass VersionedStruct (Rpost))
 
-(define post (make-object Rpost
+(define post (+Rpost
                fixed32be
                (dictify
                 'header (dictify 'italicAngle        fixed32be ;; Italic angle in counter-clockwise degrees from the vertical.
@@ -35,6 +37,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
                 4 (dictify 'map (+Array uint32be (λ (t) (· t parent maxp numGlyphs)))))))
 
 (test-module
+ (require racket/class)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define offset (· dir tables post offset))

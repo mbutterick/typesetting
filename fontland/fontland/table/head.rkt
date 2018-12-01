@@ -1,5 +1,7 @@
 #lang racket/base
-(require "../racket.rkt")
+(require "../helper.rkt"
+         sugar/unstable/class
+         sugar/unstable/dict)
 
 (require xenomorph)
 (provide (all-defined-out))
@@ -11,7 +13,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
 
 (define-subclass Struct (Rhead))
 
-(define head (make-object Rhead
+(define head (+Rhead
                (dictify
                 'version            int32be                   ;; 0x00010000 (version 1.0)
                 'revision           int32be                   ;; set by font manufacturer
@@ -34,7 +36,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
 
 
 (test-module
- (require racket/serialize)
+ (require racket/serialize
+         sugar/unstable/js
+         sugar/unstable/port
+         racket/class)
  (define ip (open-input-file charter-italic-path))
  (define dir (deserialize (read (open-input-file charter-italic-directory-path))))
  (define offset (· dir tables head offset))

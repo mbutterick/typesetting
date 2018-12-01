@@ -1,6 +1,8 @@
 #lang racket/base
-(require "racket.rkt")
-
+(require sugar/unstable/class
+         sugar/unstable/js
+         racket/class
+         racket/contract)
 (provide (all-defined-out))
 
 ;; Represents positioning information for a glyph in a GlyphRun.

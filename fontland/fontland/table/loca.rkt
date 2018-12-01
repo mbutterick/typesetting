@@ -1,7 +1,11 @@
 #lang racket/base
-(require "../racket.rkt")
-
-(require xenomorph)
+(require xenomorph
+         sugar/unstable/class
+         sugar/unstable/js
+         sugar/unstable/dict
+         racket/class
+         racket/list
+         "../helper.rkt")
 (provide (all-defined-out))
 
 (define 16bit-style 0)
@@ -20,7 +24,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
     (when (= 16bit-style (· res version))
       ;; in a 16bits-style loca table, actual 32bit offset values are divided by 2 (to fit into 16 bits)
       ;; so we re-inflate them.
-      (dict-update! res 'offsets (λ (offsets) (map (curry * 2) offsets))))
+      (dict-update! res 'offsets (λ (offsets) (map (λ (x) (* 2 x)) offsets))))
     res)
 
   (define/augride (pre-encode this-val stream)
@@ -36,7 +40,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
                                  32bit-style
                                  16bit-style))
     (when (= 16bit-style (· this version))
-      (dict-update! this 'offsets (λ (offsets) (map (curryr / 2) offsets))))))
+      (dict-update! this 'offsets (λ (offsets) (map (λ (x) (/ x 2)) offsets))))))
 
 (define loca (+Rloca
               (λ (o) (· o head indexToLocFormat)) 

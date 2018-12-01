@@ -1,6 +1,16 @@
 #lang debug racket/base
-(require "racket.rkt")
-(require racket/serialize "table/loca.rkt" "directory.rkt" xenomorph)
+(require racket/serialize
+         racket/contract
+         racket/class
+         racket/list
+         racket/match
+         sugar/unstable/class
+         sugar/unstable/dict
+         sugar/unstable/js
+         "table/loca.rkt"
+         "directory.rkt"
+         "helper.rkt"
+         xenomorph)
 (provide Subset CFFSubset TTFSubset)
 
 #|

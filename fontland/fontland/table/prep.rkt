@@ -1,5 +1,9 @@
 #lang racket/base
-(require "../racket.rkt")
+(require xenomorph
+         sugar/unstable/class
+         sugar/unstable/dict
+         sugar/unstable/js
+         "../helper.rkt")
 
 (require xenomorph)
 (provide (all-defined-out))
@@ -10,12 +14,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/prep.js
 
 (define-subclass Struct (Rprep))
 
-(define prep (make-object Rprep
+(define prep (+Rprep
                (dictify
                 'controlValueProgram (+Array uint8))))
 
 
 (test-module
+ (require sugar/unstable/port)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define offset (· dir tables prep offset))

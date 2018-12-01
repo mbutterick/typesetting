@@ -1,22 +1,21 @@
 #lang racket/base
-(require "racket.rkt")
-
+(require (for-syntax racket/base racket/string) "helper.rkt")
 (provide (all-defined-out))
-(require (for-syntax racket/string))
 
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/index.js
 |#
 
-(define-macro (define-table-codecs ID TABLE-ID ...)
-  (with-pattern ([(TABLE-ID-STRING ...) (pattern-case-filter #'(TABLE-ID ...)
-                                                        [STX (datum->syntax caller-stx
-                                                                            (string-append "table/" (string-replace (format "~a.rkt" (syntax->datum #'STX)) "/" "")))])]) 
-                #'(begin
-                    (r+p TABLE-ID-STRING ...)
-                    (test-module (require (submod TABLE-ID-STRING test) ...))
-                    (define ID (make-hasheq (map cons (list 'TABLE-ID ...) (list TABLE-ID ...)))))))
+(define-syntax (define-table-codecs stx)
+  (syntax-case stx ()
+    [(_ ID TABLE-ID ...)
+     (with-syntax ([(TABLE-ID-STRING ...) (map (λ (s) (datum->syntax stx (string-append "table/" (string-replace (format "~a.rkt" (syntax->datum s)) "/" ""))))
+                                               (syntax->list #'(TABLE-ID ...)))]) 
+                   #'(begin
+                       (r+p TABLE-ID-STRING ...)
+                       (test-module (require (submod TABLE-ID-STRING test) ...))
+                       (define ID (make-hasheq (map cons (list 'TABLE-ID ...) (list TABLE-ID ...))))))]))
 
 (define-table-codecs table-codecs head hhea hmtx maxp OS/2 post cvt_ fpgm loca prep glyf)
 

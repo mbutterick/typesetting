@@ -1,5 +1,6 @@
 #lang racket/base
-(require "../racket.rkt")
+(require sugar/unstable/class
+         "../helper.rkt")
 
 (require xenomorph)
 (provide (all-defined-out))
@@ -13,6 +14,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/glyf.js
 (define glyf (+Array (+BufferT)))
 
 (test-module
+ (require sugar/unstable/js
+          sugar/unstable/port)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define offset (· dir tables glyf offset))

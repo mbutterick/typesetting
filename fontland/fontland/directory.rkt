@@ -1,7 +1,11 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require xenomorph "tables.rkt" describe)
+(require xenomorph
+         "tables.rkt"
+         sugar/unstable/dict
+         racket/string
+         sugar/unstable/class
+         sugar/unstable/js
+         racket/class)
 
 (provide (all-defined-out))
 

@@ -1,5 +1,5 @@
 #lang racket/base
-(require "../racket.rkt")
+(require sugar/unstable/class)
 
 (require xenomorph)
 (provide CFF_)

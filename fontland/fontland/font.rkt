@@ -1,6 +1,22 @@
 #lang debug racket/base
-(require "racket.rkt")
-(require "freetype-ffi.rkt" "subset.rkt" "glyph.rkt" "bbox.rkt" "glyphrun.rkt" "directory.rkt" xenomorph "tables.rkt")
+(require (for-syntax racket/base)
+         "helper.rkt"
+         "freetype-ffi.rkt"
+         "subset.rkt"
+         "glyph.rkt"
+         "bbox.rkt"
+         "glyphrun.rkt"
+         "directory.rkt"
+         xenomorph
+         "tables.rkt"
+         racket/contract
+         racket/class
+         racket/match
+         racket/file
+         sugar/unstable/class
+         sugar/unstable/contract
+         sugar/unstable/dict
+         sugar/unstable/js)
 (provide (all-defined-out))
 
 #|
@@ -9,10 +25,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 |#
 
 (require (for-syntax "tables.rkt"))
-(define-macro (define-table-getters)
-  (with-pattern ([(TABLE-TAG ...) (hash-keys table-codecs)])
-                #'(begin
-                    (define/public (TABLE-TAG) (_getTable 'TABLE-TAG)) ...)))
+(define-syntax (define-table-getters stx)
+  (syntax-case stx ()
+    [(_)
+     (with-syntax ([(TABLE-TAG ...) (hash-keys table-codecs)])
+                   #'(begin
+                       (define/public (TABLE-TAG) (_getTable 'TABLE-TAG)) ...))]))
 
 
 (test-module
@@ -184,9 +202,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define/contract (bbox this)
   (->m BBox?)
   (make-BBox (· this head xMin)
-    (· this head yMin)
-    (· this head xMax)
-    (· this head yMax)))
+             (· this head yMin)
+             (· this head xMax)
+             (· this head yMax)))
 
 (test-module
  (check-equal? (bbox->list (· f bbox)) '(-161 -236 1193 963)))
@@ -206,10 +224,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                                                (string->symbol (bytes->string/latin-1 tag))
                                                tag)))
   
-(define has-cff-table? (curryr has-table? 'CFF_))
-(define has-morx-table? (curryr has-table? 'morx))
-(define has-gpos-table? (curryr has-table? 'GPOS))
-(define has-gsub-table? (curryr has-table? 'GSUB))
+(define (has-cff-table? x) (has-table? x 'CFF_))
+(define (has-morx-table? x) (has-table? x 'morx))
+(define (has-gpos-table? x) (has-table? x 'GPOS))
+(define (has-gsub-table? x) (has-table? x 'GSUB))
 
 (test-module
  (check-false (· f has-cff-table?))
@@ -342,7 +360,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
    (for*/first ([format (in-list formats)]
                 ;; rather than use a `probe` function,
                 ;; just try making a font with each format and see what happens
-                [font (in-value (with-handlers ([(curry eq? 'probe-fail) (λ (exn) #f)])
+                [font (in-value (with-handlers ([(λ (x) (eq? x 'probe-fail)) (λ (exn) #f)])
                                   (make-object format (open-input-bytes buffer) filename)))]
                 #:when font)
                (if postscriptName

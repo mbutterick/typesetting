@@ -1,7 +1,8 @@
 #lang racket/base
-(require "../racket.rkt")
-
-(require xenomorph)
+(require xenomorph
+         sugar/unstable/class
+         sugar/unstable/dict
+         "../helper.rkt")
 (provide (all-defined-out))
 
 #|
@@ -66,6 +67,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
                  5 (append type-1 type-2 type-5)))))
 
 (test-module
+ (require sugar/unstable/js
+          racket/class)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define offset (· dir tables OS/2 offset))

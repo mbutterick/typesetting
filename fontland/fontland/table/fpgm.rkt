@@ -1,5 +1,7 @@
 #lang racket/base
-(require "../racket.rkt")
+(require sugar/unstable/class
+         sugar/unstable/dict
+         "../helper.rkt")
 
 (require xenomorph)
 (provide (all-defined-out))
@@ -15,12 +17,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/fpgm.js
 
 (define-subclass Struct (Rfpgm))
 
-(define fpgm (make-object Rfpgm
+(define fpgm (+Rfpgm
                (dictify
-                'instructions (make-object Array uint8))))
+                'instructions (+Array uint8))))
 
 
 (test-module
+ (require sugar/unstable/js
+          sugar/unstable/port
+          racket/class)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define offset (· dir tables fpgm offset))

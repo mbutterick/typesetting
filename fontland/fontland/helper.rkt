@@ -1,6 +1,9 @@
-#lang racket/base
-(require (for-syntax racket/base) racket/runtime-path br/define)
+#lang racket
+(require racket/runtime-path)
 (provide (all-defined-out))
+
+(define-syntax-rule (r+p ID ...)
+  (begin (require ID ...) (provide (all-from-out ID ...))))
 
 (define index? (λ (x) (and (number? x) (integer? x) (not (negative? x)))))
 
@@ -11,10 +14,12 @@
 (define-runtime-path charter-directory-path "assets/charter-directory.rktd")
 (define-runtime-path charter-italic-directory-path "assets/charter-italic-directory.rktd")
 
-(define-macro (test-module . EXPRS)
-  #`(module+ test
-      (require #,(datum->syntax caller-stx 'rackunit) #,(datum->syntax caller-stx 'racket/serialize)) 
-      . EXPRS))
+(define-syntax (test-module stx)
+  (syntax-case stx ()
+    [(_ . EXPRS)
+     #`(module+ test
+         (require #,(datum->syntax stx 'rackunit) #,(datum->syntax stx 'racket/serialize)) 
+         . EXPRS)]))
 
 
 (define (is-mark? codepoint)
