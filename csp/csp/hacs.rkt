@@ -1,5 +1,5 @@
 #lang debug racket
-(require racket/generator graph)
+(require racket/generator graph racket/set)
 (provide (except-out (all-defined-out) define/contract))
 
 (define-syntax-rule (define/contract EXPR CONTRACT . BODY)
@@ -78,7 +78,7 @@
 
 (define/contract (make-var name [vals null])
   ((name?) ((listof any/c)) . ->* . var?)
-  (var name vals))
+  (var name (list->set vals)))
 
 (define/contract (add-vars! prob names [vals-or-procedure empty])
   ((csp? (listof name?)) ((or/c (listof any/c) procedure?)) . ->* . void?)
@@ -275,7 +275,7 @@
 
 (define/contract (domain-length var)
   (var? . -> . natural?)
-  (length (domain var)))
+  (set-count (domain var)))
 
 (define/contract (state-count csp)
   (csp? . -> . natural?)
@@ -384,7 +384,7 @@
        [constraints
         (define ref-val (first (find-domain prob ref-name)))
         (define new-vals
-          (for/list ([val (in-list vals)]
+          (for/set ([val (in-set vals)]
                      #:when (for/and ([const (in-list constraints)])
                                      (match const
                                        [(constraint (list (== name eq?) _) proc) (proc val ref-val)]
@@ -414,7 +414,7 @@
   (when-debug (set! nfchecks (+ (length checked-vars) nchecks)))
   ;; conflict-set will be empty if there are no empty domains (as we would hope)
   (define conflict-set (for/list ([cvr (in-list checked-vars)]
-                                  #:when (empty? (domain cvr)))
+                                  #:when (set-empty? (domain cvr)))
                                  (history cvr)))
   ;; for conflict-directed backjumping it's essential to forward-check ALL vars
   ;; (even after an empty domain is generated) and combine their conflicts
@@ -511,7 +511,8 @@
                                                                            (eq? name (car rec))))))))
                   (for/fold ([conflicts null]
                              #:result (void))
-                            ([val (in-list (order-domain-values domain))])
+                            ([val #;(in-list (order-domain-values domain))
+                                  (in-set domain)])
                     (with-handlers ([wants-backtrack?
                                      (λ (bt)
                                        (define bths (backtrack-histories bt))
