@@ -306,7 +306,9 @@
                                    _FT_UInt  
                                    -> (err : _FT_Error)))
 
-(define-freetype FT_New_Face (_fun _FT_Library _full-path _FT_Long 
+(define-freetype FT_New_Face (_fun _FT_Library
+                                   (path : _full-path)
+                                   (_FT_Long = 0) 
                                    (ftf : (_ptr o (_or-null _FT_Face)))
                                    -> (err : _FT_Error)
                                    -> (cond
@@ -314,6 +316,8 @@
                                          ;; see https://www.freetype.org/freetype2/docs/tutorial/step1.html
                                          (FT_Set_Char_Size ftf 0 1000 0 0)
                                          ftf]
+                                        [(= err 1)
+                                         (error 'FT_New_Face (format "font ~v not found" path))]
                                         [(error 'FT_New_Face (format "error ~a" err))])))
 
 
@@ -390,7 +394,7 @@
 (module+ test
   (require rackunit)
   (define ft-library (FT_Init_FreeType))
-  (define face (FT_New_Face ft-library "charter.ttf" 0))
+  (define face (FT_New_Face ft-library "../assets/charter.ttf"))
   (check-equal? (FT_Get_Postscript_Name face) "Charter")
   (check-equal? (FT_FaceRec-units_per_EM face) 1000)
   (check-true (FT_Load_Sfnt_Table face (tag->int #"cmap") 0 0 0))

@@ -2,6 +2,7 @@
 (require ffi/unsafe
          ffi/unsafe/define
          racket/draw/private/libs
+         "freetype.rkt"
          "harfbuzz-helper.rkt")
 (provide (all-defined-out))
 
@@ -65,7 +66,6 @@
 (define-harfbuzz hb_buffer_set_language (_fun _hb_buffer_t _hb_language_t -> _void))
 (define-harfbuzz hb_buffer_get_language (_fun _hb_buffer_t -> _hb_language_t))
 
-(require "freetype-ffi.rkt")
 (define _hb_font_t _pointer)
 (define _hb_destroy_func_t (_or-null _pointer))
 (define-harfbuzz hb_ft_font_create (_fun _FT_Face _hb_destroy_func_t -> _hb_font_t))
@@ -131,7 +131,7 @@
 
 (define ft-lib (FT_Init_FreeType))
 (require racket/runtime-path)
-(define-runtime-path test-font-path "fira.ttf")
+(define-runtime-path test-font-path "../assets/fira.ttf")
 
 (module+ test
   (require rackunit)
@@ -147,7 +147,7 @@
   (check-equal? #"en" (hb_language_to_string (hb_buffer_get_language buf))) 
   
   ;; Create a face and a font, using FreeType for now.
-  (define face (FT_New_Face ft-lib test-font-path 0))
+  (define face (FT_New_Face ft-lib test-font-path))
   (define font (hb_ft_font_create face #f))
 
   ;; Shape!
@@ -165,7 +165,7 @@
   (hb_font_destroy font))
 
 (define (make-font path-string)
-  (define face (FT_New_Face ft-lib path-string 0))
+  (define face (FT_New_Face ft-lib path-string))
   (hb_ft_font_create face #f))
 
 (define HB_FEATURE_GLOBAL_START 0)

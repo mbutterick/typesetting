@@ -1,7 +1,7 @@
 #lang debug racket/base
 (require (for-syntax racket/base)
          "helper.rkt"
-         "freetype-ffi.rkt"
+         "ffi/freetype.rkt"
          "subset.rkt"
          "glyph.rkt"
          "bbox.rkt"
@@ -16,7 +16,10 @@
          sugar/unstable/class
          sugar/unstable/contract
          sugar/unstable/dict
-         sugar/unstable/js)
+         sugar/unstable/js
+         "ffi/harfbuzz.rkt"
+         "glyph-position.rkt"
+         sugar/list)
 (provide (all-defined-out))
 
 #|
@@ -56,7 +59,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
          [_glyphs (mhash)]
          [_layoutEngine #f]
          [directory #f]
-         [ft-face (and _src (FT_New_Face ft-library _src 0))])
+         [ft-face (and _src (FT_New_Face ft-library _src))])
   (send this _decodeDirectory)
 
   (define/public (_getTable table-tag)
@@ -248,7 +251,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define current-layout-caching (make-parameter #false))
 (define layout-cache (make-hash))
 
-(require "harfbuzz-ffi.rkt" "glyph-position.rkt" sugar/list)
 (define (harfbuzz-glyphrun this string userFeatures script language)
   #;(string? (listof symbol?) symbol? symbol? . ->m . GlyphRun?)
   (define face (· this ft-face))
