@@ -32,8 +32,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (syntax-case stx ()
     [(_)
      (with-syntax ([(TABLE-TAG ...) (hash-keys table-codecs)])
-                   #'(begin
-                       (define/public (TABLE-TAG) (_getTable 'TABLE-TAG)) ...))]))
+       #'(begin
+           (define/public (TABLE-TAG) (_getTable 'TABLE-TAG)) ...))]))
 
 
 (test-module
@@ -215,9 +215,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; Returns a Subset for this font.
 (define/contract (createSubset this)
   (->m (is-a?/c Subset))
-  (make-object (if (· this has-cff-table?)
-                   CFFSubset
-                   TTFSubset) this))
+  (make-object
+      ;; no CFF support
+      #;(if (· this has-cff-table?)
+            CFFSubset
+            TTFSubset)
+    TTFSubset this))
 
 
 

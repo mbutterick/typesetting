@@ -11,7 +11,7 @@
          "directory.rkt"
          "helper.rkt"
          xenomorph)
-(provide Subset CFFSubset TTFSubset)
+(provide Subset TTFSubset)
 
 #|
 approximates
@@ -20,9 +20,8 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 
 (define-subclass object% (Subset font)
   (field [glyphs empty] ; list of glyph ids in the subset
-         [mapping (mhash)] ; mapping of glyph ids to indexes in `glyphs`
-         )
-
+         [mapping (mhash)]) ; mapping of glyph ids to indexes in `glyphs`
+         
   (send this includeGlyph 0) ; always include the missing glyph in subset
 
   (define/public (encode-to-port)
@@ -33,23 +32,26 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
   (as-methods
    includeGlyph))
 
-(define/contract (includeGlyph this glyph)
+(define/contract (includeGlyph this glyph-or-gid)
   ((or/c object? index?) . ->m . index?)
-  (let ([glyph (if (object? glyph) (· glyph id) glyph)])
-    (hash-ref! (· this mapping) glyph
-               (λ ()
-                 ;; put the new glyph at the end of `glyphs`,
-                 ;; and put its index in the mapping
-                 (push-end-field! glyphs this glyph)
-                 (sub1 (length (· this glyphs)))))))  
-
-
+  (define glyph (if (object? glyph-or-gid)
+                    (· glyph-or-gid id)
+                    glyph-or-gid))
+  (hash-ref! (· this mapping) glyph
+             (λ ()
+               ;; put the new glyph at the end of `glyphs`,
+               ;; and put its index in the mapping
+               (push-end-field! glyphs this glyph)
+               (sub1 (length (· this glyphs))))))  
 
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 |#
 
+
+#|
+;; no CFF font support for now
 
 (define-subclass Subset (CFFSubset)
   #R (· this font)
@@ -65,7 +67,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
    #;createCIDFontdict
    #;addString
    #;encode))
-
+|#
 
 (define/contract (subsetCharstrings this)
   (->m void?)
