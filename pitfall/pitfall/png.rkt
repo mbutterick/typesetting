@@ -6,7 +6,7 @@
 
 (define-subclass object% (PNG data [label #f])
   
-  (field [image (read-png data)]
+  (field [image (read-png data)] ; `image` is a hash
          [pixelBitlength (· image pixelBitlength)]
          [width (· image width)]
          [height (· image height)]
@@ -86,11 +86,15 @@
   ;; embed the actual image data
   (send (· this obj) end (· this imgData)))
 
-
+(require sugar/debug)
+;; todo: this function is too slow.
+;; switch to draw/unsafe/png
 (define/contract (splitAlphaChannel this)
   (->m void?)
+  #;(report 'pixels)
   (define pixels
     (decodePixels (· this imgData) (· this pixelBitlength) (· this width) (· this height)))
+  #;(report '(imgBytes alphaBytes))
   (define-values (imgBytes alphaBytes)
     (for/fold ([img-bytes empty]
                [alpha-bytes empty])
@@ -100,7 +104,9 @@
           (values img-bytes (cons b alpha-bytes))
           (values (cons b img-bytes) alpha-bytes))))
 
+  #;(report 'deflate-imgBytes)
   (set-field! imgData this (deflate (apply bytes (reverse imgBytes))))
+  #;(report 'deflate-alphaBytes)
   (set-field! alphaChannel this (deflate (apply bytes (reverse alphaBytes)))))
 
 #;(module+ test
