@@ -1,12 +1,8 @@
 #lang racket/base
 (require racket/class
-         racket/list
-         racket/function
          sugar/unstable/class
          sugar/unstable/dict
          sugar/unstable/js
-         racket/dict
-         "struct.rkt"
          "private/generic.rkt"
          "private/helper.rkt"
          "number.rkt"

@@ -7,8 +7,7 @@
          "private/helper.rkt"
          "private/generic.rkt"
          racket/dict
-         racket/private/generic-methods
-         racket/function)
+         racket/private/generic-methods)
 (provide (all-defined-out) ref* ref*-set! (all-from-out racket/dict))
 (require (prefix-in d: racket/dict))
 
@@ -79,7 +78,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (unless (dict? res) (raise-result-error 'Struct:pre-encode "dict" res))
       res))
   
-  (unless ((disjoin assocs? Struct?) fields) ; should be Versioned Struct but whatever
+  (unless (or (assocs? fields) (Struct? fields)) ; should be Versioned Struct but whatever
     (raise-argument-error 'Struct "assocs or Versioned Struct" fields))
 
   (define/augride (decode stream [parent #f] [len 0])

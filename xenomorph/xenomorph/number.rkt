@@ -4,8 +4,6 @@
                      "sizes.rkt"
                      racket/match)
          racket/class
-         racket/list
-         racket/function
          sugar/unstable/class
          "private/helper.rkt"
          "sizes.rkt")
@@ -46,7 +44,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define/augment (size . args) _size)
 
   (define-values (bound-min bound-max)
-    ;; if a signed integer has n bits, it can contain a number between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
+    ;; if a signed integer has n bits, it can contain a number
+    ;; between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
     (let* ([signed-max (sub1 (arithmetic-shift 1 (sub1 bits)))]
            [signed-min (sub1 (- signed-max))]
            [delta (if _signed? 0 signed-min)])
@@ -54,7 +53,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
   (define/augment (decode port [parent #f])
     (define bstr (read-bytes _size port))
-    (define bs ((if (eq? endian system-endian) identity reverse) (bytes->list bstr)))
+    (define bs ((if (eq? endian system-endian) values reverse) (bytes->list bstr)))
     (define unsigned-int (for/sum ([(b i) (in-indexed bs)])
                                   (arithmetic-shift b (* 8 i))))
     unsigned-int)
@@ -68,10 +67,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define/augment (encode port val [parent #f])
     (unless (<= bound-min val bound-max)
       (raise-argument-error 'Integer:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
-    (define-values (bs _) (for/fold ([bs empty] [n val])
+    (define-values (bs _) (for/fold ([bs null] [n val])
                                     ([i (in-range _size)])
                             (values (cons (bitwise-and n #xff) bs) (arithmetic-shift n -8))))
-    (apply bytes ((if (eq? endian 'be) identity reverse) bs))))
+    (apply bytes ((if (eq? endian 'be) values reverse) bs))))
 
 (define-values (NumberT NumberT? +NumberT) (values Integer Integer? +Integer))
 (define-values (Number Number? +Number) (values Integer Integer? +Integer))

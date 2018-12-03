@@ -1,12 +1,12 @@
 #lang racket/base
 (require racket/class
-         racket/function
          sugar/unstable/class
          sugar/unstable/case
          sugar/unstable/js
          "private/generic.rkt"
-         "private/helper.rkt")
-(require "number.rkt" "utils.rkt")
+         "private/helper.rkt"
+         "number.rkt"
+         "utils.rkt")
 (provide (all-defined-out))
 
 #|
@@ -20,7 +20,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                       [(ucs2) (error 'bleh)]
                       [(utf8) bytes->string/utf-8]
                       [(ascii) bytes->string/latin-1]
-                      [else identity]))
+                      [else values]))
   (proc (read-bytes len port)))
 
 (define (write-encoded-string port string [encoding 'ascii])

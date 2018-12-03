@@ -1,7 +1,6 @@
 #lang racket/base
 (require racket/class
          racket/list
-         racket/function
          sugar/unstable/class
          sugar/unstable/dict
          sugar/unstable/js
@@ -19,7 +18,8 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
 
 (define-subclass Struct (VersionedStruct type [versions (dictify)])
   
-  (unless ((disjoin integer? procedure? xenomorph-base%? symbol?) type)
+  (unless (for/or ([proc (list integer? procedure? xenomorph-base%? symbol?)])
+            (proc type))
     (raise-argument-error 'VersionedStruct "integer, function, symbol, or Restructure object" type))
   (unless (and (dict? versions) (andmap (λ (val) (or (dict? val) (Struct? val))) (map cdr versions)))
     (raise-argument-error 'VersionedStruct "dict of dicts or Structs" versions))
