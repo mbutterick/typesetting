@@ -19,11 +19,11 @@
                  ;;data = new Buffer(new Uint8Array(src))
                  [(regexp-match #rx"^data:.+;base64,(.*)$" src)
                   (void)] ;; base64 ; todo
-                 [else (file->bytes src)]))
+                 [else (open-input-file src)]))
   (cond
-    [(equal? (subbytes data 0 2) (bytes #xff #xd8))
+    [(equal? (peek-bytes 2 0 data) (bytes #xff #xd8))
      (make-object JPEG data label)]
-    [(equal? (subbytes data 0 4) (apply bytes (cons #x89 (map char->integer '(#\P #\N #\G)))))
+    [(equal? (peek-bytes 4 0 data) (apply bytes (cons #x89 (map char->integer '(#\P #\N #\G)))))
      (make-object PNG data label)]
     [else (raise-argument-error 'PDFImage-open "valid image format" src)]))
            
