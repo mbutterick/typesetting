@@ -78,7 +78,7 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
          (loop)]))))
 
 (define/contract (decodePixels imgData pixelBitLength width height)
-  (bytes? number? number? number? . -> . any/c)
+  (bytes? number? number? number? . -> . bytes?)
   (define pixelBytes (/ pixelBitLength 8))
   (define scanlineLength (* pixelBytes width))
   (define pixels (make-bytes (* scanlineLength height)))
@@ -153,5 +153,5 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
 (module+ test
   (require rackunit)
   (check-equal?
-   (read-png (open-input-file "test/assets/test.png"))
-   (read-png (file->bytes "test/assets/test.png"))))
+   (read-png (open-input-file "../ptest/assets/test.png"))
+   (read-png (file->bytes "../ptest/assets/test.png"))))
