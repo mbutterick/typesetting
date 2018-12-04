@@ -112,15 +112,14 @@
   #;(report 'unpacking-argb)
   (define-values (imgBytes alphaBytes)
     (parameterize ([current-input-port (open-input-bytes pixels)])
-      (for/fold ([img-bytes empty]
-                 [alpha-bytes empty]
-                 #:result (values (apply bytes-append (reverse img-bytes))
-                                  (apply bytes-append (reverse alpha-bytes))))
-                ([i (in-naturals)]
-                 #:break (eof-object? (peek-byte)))
-        (if (even? i)
-            (values img-bytes (cons (read-bytes 1) alpha-bytes))
-            (values (cons (read-bytes 3) img-bytes) alpha-bytes)))))
+      (define argb-len (/ (bytes-length pixels) 4))
+      (define img-bytes (make-bytes (* argb-len 3)))
+      (define alpha-bytes (make-bytes argb-len))
+      (for ([argb-bytes (in-port (λ (p) (read-bytes 4 p)))]
+            [i (in-range argb-len)])
+           (bytes-copy! alpha-bytes i argb-bytes 0 1)
+           (bytes-copy! img-bytes (* i 3) argb-bytes 1 4))
+      (values img-bytes alpha-bytes)))
 
   #;(report 'deflate-imgBytes)
   (set-field! imgData this (deflate imgBytes))
