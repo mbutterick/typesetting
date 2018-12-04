@@ -13,7 +13,7 @@
 ; node's zlib.deflate makes smaller files, for some reason
 ; so don't compare file sizes in this case
 (define-runtime-path this "test8rkt.pdf")
-(make-doc this #f proc #:test #false #:pdfkit #t) 
+(make-doc this #f proc #:pdfkit #f) 
 
 (define-runtime-path that "test8crkt.pdf")
-(make-doc that #t proc #:test #false #:pdfkit #f)
+(make-doc that #t proc #:pdfkit #f)
