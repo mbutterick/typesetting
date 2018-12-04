@@ -104,19 +104,24 @@
 
   #;(report 'unpacking-argb)
   (define-values (imgBytes alphaBytes)
-    (time (for/fold ([img-bytes empty]
-                     [alpha-bytes empty])
-                    ([pixel (in-port (λ (p) (read-bytes 4 p)) (open-input-bytes pixels))])
-            (values (cons (subbytes pixel 1 4) img-bytes)
-                    (cons (subbytes pixel 0 1) alpha-bytes)))))
+    (parameterize ([current-input-port (open-input-bytes pixels)])
+       (for/fold ([img-bytes empty]
+                  [alpha-bytes empty]
+                  #:result (values (apply bytes-append (reverse img-bytes))
+                                   (apply bytes-append (reverse alpha-bytes))))
+                 ([i (in-naturals)]
+                  #:break (eof-object? (peek-byte)))
+         (if (even? i)
+             (values img-bytes (cons (read-bytes 1) alpha-bytes))
+             (values (cons (read-bytes 3) img-bytes) alpha-bytes)))))
 
-  (report 'deflate-imgBytes)
-  (set-field! imgData this (time (deflate (apply bytes-append (reverse imgBytes)))))
-  (report 'deflate-alphaBytes)
-  (set-field! alphaChannel this (time (deflate (apply bytes-append (reverse alphaBytes))))))
+  #;(report 'deflate-imgBytes)
+  (set-field! imgData this (deflate imgBytes))
+  #;(report 'deflate-alphaBytes)
+  (set-field! alphaChannel this (deflate alphaBytes)))
 
 ;; test files
 ;; http://www.libpng.org/pub/png/png-sitemap.html#images
 (module+ test
-  (define pic (make-object PNG (open-input-file "../ptest/assets/test.png")))
+  (define pic (make-object PNG (open-input-file "../ptest/assets/death-alpha.png")))
   (splitAlphaChannel pic))
