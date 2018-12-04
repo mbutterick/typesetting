@@ -22,7 +22,7 @@
                  [else (open-input-file src)]))
   (cond
     [(equal? (peek-bytes 2 0 data) (bytes #xff #xd8))
-     (make-object JPEG (port->bytes data) label)]
+     (make-object JPEG data label)]
     [(equal? (peek-bytes 4 0 data) (apply bytes (cons #x89 (map char->integer '(#\P #\N #\G)))))
      (make-object PNG data label)]
     [else (raise-argument-error 'PDFImage-open "valid image format" src)]))

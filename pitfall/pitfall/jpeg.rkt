@@ -8,9 +8,7 @@
 
 (define-subclass object% (JPEG data [label #f])
   (define last-ip (current-input-port))
-  (current-input-port (if (input-port? data)
-                          data
-                          (open-input-bytes data)))
+  (current-input-port (if (input-port? data) data (open-input-bytes data)))
   (unless (equal? (read-16bit-integer) #xffd8)
     (error 'JPEG "Start of Input marker byte not found"))
 
@@ -66,6 +64,7 @@
     (when (equal? (· this colorSpace) "DeviceCMYK")
       (hash-set! (· this obj payload) 'Decode '(1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0)))
 
+    (port-position (· this data) 0)
     (send (· this obj) end (· this data))))
 
 (module+ test
