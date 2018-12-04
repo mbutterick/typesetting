@@ -1,5 +1,5 @@
 #lang racket/base
-(require pitfall/pdftest)
+(require pitfall/pdftest racket/file racket/string)
 
 (define-runtime-path tiger "assets/tiger.json")
 
