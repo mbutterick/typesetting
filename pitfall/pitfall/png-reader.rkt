@@ -2,7 +2,7 @@
 (require "racket.rkt")
 
 (require "zlib.rkt")
-(provide read-png decodePixels)
+(provide read-png)
 
 #|
 Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
@@ -77,73 +77,6 @@ Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
          (read-bytes 4) ; skip crc
          (loop)]))))
 
-(define/contract (decodePixels imgData pixelBitLength width height)
-  (bytes? number? number? number? . -> . bytes?)
-  (define pixelBytes (/ pixelBitLength 8))
-  (define scanlineLength (* pixelBytes width))
-  (define pixels (make-bytes (* scanlineLength height)))
-
-  (define (left-byte idx c) (if (< idx pixelBytes)
-                              0
-                              (bytes-ref pixels (- c pixelBytes))))
-
-  (define (upper-byte row col idx)
-    (if (zero? row) 0 (bytes-ref pixels (+ (* (sub1 row) scanlineLength)
-                                           (* col pixelBytes)
-                                           (modulo idx pixelBytes)))))
-
-  (define (get-col i) ((i . - . (modulo i pixelBytes)) . / . pixelBytes))
-
-  (define (fold/scanline c-in proc)
-    (for/fold ([c c-in])
-              ([idx (in-range scanlineLength)]
-               [byte (in-port read-byte)])
-      (bytes-set! pixels c (proc c idx byte))
-      (add1 c)))
-
-  (parameterize ([current-input-port (open-input-bytes (inflate imgData))])
-    (for/fold ([c 0])
-              ([row (in-naturals)]
-               #:break (eof-object? (peek-byte)))
-      (case (read-byte)
-        ;; none
-        [(0) (fold/scanline c (λ (c idx byte) byte))]
-        ;; sub
-        [(1) (fold/scanline c (λ (c idx byte) (modulo (+ byte (left-byte idx c)) 256)))]
-        ;; up
-        [(2) (fold/scanline c (λ (c idx byte) (modulo (+ (upper-byte row (get-col idx) idx) byte) 256)))]
-        ;; ; average
-        [(3) (fold/scanline c (λ (c idx byte) (modulo (+ byte (floor (/ (+ (left-byte idx c) (upper-byte row (get-col idx) idx)) 2))) 256)))]
-        [(4) ; paeth
-         (fold/scanline c (λ (c idx byte)
-                            (define col (get-col idx))
-                            (match-define (list upper upperLeft)
-                              (cond
-                                [(zero? row) (list 0 0)]
-                                [else (define upper (upper-byte row col idx))
-                                      (define upperLeft (if (zero? col)
-                                                            col
-                                                            (bytes-ref pixels
-                                                                       (+ (* (sub1 row) scanlineLength)
-                                                                          (* (sub1 col) pixelBytes)
-                                                                          (modulo idx pixelBytes)))))
-                                      (list upper upperLeft)]))
-
-                            (define left (left-byte idx c))
-           
-                            (match-define (list pa pb pc)
-                              (for/list ([x (in-list (list left upper upperLeft))])
-                                (define p (+ left upper (- upperLeft)))
-                                (abs (- p x))))
-           
-                            (define paeth (cond
-                                            [(and (<= pa pb) (<= pa pc)) left]
-                                            [(<= pb pc) upper]
-                                            [else upperLeft]))
-           
-                            (modulo (+ byte paeth) 256)))]
-        [else (error 'invalid-png-filter-algorithm )])))
-  pixels)
 
 
 (define (read-32bit-integer)

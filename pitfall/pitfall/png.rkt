@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require "racket.rkt")
 
 (require "png-reader.rkt" "zlib.rkt")
@@ -86,29 +86,37 @@
   ;; embed the actual image data
   (send (· this obj) end (· this imgData)))
 
-(require sugar/debug)
+(require sugar/debug racket/draw)
 ;; todo: this function is too slow.
 ;; switch to draw/unsafe/png
 (define/contract (splitAlphaChannel this)
   (->m void?)
-  #;(report 'pixels)
+  
   (define pixels
-    (decodePixels (· this imgData) (· this pixelBitlength) (· this width) (· this height)))
-  #;(report '(imgBytes alphaBytes))
+    (let ()
+      (define ip (· this data))
+      (port-position ip 0)
+      (define bmap (read-bitmap ip 'png/alpha))
+      (define bs (make-bytes (* 4 (· this width) (· this height))))
+      (send bmap get-argb-pixels 0 0 (· this width) (· this height) bs)
+      bs
+      #;(decodePixels (· this imgData) (· this pixelBitlength) (· this width) (· this height))))
+
+  #;(report 'unpacking-argb)
   (define-values (imgBytes alphaBytes)
-    (for/fold ([img-bytes empty]
-               [alpha-bytes empty])
-              ([b (in-bytes pixels)]
-               [which (in-cycle '(img img img alpha))])
-      (if (eq? which 'alpha)
-          (values img-bytes (cons b alpha-bytes))
-          (values (cons b img-bytes) alpha-bytes))))
+    (time (for/fold ([img-bytes empty]
+                     [alpha-bytes empty])
+                    ([pixel (in-port (λ (p) (read-bytes 4 p)) (open-input-bytes pixels))])
+            (values (cons (subbytes pixel 1 4) img-bytes)
+                    (cons (subbytes pixel 0 1) alpha-bytes)))))
 
-  #;(report 'deflate-imgBytes)
-  (set-field! imgData this (deflate (apply bytes (reverse imgBytes))))
-  #;(report 'deflate-alphaBytes)
-  (set-field! alphaChannel this (deflate (apply bytes (reverse alphaBytes)))))
+  (report 'deflate-imgBytes)
+  (set-field! imgData this (time (deflate (apply bytes-append (reverse imgBytes)))))
+  (report 'deflate-alphaBytes)
+  (set-field! alphaChannel this (time (deflate (apply bytes-append (reverse alphaBytes))))))
 
-#;(module+ test
-    (define pic (make-object PNG (file->bytes "test/assets/test.png")))
-    (splitAlphaChannel pic))
+;; test files
+;; http://www.libpng.org/pub/png/png-sitemap.html#images
+(module+ test
+  (define pic (make-object PNG (open-input-file "../ptest/assets/test.png")))
+  (splitAlphaChannel pic))
