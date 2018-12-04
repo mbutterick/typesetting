@@ -3,7 +3,6 @@
   racket/class
   racket/contract
   racket/draw
-  racket/promise
   sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
