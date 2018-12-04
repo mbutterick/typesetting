@@ -1,5 +1,12 @@
 #lang racket/base
-(require "racket.rkt")
+(require
+  "struct.rkt"
+  racket/class
+  racket/match
+  racket/contract
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict)
 
 (provide annotation-mixin)
 

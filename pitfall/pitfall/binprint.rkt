@@ -1,7 +1,9 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require sugar/list)
+(require
+  racket/string
+  racket/format
+  racket/function
+  sugar/list)
 (provide binprint)
 
 (define (binprint in #:width [width 16])
@@ -30,4 +32,4 @@
 
 (module+ test
   #;(binprint (open-input-bytes #"foobar is the name"))
-  (binprint (open-input-file "test/test12.pdf") #:width 24))
+  (binprint (open-input-file "../ptest/test12.pdf") #:width 24))

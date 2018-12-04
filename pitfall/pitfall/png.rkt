@@ -1,5 +1,12 @@
 #lang debug racket/base
-(require "racket.rkt")
+(require
+  racket/class
+  racket/contract
+  racket/list
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  sugar/unstable/port)
 
 (require "png-reader.rkt" "zlib.rkt")
 (provide PNG)
@@ -86,7 +93,7 @@
   ;; embed the actual image data
   (send (· this obj) end (· this imgData)))
 
-(require sugar/debug racket/draw)
+(require racket/draw)
 ;; todo: this function is too slow.
 ;; switch to draw/unsafe/png
 (define/contract (splitAlphaChannel this)
@@ -105,15 +112,15 @@
   #;(report 'unpacking-argb)
   (define-values (imgBytes alphaBytes)
     (parameterize ([current-input-port (open-input-bytes pixels)])
-       (for/fold ([img-bytes empty]
-                  [alpha-bytes empty]
-                  #:result (values (apply bytes-append (reverse img-bytes))
-                                   (apply bytes-append (reverse alpha-bytes))))
-                 ([i (in-naturals)]
-                  #:break (eof-object? (peek-byte)))
-         (if (even? i)
-             (values img-bytes (cons (read-bytes 1) alpha-bytes))
-             (values (cons (read-bytes 3) img-bytes) alpha-bytes)))))
+      (for/fold ([img-bytes empty]
+                 [alpha-bytes empty]
+                 #:result (values (apply bytes-append (reverse img-bytes))
+                                  (apply bytes-append (reverse alpha-bytes))))
+                ([i (in-naturals)]
+                 #:break (eof-object? (peek-byte)))
+        (if (even? i)
+            (values img-bytes (cons (read-bytes 1) alpha-bytes))
+            (values (cons (read-bytes 3) img-bytes) alpha-bytes)))))
 
   #;(report 'deflate-imgBytes)
   (set-field! imgData this (deflate imgBytes))

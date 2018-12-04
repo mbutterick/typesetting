@@ -1,5 +1,11 @@
 #lang debug racket/base
-(require "racket.rkt")
+(require
+  racket/class
+  racket/contract
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  sugar/unstable/port)
 
 (provide JPEG)
 

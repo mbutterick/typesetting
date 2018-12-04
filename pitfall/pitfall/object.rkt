@@ -1,7 +1,12 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require (only-in srfi/19 date->string))
+(require
+  "struct.rkt"
+  racket/class
+  racket/string
+  racket/contract
+  racket/list
+  sugar/unstable/js
+  (only-in srfi/19 date->string))
 (provide PDFObject convert)
 
 (define PDFObject

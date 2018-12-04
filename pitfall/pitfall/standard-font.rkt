@@ -1,8 +1,16 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "afm-font.rkt" "font.rkt" fontland)
-(require racket/runtime-path)
+(require
+  (for-syntax racket/base)
+  racket/class
+  racket/file
+  racket/contract
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  "afm-font.rkt"
+  "font.rkt"
+  fontland
+  racket/runtime-path)
 (provide isStandardFont standard-fonts StandardFont)
 
 (define-subclass PDFFont (StandardFont document name id)

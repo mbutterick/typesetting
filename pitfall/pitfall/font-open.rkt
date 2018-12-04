@@ -1,7 +1,11 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "standard-font.rkt" "font.rkt" fontland "embedded.rkt")
+(require
+  racket/class
+  racket/contract
+  "standard-font.rkt"
+  "font.rkt"
+  fontland
+  "embedded.rkt")
 (provide PDFFont-open)
 
 (define/contract (PDFFont-open document src family id)

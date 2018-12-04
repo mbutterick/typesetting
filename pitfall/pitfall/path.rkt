@@ -1,7 +1,10 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require brag/support sugar/list)
+(require
+  racket/class
+  racket/match
+  racket/list
+  brag/support
+  sugar/list)
 (provide parse-svg-path)
 
 (define (parse-svg-path doc path)

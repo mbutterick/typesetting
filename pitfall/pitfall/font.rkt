@@ -1,7 +1,10 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "reference.rkt")
+(require
+  racket/class
+  racket/contract
+  sugar/unstable/class
+  sugar/unstable/js
+  "reference.rkt")
 (provide PDFFont)
 
 (define PDFFont

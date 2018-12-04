@@ -1,7 +1,23 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "font.rkt" fontland "reference.rkt")
+(require
+  (for-syntax racket/base)
+  "param.rkt"
+  "struct.rkt"
+  racket/class
+  racket/match
+  racket/string
+  racket/format
+  racket/contract
+  racket/list
+  racket/function
+  br/define
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  sugar/unstable/contract
+  "font.rkt"
+  fontland
+  "reference.rkt")
 (provide EmbeddedFont)
 
 #|

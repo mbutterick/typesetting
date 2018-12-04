@@ -1,7 +1,10 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "jpeg.rkt" "png.rkt")
+(require
+  "helper.rkt"
+  racket/class
+  racket/contract
+  "jpeg.rkt"
+  "png.rkt")
 (provide PDFImage-open)
 
 #;(define PDFImage

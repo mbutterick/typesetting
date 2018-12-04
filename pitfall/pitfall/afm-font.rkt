@@ -1,5 +1,14 @@
 #lang at-exp racket/base
-(require "racket.rkt")
+(require
+  racket/class
+  racket/file
+  racket/match
+  racket/string
+  racket/contract
+  racket/list
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict)
 
 (provide AFMFont AFMFont-open)
 

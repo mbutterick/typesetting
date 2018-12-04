@@ -1,7 +1,12 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "font.rkt" "font-open.rkt")
+(require
+  racket/class
+  racket/match
+  racket/contract
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  "font-open.rkt")
 (provide fonts-mixin)
 
 (define (fonts-mixin [% mixin-tester%])

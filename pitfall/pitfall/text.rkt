@@ -1,7 +1,16 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require sugar/list racket/promise)
+(require
+  racket/class
+  racket/match
+  racket/string
+  racket/contract
+  racket/list
+  racket/function
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  sugar/list
+  racket/promise)
 (provide text-mixin)
 
 #|

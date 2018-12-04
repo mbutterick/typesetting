@@ -1,5 +1,4 @@
 #lang racket/base
-(require "racket.rkt")
 
 (provide deflate inflate)
 

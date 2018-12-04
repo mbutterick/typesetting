@@ -1,8 +1,25 @@
 #lang at-exp racket/base
-(require "racket.rkt")
-
-(require "reference.rkt" "object.rkt" "page.rkt")
-(require "vector.rkt" "color.rkt" "fonts.rkt" "text.rkt" "images.rkt" "annotations.rkt")
+(require
+  "helper.rkt"
+  "param.rkt"
+  "struct.rkt"
+  racket/class
+  racket/format
+  racket/contract
+  racket/list
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  sugar/unstable/port
+  "reference.rkt"
+  "object.rkt"
+  "page.rkt"
+  "vector.rkt"
+  "color.rkt"
+  "fonts.rkt"
+  "text.rkt"
+  "images.rkt"
+  "annotations.rkt")
 (provide PDFDocument)
 
 (define mixed% (annotation-mixin (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%)))))))

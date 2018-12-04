@@ -1,7 +1,11 @@
 #lang racket/base
-(require "racket.rkt")
+(require
+  sugar/debug
+  racket/file
+  racket/contract
+  racket/list
+  sugar/unstable/dict)
 
-(require "zlib.rkt")
 (provide read-png)
 
 #|

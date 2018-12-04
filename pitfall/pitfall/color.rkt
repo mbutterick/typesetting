@@ -1,5 +1,13 @@
 #lang racket/base
-(require "racket.rkt")
+(require
+  "helper.rkt"
+  racket/class
+  racket/match
+  racket/string
+  racket/contract
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict)
 
 (provide color-mixin)
 

@@ -1,7 +1,12 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "image.rkt")
+(require
+  racket/class
+  racket/match
+  racket/contract
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  "image.rkt")
 (provide image-mixin)
 
 (define (image-mixin [% mixin-tester%])

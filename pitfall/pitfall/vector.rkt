@@ -1,7 +1,14 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "path.rkt")
+(require
+  "helper.rkt"
+  racket/class
+  racket/match
+  racket/string
+  racket/contract
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  "path.rkt")
 (provide vector-mixin default-ctm-value)
 
 (define (vector-mixin [% mixin-tester%])

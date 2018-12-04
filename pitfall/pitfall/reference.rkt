@@ -1,7 +1,16 @@
 #lang racket/base
-(require "racket.rkt")
-
-(require "object.rkt" "zlib.rkt")
+(require
+  "helper.rkt"
+  "param.rkt"
+  racket/class
+  racket/contract
+  racket/list
+  sugar/unstable/class
+  sugar/unstable/js
+  sugar/unstable/dict
+  sugar/unstable/port
+  "object.rkt"
+  "zlib.rkt")
 (provide PDFReference)
 
 (define-subclass object% (PDFReference document id [payload (mhash)])
