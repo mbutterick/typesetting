@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require "racket.rkt")
 
 (provide JPEG)
@@ -39,12 +39,11 @@
 
 (define (read-16bit-integer [bytes-or-port #f])
   (define signed #f) (define big-endian #t)
-  (integer-bytes->integer (read-bytes 2 (cond
-                                          [(bytes? bytes-or-port)
-                                           (open-input-bytes bytes-or-port)]
-                                          [(port? bytes-or-port) bytes-or-port]
-                                          [else
-                                           (current-input-port)])) signed big-endian))
+  (integer-bytes->integer
+   (read-bytes 2 (cond
+                   [(bytes? bytes-or-port) (open-input-bytes bytes-or-port)]
+                   [(port? bytes-or-port) bytes-or-port]
+                   [else (current-input-port)])) signed big-endian))
 
 (define/contract (embed this doc-in)
   (object? . ->m . void?)
@@ -72,4 +71,4 @@
 (module+ test
   (require rackunit)
   (check-equal? (number->string (read-16bit-integer (bytes #x12 #x34 #x56)) 16) "1234")
-  (make-object JPEG (open-input-file "test/assets/test.jpeg")))
+  (make-object JPEG (open-input-file "../ptest/assets/test.jpeg")))
