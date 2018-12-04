@@ -2,7 +2,8 @@
 (require
   racket/class
   racket/contract
-  racket/list
+  racket/draw
+  racket/promise
   sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
@@ -24,7 +25,7 @@
 
   (as-methods
    embed
-   splitAlphaChannel))
+   split-alpha-channel))
 
 (define/contract (embed this doc-in)
   (object? . ->m . void?)
@@ -33,7 +34,7 @@
   
   (unless (· this obj)
     (set-field! obj this
-                (send doc-in ref
+                (send (· this document) ref
                       (mhash 'Type "XObject"
                              'Subtype "Image"
                              'BitsPerComponent (· this image bits)
@@ -42,17 +43,18 @@
                              'Filter "FlateDecode")))
 
     (unless (· this image hasAlphaChannel)
-      (define params (send doc-in ref (mhash 'Predictor 15
-                                             'Colors (· this image colors)
-                                             'BitsPerComponent (· this image bits)
-                                             'Columns (· this width))))
+      (define params (send (· this document) ref
+                           (mhash 'Predictor 15
+                                  'Colors (· this image colors)
+                                  'BitsPerComponent (· this image bits)
+                                  'Columns (· this width))))
       (hash-set! (· this obj payload) 'DecodeParms params)
       (send params end))
 
     (cond
-      [(hash-ref (· this image) 'palette #f)
+      [(hash-has-key? (· this image) 'palette)
        ;; embed the color palette in the PDF as an object stream
-       (define palette-ref (· doc-in ref))
+       (define palette-ref (· this document ref))
        (send palette-ref end (· this image palette))
 
        ;; build the color space array for the image
@@ -62,19 +64,21 @@
 
    
     (cond
-      [(hash-ref (· this image) 'transparency #f)
+      [(hash-has-key? (· this image) 'transparency)
        (cond
-         [(hash-ref (hash-ref (· this image) 'transparency) 'grayscale #f)
+         [(hash-has-key? (· this image transparency) 'grayscale)
           (error 'transparency-grayscale-not-implemented)]
-         [(hash-ref (hash-ref (· this image) 'transparency) 'rgb #f)
+         [(hash-has-key? (· this image transparency) 'rgb)
           (error 'transparency-rgb-not-implemented)]
-         [(hash-ref (hash-ref (· this image) 'transparency) 'indexed #f)
+         [(hash-has-key? (· this image transparency) 'indexed)
           (error 'transparency-indexed-not-implemented)])]
-      [(hash-ref (· this image) 'hasAlphaChannel #f)
+      [(hash-has-key? (· this image) 'hasAlphaChannel)
        ;; For PNG color types 4 and 6, the transparency data is stored as a alpha
        ;; channel mixed in with the main image data. Separate this data out into an
        ;; SMask object and store it separately in the PDF.]
-       (· this splitAlphaChannel)]))
+       (define-values (img-bytes alpha-bytes) (send this split-alpha-channel))
+       (set-field! imgData this (deflate img-bytes))
+       (set-field! alphaChannel this (deflate alpha-bytes))]))
 
   (when (· this alphaChannel)
     (define sMask
@@ -93,41 +97,25 @@
   ;; embed the actual image data
   (send (· this obj) end (· this imgData)))
 
-(require racket/draw)
-;; todo: this function is too slow.
-;; switch to draw/unsafe/png
-(define/contract (splitAlphaChannel this)
-  (->m void?)
-  
-  (define pixels
-    (let ()
-      (define ip (· this data))
-      (port-position ip 0)
-      (define bmap (read-bitmap ip 'png/alpha))
-      (define bs (make-bytes (* 4 (· this width) (· this height))))
-      (send bmap get-argb-pixels 0 0 (· this width) (· this height) bs)
-      bs
-      #;(decodePixels (· this imgData) (· this pixelBitlength) (· this width) (· this height))))
 
-  #;(report 'unpacking-argb)
-  (define-values (imgBytes alphaBytes)
-    (parameterize ([current-input-port (open-input-bytes pixels)])
-      (define argb-len (/ (bytes-length pixels) 4))
-      (define img-bytes (make-bytes (* argb-len 3)))
-      (define alpha-bytes (make-bytes argb-len))
-      (for ([argb-bytes (in-port (λ (p) (read-bytes 4 p)))]
-            [i (in-range argb-len)])
-           (bytes-copy! alpha-bytes i argb-bytes 0 1)
-           (bytes-copy! img-bytes (* i 3) argb-bytes 1 4))
-      (values img-bytes alpha-bytes)))
-
-  #;(report 'deflate-imgBytes)
-  (set-field! imgData this (deflate imgBytes))
-  #;(report 'deflate-alphaBytes)
-  (set-field! alphaChannel this (deflate alphaBytes)))
+(define (split-alpha-channel this)
+  (define ip (· this data))
+  (port-position ip 0)
+  (define bmap (read-bitmap ip 'png/alpha))
+  (define pixels (make-bytes (* 4 (· this width) (· this height))))
+  (send bmap get-argb-pixels 0 0 (· this width) (· this height) pixels)
+  (parameterize ([current-input-port (open-input-bytes pixels)])
+    (define argb-len (/ (bytes-length pixels) 4))
+    (define img-bytes (make-bytes (* argb-len 3)))
+    (define alpha-bytes (make-bytes argb-len))
+    (for ([argb-bytes (in-port (λ (p) (read-bytes 4 p)))]
+          [i (in-range argb-len)])
+      (bytes-copy! alpha-bytes i argb-bytes 0 1)
+      (bytes-copy! img-bytes (* i 3) argb-bytes 1 4))
+    (values img-bytes alpha-bytes)))
 
 ;; test files
 ;; http://www.libpng.org/pub/png/png-sitemap.html#images
 (module+ test
   (define pic (make-object PNG (open-input-file "../ptest/assets/death-alpha.png")))
-  (splitAlphaChannel pic))
+  (define-values (img alpha) (split-alpha-channel pic)))
