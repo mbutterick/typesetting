@@ -18,20 +18,19 @@
   (begin (log-query q) (query-rows (current-dbc) q arg ...)))
 
 (define (add-record! rec)
-  (define recstring (format "(~a, '~a')" (car rec) (bytes->hex-string (cdr rec))))
-  (query-exec-logging (format "insert or replace into layouts (crc, layout) values ~a" recstring)))
+  (query-exec-logging "insert or replace into layouts (crc, layout) values ($1, $2)" (car rec) (cdr rec)))
 
 (define/caching (get-layout-from-db which)
-  (match (query-rows-logging (format "select layout from layouts where crc==~a" which))
-    [(list (vector val)) (hex-string->bytes val)]
+  (match (query-rows-logging "select layout from layouts where crc==$1" which)
+    [(list (vector val)) val]
     [_ #false]))
 
 (define (init-db)
-  (query-exec-logging "create table if not exists layouts (crc INTEGER UNIQUE, layout TEXT)")
+  (query-exec-logging "create table if not exists layouts (crc INTEGER UNIQUE, layout BLOB)")
   (query-exec-logging "create index if not exists layout_crcs ON layouts (crc);
 "))
 
 (module+ main
   (init-db)
-  (add-record! (cons 42 #"01234"))
+  (add-record! (cons 42 (bytes 0 1 0 2 3 4)))
   (get-layout-from-db 42))
