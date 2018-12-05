@@ -63,15 +63,15 @@
 
    
     (cond
-      [(hash-has-key? (· this image) 'transparency)
+      [(hash-ref (· this image) 'transparency #f)
        (cond
-         [(hash-has-key? (· this image transparency) 'grayscale)
+         [(hash-ref (hash-ref (· this image) 'transparency) 'grayscale #f)
           (error 'transparency-grayscale-not-implemented)]
-         [(hash-has-key? (· this image transparency) 'rgb)
+         [(hash-ref (hash-ref (· this image) 'transparency) 'rgb #f)
           (error 'transparency-rgb-not-implemented)]
-         [(hash-has-key? (· this image transparency) 'indexed)
+         [(hash-ref (hash-ref (· this image) 'transparency) 'indexed #f)
           (error 'transparency-indexed-not-implemented)])]
-      [(hash-has-key? (· this image) 'hasAlphaChannel)
+      [(hash-ref (· this image) 'hasAlphaChannel #f)
        ;; For PNG color types 4 and 6, the transparency data is stored as a alpha
        ;; channel mixed in with the main image data. Separate this data out into an
        ;; SMask object and store it separately in the PDF.]
