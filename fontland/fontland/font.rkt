@@ -21,7 +21,8 @@
          "ffi/harfbuzz.rkt"
          "glyph-position.rkt"
          sugar/list
-         racket/promise)
+         racket/promise
+         crc32c)
 (provide (all-defined-out))
 
 #|
@@ -40,6 +41,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (test-module
  (define f (openSync (path->string charter-path)))
+ (define fira (openSync (path->string fira-path)))
  (define otf (openSync (path->string fira-otf-path)))
  (check-equal? (postscriptName f) "Charter"))
 
@@ -61,7 +63,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
          [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
          [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
          [_hb-font (delay (and _src (hb_ft_font_create (· this ft-face))))]
-         [_hb-buf (delay (hb_buffer_create))])
+         [_hb-buf (delay (hb_buffer_create))]
+         [_crc (begin0 (crc32c-input-port _port) (pos _port 0))])
  
   (define/public (directory) (force _directory))
   (define/public (ft-face) (or (force _ft-face) (error 'ft-face-not-available)))
@@ -249,33 +252,67 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (make-object TTFGlyph glyph characters this))
 
 (define current-layout-caching (make-parameter #false))
-(define layout-cache (make-hash))
 
-(define (harfbuzz-glyphrun this string userFeatures script language)
+(struct hb-gid (val) #:transparent)
+(struct hb-cluster (chars) #:transparent)
+(struct hb-position (xad yad xoff yoff etc) #:transparent)
+(struct hb-layout (hb-gids hb-clusters hb-positions) #:transparent)
+
+(define hb-output (+Struct (dictify
+                            'hb-gids (+Array uint16 uint16)
+                            'hb-clusters (+Array (+Array uint16 uint16) uint16)
+                            'hb-positions (+Array (+Array uint16 5) uint16))))
+
+(define (hb-layout->glyphrun this hbr)
+  (match hbr
+    [(hash-table ('hb-gids gidxs)
+       ('hb-clusters clusters)
+       ('hb-positions posns))
+     (define glyphs (for/list ([gidx (in-list gidxs)]
+                               [cluster (in-list clusters)])
+                              (send this getGlyph gidx cluster)))
+     (define positions (for/list ([pos (in-list posns)])
+                                 (match pos
+                                   [(list xad yad xoff yoff _) (+GlyphPosition xad yad xoff yoff)])))
+     (+GlyphRun glyphs positions)]))
+
+
+(define (harfbuzz-layout this codepoints userFeatures script language)
   #;(string? (listof symbol?) symbol? symbol? . ->m . GlyphRun?)
   (define buf (· this hb-buf))
   (hb_buffer_reset buf)
-  (hb_buffer_add_codepoints buf (map char->integer (string->list string)))
+  (hb_buffer_add_codepoints buf codepoints)
   (define chars (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf)))
   (hb_shape (· this hb-font) buf (map tag->hb-feature (or userFeatures null)))
-  (define-values (gidxs clusters)
-    (for/lists (gs cs)
-               ([gi (in-list (hb_buffer_get_glyph_infos buf))])
-      (values (hb_glyph_info_t-codepoint gi) (hb_glyph_info_t-cluster gi))))
-  (define glyphs (for/list ([gidx (in-list gidxs)]
-                            [char-cluster (in-list (break-at chars clusters))])
-                   (send this getGlyph gidx char-cluster)))
-  (define positions (for/list ([gp (in-list (hb_buffer_get_glyph_positions buf))])
-                      (match (hb_glyph_position_t->list gp)
-                        [(list xad yad xoff yoff _) (+GlyphPosition xad yad xoff yoff)])))
-  (+GlyphRun glyphs positions))
+  (define gis (hb_buffer_get_glyph_infos buf))
+  (dictify 'hb-gids (map hb_glyph_info_t-codepoint gis)
+           'hb-clusters (break-at chars (map hb_glyph_info_t-cluster gis))
+           'hb-positions (map hb_glyph_position_t->list (hb_buffer_get_glyph_positions buf))))
+
+
+(define layout-cache (make-hasheqv))
+
+(require xenomorph/struct)
+(define hb-input (+Struct (dictify
+                           'font-crc uint32
+                           'codepoints (+Array uint16)
+                           'userFeatures (+Array (+String uint8)))))
+
+(define (layout-cache-key font-crc codepoints user-features . _)
+  (crc32c-bytes (encode hb-input (dictify 
+                                  'font-crc font-crc
+                                  'codepoints codepoints
+                                  'userFeatures user-features) #f)))
+
 
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
-(define/contract (layout this string [userFeatures #f] [script #f] [language #f])
-  ((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
+(define (layout this string [userFeatures #f] [script #f] [language #f] #:debug [debug #f])
+  #;((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
   (define (get-layout string)
-    (define key (list string (and userFeatures (sort userFeatures symbol<?)) script language))
-    (hash-ref! layout-cache key (λ () (apply harfbuzz-glyphrun this key))))
+    (define codepoints (map char->integer (string->list string)))
+    (define args (list codepoints (if userFeatures (sort userFeatures symbol<?) null) script language))
+    (define res (hash-ref! layout-cache (apply layout-cache-key (· this _crc) args) (λ () (encode hb-output (apply harfbuzz-layout this args) #f))))
+    (dump (decode hb-output res))) ;; `dump` converts to hash
   ;; work on substrs to reuse cached pieces
   ;; caveat: no shaping / positioning that involve word spaces
   ;; todo: why does caching produce slightly different results in test files
@@ -284,9 +321,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     [(current-layout-caching)
      (define substrs (for/list ([substr (in-list (regexp-match* " " string #:gap-select? #t))]
                                 #:when (positive? (string-length substr)))
-                       substr))
+                               substr))
      (apply append-glyphruns (map get-layout substrs))]
-    [else (get-layout string)]))
+    [else (if debug
+              (get-layout string)
+              (hb-layout->glyphrun this (get-layout string)))]))
 
 
 ;; Returns an array of Glyph objects for the given string.
@@ -300,7 +339,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   ;; for now, just use UTF-8
   (define codepoints (map char->integer (string->list string)))
   (for/list ([cp (in-list codepoints)])
-    (send this glyphForCodePoint cp)))
+            (send this glyphForCodePoint cp)))
 
 
 ;; Maps a single unicode code point to a Glyph object.
@@ -323,7 +362,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (string? number? . ->m . number?)
   (/ (* size
         (for/sum ([c (in-string str)])
-          (measure-char-width this c))) (· this unitsPerEm)))
+                 (measure-char-width this c))) (· this unitsPerEm)))
 
 
 #|
@@ -357,13 +396,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
    ;; rather than use a `probe` function,
    ;; just try making a font with each format and see what happens
    (for/first ([font-format (in-list font-formats)])
-     (with-handlers ([probe-failed? (λ (exn) #f)])
-       (make-object font-format port)))
+              (with-handlers ([probe-failed? (λ (exn) #f)])
+                (make-object font-format port)))
    (error 'fontland:create "unknown font format")))
 
 
 (test-module
  (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0)
  (check-true (send f has-table? #"cmap"))
- (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag))))
-
+ (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag)))
+ (check-true
+  (let ([h (layout fira "Rifle" #:debug #t)])
+    (and (equal? (hash-ref h 'hb-gids) '(227 480 732 412))
+         (equal? (hash-ref h 'hb-clusters) '((82) (105) (102 108) (101)))
+         (equal? (hash-ref h 'hb-positions) '((601 0 0 0 0) (279 0 0 0 0) (580 0 0 0 0) (547 0 0 0 0)))))))
+ 
