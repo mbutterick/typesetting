@@ -27,7 +27,9 @@
     [_ #false]))
 
 (define (init-db)
-  (query-exec-logging "create table if not exists layouts (crc INTEGER, layout TEXT, PRIMARY KEY (crc))"))
+  (query-exec-logging "create table if not exists layouts (crc INTEGER UNIQUE, layout TEXT)")
+  (query-exec-logging "create index if not exists layout_crcs ON layouts (crc);
+"))
 
 (module+ main
   (init-db)
