@@ -1,12 +1,13 @@
 #lang debug racket/base
 (require (for-syntax racket/base)
          "helper.rkt"
-         "ffi/freetype.rkt"
+         "unsafe/freetype.rkt"
          "subset.rkt"
          "glyph.rkt"
          "bbox.rkt"
          "glyphrun.rkt"
          "directory.rkt"
+         "db.rkt"
          xenomorph
          "tables.rkt"
          racket/contract
@@ -18,7 +19,7 @@
          sugar/unstable/dict
          sugar/unstable/js
          racket/port
-         "ffi/harfbuzz.rkt"
+         "unsafe/harfbuzz.rkt"
          "glyph-position.rkt"
          sugar/list
          racket/promise
@@ -266,8 +267,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define (hb-layout->glyphrun this hbr)
   (match hbr
     [(hash-table ('hb-gids gidxs)
-       ('hb-clusters clusters)
-       ('hb-positions posns))
+                 ('hb-clusters clusters)
+                 ('hb-positions posns))
      (define glyphs (for/list ([gidx (in-list gidxs)]
                                [cluster (in-list clusters)])
                               (send this getGlyph gidx cluster)))
@@ -311,8 +312,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define (get-layout string)
     (define codepoints (map char->integer (string->list string)))
     (define args (list codepoints (if userFeatures (sort userFeatures symbol<?) null) script language))
-    (define res (hash-ref! layout-cache (apply layout-cache-key (· this _crc) args) (λ () (encode hb-output (apply harfbuzz-layout this args) #f))))
-    (dump (decode hb-output res))) ;; `dump` converts to hash
+    (define key (apply layout-cache-key (· this _crc) args))
+    (hash-ref! layout-cache key
+               (λ ()
+                 #;(encode hb-output (apply harfbuzz-layout this args) #f)
+                 (match (get-layout-from-db key)
+                   [(? bytes? res) (dump (decode hb-output res))]
+                   [_  (define new-layout (apply harfbuzz-layout this args))
+                       (add-record! (cons key (encode hb-output new-layout #f)))
+                       (make-hasheq new-layout)])))) ;; `dump` converts to hash
   ;; work on substrs to reuse cached pieces
   ;; caveat: no shaping / positioning that involve word spaces
   ;; todo: why does caching produce slightly different results in test files
@@ -322,7 +330,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
      (define substrs (for/list ([substr (in-list (regexp-match* " " string #:gap-select? #t))]
                                 #:when (positive? (string-length substr)))
                                substr))
-     (apply append-glyphruns (map get-layout substrs))]
+     (apply append-glyphruns (map (λ (lo) (hb-layout->glyphrun this lo)) (map get-layout substrs)))]
     [else (if debug
               (get-layout string)
               (hb-layout->glyphrun this (get-layout string)))]))
@@ -410,4 +418,3 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
     (and (equal? (hash-ref h 'hb-gids) '(227 480 732 412))
          (equal? (hash-ref h 'hb-clusters) '((82) (105) (102 108) (101)))
          (equal? (hash-ref h 'hb-positions) '((601 0 0 0 0) (279 0 0 0 0) (580 0 0 0 0) (547 0 0 0 0)))))))
- 

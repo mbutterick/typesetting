@@ -9,7 +9,7 @@
          sugar/unstable/dict
          sugar/unstable/js
          sugar/unstable/stub
-         "ffi/freetype.rkt"
+         "unsafe/freetype.rkt"
          "helper.rkt")
 (provide (all-defined-out))
 (module+ test (require rackunit))
