@@ -74,18 +74,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
 
 (define (ttf-subset-add-glyph ss gid)
-  (define glyph (getGlyph (subset-font ss) gid))
-
-  
   ;; glyph-decode unpacks the `glyf` table data corresponding to a certin gid.
   ;; here, it's not necessary for non-composite glyphs
   ;; because they just get copied entirely into the subset.
   ;; it's just used to detect composite glyphs and handle them specially.
   ;; so an optimization would be to detect composite / noncomposite without full glyph-decode.
+  (define glyph (get-glyph (subset-font ss) gid))
   (define ttf-glyf-data (glyph-decode glyph))
   
   ;; get the offset to the glyph from the loca table
-  (match-define (list this-offset next-offset) (take (drop (hash-ref (dump (get-table (subset-font ss) 'loca)) 'offsets) gid) 2))
+  (match-define (list this-offset next-offset)
+    (take (drop (hash-ref (dump (get-table (subset-font ss) 'loca)) 'offsets) gid) 2))
 
   (define port (get-table-stream (subset-font ss) 'glyf))
   (pos port (+ (pos port) this-offset))

@@ -64,8 +64,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
 ;; Returns a glyph object for the given glyph id.
 ;; You can pass the array of code points this glyph represents for
 ;; your use later, and it will be stored in the glyph object.
-(define (getGlyph this glyph [characters null])
-  #;((index?) ((listof index?)) . ->*m . glyph?)
+(define (get-glyph this glyph [characters null])
   ;; no CFF
   #;(make-object (if (· this has-cff-table?)
                      CFFGlyph

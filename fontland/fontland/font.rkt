@@ -183,7 +183,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                  ('hb-positions posns))
      (define glyphs (for/list ([gidx (in-list gidxs)]
                                [cluster (in-list clusters)])
-                      (getGlyph this gidx cluster)))
+                      (get-glyph this gidx cluster)))
      (define positions (for/list ([pos (in-list posns)])
                          (match pos
                            [(list xad yad xoff yoff _) (+glyph-position xad yad xoff yoff)])))
@@ -264,10 +264,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 ;; Maps a single unicode code point to a Glyph object.
 ;; Does not perform any advanced substitutions (there is no context to do so).
-(define (glyphForCodePoint this codePoint)
-  #;(index? . ->m . glyph?)
-  (define glyph-idx (FT_Get_Char_Index (· this ft-face) codePoint))
-  (getGlyph this glyph-idx (list codePoint)))
+(define (glyph-for-codepoint this codepoint)
+  (define glyph-idx (FT_Get_Char_Index (· this ft-face) codepoint))
+  (get-glyph this glyph-idx (list codepoint)))
 
 
 (define (measure-char-width this char)
