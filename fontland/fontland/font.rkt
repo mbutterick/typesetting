@@ -4,6 +4,7 @@
          "unsafe/freetype.rkt"
          "subset.rkt"
          "glyph.rkt"
+         "ttf-glyph.rkt"
          "bbox.rkt"
          "glyphrun.rkt"
          "directory.rkt"

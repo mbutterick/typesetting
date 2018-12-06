@@ -11,6 +11,7 @@
          "directory.rkt"
          "helper.rkt"
          fontland/glyph
+         fontland/ttf-glyph
          xenomorph)
 (provide Subset TTFSubset)
 
@@ -122,9 +123,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; if it is a compound glyph, include its components
   (when (and glyf (negative? (· glyf numberOfContours)))
     (for ([component (in-list (· glyf components))])
-         (define gid (send this includeGlyph (· component glyphID)))
-         ;; note: this (· component pos) is correct. It's a field of a Component object, not a port
-         (bytes-copy! buffer (· component pos) (send uint16be encode #f gid))))
+         (define gid (send this includeGlyph (Component-glyphID component)))
+         ;; note: this (Component-pos component) is correct. It's a field of a Component object, not a port
+         (bytes-copy! buffer (Component-pos component) (send uint16be encode #f gid))))
   
   ;; skip variation shit
 
