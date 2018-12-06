@@ -45,7 +45,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 
 (define loca (+Rloca
               ;; todo: address ugliness to cross-ref head table from ttffont
-              (λ (o) (hash-ref (dump ((TTFFont-_get-head-table o))) 'indexToLocFormat)) 
+              (λ (o) (hash-ref (dump ((ttf-font-get-head-table-proc o))) 'indexToLocFormat)) 
               (dictify
                0 (dictify 'offsets (+Array uint16be))
                1 (dictify 'offsets (+Array uint32be)))))

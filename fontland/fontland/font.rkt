@@ -49,7 +49,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define ft-library (delay (FT_Init_FreeType)))
 
-(define (+TTFFont _port [_decoded-tables (mhash)]
+(define (+ttf-font _port [_decoded-tables (mhash)]
                   [_src (path->string (object-name _port))]
                   [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
                   [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
@@ -58,20 +58,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                   [_crc (begin0 (crc32c-input-port _port) (pos _port 0))]
                   [_get-head-table #f])
   (unless (input-port? _port)
-    (raise-argument-error '+TTFFont "input port" _port))
+    (raise-argument-error '+ttf-font "input port" _port))
   (unless (member (peek-bytes 4 0 _port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
     (raise 'probe-fail))
   (define f
-    (TTFFont _port _decoded-tables _src _directory _ft-face _hb-font _hb-buf _crc _get-head-table))
+    (ttf-font _port _decoded-tables _src _directory _ft-face _hb-font _hb-buf _crc _get-head-table))
   
     ;; needed for `loca` table decoding cross-reference
-  (set-TTFFont-_get-head-table! f (λ () (get-head-table f)))
+  (set-ttf-font-get-head-table-proc! f (λ () (get-head-table f)))
   f)
 
 
 (define (directory this) (force (· this _directory)))
-(define (hb-font this) (or (force (TTFFont-_hb-font this)) (error 'hb-font-not-available)))
-(define (hb-buf this) (force (TTFFont-_hb-buf this)))
+(define (hb-font this) (or (force (ttf-font-hb-font this)) (error 'hb-font-not-available)))
+(define (hb-buf this) (force (ttf-font-hb-buf this)))
 
 (require "table-stream.rkt")
 
@@ -219,12 +219,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 ;; Returns a GlyphRun object, which includes an array of Glyphs and GlyphPositions for the given string.
-(define (layout this string [userFeatures #f] [script #f] [language #f] #:debug [debug #f])
+(define (layout this string [user-features #f] [script #f] [language #f] #:debug [debug #f])
   #;((string?) ((option/c (listof symbol?)) (option/c symbol?) (option/c symbol?)) . ->*m . GlyphRun?)
   (define (get-layout string)
     (define codepoints (map char->integer (string->list string)))
-    (define args (list codepoints (if userFeatures (sort userFeatures symbol<?) null) script language))
-    (define key (apply layout-cache-key (TTFFont-_crc this) args))
+    (define args (list codepoints (if user-features (sort user-features symbol<?) null) script language))
+    (define key (apply layout-cache-key (ttf-font-crc this) args))
     (hash-ref! layout-cache key
                (λ ()
                  #;(encode hb-output (apply harfbuzz-layout this args) #f)
@@ -289,7 +289,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/index.js
 |#
 
 ;; Register font formats
-(define font-formats (list +TTFFont))
+(define font-formats (list +ttf-font))
 ;;fontkit.registerFormat(WOFFFont); ;; todo
 ;;fontkit.registerFormat(WOFF2Font); ;; todo
 ;;fontkit.registerFormat(TrueTypeCollection); ;; todo

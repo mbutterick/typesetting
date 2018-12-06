@@ -17,7 +17,7 @@
 
 (define (has-table? this tag)
   #;((or/c bytes? symbol?) . ->m . boolean?)
-  (define directory (force (TTFFont-_directory this)))
+  (define directory (force (ttf-font-directory this)))
   (hash-has-key? (· directory tables) (match tag
                                              [(? bytes?) (string->symbol (bytes->string/latin-1 tag))]
                                              [_ tag])))
@@ -27,23 +27,23 @@
 (define (get-table this table-tag)
   (unless (has-table? this table-tag)
     (raise-argument-error 'get-table "table that exists in font" table-tag))
-  (hash-ref! (TTFFont-_decoded-tables this) table-tag (λ () (decode-table this table-tag))))
+  (hash-ref! (ttf-font-decoded-tables this) table-tag (λ () (decode-table this table-tag))))
 
 (define-table-getters)
 
 (define (get-table-stream this tag)
-  (define directory (force (TTFFont-_directory this)))
+  (define directory (force (ttf-font-directory this)))
   (define table (hash-ref (· directory tables) tag))
-  (and table (pos (TTFFont-_port this) (· table offset)) (TTFFont-_port this)))
+  (and table (pos (ttf-font-port this) (· table offset)) (ttf-font-port this)))
   
 (define  (decode-table this table-tag)
   (unless (hash-has-key? table-codecs table-tag)
     (raise-argument-error 'decode-table "decodable table" table-tag))
-  (define directory (force (TTFFont-_directory this)))
+  (define directory (force (ttf-font-directory this)))
   (define table (hash-ref (· directory tables) table-tag))
   ;; todo: possible to avoid copying the bytes here?
-  (pos (TTFFont-_port this) (· table offset))
-  (define table-bytes (open-input-bytes (peek-bytes (· table length) 0 (TTFFont-_port this))))
+  (pos (ttf-font-port this) (· table offset))
+  (define table-bytes (open-input-bytes (peek-bytes (· table length) 0 (ttf-font-port this))))
   (define table-decoder (hash-ref table-codecs table-tag))
   (decode table-decoder table-bytes #:parent this))
 
