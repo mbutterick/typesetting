@@ -16,6 +16,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/GlyphRun.js
 ; An array of GlyphPosition objects for each glyph in the run
 (struct glyphrun (glyphs positions) #:transparent)
 
+(define (+glyphrun [glyphs null] [positions null])
+  (glyphrun glyphs positions))
+
 (define (glyphrun-advance-width gr)
   (for/sum ([pos (in-list (glyphrun-positions gr))])
            (glyph-position-x-advance pos)))
@@ -32,6 +35,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/GlyphRun.js
 
 (module+ test
   (require rackunit)
-  (define gr (glyphrun null null))
+  (define gr (+glyphrun))
   (check-true (glyphrun? gr))
   (check-equal? (append-glyphruns gr gr) gr))
