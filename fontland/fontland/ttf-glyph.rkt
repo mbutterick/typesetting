@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require (for-syntax racket/base)
          racket/match
          racket/list
@@ -101,14 +101,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 
 ;; Decodes the glyph data into points for simple glyphs,
 ;; or components for composite glyphs
+(require "table-stream.rkt")
 (define (glyph-decode ttfg)
-  (define offsets (· (glyph-font ttfg) loca offsets))
+  (define offsets (hash-ref (dump (_getTable (glyph-font ttfg) 'loca)) 'offsets))
   (match-define (list glyfPos nextPos) (take (drop offsets (glyph-id ttfg)) 2))
 
   ;; Nothing to do if there is no data for this glyph
   (and (not (= glyfPos nextPos))
        (let ()
-         (define port (send (glyph-font ttfg) _getTableStream 'glyf))
+         (define port (_getTableStream (glyph-font ttfg) 'glyf))
          (pos port (+ (pos port) glyfPos))
          (define startPos (pos port))
          (define glyph-data (decode GlyfHeader port))

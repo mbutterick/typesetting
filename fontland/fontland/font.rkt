@@ -25,20 +25,22 @@
          sugar/list
          racket/promise
          crc32c)
-(provide (all-defined-out))
+(provide (except-out (all-defined-out) 
+   head
+   post
+   hhea
+   maxp
+   OS/2
+   cvt_
+   prep
+   fpgm))
 
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 |#
 
-(require (for-syntax "tables.rkt"))
-(define-syntax (define-table-getters stx)
-  (syntax-case stx ()
-    [(_)
-     (with-syntax ([(TABLE-TAG ...) (hash-keys table-codecs)])
-       #'(begin
-           (define/public (TABLE-TAG) (_getTable 'TABLE-TAG)) ...))]))
+
 
 
 (test-module
@@ -68,28 +70,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
          [_hb-buf (delay (hb_buffer_create))]
          [_crc (begin0 (crc32c-input-port _port) (pos _port 0))])
 
-
-  (define/public (_getTable table-tag)
-    (unless (has-table? this table-tag)
-      (raise-argument-error '_getTable "table that exists in font" table-tag))
-    (hash-ref! _decoded-tables table-tag (λ () (_decodeTable table-tag))))
-
-  (define-table-getters)
-
-  (define/public (_getTableStream tag)
-    (define table (hash-ref (· this directory tables) tag))
-    (and table (pos _port (· table offset)) _port))
-  
-  (define/public (_decodeTable table-tag)
-    (unless (hash-has-key? table-codecs table-tag)
-      (raise-argument-error '_decodeTable "decodable table" table-tag))
-    (define table (hash-ref (· this directory tables) table-tag))
-    ;; todo: possible to avoid copying the bytes here?
-    (pos _port (· table offset))
-    (define table-bytes (open-input-bytes (peek-bytes (· table length) 0 _port)))
-    (define table-decoder (hash-ref table-codecs table-tag))
-    (decode table-decoder table-bytes #:parent this))
-
   (as-methods
    postscriptName
    measure-string
@@ -104,11 +84,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
    xHeight
    bbox
    createSubset
-   has-table?
-   has-cff-table?
-   has-morx-table?
-   has-gsub-table?
-   has-gpos-table?
    getGlyph
    layout
    glyphsForString
@@ -116,7 +91,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
    directory
    ft-face
    hb-font
-   hb-buf))
+   hb-buf
+   head
+   post
+   hhea
+   maxp
+   OS/2
+   cvt_
+   prep
+   fpgm))
 
 
   (define (directory this) (force (· this _directory)))
@@ -124,6 +107,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define (hb-font this) (or (force (· this _hb-font)) (error 'hb-font-not-available)))
   (define (hb-buf this) (force (· this _hb-buf)))
 
+(require "table-stream.rkt")
+(define (head this) (_getTable this 'head))
+(define (post this) (_getTable this 'post))
+(define (hhea this) (_getTable this 'hhea))
+(define (OS/2 this) (_getTable this 'OS/2))
+(define (maxp this) (_getTable this 'maxp))
+(define (cvt_ this) (_getTable this 'cvt_))
+(define (prep this) (_getTable this 'prep))
+(define (fpgm this) (_getTable this 'fpgm))
 
 ;; The unique PostScript name for this font
 (define/contract (postscriptName this)
@@ -193,7 +185,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The height of capital letters above the baseline.
 (define/contract (capHeight this)
   (->m number?)
-  (if (send this has-table? #"OS/2")
+  (if (has-table? this #"OS/2")
       (· this OS/2 capHeight)
       (· this ascent)))
 
@@ -204,7 +196,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The height of lower case letters in the font.
 (define/contract (xHeight this)
   (->m number?)
-  (if (send this has-table? #"OS/2")
+  (if (has-table? this #"OS/2")
       (· this OS/2 xHeight)
       0))
 
@@ -228,24 +220,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                      CFFSubset
                      TTFSubset) this)
   (+ttf-subset this))
-
-
-(define/contract (has-table? this tag)
-  ((or/c bytes? symbol?) . ->m . boolean?)
-  (hash-has-key? (· this directory tables) (match tag
-                                             [(? bytes?) (string->symbol (bytes->string/latin-1 tag))]
-                                             [_ tag])))
-  
-(define (has-cff-table? x) (has-table? x 'CFF_))
-(define (has-morx-table? x) (has-table? x 'morx))
-(define (has-gpos-table? x) (has-table? x 'GPOS))
-(define (has-gsub-table? x) (has-table? x 'GSUB))
-
-(test-module
- (check-false (· f has-cff-table?))
- (check-false (· f has-morx-table?))
- (check-false (· f has-gsub-table?))
- (check-false (· f has-gpos-table?)))
 
 
 ;; Returns a glyph object for the given glyph id.
@@ -418,8 +392,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
 
 (test-module
  (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0)
- (check-true (send f has-table? #"cmap"))
- (check-exn exn:fail:contract? (λ () (send f _getTable 'nonexistent-table-tag)))
+ (check-true (has-table? f #"cmap"))
+ (check-exn exn:fail:contract? (λ () (_getTable f 'nonexistent-table-tag)))
  (check-true
   (let ([h (layout fira "Rifle" #:debug #t)])
     (and (equal? (hash-ref h 'hb-gids) '(227 480 732 412))

@@ -6,6 +6,7 @@
          sugar/unstable/dict
          sugar/unstable/js
          "table/loca.rkt"
+         "table-stream.rkt"
          "directory.rkt"
          fontland/glyph
          fontland/ttf-glyph
@@ -71,9 +72,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define ttf-glyf-data (glyph-decode glyph))
 
   ;; get the offset to the glyph from the loca table
-  (match-define (list this-offset next-offset) (take (drop (· (subset-font ss) loca offsets) gid) 2))
+  (match-define (list this-offset next-offset) (take (drop (hash-ref (dump (_getTable (subset-font ss) 'loca)) 'offsets) gid) 2))
 
-  (define port (send (subset-font ss) _getTableStream 'glyf))
+  (define port (_getTableStream (subset-font ss) 'glyf))
   (pos port (+ (pos port) this-offset))
 
   (define buffer (read-bytes  (- next-offset this-offset) port))
@@ -105,6 +106,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
 (define (clone-deep val)  (deserialize (serialize val)))
 
+(require racket/sequence)
 (define (encode ss port)
   #;(output-port? . ->m . void?)
   
@@ -134,23 +136,29 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define hhea (clone-deep (· (subset-font ss) hhea to-hash)))
   (dict-set! hhea 'numberOfMetrics (length (· (ttf-subset-hmtx ss) metrics)))
 
+  (define table-mhash
+    (let ([mh (make-hasheq)])
+      (define kvs (list 'head head
+                        'hhea hhea
+                        'loca (ttf-subset-loca ss)
+                        'maxp maxp
+                        'cvt_ (· (subset-font ss) cvt_)
+                        'prep (· (subset-font ss) prep)
+                        'glyf (ttf-subset-glyf ss)
+                        'hmtx (ttf-subset-hmtx ss)
+                        'fpgm (· (subset-font ss) fpgm)))
+      (for ([kv (in-slice 2 kvs)])
+        (unless (second kv)
+          (error 'encode (format "missing value for ~a" (first kv))))
+        (hash-set! mh (first kv) (second kv)))
+      mh))
   
-  (send Directory encode port
-        (mhash 'tables
-               (mhash
-                'head head
-                'hhea hhea
-                'loca (ttf-subset-loca ss)
-                'maxp maxp
-                'cvt_ (· (subset-font ss) cvt_)
-                'prep (· (subset-font ss) prep)
-                'glyf (ttf-subset-glyf ss)
-                'hmtx (ttf-subset-hmtx ss)
-                'fpgm (· (subset-font ss) fpgm))))
+    (send Directory encode port (mhash 'tables table-mhash))
 
-  #;(report* (bytes-length (send stream dump)) (send stream dump))
-  #;(report* (bytes-length (file->bytes "out.bin")) (file->bytes "out.bin"))
+    #;(report* (bytes-length (send stream dump)) (send stream dump))
+    #;(report* (bytes-length (file->bytes "out.bin")) (file->bytes "out.bin"))
   
-  (void)
-  )
+    (void)
+    )
 
+  
