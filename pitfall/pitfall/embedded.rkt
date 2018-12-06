@@ -67,7 +67,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
     (for/lists (idxs posns)
                ([(g i) (in-indexed glyphs)]
                 [posn (in-list positions)])
-      (define gid (includeGlyph (· this subset) (glyph-id g)))
+      (define gid (subset-include-glyph (· this subset) (glyph-id g)))
       (define subset-idx (toHex gid))
       (set-glyph-position-advance-width! posn (glyph-advance-width g))
 
