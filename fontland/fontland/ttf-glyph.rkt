@@ -103,13 +103,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 ;; or components for composite glyphs
 (require "table-stream.rkt")
 (define (glyph-decode ttfg)
-  (define offsets (hash-ref (dump (_getTable (glyph-font ttfg) 'loca)) 'offsets))
+  (define offsets (hash-ref (dump (get-table (glyph-font ttfg) 'loca)) 'offsets))
   (match-define (list glyfPos nextPos) (take (drop offsets (glyph-id ttfg)) 2))
 
   ;; Nothing to do if there is no data for this glyph
   (and (not (= glyfPos nextPos))
        (let ()
-         (define port (_getTableStream (glyph-font ttfg) 'glyf))
+         (define port (get-table-stream (glyph-font ttfg) 'glyf))
          (pos port (+ (pos port) glyfPos))
          (define startPos (pos port))
          (define glyph-data (decode GlyfHeader port))

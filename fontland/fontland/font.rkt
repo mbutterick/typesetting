@@ -25,15 +25,7 @@
          sugar/list
          racket/promise
          crc32c)
-(provide (except-out (all-defined-out) 
-   head
-   post
-   hhea
-   maxp
-   OS/2
-   cvt_
-   prep
-   fpgm))
+(provide (all-defined-out))
 
 #|
 approximates
@@ -70,6 +62,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
          [_hb-buf (delay (hb_buffer_create))]
          [_crc (begin0 (crc32c-input-port _port) (pos _port 0))])
 
+  (define/public (_get-head-table) (get-head-table this))
+
   (as-methods
    postscriptName
    measure-string
@@ -91,15 +85,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
    directory
    ft-face
    hb-font
-   hb-buf
-   head
-   post
-   hhea
-   maxp
-   OS/2
-   cvt_
-   prep
-   fpgm))
+   hb-buf))
 
 
   (define (directory this) (force (· this _directory)))
@@ -108,14 +94,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define (hb-buf this) (force (· this _hb-buf)))
 
 (require "table-stream.rkt")
-(define (head this) (_getTable this 'head))
-(define (post this) (_getTable this 'post))
-(define (hhea this) (_getTable this 'hhea))
-(define (OS/2 this) (_getTable this 'OS/2))
-(define (maxp this) (_getTable this 'maxp))
-(define (cvt_ this) (_getTable this 'cvt_))
-(define (prep this) (_getTable this 'prep))
-(define (fpgm this) (_getTable this 'fpgm))
 
 ;; The unique PostScript name for this font
 (define/contract (postscriptName this)
@@ -126,7 +104,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The size of the font’s internal coordinate grid
 (define/contract (unitsPerEm this)
   (->m number?)
-  (· this head unitsPerEm))
+  (· (get-head-table this) unitsPerEm))
 
 (test-module
  (check-equal? (· f unitsPerEm) 1000))
@@ -134,7 +112,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The font’s [ascender](https://en.wikipedia.org/wiki/Ascender_(typography))
 (define/contract (ascent this)
   (->m number?)
-  (· this hhea ascent))
+  (· (get-hhea-table this) ascent))
 
 (test-module
  (check-equal? (· f ascent) 980))
@@ -143,7 +121,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The font’s [descender](https://en.wikipedia.org/wiki/Descender)
 (define/contract (descent this)
   (->m number?)
-  (· this hhea descent))
+  (· (get-hhea-table this) descent))
 
 (test-module
  (check-equal? (· f descent) -238))
@@ -151,7 +129,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The amount of space that should be included between lines
 (define/contract (lineGap this)
   (->m number?)
-  (· this hhea lineGap))
+  (· (get-hhea-table this) lineGap))
 
 (test-module
  (check-equal? (· f lineGap) 0))
@@ -159,7 +137,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define/contract (underlinePosition this)
   (->m number?)
-  (· this post underlinePosition))
+  (· (get-post-table this) underlinePosition))
 
 (test-module
  (check-equal? (· f underlinePosition) -178))
@@ -167,7 +145,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define/contract (underlineThickness this)
   (->m number?)
-  (· this post underlineThickness))
+  (· (get-post-table this) underlineThickness))
 
 (test-module
  (check-equal? (· f underlineThickness) 58))
@@ -176,7 +154,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; If this is an italic font, the angle the cursor should be drawn at to match the font design
 (define/contract (italicAngle this)
   (->m number?)
-  (· this post italicAngle))
+  (· (get-post-table this) italicAngle))
 
 (test-module
  (check-equal? (· f italicAngle) 0))
@@ -186,7 +164,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define/contract (capHeight this)
   (->m number?)
   (if (has-table? this #"OS/2")
-      (· this OS/2 capHeight)
+      (· (get-OS/2-table this) capHeight)
       (· this ascent)))
 
 (test-module
@@ -197,7 +175,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define/contract (xHeight this)
   (->m number?)
   (if (has-table? this #"OS/2")
-      (· this OS/2 xHeight)
+      (· (get-OS/2-table this) xHeight)
       0))
 
 (test-module
@@ -207,7 +185,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
 (define/contract (bbox this)
   (->m BBox?)
-  (make-BBox (· this head xMin) (· this head yMin) (· this head xMax) (· this head yMax)))
+  (define head-table (get-head-table this))
+  (make-BBox (· head-table xMin) (· head-table yMin) (· head-table xMax) (· head-table yMax)))
 
 (test-module
  (check-equal? (bbox->list (· f bbox)) '(-161 -236 1193 963)))
@@ -393,7 +372,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
 (test-module
  (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0)
  (check-true (has-table? f #"cmap"))
- (check-exn exn:fail:contract? (λ () (_getTable f 'nonexistent-table-tag)))
+ (check-exn exn:fail:contract? (λ () (get-table f 'nonexistent-table-tag)))
  (check-true
   (let ([h (layout fira "Rifle" #:debug #t)])
     (and (equal? (hash-ref h 'hb-gids) '(227 480 732 412))

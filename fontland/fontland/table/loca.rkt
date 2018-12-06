@@ -43,7 +43,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
       (dict-update! this 'offsets (λ (offsets) (map (λ (x) (/ x 2)) offsets))))))
 
 (define loca (+Rloca
-              (λ (o) (· o head indexToLocFormat)) 
+              (λ (o) (· o _get-head-table indexToLocFormat)) 
               (dictify
                0 (dictify 'offsets (+Array uint16be))
                1 (dictify 'offsets (+Array uint32be)))))

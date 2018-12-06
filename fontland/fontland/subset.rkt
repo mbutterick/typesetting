@@ -72,9 +72,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define ttf-glyf-data (glyph-decode glyph))
 
   ;; get the offset to the glyph from the loca table
-  (match-define (list this-offset next-offset) (take (drop (hash-ref (dump (_getTable (subset-font ss) 'loca)) 'offsets) gid) 2))
+  (match-define (list this-offset next-offset) (take (drop (hash-ref (dump (get-table (subset-font ss) 'loca)) 'offsets) gid) 2))
 
-  (define port (_getTableStream (subset-font ss) 'glyf))
+  (define port (get-table-stream (subset-font ss) 'glyf))
   (pos port (+ (pos port) this-offset))
 
   (define buffer (read-bytes  (- next-offset this-offset) port))
@@ -122,18 +122,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
         #:break (= idx (length (subset-glyphs ss))))
     (define gid (list-ref (subset-glyphs ss) idx))
     (ttf-subset-add-glyph ss gid))
-
-  (define maxp (clone-deep (· (subset-font ss) maxp to-hash)))
+  
+  (define maxp (clone-deep (· (get-maxp-table (subset-font ss)) to-hash)))
   (dict-set! maxp 'numGlyphs (length (ttf-subset-glyf ss)))
   
   ;; populate the new loca table
   (dict-update! (ttf-subset-loca ss) 'offsets (λ (vals) (append vals (list (ttf-subset-offset ss)))))
   (loca-pre-encode (ttf-subset-loca ss))
 
-  (define head (clone-deep (· (subset-font ss) head to-hash)))
+  (define head (clone-deep (· (get-head-table (subset-font ss)) to-hash)))
   (dict-set! head 'indexToLocFormat (· (ttf-subset-loca ss) version))
   
-  (define hhea (clone-deep (· (subset-font ss) hhea to-hash)))
+  (define hhea (clone-deep (· (get-hhea-table (subset-font ss)) to-hash)))
   (dict-set! hhea 'numberOfMetrics (length (· (ttf-subset-hmtx ss) metrics)))
 
   (define table-mhash
@@ -142,11 +142,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                         'hhea hhea
                         'loca (ttf-subset-loca ss)
                         'maxp maxp
-                        'cvt_ (· (subset-font ss) cvt_)
-                        'prep (· (subset-font ss) prep)
+                        'cvt_ (get-cvt_-table (subset-font ss))
+                        'prep (get-prep-table (subset-font ss))
                         'glyf (ttf-subset-glyf ss)
                         'hmtx (ttf-subset-hmtx ss)
-                        'fpgm (· (subset-font ss) fpgm)))
+                        'fpgm (get-fpgm-table (subset-font ss))))
       (for ([kv (in-slice 2 kvs)])
         (unless (second kv)
           (error 'encode (format "missing value for ~a" (first kv))))
