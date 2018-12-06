@@ -54,15 +54,15 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
              (list string size (and features (sort features symbol<?)))
              (λ ()
                (define run (send (· this font) layout string features))
-               (define width (advanceWidth run))
+               (define width (glyphrun-advance-width run))
                (define scale (/ size (+ (· this font unitsPerEm) 0.0)))
                (* width scale))))
 
 
 ;; called from text.rkt
-(define/contract (encode this text [features #f])
-  ((string?) ((option/c list?)) . ->*m .
-             (list/c (listof string?) (listof GlyphPosition?)))
+(define (encode this text [features #f])
+  #;((string?) ((option/c list?)) . ->*m .
+             (list/c (listof string?) (listof glyphposition?)))
   #;(report*/file 'starting-layout-in-embedded (description (· this font)))
   (define glyphRun (send (· this font) layout text features))
   (define glyphs (glyphrun-glyphs glyphRun))
@@ -77,12 +77,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                 [posn (in-list positions)])
       (define gid (send (· this subset) includeGlyph (· glyph id)))
       (define subset-idx (toHex gid))
-      (set-field! advanceWidth posn (· glyph advanceWidth))
+      (set-glyph-position-advance-width! posn (· glyph advanceWidth))
 
-      (hash-ref! (· this widths) gid (λ () (· posn advanceWidth)))
+      (hash-ref! (· this widths) gid (λ () (glyph-position-advance-width posn)))
       (hash-ref! (· this unicode) gid (λ () (· glyph codePoints)))
 
-      (send posn scale (· this scale))
+      (scale-glyph-position! posn (· this scale))
       (values subset-idx posn)))
   (list subset-idxs new-positions))
 

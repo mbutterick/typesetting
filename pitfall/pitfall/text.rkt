@@ -10,7 +10,8 @@
   sugar/unstable/js
   sugar/unstable/dict
   sugar/list
-  racket/promise)
+  racket/promise
+  fontland/glyph-position)
 (provide text-mixin)
 
 #|
@@ -221,7 +222,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (when (< last cur)
       (let* ([hex (string-append* (sublist encoded-char-strs last cur))]
              [posn (list-ref positions (sub1 cur))]
-             [advance (- (· posn xAdvance) (· posn advanceWidth))])
+             [advance (- (glyph-position-x-advance posn) (glyph-position-advance-width posn))])
         (push-end! commands (format "<~a> ~a" hex (number (- advance))))))
     (set! last cur))
         
@@ -240,13 +241,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (cond
         ;; If we have an x or y offset, we have to break out of the current TJ command
         ;; so we can move the text position.
-        [(or (not (zero? (· posn xOffset))) (not (zero? (· posn yOffset))))
+        [(or (not (zero? (glyph-position-x-offset posn))) (not (zero? (glyph-position-y-offset posn))))
          ;; Flush the current buffer
          (flush i)
          ;; Move the text position and flush just the current character
          (send this addContent (format "1 0 0 1 ~a ~a Tm"
-                                       (number (+ x (* (· posn xOffset) scale)))
-                                       (number (+ y (* (· posn yOffset) scale)))))
+                                       (number (+ x (* (glyph-position-x-offset posn) scale)))
+                                       (number (+ y (* (glyph-position-y-offset posn) scale)))))
          (flush (add1 i))
          #t]
         [else
@@ -255,12 +256,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
            (send this addContent (format "1 0 0 1 ~a ~a Tm" (number x) (number y))))
 
          ;; Group segments that don't have any advance adjustments
-         (unless (zero? (- (· posn xAdvance) (· posn advanceWidth)))
+         (unless (zero? (- (glyph-position-x-advance posn) (glyph-position-advance-width posn)))
            (addSegment (add1 i)))
 
          #f]))
 
-    (values havingOffset (+ x (* (· posn xAdvance) scale))))
+    (values havingOffset (+ x (* (glyph-position-x-advance posn) scale))))
   
   
   ;; Flush any remaining commands

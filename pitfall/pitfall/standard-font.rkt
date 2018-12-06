@@ -36,8 +36,8 @@
   (· this dictionary end))
 
 
-(define/contract (encode this text [options #f])
-  ((string?) ((or/c hash? #f)) . ->*m . (list/c (listof string?) (listof (is-a?/c GlyphPosition))))
+(define (encode this text [options #f])
+  #;((string?) ((or/c hash? #f)) . ->*m . (list/c (listof string?) (listof glyph-position?)))
   (define this-font (· this font))
   (define encoded (send this-font encodeText text))
   (define glyphs (send this-font glyphsForString text))
@@ -45,7 +45,7 @@
   (define positions
     (for/list ([glyph (in-list glyphs)]
                [advance (in-list advances)])
-      (make-object GlyphPosition advance 0 0 0 (send this-font widthOfGlyph glyph)))) 
+      (+glyph-position advance 0 0 0 (send this-font widthOfGlyph glyph)))) 
   (list encoded positions))
 
 
