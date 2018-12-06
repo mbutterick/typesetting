@@ -190,23 +190,23 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
          (define port (send (glyph-_font ttfg) _getTableStream 'glyf))
          (pos port (+ (pos port) glyfPos))
          (define startPos (pos port))
-         (define glyph (decode GlyfHeader port))
-         (match (· glyph numberOfContours)
-           [(? positive?) (_decodeSimple glyph port)]
-           [(? negative?) (_decodeComposite glyph port startPos)])
-         glyph)))
+         (define glyph-data (decode GlyfHeader port))
+         (match (· glyph-data numberOfContours)
+           [(? positive?) (_decodeSimple glyph-data port)]
+           [(? negative?) (_decodeComposite glyph-data port startPos)])
+         glyph-data)))
 
-(define (_decodeSimple glyph port)
-  (unless (dict? glyph)
-    (raise-argument-error 'TTFGlyph-_decodeSimple "decoded RGlyfHeader" glyph))
+(define (_decodeSimple glyph-data port)
+  (unless (dict? glyph-data)
+    (raise-argument-error 'TTFGlyph-_decodeSimple "decoded RGlyfHeader" glyph-data))
 
   (unless (input-port? port)
     (raise-argument-error 'TTFGlyph-_decodeSimple "input port" port))
 
   ;; this is a simple glyph
-  (dict-set! glyph 'points empty)
-  (define endPtsOfContours (decode (+Array uint16be (· glyph numberOfContours)) port))
-  (dict-set! glyph 'instructions (decode (+Array uint8be uint16be) port))
+  (dict-set! glyph-data 'points empty)
+  (define endPtsOfContours (decode (+Array uint16be (· glyph-data numberOfContours)) port))
+  (dict-set! glyph-data 'instructions (decode (+Array uint8be uint16be) port))
   (define numCoords (add1 (last endPtsOfContours)))
 
   (define flags
@@ -229,15 +229,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
       (set-field! x point next-px)
       (set-field! y point next-py)
       (values (cons point points) next-px next-py)))
-  (dict-set! glyph 'points (reverse points)))
+  (dict-set! glyph-data 'points (reverse points)))
 
-(define (_decodeComposite glyph port [offset 0])
+(define (_decodeComposite glyph-data port [offset 0])
   ;; this is a composite glyph
-  (dict-set! glyph 'components empty)
+  (dict-set! glyph-data 'components empty)
   (define haveInstructions #f)
   (define flags MORE_COMPONENTS)
 
-  (dict-set! glyph 'components
+  (dict-set! glyph-data 'components
              (for/list ([i (in-naturals)]
                         #:break (zero? (bitwise-and flags MORE_COMPONENTS)))
                        (set! flags (send uint16be decode port))
