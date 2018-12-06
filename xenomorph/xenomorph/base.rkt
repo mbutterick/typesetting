@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require racket/class
          sugar/unstable/class
          racket/generic
@@ -77,8 +77,9 @@
            [_list null])
 
     (define/pubment (decode port [parent #f] . args)
-      (when parent (unless (indexable? parent)
-                     (raise-argument-error (symbol-append (get-class-name) ':decode) "indexable" parent)))
+      ;; todo: is `indexable?` really a necessary condition? doesn't seem to break anything withou it
+      #;(when parent (unless (indexable? parent)
+                     #;(raise-argument-error (symbol-append (get-class-name) ':decode) "indexable" parent)))
       (define ip (cond
                    [(bytes? port) (open-input-bytes port)]
                    [(input-port? port) port]
@@ -88,7 +89,7 @@
     (define/pubment (encode port val-in [parent #f] . args)
       #;(report* port val-in parent)
       (define val (pre-encode val-in port))
-      (when parent (unless (indexable? parent)
+      #;(when parent (unless (indexable? parent)
                      (raise-argument-error (symbol-append (get-class-name) ':encode) "indexable" parent)))
       (define op (cond
                    [(output-port? port) port]
