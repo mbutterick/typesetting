@@ -110,7 +110,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; because they just get copied entirely into the subset.
   ;; it's just used to detect composite glyphs and handle them specially.
   ;; so an optimization would be to detect composite / noncomposite without full glyph-decode.
-  (define glyf (glyph-decode glyph))
+  (define ttf-glyf-data (glyph-decode glyph))
 
   ;; get the offset to the glyph from the loca table
   (match-define (list curOffset nextOffset) (take (drop (· this font loca offsets) gid) 2))
@@ -121,11 +121,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define buffer (read-bytes  (- nextOffset curOffset) port))
 
   ;; if it is a compound glyph, include its components
-  (when (and glyf (negative? (· glyf numberOfContours)))
-    (for ([component (in-list (· glyf components))])
-         (define gid (send this includeGlyph (Component-glyphID component)))
-         ;; note: this (Component-pos component) is correct. It's a field of a Component object, not a port
-         (bytes-copy! buffer (Component-pos component) (send uint16be encode #f gid))))
+  (when (and ttf-glyf-data (negative? (· ttf-glyf-data numberOfContours)))
+    (for ([ttf-glyph-component (in-list (· ttf-glyf-data components))])
+         (define gid (send this includeGlyph (ttf-glyph-component-glyph-id ttf-glyph-component)))
+         ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
+         (bytes-copy! buffer (ttf-glyph-component-pos ttf-glyph-component) (send uint16be encode #f gid))))
   
   ;; skip variation shit
 
