@@ -30,7 +30,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
          ;; we make `unicode` and `width` fields integer-keyed hashes not lists
          ;; because they offer better random access and growability 
          [unicode (mhash 0 '(0))] ; always include the missing glyph (gid = 0)
-         [widths (mhash 0 (send (send (· this font) getGlyph 0) advanceWidth))]
+         [widths (mhash 0 (glyph-advance-width (send (· this font) getGlyph 0)))]
          ;; always include the width of the missing glyph (gid = 0)
          
          [name (· font postscriptName)]
@@ -66,21 +66,19 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   #;(report*/file 'starting-layout-in-embedded (description (· this font)))
   (define glyphRun (send (· this font) layout text features))
   (define glyphs (glyphrun-glyphs glyphRun))
-  (for ([g (in-list glyphs)])
-       (· g id))
   (define positions (glyphrun-positions glyphRun))
   #;(report/file (for/list ([p (in-list positions)])
                            (list (· p xAdvance) (· p xOffset))))
   (define-values (subset-idxs new-positions)
     (for/lists (idxs posns)
-               ([(glyph i) (in-indexed glyphs)]
+               ([(g i) (in-indexed glyphs)]
                 [posn (in-list positions)])
-      (define gid (send (· this subset) includeGlyph (· glyph id)))
+      (define gid (send (· this subset) includeGlyph (glyph-id g)))
       (define subset-idx (toHex gid))
-      (set-glyph-position-advance-width! posn (· glyph advanceWidth))
+      (set-glyph-position-advance-width! posn (glyph-advance-width g))
 
       (hash-ref! (· this widths) gid (λ () (glyph-position-advance-width posn)))
-      (hash-ref! (· this unicode) gid (λ () (· glyph codePoints)))
+      (hash-ref! (· this unicode) gid (λ () (glyph-codePoints g)))
 
       (scale-glyph-position! posn (· this scale))
       (values subset-idx posn)))
@@ -236,6 +234,6 @@ HERE
   (check-equal? (bbox->list (· ef bbox)) '(-161 -236 1193 963))
   (define H-gid 41)
   (check-equal? (· ef widths) (mhash 0 278))
-  (check-equal? (send (send (· ef font) getGlyph H-gid) advanceWidth) 738)
+  (check-equal? (glyph-advance-width (send (· ef font) getGlyph H-gid)) 738)
   
   )
