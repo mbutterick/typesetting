@@ -79,8 +79,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define buffer (read-bytes  (- next-offset this-offset) port))
 
   ;; if it is a compound glyph, include its components
-  (when (and ttf-glyf-data (negative? (hash-ref ttf-glyf-data 'numberOfContours)))
-    (for ([ttf-glyph-component (in-list (hash-ref ttf-glyf-data 'components))])
+  (when (and ttf-glyf-data (negative? (· ttf-glyf-data numberOfContours)))
+    (for ([ttf-glyph-component (in-list (· ttf-glyf-data components))])
       (define gid (subset-include-glyph ss (ttf-glyph-component-glyph-id ttf-glyph-component)))
       ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
       (bytes-copy! buffer (ttf-glyph-component-pos ttf-glyph-component) (send uint16be encode #f gid))))
@@ -88,14 +88,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; skip variation shit
 
   (set-ttf-subset-glyf! ss (append (ttf-subset-glyf ss) (list buffer)))
-  (hash-update! (ttf-subset-loca ss) 'offsets
-                (λ (os)
-                  (append os (list (ttf-subset-offset ss)))))
+  (hash-update! (ttf-subset-loca ss) 'offsets (λ (os)
+                                                (append os (list (ttf-subset-offset ss)))))
 
-  (hash-update! (ttf-subset-hmtx ss) 'metrics
-                (λ (ms) (append ms
-                                (list (mhash 'advance (glyph-advance-width glyph)
-                                             'bearing (hash-ref (get-glyph-metrics glyph) 'leftBearing))))))
+  (hash-update! (ttf-subset-hmtx ss) 'metrics (λ (ms) (append ms
+                                                              (list (mhash 'advance (glyph-advance-width glyph)
+                                                                           'bearing (· (get-glyph-metrics glyph) leftBearing))))))
   
   (set-ttf-subset-offset! ss (+ (ttf-subset-offset ss) (bytes-length buffer)))
   (sub1 (length (ttf-subset-glyf ss))))
@@ -105,9 +103,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 ;; additional tables required for standalone fonts:
 ;; name, cmap, OS/2, post
 
-(define (clone-deep val) (deserialize (serialize val)))
+(define (clone-deep val)  (deserialize (serialize val)))
 
 (define (encode ss port)
+  #;(output-port? . ->m . void?)
   
   (set-ttf-subset-glyf! ss empty)
   (set-ttf-subset-offset! ss 0)
@@ -130,10 +129,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (loca-pre-encode (ttf-subset-loca ss))
 
   (define head (clone-deep (· (subset-font ss) head to-hash)))
-  (dict-set! head 'indexToLocFormat (hash-ref (ttf-subset-loca ss) 'version))
+  (dict-set! head 'indexToLocFormat (· (ttf-subset-loca ss) version))
   
   (define hhea (clone-deep (· (subset-font ss) hhea to-hash)))
-  (dict-set! hhea 'numberOfMetrics (length (hash-ref (ttf-subset-hmtx ss) 'metrics)))
+  (dict-set! hhea 'numberOfMetrics (length (· (ttf-subset-hmtx ss) metrics)))
 
   
   (send Directory encode port
