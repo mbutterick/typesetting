@@ -53,39 +53,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 |#
 
 
-#|
-;; no CFF font support for now
-
-(define-subclass Subset (CFFSubset)
-  #R (· this font)
-  (field [cff (send (· this font) _getTable 'CFF_)])
-  (unless (· this cff) (error 'not-a-cff-font))
-  (field [charStrings #f]
-         [subrs #f])
-
-  (as-methods
-   subsetCharstrings
-   #;subsetSubrs
-   #;subsetFontdict
-   #;createCIDFontdict
-   #;addString
-   #;encode))
-
-(define/contract (subsetCharstrings this)
-  (->m void?)
-  (set-field! charStrings this null)
-  (define gsubrs (make-hash))
-  (for ([gid (in-list (· this glyphs))])
-    (push-end-field! charStrings this (· this cff getCharString gid))
-    (define glyph (· this font getGlyph gid))
-    (define path (· glyph path)) ; this causes the glyph to be parsed
-    (for ([subr (in-list (· glyph _usedGsubrs))])
-      (hash-set! gsubrs subr #true)))
-  (set-field! this gsubrs (send this subsetSubrs (· this cff globalSubrIndex) gsubrs))
-  (void))
-
-
-|#
 
 #|
 approximates
