@@ -215,13 +215,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (check-equal? (bbox->list (· f bbox)) '(-161 -236 1193 963)))
 
 ;; Returns a Subset for this font.
-(define/contract (createSubset this)
-  (->m (is-a?/c Subset))
+(define (createSubset this)
+  #;(->m Subset?)
   ;; no CFF support
   #;(make-object (if (· this has-cff-table?)
                      CFFSubset
                      TTFSubset) this)
-  (make-object TTFSubset this))
+  (+TTFSubset this))
 
 
 (define/contract (has-table? this tag)

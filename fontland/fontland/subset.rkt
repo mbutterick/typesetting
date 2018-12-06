@@ -13,38 +13,46 @@
          fontland/glyph
          fontland/ttf-glyph
          xenomorph)
-(provide Subset TTFSubset)
+
+(provide Subset +Subset TTFSubset +TTFSubset includeGlyph encode-to-port)
 
 #|
 approximates
 https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 |#
 
-(define-subclass object% (Subset font)
-  (field [glyphs empty] ; list of glyph ids in the subset
-         [mapping (mhash)]) ; mapping of glyph ids to indexes in `glyphs`
-         
-  (send this includeGlyph 0) ; always include the missing glyph in subset
+#;(define-subclass object% (Subset font)
+    (field [glyphs empty] ; list of glyph ids in the subset
+           [mapping (mhash)]) ; mapping of glyph ids to indexes in `glyphs`
+    (send this includeGlyph 0) ; always include the missing glyph in subset
+    (as-methods
+     includeGlyph))
 
-  (define/public (encode-to-port)
-    (define p (open-output-bytes))
-    (encode this p)
-    p)
-  
-  (as-methods
-   includeGlyph))
+; glyphs = list of glyph ids in the subset
+; mapping = of glyph ids to indexes in `glyphs`
+(struct Subset (font glyphs mapping) #:transparent #:mutable)
 
-(define/contract (includeGlyph this glyph-or-gid)
-  ((or/c object? index?) . ->m . index?)
+(define (+Subset font [glyphs empty] [mapping (mhash)])
+  (define ss (Subset font glyphs mapping))
+  (includeGlyph ss 0)
+  ss)
+
+(define (encode-to-port ss)
+  (define p (open-output-bytes))
+  (encode ss p)
+  p)
+
+(define (includeGlyph ss glyph-or-gid)
+  #;((or/c object? index?) . ->m . index?)
   (define glyph (if (object? glyph-or-gid)
                     (· glyph-or-gid id)
                     glyph-or-gid))
-  (hash-ref! (· this mapping) glyph
+  (hash-ref! (Subset-mapping ss) glyph
              (λ ()
                ;; put the new glyph at the end of `glyphs`,
                ;; and put its index in the mapping
-               (push-end-field! glyphs this glyph)
-               (sub1 (length (· this glyphs))))))  
+               (set-Subset-glyphs! ss (append (Subset-glyphs ss) (list glyph)))
+               (sub1 (length (Subset-glyphs ss))))))  
 
 #|
 approximates
@@ -69,42 +77,53 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
    #;createCIDFontdict
    #;addString
    #;encode))
-|#
 
 (define/contract (subsetCharstrings this)
   (->m void?)
   (set-field! charStrings this null)
   (define gsubrs (make-hash))
   (for ([gid (in-list (· this glyphs))])
-       (push-end-field! charStrings this (· this cff getCharString gid))
-       (define glyph (· this font getGlyph gid))
-       (define path (· glyph path)) ; this causes the glyph to be parsed
-       (for ([subr (in-list (· glyph _usedGsubrs))])
-            (hash-set! gsubrs subr #true)))
+    (push-end-field! charStrings this (· this cff getCharString gid))
+    (define glyph (· this font getGlyph gid))
+    (define path (· glyph path)) ; this causes the glyph to be parsed
+    (for ([subr (in-list (· glyph _usedGsubrs))])
+      (hash-set! gsubrs subr #true)))
   (set-field! this gsubrs (send this subsetSubrs (· this cff globalSubrIndex) gsubrs))
   (void))
 
 
+|#
 
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 |#
 
-(define-subclass Subset (TTFSubset)
-  (field [glyf #f]
-         [offset #f]
-         [loca #f]
-         [hmtx #f])
+#;(define-subclass Subset (TTFSubset)
+    (field [glyf #f]
+           [offset #f]
+           [loca #f]
+           [hmtx #f])
 
-  (as-methods
-   _addGlyph
-   encode))
+    (as-methods
+     _addGlyph
+     encode))
 
-(define/contract (_addGlyph this gid)
-  (index? . ->m . index?)
+(struct TTFSubset Subset (glyf offset loca hmtx) #:transparent #:mutable)
 
-  (define glyph (send (· this font) getGlyph gid))
+(define (+TTFSubset font [glyphs empty] [mapping (mhash)]
+                    [glyf #f]
+                    [offset #f]
+                    [loca #f]
+                    [hmtx #f])
+  (define ss (TTFSubset font glyphs mapping glyf offset loca hmtx))
+  (includeGlyph ss 0)
+  ss)
+
+(define (_addGlyph ss gid)
+  #;(index? . ->m . index?)
+
+  (define glyph (send (Subset-font ss) getGlyph gid))
   ;; glyph-decode unpacks the `glyf` table data corresponding to a certin gid.
   ;; here, it's not necessary for non-composite glyphs
   ;; because they just get copied entirely into the subset.
@@ -113,9 +132,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define ttf-glyf-data (glyph-decode glyph))
 
   ;; get the offset to the glyph from the loca table
-  (match-define (list curOffset nextOffset) (take (drop (· this font loca offsets) gid) 2))
+  (match-define (list curOffset nextOffset) (take (drop (· (Subset-font ss) loca offsets) gid) 2))
 
-  (define port (send (· this font) _getTableStream 'glyf))
+  (define port (send (Subset-font ss) _getTableStream 'glyf))
   (pos port (+ (pos port) curOffset))
 
   (define buffer (read-bytes  (- nextOffset curOffset) port))
@@ -123,22 +142,22 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; if it is a compound glyph, include its components
   (when (and ttf-glyf-data (negative? (· ttf-glyf-data numberOfContours)))
     (for ([ttf-glyph-component (in-list (· ttf-glyf-data components))])
-         (define gid (send this includeGlyph (ttf-glyph-component-glyph-id ttf-glyph-component)))
-         ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
-         (bytes-copy! buffer (ttf-glyph-component-pos ttf-glyph-component) (send uint16be encode #f gid))))
+      (define gid (includeGlyph ss (ttf-glyph-component-glyph-id ttf-glyph-component)))
+      ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
+      (bytes-copy! buffer (ttf-glyph-component-pos ttf-glyph-component) (send uint16be encode #f gid))))
   
   ;; skip variation shit
 
-  (push-end-field! glyf this buffer)
-  (hash-update! (get-field loca this) 'offsets (λ (os)
-                                                 (append os (list (get-field offset this)))))
+  (set-TTFSubset-glyf! ss (append (TTFSubset-glyf ss) (list buffer)))
+  (hash-update! (TTFSubset-loca ss) 'offsets (λ (os)
+                                                 (append os (list (TTFSubset-offset ss)))))
 
-  (hash-update! (get-field hmtx this) 'metrics (λ (ms) (append ms
+  (hash-update! (TTFSubset-hmtx ss) 'metrics (λ (ms) (append ms
                                                                (list (mhash 'advance (glyph-advance-width glyph)
                                                                             'bearing (· (get-glyph-metrics glyph) leftBearing))))))
-
-  (increment-field! offset this (bytes-length buffer))
-  (sub1 (length (· this glyf))))
+  
+  (set-TTFSubset-offset! ss (+ (TTFSubset-offset ss) (bytes-length buffer)))
+  (sub1 (length (TTFSubset-glyf ss))))
 
 ;; tables required by PDF spec:
 ;; head, hhea, loca, maxp, cvt, prep, glyf, hmtx, fpgm
@@ -147,34 +166,34 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
 (define (cloneDeep val)  (deserialize (serialize val)))
 
-(define/contract (encode this port)
-  (output-port? . ->m . void?)
+(define (encode ss port)
+  #;(output-port? . ->m . void?)
   
-  (set-field! glyf this empty)
-  (set-field! offset this 0)
-  (set-field! loca this (mhash 'offsets empty))
-  (set-field! hmtx this (mhash 'metrics empty 'bearings empty))
+  (set-TTFSubset-glyf! ss empty)
+  (set-TTFSubset-offset! ss 0)
+  (set-TTFSubset-loca! ss (mhash 'offsets empty))
+  (set-TTFSubset-hmtx! ss (mhash 'metrics empty 'bearings empty))
 
   ;; include all the glyphs used in the document
   ;; not using `in-list` because we need to support adding more
   ;; glyphs to the array as component glyphs are discovered & enqueued
   (for ([idx (in-naturals)]
-        #:break (= idx (length (· this glyphs))))
-       (define gid (list-ref (· this glyphs) idx))
-       (send this _addGlyph gid))
+        #:break (= idx (length (Subset-glyphs ss))))
+    (define gid (list-ref (Subset-glyphs ss) idx))
+    (_addGlyph ss gid))
 
-  (define maxp (cloneDeep (· this font maxp to-hash)))
-  (dict-set! maxp 'numGlyphs (length (· this glyf)))
+  (define maxp (cloneDeep (· (Subset-font ss) maxp to-hash)))
+  (dict-set! maxp 'numGlyphs (length (TTFSubset-glyf ss)))
   
   ;; populate the new loca table
-  (dict-update! (· this loca) 'offsets (λ (vals) (append vals (list (· this offset)))))
-  (loca-pre-encode (· this loca))
+  (dict-update! (TTFSubset-loca ss) 'offsets (λ (vals) (append vals (list (TTFSubset-offset ss)))))
+  (loca-pre-encode (TTFSubset-loca ss))
 
-  (define head (cloneDeep (· this font head to-hash)))
-  (dict-set! head 'indexToLocFormat (· this loca version))
+  (define head (cloneDeep (· (Subset-font ss) head to-hash)))
+  (dict-set! head 'indexToLocFormat (· (TTFSubset-loca ss) version))
   
-  (define hhea (cloneDeep (· this font hhea to-hash)))
-  (dict-set! hhea 'numberOfMetrics (length (· this hmtx metrics)))
+  (define hhea (cloneDeep (· (Subset-font ss) hhea to-hash)))
+  (dict-set! hhea 'numberOfMetrics (length (· (TTFSubset-hmtx ss) metrics)))
 
   
   (send Directory encode port
@@ -182,13 +201,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                (mhash
                 'head head
                 'hhea hhea
-                'loca (· this loca)
+                'loca (TTFSubset-loca ss)
                 'maxp maxp
-                'cvt_ (· this font cvt_)
-                'prep (· this font prep)
-                'glyf (· this glyf)
-                'hmtx (· this hmtx)
-                'fpgm (· this font fpgm))))
+                'cvt_ (· (Subset-font ss) cvt_)
+                'prep (· (Subset-font ss) prep)
+                'glyf (TTFSubset-glyf ss)
+                'hmtx (TTFSubset-hmtx ss)
+                'fpgm (· (Subset-font ss) fpgm))))
 
   #;(report* (bytes-length (send stream dump)) (send stream dump))
   #;(report* (bytes-length (file->bytes "out.bin")) (file->bytes "out.bin"))
