@@ -5,7 +5,6 @@
   racket/string
   racket/contract
   racket/list
-  racket/function
   sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
@@ -83,7 +82,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
 
 (define (text this text-string [x #f] [y #f] [options (mhash)])
-  (send this _text text-string x y options (curry _line this)))
+  (send this _text text-string x y options (λ (x) (_line this x))))
 
 
 (define/contract (widthOfString this str [options (mhash)])

@@ -1,35 +1,17 @@
 #lang racket/base
-
 (require
   (for-syntax racket/base)
-  "helper.rkt"
   "param.rkt"
-  "struct.rkt"
-  sugar/debug
   racket/class
-  racket/file
-  racket/match
   racket/string
-  racket/format
-  racket/contract
-  racket/list
-  racket/port
-  racket/function
   br/define
-  sugar/unstable/class
-  sugar/unstable/js
-  sugar/unstable/dict
-  sugar/unstable/stub
-  sugar/unstable/port
-  sugar/unstable/contract
-  describe
   "check-pdf.rkt")
 
 (provide check-copy-equal? check-pdfkit? make-doc)
 
 (test-mode #t)
 
-(require rackunit racket/runtime-path pitfall/document racket/class)
+(require rackunit pitfall/document racket/runtime-path racket/class)
 (provide (all-from-out  rackunit racket/runtime-path pitfall/document racket/class))
 
 (define (this->control this) (path-add-extension this #"" #" copy."))

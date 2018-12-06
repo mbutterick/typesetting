@@ -9,7 +9,6 @@
   racket/format
   racket/contract
   racket/list
-  racket/function
   br/define
   sugar/unstable/class
   sugar/unstable/js
@@ -61,14 +60,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
 ;; called from text.rkt
 (define (encode this text [features #f])
-  #;((string?) ((option/c list?)) . ->*m .
-             (list/c (listof string?) (listof glyphposition?)))
-  #;(report*/file 'starting-layout-in-embedded (description (· this font)))
   (define glyphRun (send (· this font) layout text features))
   (define glyphs (glyphrun-glyphs glyphRun))
   (define positions (glyphrun-positions glyphRun))
-  #;(report/file (for/list ([p (in-list positions)])
-                           (list (· p xAdvance) (· p xOffset))))
   (define-values (subset-idxs new-positions)
     (for/lists (idxs posns)
                ([(g i) (in-indexed glyphs)]
@@ -109,7 +103,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
   ;; font descriptor flags
   (match-define (list FIXED_PITCH SERIF SYMBOLIC SCRIPT _UNUSED NONSYMBOLIC ITALIC)
-    (map (curry expt 2) (range 7)))
+    (map (λ (x) (expt 2 x)) (range 7)))
   
   (define flags (sum-flags
                  [(not (zero? (· this font post isFixedPitch))) FIXED_PITCH]
@@ -130,7 +124,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                             'Type "FontDescriptor"
                             'FontName name
                             'Flags flags
-                            'FontBBox (map (curry * (· this scale))
+                            'FontBBox (map (λ (x) (* (· this scale) x))
                                            (list (BBox-minX bbox) (BBox-minY bbox)
                                                  (BBox-maxX bbox) (BBox-maxY bbox)))
                             'ItalicAngle (· this font italicAngle)

@@ -2,14 +2,13 @@
 (require
   racket/string
   racket/format
-  racket/function
   sugar/list)
 (provide binprint)
 
 (define (binprint in #:width [width 16])
   (unless (even? width) (raise-argument-error 'binprint "even width" width))
   (for-each displayln
-            (for/list ([bs (in-port (curry read-bytes width) in)])
+            (for/list ([bs (in-port (λ (p) (read-bytes width p)) in)])
               (string-append (pad-string (hexline bs) (+ (* width 2) (sub1 (/ width 2)))) "   " (alphaline bs)))))
 
 
