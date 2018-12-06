@@ -62,6 +62,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
          [_hb-buf (delay (hb_buffer_create))]
          [_crc (begin0 (crc32c-input-port _port) (pos _port 0))])
 
+  ;; needed for `loca` table decoding cross-reference
   (define/public (_get-head-table) (get-head-table this))
 
   (as-methods
