@@ -76,22 +76,19 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (require "table-stream.rkt")
 
 ;; The unique PostScript name for this font
-(define/contract (postscriptName this)
-  (->m string?)
+(define (postscriptName this)
   (FT_Get_Postscript_Name (ft-face this)))
 
 
 ;; The size of the font’s internal coordinate grid
-(define/contract (unitsPerEm this)
-  (->m number?)
+(define (unitsPerEm this)
   (· (get-head-table this) unitsPerEm))
 
 (test-module
  (check-equal? (unitsPerEm f) 1000))
 
 ;; The font’s [ascender](https://en.wikipedia.org/wiki/Ascender_(typography))
-(define/contract (ascent this)
-  (->m number?)
+(define (ascent this)
   (· (get-hhea-table this) ascent))
 
 (test-module
@@ -99,16 +96,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 ;; The font’s [descender](https://en.wikipedia.org/wiki/Descender)
-(define/contract (descent this)
-  (->m number?)
+(define (descent this)
   (· (get-hhea-table this) descent))
 
 (test-module
  (check-equal? (descent f) -238))
 
 ;; The amount of space that should be included between lines
-(define/contract (lineGap this)
-  (->m number?)
+(define (lineGap this)
   (· (get-hhea-table this) lineGap))
 (define line-gap lineGap) ; todo: avoid this name collision in pitfall/embedded
 
@@ -116,16 +111,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
  (check-equal? (lineGap f) 0))
 
 
-(define/contract (underlinePosition this)
-  (->m number?)
+(define (underlinePosition this)
   (· (get-post-table this) underlinePosition))
 
 (test-module
  (check-equal? (underlinePosition f) -178))
 
 
-(define/contract (underlineThickness this)
-  (->m number?)
+(define (underlineThickness this)
   (· (get-post-table this) underlineThickness))
 
 (test-module
@@ -133,8 +126,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 ;; If this is an italic font, the angle the cursor should be drawn at to match the font design
-(define/contract (italicAngle this)
-  (->m number?)
+(define (italicAngle this)
   (· (get-post-table this) italicAngle))
 
 (test-module
@@ -142,8 +134,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 ;; The height of capital letters above the baseline.
-(define/contract (capHeight this)
-  (->m number?)
+(define (capHeight this)
   (if (has-table? this #"OS/2")
       (· (get-OS/2-table this) capHeight)
       (ascent this)))
@@ -153,8 +144,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 ;; The height of lower case letters in the font.
-(define/contract (xHeight this)
-  (->m number?)
+(define (xHeight this)
   (if (has-table? this #"OS/2")
       (· (get-OS/2-table this) xHeight)
       0))
@@ -164,8 +154,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
-(define/contract (bbox this)
-  (->m BBox?)
+(define (bbox this)
   (define head-table (get-head-table this))
   (make-BBox (· head-table xMin) (· head-table yMin) (· head-table xMax) (· head-table yMax)))
 
@@ -281,16 +270,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (getGlyph this glyph-idx (list codePoint)))
 
 
-(define/contract (measure-char-width this char)
-  (char? . ->m . number?)
+(define (measure-char-width this char)
   (define glyph-idx (FT_Get_Char_Index (ft-face this) (char->integer char)))
   (FT_Load_Glyph (ft-face this) glyph-idx FT_LOAD_NO_RECURSE)
   (define width (FT_Vector-x (FT_GlyphSlotRec-advance (FT_FaceRec-glyph (ft-face this)))))
   (* width 1.0))
   
 
-(define/contract (measure-string this str size)
-  (string? number? . ->m . number?)
+(define (measure-string this str size)
   (/ (* size
         (for/sum ([c (in-string str)])
           (measure-char-width this c))) (unitsPerEm this)))
@@ -314,15 +301,13 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/base.js
 |#
 
-(define/contract (openSync str-or-path)
-  ((or/c path? string?) . -> . TTFFont?)
+(define (openSync str-or-path)
   (define filename (if (path? str-or-path) (path->string str-or-path) str-or-path))
   (create (open-input-file filename)))
 
 (define (probe-failed? x) (eq? x 'probe-fail))
 
-(define/contract (create port)
-  (input-port? . -> . TTFFont?)
+(define (create port)
   (or
    ;; rather than use a `probe` function,
    ;; just try making a font with each format and see what happens
