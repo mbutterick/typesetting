@@ -67,7 +67,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
     (for/lists (idxs posns)
                ([(g i) (in-indexed glyphs)]
                 [posn (in-list positions)])
-      (define gid (send (· this subset) includeGlyph (glyph-id g)))
+      (define gid (includeGlyph (· this subset) (glyph-id g)))
       (define subset-idx (toHex gid))
       (set-glyph-position-advance-width! posn (glyph-advance-width g))
 
@@ -94,7 +94,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (when isCFF
     (hash-set! (· fontFile payload) 'Subtype "CIDFontType0C"))
   
-  (send fontFile end (get-output-bytes (· this subset encode-to-port)))
+  (send fontFile end (get-output-bytes (encode-to-port (· this subset))))
 
   (define familyClass (let ([val (if (send (· this font) has-table? 'OS/2)
                                      (· this font OS/2 sFamilyClass)
