@@ -221,7 +221,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   #;(make-object (if (· this has-cff-table?)
                      CFFSubset
                      TTFSubset) this)
-  (+TTFSubset this))
+  (+ttf-subset this))
 
 
 (define/contract (has-table? this tag)
