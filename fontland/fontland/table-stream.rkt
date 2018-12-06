@@ -2,6 +2,7 @@
 (require sugar/unstable/js
          (only-in xenomorph pos decode)
          "tables.rkt"
+         "struct.rkt"
          (for-syntax "tables.rkt"))
 (provide (all-defined-out))
 
@@ -16,7 +17,8 @@
 
 (define (has-table? this tag)
   #;((or/c bytes? symbol?) . ->m . boolean?)
-  (hash-has-key? (· this directory tables) (match tag
+  (define directory (force (TTFFont-_directory this)))
+  (hash-has-key? (· directory tables) (match tag
                                              [(? bytes?) (string->symbol (bytes->string/latin-1 tag))]
                                              [_ tag])))
   
@@ -25,7 +27,7 @@
 (define (get-table this table-tag)
   (unless (has-table? this table-tag)
     (raise-argument-error 'get-table "table that exists in font" table-tag))
-  (hash-ref! (· this  _decoded-tables) table-tag (λ () (decode-table this table-tag))))
+  (hash-ref! (TTFFont-_decoded-tables this) table-tag (λ () (decode-table this table-tag))))
 
 (define-table-getters)
 
@@ -36,10 +38,11 @@
 (define  (decode-table this table-tag)
   (unless (hash-has-key? table-codecs table-tag)
     (raise-argument-error 'decode-table "decodable table" table-tag))
-  (define table (hash-ref (· this directory tables) table-tag))
+  (define directory (force (TTFFont-_directory this)))
+  (define table (hash-ref (· directory tables) table-tag))
   ;; todo: possible to avoid copying the bytes here?
-  (pos (· this _port) (· table offset))
-  (define table-bytes (open-input-bytes (peek-bytes (· table length) 0 (· this _port))))
+  (pos (TTFFont-_port this) (· table offset))
+  (define table-bytes (open-input-bytes (peek-bytes (· table length) 0 (TTFFont-_port this))))
   (define table-decoder (hash-ref table-codecs table-tag))
   (decode table-decoder table-bytes #:parent this))
 

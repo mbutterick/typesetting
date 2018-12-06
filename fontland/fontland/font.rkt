@@ -45,61 +45,80 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; (including CFF)
 ;;  It supports TrueType, and PostScript glyphs, and several color glyph formats.
 
+(require "struct.rkt")
+
 (define ft-library (delay (FT_Init_FreeType)))
 
-(define-subclass object% (TTFFont _port)
+(define (+TTFFont _port [_decoded-tables (mhash)]
+                  [_src (path->string (object-name _port))]
+                  [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
+                  [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
+                  [_hb-font (delay (and _src (hb_ft_font_create _ft-face)))]
+                  [_hb-buf (delay (hb_buffer_create))]
+                  [_crc (begin0 (crc32c-input-port _port) (pos _port 0))]
+                  [_get-head-table #f])
   (unless (input-port? _port)
-    (raise-argument-error 'TTFFont "input port" _port))
+    (raise-argument-error '+TTFFont "input port" _port))
   (unless (member (peek-bytes 4 0 _port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
     (raise 'probe-fail))
+  (define f
+    (TTFFont _port _decoded-tables _src _directory _ft-face _hb-font _hb-buf _crc _get-head-table))
+  (set-TTFFont-_get-head-table! f (λ () (get-head-table f)))
+  f)
+
+#;(define-subclass object% (TTFFont _port)
+    (unless (input-port? _port)
+      (raise-argument-error 'TTFFont "input port" _port))
+    (unless (member (peek-bytes 4 0 _port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
+      (raise 'probe-fail))
   
-  ;; skip variationCoords
-  (field [_decoded-tables (mhash)]
-         [_src (path->string (object-name _port))]
-         [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
-         [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
-         [_hb-font (delay (and _src (hb_ft_font_create (· this ft-face))))]
-         [_hb-buf (delay (hb_buffer_create))]
-         [_crc (begin0 (crc32c-input-port _port) (pos _port 0))])
+    ;; skip variationCoords
+    (field [_decoded-tables (mhash)]
+           [_src (path->string (object-name _port))]
+           [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
+           [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
+           [_hb-font (delay (and _src (hb_ft_font_create (· this ft-face))))]
+           [_hb-buf (delay (hb_buffer_create))]
+           [_crc (begin0 (crc32c-input-port _port) (pos _port 0))])
 
-  ;; needed for `loca` table decoding cross-reference
-  (define/public (_get-head-table) (get-head-table this))
+    ;; needed for `loca` table decoding cross-reference
+    (define/public (_get-head-table) (get-head-table this))
 
-  (as-methods
-   postscriptName
-   measure-string
-   unitsPerEm
-   ascent
-   descent
-   lineGap
-   underlinePosition
-   underlineThickness
-   italicAngle
-   capHeight
-   xHeight
-   bbox
-   createSubset
-   getGlyph
-   layout
-   glyphsForString
-   glyphForCodePoint
-   directory
-   ft-face
-   hb-font
-   hb-buf))
+    (as-methods
+     postscriptName
+     measure-string
+     unitsPerEm
+     ascent
+     descent
+     lineGap
+     underlinePosition
+     underlineThickness
+     italicAngle
+     capHeight
+     xHeight
+     bbox
+     createSubset
+     getGlyph
+     layout
+     glyphsForString
+     glyphForCodePoint
+     directory
+     ft-face
+     hb-font
+     hb-buf))
 
 
-  (define (directory this) (force (· this _directory)))
-  (define (ft-face this) (or (force (· this _ft-face)) (error 'ft-face-not-available)))
-  (define (hb-font this) (or (force (· this _hb-font)) (error 'hb-font-not-available)))
-  (define (hb-buf this) (force (· this _hb-buf)))
+(define (directory this) (force (· this _directory)))
+(define (ft-face this) (or (force (TTFFont-_ft-face this)) (error 'ft-face-not-available)))
+(define (hb-font this) (or (force (· this _hb-font)) (error 'hb-font-not-available)))
+(define (hb-buf this) (force (· this _hb-buf)))
 
 (require "table-stream.rkt")
 
 ;; The unique PostScript name for this font
 (define/contract (postscriptName this)
   (->m string?)
-  (FT_Get_Postscript_Name (· this ft-face)))
+  (FT_Get_Postscript_Name (ft-face this)))
 
 
 ;; The size of the font’s internal coordinate grid
@@ -108,7 +127,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (· (get-head-table this) unitsPerEm))
 
 (test-module
- (check-equal? (· f unitsPerEm) 1000))
+ (check-equal? #R (unitsPerEm f) 1000))
 
 ;; The font’s [ascender](https://en.wikipedia.org/wiki/Ascender_(typography))
 (define/contract (ascent this)
@@ -232,10 +251,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                  ('hb-positions posns))
      (define glyphs (for/list ([gidx (in-list gidxs)]
                                [cluster (in-list clusters)])
-                              (send this getGlyph gidx cluster)))
+                      (send this getGlyph gidx cluster)))
      (define positions (for/list ([pos (in-list posns)])
-                                 (match pos
-                                   [(list xad yad xoff yoff _) (+glyph-position xad yad xoff yoff)])))
+                         (match pos
+                           [(list xad yad xoff yoff _) (+glyph-position xad yad xoff yoff)])))
      (glyphrun glyphs positions)]))
 
 
@@ -290,7 +309,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     [(current-layout-caching)
      (define substrs (for/list ([substr (in-list (regexp-match* " " string #:gap-select? #t))]
                                 #:when (positive? (string-length substr)))
-                               substr))
+                       substr))
      (apply append-glyphruns (map (λ (lo) (hb-layout->glyphrun this lo)) (map get-layout substrs)))]
     [else (if debug
               (get-layout string)
@@ -308,7 +327,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   ;; for now, just use UTF-8
   (define codepoints (map char->integer (string->list string)))
   (for/list ([cp (in-list codepoints)])
-            (send this glyphForCodePoint cp)))
+    (send this glyphForCodePoint cp)))
 
 
 ;; Maps a single unicode code point to a Glyph object.
@@ -331,7 +350,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (string? number? . ->m . number?)
   (/ (* size
         (for/sum ([c (in-string str)])
-                 (measure-char-width this c))) (· this unitsPerEm)))
+          (measure-char-width this c))) (· this unitsPerEm)))
 
 
 #|
@@ -340,7 +359,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/index.js
 |#
 
 ;; Register font formats
-(define font-formats (list TTFFont))
+(define font-formats (list +TTFFont))
 ;;fontkit.registerFormat(WOFFFont); ;; todo
 ;;fontkit.registerFormat(WOFF2Font); ;; todo
 ;;fontkit.registerFormat(TrueTypeCollection); ;; todo
@@ -365,8 +384,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
    ;; rather than use a `probe` function,
    ;; just try making a font with each format and see what happens
    (for/first ([font-format (in-list font-formats)])
-              (with-handlers ([probe-failed? (λ (exn) #f)])
-                (make-object font-format port)))
+     (with-handlers ([probe-failed? (λ (exn) #f)])
+       (font-format port)))
    (error 'fontland:create "unknown font format")))
 
 
