@@ -16,6 +16,7 @@
   sugar/unstable/contract
   "font.rkt"
   fontland
+  fontland/table-stream
   "reference.rkt")
 (provide EmbeddedFont)
 
@@ -96,8 +97,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   
   (send fontFile end (get-output-bytes (encode-to-port (· this subset))))
 
-  (define familyClass (let ([val (if (send (· this font) has-table? 'OS/2)
-                                     (· this font OS/2 sFamilyClass)
+  (define familyClass (let ([val (if (has-table? (· this font) 'OS/2)
+                                     (· (get-OS/2-table (· this font)) sFamilyClass)
                                      0)])
                         (floor (/ val 256)))) ; equivalent to >> 8
 
@@ -106,7 +107,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
     (map (λ (x) (expt 2 x)) (range 7)))
   
   (define flags (sum-flags
-                 [(not (zero? (· this font post isFixedPitch))) FIXED_PITCH]
+                 [(not (zero? (· (get-post-table (· this font)) isFixedPitch))) FIXED_PITCH]
                  [(<= 1 familyClass 7) SERIF]
                  [#t SYMBOLIC] ; assume the font uses non-latin characters
                  [(= familyClass 10) SCRIPT]
