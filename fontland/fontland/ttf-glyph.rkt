@@ -16,8 +16,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 |#
 
 ;; Represents a TrueType glyph.
-#;(define-subclass Glyph (TTFGlyph)
-    (inherit-field _font id))
 
 (struct ttf-glyph glyph () #:transparent)
 
