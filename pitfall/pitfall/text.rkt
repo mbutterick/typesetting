@@ -82,7 +82,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
 
 (define (text this text-string [x #f] [y #f] [options (mhash)])
-  (send this _text text-string x y options (λ (x) (_line this x))))
+  (send this _text text-string x y options (λ args (apply _line this args))))
 
 
 (define/contract (widthOfString this str [options (mhash)])
