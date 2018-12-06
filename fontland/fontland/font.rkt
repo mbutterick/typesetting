@@ -5,7 +5,7 @@
          "subset.rkt"
          "glyph.rkt"
          "bbox.rkt"
-         "glyphrun.rkt"
+         (except-in "glyphrun.rkt" advanceWidth)
          "directory.rkt"
          "db.rkt"
          xenomorph
@@ -275,7 +275,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
      (define positions (for/list ([pos (in-list posns)])
                                  (match pos
                                    [(list xad yad xoff yoff _) (+GlyphPosition xad yad xoff yoff)])))
-     (+GlyphRun glyphs positions)]))
+     (glyphrun glyphs positions)]))
 
 
 (define (harfbuzz-layout this codepoints userFeatures script language)

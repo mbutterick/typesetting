@@ -7,4 +7,5 @@
      "glyph-position.rkt"
      "subset.rkt"
      "bbox.rkt"
-     "tables.rkt")
+     "tables.rkt"
+     "glyphrun.rkt")
