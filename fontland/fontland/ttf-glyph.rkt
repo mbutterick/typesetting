@@ -39,7 +39,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
      #`(match-define (list . IDS) (map (λ (x) (expt 2 x)) (range #,(length (syntax->list #'IDS)))))]))
 
 ;; Flags for simple glyphs
-(define-flag-series ON_CURVE
+(define-flag-series
+  ON_CURVE
   X_SHORT_VECTOR
   Y_SHORT_VECTOR
   REPEAT
@@ -47,7 +48,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
   SAME_Y)
 
 ;; Flags for composite glyphs
-(define-flag-series ARG_1_AND_2_ARE_WORDS    
+(define-flag-series
+  ARG_1_AND_2_ARE_WORDS    
   ARGS_ARE_XY_VALUES       
   ROUND_XY_TO_GRID         
   WE_HAVE_A_SCALE
@@ -73,11 +75,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 ;; Represents a component in a composite glyph
 (struct ttf-glyph-component (glyph-id dx dy pos scale-x scale-y scale-01 scale-10) #:transparent #:mutable)
 
-(define (+ttf-glyph-component glyph-id dx dy [pos 0]
-                    [scale-x 1]
-                    [scale-y 1]
-                    [scale-01 0]
-                    [scale-10 0])
+(define (+ttf-glyph-component glyph-id dx dy
+                              [pos 0]
+                              [scale-x 1]
+                              [scale-y 1]
+                              [scale-01 0]
+                              [scale-10 0])
   (ttf-glyph-component glyph-id dx dy pos scale-x scale-y scale-01 scale-10))
 
 
@@ -118,10 +121,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 
 (define (decode-simple glyph-data port)
   (unless (dict? glyph-data)
-    (raise-argument-error 'TTFGlyph-_decodeSimple "decoded RGlyfHeader" glyph-data))
+    (raise-argument-error 'TTFGlyph:decode-simple "decoded RGlyfHeader" glyph-data))
 
   (unless (input-port? port)
-    (raise-argument-error 'TTFGlyph-_decodeSimple "input port" port))
+    (raise-argument-error 'TTFGlyph:decode-simple "input port" port))
 
   ;; this is a simple glyph
   (dict-set! glyph-data 'points empty)
