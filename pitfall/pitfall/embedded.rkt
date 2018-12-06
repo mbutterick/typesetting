@@ -31,7 +31,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
          ;; we make `unicode` and `width` fields integer-keyed hashes not lists
          ;; because they offer better random access and growability 
          [unicode (mhash 0 '(0))] ; always include the missing glyph (gid = 0)
-         [widths (mhash 0 (glyph-advance-width (getGlyph font 0)))]
+         [widths (mhash 0 (glyph-advance-width (get-glyph font 0)))]
          ;; always include the width of the missing glyph (gid = 0)
          
          [name (postscriptName font)]
@@ -228,6 +228,6 @@ HERE
   (check-equal? (bbox->list (· ef bbox)) '(-161 -236 1193 963))
   (define H-gid 41)
   (check-equal? (· ef widths) (mhash 0 278))
-  (check-equal? (glyph-advance-width (getGlyph (· ef font) H-gid)) 738)
+  (check-equal? (glyph-advance-width (get-glyph (· ef font) H-gid)) 738)
   
   )
