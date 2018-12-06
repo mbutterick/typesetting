@@ -12,7 +12,7 @@
          fontland/ttf-glyph
          xenomorph)
 
-(provide subset +subset ttf-subset +ttf-subset subset-include-glyph encode-to-port)
+(provide subset +subset ttf-subset +ttf-subset subset-include-glyph encode-to-port createSubset)
 
 #|
 approximates
@@ -61,8 +61,21 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (subset-include-glyph ss 0)
   ss)
 
+
+;; Returns a Subset for this font.
+(define (createSubset this)
+  #;(->m Subset?)
+  ;; no CFF support
+  #;(make-object (if (· this has-cff-table?)
+                     CFFSubset
+                     TTFSubset) this)
+  (+ttf-subset this))
+
+
+
 (define (ttf-subset-add-glyph ss gid)
-  (define glyph (send (subset-font ss) getGlyph gid))
+  (define glyph (getGlyph (subset-font ss) gid))
+
   
   ;; glyph-decode unpacks the `glyf` table data corresponding to a certin gid.
   ;; here, it's not necessary for non-composite glyphs
@@ -70,7 +83,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; it's just used to detect composite glyphs and handle them specially.
   ;; so an optimization would be to detect composite / noncomposite without full glyph-decode.
   (define ttf-glyf-data (glyph-decode glyph))
-
+  
   ;; get the offset to the glyph from the loca table
   (match-define (list this-offset next-offset) (take (drop (hash-ref (dump (get-table (subset-font ss) 'loca)) 'offsets) gid) 2))
 

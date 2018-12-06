@@ -5,6 +5,7 @@
          sugar/unstable/dict
          racket/class
          racket/list
+         "../struct.rkt"
          "../helper.rkt")
 (provide (all-defined-out))
 
@@ -43,7 +44,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
       (dict-update! this 'offsets (λ (offsets) (map (λ (x) (/ x 2)) offsets))))))
 
 (define loca (+Rloca
-              (λ (o) (· o _get-head-table indexToLocFormat)) 
+              ;; todo: address ugliness to cross-ref head table from ttffont
+              (λ (o) (hash-ref (dump ((TTFFont-_get-head-table o))) 'indexToLocFormat)) 
               (dictify
                0 (dictify 'offsets (+Array uint16be))
                1 (dictify 'offsets (+Array uint32be)))))

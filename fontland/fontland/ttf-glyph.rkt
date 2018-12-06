@@ -15,12 +15,6 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 |#
 
-;; Represents a TrueType glyph.
-
-(struct ttf-glyph glyph () #:transparent)
-
-(define (+ttf-glyph . args)
-  (apply +glyph #:constructor ttf-glyph args))
 
 ;; The header for both simple and composite glyphs
 (define GlyfHeader (+Struct

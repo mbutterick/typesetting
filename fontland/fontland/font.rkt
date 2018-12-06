@@ -53,7 +53,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                   [_src (path->string (object-name _port))]
                   [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
                   [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
-                  [_hb-font (delay (and _src (hb_ft_font_create _ft-face)))]
+                  [_hb-font (delay (and _src (hb_ft_font_create (force _ft-face))))]
                   [_hb-buf (delay (hb_buffer_create))]
                   [_crc (begin0 (crc32c-input-port _port) (pos _port 0))]
                   [_get-head-table #f])
@@ -63,55 +63,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     (raise 'probe-fail))
   (define f
     (TTFFont _port _decoded-tables _src _directory _ft-face _hb-font _hb-buf _crc _get-head-table))
+  
+    ;; needed for `loca` table decoding cross-reference
   (set-TTFFont-_get-head-table! f (λ () (get-head-table f)))
   f)
 
-#;(define-subclass object% (TTFFont _port)
-    (unless (input-port? _port)
-      (raise-argument-error 'TTFFont "input port" _port))
-    (unless (member (peek-bytes 4 0 _port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
-      (raise 'probe-fail))
-  
-    ;; skip variationCoords
-    (field [_decoded-tables (mhash)]
-           [_src (path->string (object-name _port))]
-           [_directory (delay (decode Directory _port #:parent (mhash '_startOffset 0)))]
-           [_ft-face (delay (and _src (FT_New_Face (force ft-library) _src)))]
-           [_hb-font (delay (and _src (hb_ft_font_create (· this ft-face))))]
-           [_hb-buf (delay (hb_buffer_create))]
-           [_crc (begin0 (crc32c-input-port _port) (pos _port 0))])
-
-    ;; needed for `loca` table decoding cross-reference
-    (define/public (_get-head-table) (get-head-table this))
-
-    (as-methods
-     postscriptName
-     measure-string
-     unitsPerEm
-     ascent
-     descent
-     lineGap
-     underlinePosition
-     underlineThickness
-     italicAngle
-     capHeight
-     xHeight
-     bbox
-     createSubset
-     getGlyph
-     layout
-     glyphsForString
-     glyphForCodePoint
-     directory
-     ft-face
-     hb-font
-     hb-buf))
-
 
 (define (directory this) (force (· this _directory)))
-(define (ft-face this) (or (force (TTFFont-_ft-face this)) (error 'ft-face-not-available)))
-(define (hb-font this) (or (force (· this _hb-font)) (error 'hb-font-not-available)))
-(define (hb-buf this) (force (· this _hb-buf)))
+(define (hb-font this) (or (force (TTFFont-_hb-font this)) (error 'hb-font-not-available)))
+(define (hb-buf this) (force (TTFFont-_hb-buf this)))
 
 (require "table-stream.rkt")
 
@@ -127,7 +87,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (· (get-head-table this) unitsPerEm))
 
 (test-module
- (check-equal? #R (unitsPerEm f) 1000))
+ (check-equal? (unitsPerEm f) 1000))
 
 ;; The font’s [ascender](https://en.wikipedia.org/wiki/Ascender_(typography))
 (define/contract (ascent this)
@@ -135,7 +95,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (· (get-hhea-table this) ascent))
 
 (test-module
- (check-equal? (· f ascent) 980))
+ (check-equal? (ascent f) 980))
 
 
 ;; The font’s [descender](https://en.wikipedia.org/wiki/Descender)
@@ -144,15 +104,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (· (get-hhea-table this) descent))
 
 (test-module
- (check-equal? (· f descent) -238))
+ (check-equal? (descent f) -238))
 
 ;; The amount of space that should be included between lines
 (define/contract (lineGap this)
   (->m number?)
   (· (get-hhea-table this) lineGap))
+(define line-gap lineGap) ; todo: avoid this name collision in pitfall/embedded
 
 (test-module
- (check-equal? (· f lineGap) 0))
+ (check-equal? (lineGap f) 0))
 
 
 (define/contract (underlinePosition this)
@@ -160,7 +121,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (· (get-post-table this) underlinePosition))
 
 (test-module
- (check-equal? (· f underlinePosition) -178))
+ (check-equal? (underlinePosition f) -178))
 
 
 (define/contract (underlineThickness this)
@@ -168,7 +129,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (· (get-post-table this) underlineThickness))
 
 (test-module
- (check-equal? (· f underlineThickness) 58))
+ (check-equal? (underlineThickness f) 58))
 
 
 ;; If this is an italic font, the angle the cursor should be drawn at to match the font design
@@ -177,7 +138,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (· (get-post-table this) italicAngle))
 
 (test-module
- (check-equal? (· f italicAngle) 0))
+ (check-equal? (italicAngle f) 0))
 
 
 ;; The height of capital letters above the baseline.
@@ -185,10 +146,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (->m number?)
   (if (has-table? this #"OS/2")
       (· (get-OS/2-table this) capHeight)
-      (· this ascent)))
+      (ascent this)))
 
 (test-module
- (check-equal? (· f capHeight) 671))
+ (check-equal? (capHeight f) 671))
 
 
 ;; The height of lower case letters in the font.
@@ -199,7 +160,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
       0))
 
 (test-module
- (check-equal? (· f xHeight) 481))
+ (check-equal? (xHeight f) 481))
 
 
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
@@ -208,29 +169,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define head-table (get-head-table this))
   (make-BBox (· head-table xMin) (· head-table yMin) (· head-table xMax) (· head-table yMax)))
 
+(define font-bbox bbox) ; todo: avoid name collision in pitfall/embedded
+
 (test-module
- (check-equal? (bbox->list (· f bbox)) '(-161 -236 1193 963)))
+ (check-equal? (bbox->list (bbox f)) '(-161 -236 1193 963)))
 
-;; Returns a Subset for this font.
-(define (createSubset this)
-  #;(->m Subset?)
-  ;; no CFF support
-  #;(make-object (if (· this has-cff-table?)
-                     CFFSubset
-                     TTFSubset) this)
-  (+ttf-subset this))
-
-
-;; Returns a glyph object for the given glyph id.
-;; You can pass the array of code points this glyph represents for
-;; your use later, and it will be stored in the glyph object.
-(define (getGlyph this glyph [characters null])
-  #;((index?) ((listof index?)) . ->*m . glyph?)
-  ;; no CFF
-  #;(make-object (if (· this has-cff-table?)
-                     CFFGlyph
-                     TTFGlyph) glyph characters this)
-  (+ttf-glyph glyph characters this))
 
 (define current-layout-caching (make-parameter #false))
 
@@ -251,7 +194,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                  ('hb-positions posns))
      (define glyphs (for/list ([gidx (in-list gidxs)]
                                [cluster (in-list clusters)])
-                      (send this getGlyph gidx cluster)))
+                      (getGlyph this gidx cluster)))
      (define positions (for/list ([pos (in-list posns)])
                          (match pos
                            [(list xad yad xoff yoff _) (+glyph-position xad yad xoff yoff)])))
@@ -260,11 +203,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define (harfbuzz-layout this codepoints userFeatures script language)
   #;(string? (listof symbol?) symbol? symbol? . ->m . GlyphRun?)
-  (define buf (· this hb-buf))
+  (define buf (hb-buf this))
   (hb_buffer_reset buf)
   (hb_buffer_add_codepoints buf codepoints)
   (define chars (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf)))
-  (hb_shape (· this hb-font) buf (map tag->hb-feature (or userFeatures null)))
+  (hb_shape (hb-font this) buf (map tag->hb-feature (or userFeatures null)))
   (define gis (hb_buffer_get_glyph_infos buf))
   (dictify 'hb-gids (map hb_glyph_info_t-codepoint gis)
            'hb-clusters (break-at chars (map hb_glyph_info_t-cluster gis))
@@ -292,7 +235,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define (get-layout string)
     (define codepoints (map char->integer (string->list string)))
     (define args (list codepoints (if userFeatures (sort userFeatures symbol<?) null) script language))
-    (define key (apply layout-cache-key (· this _crc) args))
+    (define key (apply layout-cache-key (TTFFont-_crc this) args))
     (hash-ref! layout-cache key
                (λ ()
                  #;(encode hb-output (apply harfbuzz-layout this args) #f)
@@ -335,14 +278,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define (glyphForCodePoint this codePoint)
   #;(index? . ->m . glyph?)
   (define glyph-idx (FT_Get_Char_Index (· this ft-face) codePoint))
-  (send this getGlyph glyph-idx (list codePoint)))
+  (getGlyph this glyph-idx (list codePoint)))
 
 
 (define/contract (measure-char-width this char)
   (char? . ->m . number?)
-  (define glyph-idx (FT_Get_Char_Index (· this ft-face) (char->integer char)))
-  (FT_Load_Glyph (· this ft-face) glyph-idx FT_LOAD_NO_RECURSE)
-  (define width (FT_Vector-x (FT_GlyphSlotRec-advance (FT_FaceRec-glyph (· this ft-face)))))
+  (define glyph-idx (FT_Get_Char_Index (ft-face this) (char->integer char)))
+  (FT_Load_Glyph (ft-face this) glyph-idx FT_LOAD_NO_RECURSE)
+  (define width (FT_Vector-x (FT_GlyphSlotRec-advance (FT_FaceRec-glyph (ft-face this)))))
   (* width 1.0))
   
 
@@ -350,7 +293,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (string? number? . ->m . number?)
   (/ (* size
         (for/sum ([c (in-string str)])
-          (measure-char-width this c))) (· this unitsPerEm)))
+          (measure-char-width this c))) (unitsPerEm this)))
 
 
 #|
@@ -390,7 +333,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
 
 
 (test-module
- (check-equal? (measure-string f "f" (· f unitsPerEm)) 321.0)
+ (check-equal? (measure-string f "f" (unitsPerEm f)) 321.0)
  (check-true (has-table? f #"cmap"))
  (check-exn exn:fail:contract? (λ () (get-table f 'nonexistent-table-tag)))
  (check-true

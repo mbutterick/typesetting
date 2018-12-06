@@ -3,6 +3,7 @@
          sugar/unstable/dict
          sugar/unstable/js
          "unsafe/freetype.rkt"
+         "struct.rkt"
          "helper.rkt")
 (provide (all-defined-out))
 
@@ -40,7 +41,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
 
 (define (get-glyph-metrics g)
   (unless (glyph-metrics g)
-    (define face (· (glyph-font g) ft-face))
+    (define face (ft-face (glyph-font g)))
     (FT_Load_Glyph face (glyph-id g) FT_LOAD_NO_RECURSE)
     (define glyph (FT_FaceRec-glyph face))
     (define ft-glyph-metrics (FT_GlyphSlotRec-metrics glyph))
@@ -51,3 +52,22 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
   (glyph-metrics g))
 
 
+
+;; Represents a TrueType glyph.
+
+(struct ttf-glyph glyph () #:transparent)
+
+(define (+ttf-glyph . args)
+  (apply +glyph #:constructor ttf-glyph args))
+
+
+;; Returns a glyph object for the given glyph id.
+;; You can pass the array of code points this glyph represents for
+;; your use later, and it will be stored in the glyph object.
+(define (getGlyph this glyph [characters null])
+  #;((index?) ((listof index?)) . ->*m . glyph?)
+  ;; no CFF
+  #;(make-object (if (· this has-cff-table?)
+                     CFFGlyph
+                     TTFGlyph) glyph characters this)
+  (+ttf-glyph glyph characters this))

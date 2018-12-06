@@ -32,8 +32,9 @@
 (define-table-getters)
 
 (define (get-table-stream this tag)
-  (define table (hash-ref (· this directory tables) tag))
-  (and table (pos (· this _port) (· table offset)) (· this _port)))
+  (define directory (force (TTFFont-_directory this)))
+  (define table (hash-ref (· directory tables) tag))
+  (and table (pos (TTFFont-_port this) (· table offset)) (TTFFont-_port this)))
   
 (define  (decode-table this table-tag)
   (unless (hash-has-key? table-codecs table-tag)
