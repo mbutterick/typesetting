@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require
   (for-syntax racket/base)
   "param.rkt"
@@ -17,6 +17,7 @@
   "font.rkt"
   fontland
   fontland/table-stream
+  fontland/subset
   "reference.rkt")
 (provide EmbeddedFont)
 
@@ -26,19 +27,19 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 |#
 
 (define-subclass PDFFont (EmbeddedFont document font id)
-  (field [subset (· this font createSubset)]
+  (field [subset (createSubset font)]
          ;; we make `unicode` and `width` fields integer-keyed hashes not lists
          ;; because they offer better random access and growability 
          [unicode (mhash 0 '(0))] ; always include the missing glyph (gid = 0)
-         [widths (mhash 0 (glyph-advance-width (send (· this font) getGlyph 0)))]
+         [widths (mhash 0 (glyph-advance-width (getGlyph font 0)))]
          ;; always include the width of the missing glyph (gid = 0)
          
-         [name (· font postscriptName)]
-         [scale (/ 1000 (· font unitsPerEm))]
-         [ascender (* (· font ascent) scale)]
-         [descender (* (· font descent) scale)]
-         [lineGap (* (· font lineGap) scale)]
-         [bbox (· font bbox)])
+         [name (postscriptName font)]
+         [scale (/ 1000 (unitsPerEm font))]
+         [ascender (* (ascent font) scale)]
+         [descender (* (descent font) scale)]
+         [lineGap (* (line-gap font) scale)]
+         [bbox (font-bbox font)])
 
   (as-methods
    widthOfString
@@ -53,15 +54,15 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (hash-ref! width-cache
              (list string size (and features (sort features symbol<?)))
              (λ ()
-               (define run (send (· this font) layout string features))
+               (define run (layout (· this font) string features))
                (define width (glyphrun-advance-width run))
-               (define scale (/ size (+ (· this font unitsPerEm) 0.0)))
+               (define scale (/ size (+ (unitsPerEm (· this font)) 0.0)))
                (* width scale))))
 
 
 ;; called from text.rkt
 (define (encode this text [features #f])
-  (define glyphRun (send (· this font) layout text features))
+  (define glyphRun (layout (· this font) text features))
   (define glyphs (glyphrun-glyphs glyphRun))
   (define positions (glyphrun-positions glyphRun))
   (define-values (subset-idxs new-positions)
@@ -86,8 +87,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
               #:when c)
              v))
 
-(define/contract (embed this)
-  (->m void?)
+(define (embed this)
   ;; no CFF support
   (define isCFF #false) #;(is-a? (· this subset) CFFSubset)
   (define fontFile (· this document ref))
@@ -105,21 +105,21 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   ;; font descriptor flags
   (match-define (list FIXED_PITCH SERIF SYMBOLIC SCRIPT _UNUSED NONSYMBOLIC ITALIC)
     (map (λ (x) (expt 2 x)) (range 7)))
-  
+
   (define flags (sum-flags
                  [(not (zero? (· (get-post-table (· this font)) isFixedPitch))) FIXED_PITCH]
                  [(<= 1 familyClass 7) SERIF]
                  [#t SYMBOLIC] ; assume the font uses non-latin characters
                  [(= familyClass 10) SCRIPT]
-                 [(· this font head macStyle italic) ITALIC]))
+                 [(· (get-head-table (· this font)) macStyle italic) ITALIC]))
 
   ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
   (when (test-mode) (random-seed 0))
   (define tag (list->string (for/list ([i (in-range 6)])
                                       (integer->char (random 65 (+ 65 26))))))
-  (define name (string-append tag "+" (· this font postscriptName)))
+  (define name (string-append tag "+" (postscriptName (· this font))))
 
-  (define bbox (· this font bbox))
+  (define bbox (font-bbox (· this font)))
   (define descriptor (send (· this document) ref
                            (mhash
                             'Type "FontDescriptor"
@@ -128,13 +128,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                             'FontBBox (map (λ (x) (* (· this scale) x))
                                            (list (BBox-minX bbox) (BBox-minY bbox)
                                                  (BBox-maxX bbox) (BBox-maxY bbox)))
-                            'ItalicAngle (· this font italicAngle)
+                            'ItalicAngle (italicAngle (· this font))
                             'Ascent (· this ascender)
                             'Descent (· this descender)
-                            'CapHeight (* (or (· this font capHeight) (· this sfont ascent)) (· this scale))
-                            'XHeight (* (or (· this font xHeight) 0) (· this scale))
+                            'CapHeight (* (or (capHeight (· this font)) (· this sfont ascent)) (· this scale))
+                            'XHeight (* (or (xHeight (· this font)) 0) (· this scale))
                             'StemV 0)))
-
 
   (hash-set! (· descriptor payload) (if isCFF
                                         'FontFile3
@@ -229,6 +228,6 @@ HERE
   (check-equal? (bbox->list (· ef bbox)) '(-161 -236 1193 963))
   (define H-gid 41)
   (check-equal? (· ef widths) (mhash 0 278))
-  (check-equal? (glyph-advance-width (send (· ef font) getGlyph H-gid)) 738)
+  (check-equal? (glyph-advance-width (getGlyph (· ef font) H-gid)) 738)
   
   )

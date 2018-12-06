@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require
   racket/class
   racket/match
@@ -62,6 +62,7 @@
                                (and (string? ck) ck))])))
 
   (when size (fontSize this size))
+  
 
   ;; fast path: check if the font is already in the PDF
   (cond
