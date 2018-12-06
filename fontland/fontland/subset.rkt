@@ -10,6 +10,7 @@
          "table/loca.rkt"
          "directory.rkt"
          "helper.rkt"
+         fontland/glyph
          xenomorph)
 (provide Subset TTFSubset)
 
@@ -103,12 +104,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (index? . ->m . index?)
 
   (define glyph (send (· this font) getGlyph gid))
-  ;; _decode unpacks the `glyf` table data corresponding to a certin gid.
+  ;; glyph-decode unpacks the `glyf` table data corresponding to a certin gid.
   ;; here, it's not necessary for non-composite glyphs
   ;; because they just get copied entirely into the subset.
   ;; it's just used to detect composite glyphs and handle them specially.
-  ;; so an optimization would be to detect composite / noncomposite without full _decode.
-  (define glyf (send glyph _decode))
+  ;; so an optimization would be to detect composite / noncomposite without full glyph-decode.
+  (define glyf (glyph-decode glyph))
 
   ;; get the offset to the glyph from the loca table
   (match-define (list curOffset nextOffset) (take (drop (· this font loca offsets) gid) 2))
@@ -132,8 +133,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                                                  (append os (list (get-field offset this)))))
 
   (hash-update! (get-field hmtx this) 'metrics (λ (ms) (append ms
-                                                               (list (mhash 'advance (· glyph advanceWidth)
-                                                                            'bearing (· (send glyph _getMetrics) leftBearing))))))
+                                                               (list (mhash 'advance (glyph-advance-width glyph)
+                                                                            'bearing (· (_getMetrics glyph) leftBearing))))))
 
   (increment-field! offset this (bytes-length buffer))
   (sub1 (length (· this glyf))))

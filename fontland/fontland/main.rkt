@@ -8,4 +8,5 @@
      "subset.rkt"
      "bbox.rkt"
      "tables.rkt"
-     "glyphrun.rkt")
+     "glyphrun.rkt"
+     "glyph.rkt")

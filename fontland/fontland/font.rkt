@@ -244,13 +244,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; Returns a glyph object for the given glyph id.
 ;; You can pass the array of code points this glyph represents for
 ;; your use later, and it will be stored in the glyph object.
-(define/contract (getGlyph this glyph [characters null])
-  ((index?) ((listof index?)) . ->*m . (is-a?/c Glyph))
+(define (getGlyph this glyph [characters null])
+  #;((index?) ((listof index?)) . ->*m . glyph?)
   ;; no CFF
   #;(make-object (if (· this has-cff-table?)
                      CFFGlyph
                      TTFGlyph) glyph characters this)
-  (make-object TTFGlyph glyph characters this))
+  (+ttf-glyph glyph characters this))
 
 (define current-layout-caching (make-parameter #false))
 
@@ -340,8 +340,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; This is only a one-to-one mapping from characters to glyphs.
 ;; For most uses, you should use font.layout (described below), which
 ;; provides a much more advanced mapping supporting AAT and OpenType shaping.
-(define/contract (glyphsForString this string)
-  (string? . ->m . (listof (is-a?/c Glyph)))
+(define (glyphsForString this string)
+  #;(string? . ->m . (listof glyph?))
 
   ;; todo: make this handle UTF-16 with surrogate bytes
   ;; for now, just use UTF-8
@@ -352,8 +352,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 ;; Maps a single unicode code point to a Glyph object.
 ;; Does not perform any advanced substitutions (there is no context to do so).
-(define/contract (glyphForCodePoint this codePoint)
-  (index? . ->m . Glyph?)
+(define (glyphForCodePoint this codePoint)
+  #;(index? . ->m . glyph?)
   (define glyph-idx (FT_Get_Char_Index (· this ft-face) codePoint))
   (send this getGlyph glyph-idx (list codePoint)))
 

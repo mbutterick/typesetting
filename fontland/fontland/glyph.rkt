@@ -31,60 +31,64 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
 |#
 
-(define-subclass object% (Glyph id codePoints font)
-  (field [_font font]
-         [isMark (andmap is-mark? codePoints)]
-         [isLigature (> (length codePoints) 1)]
-         [_metrics #f])
+#;(define-subclass object% (Glyph id codePoints font)
+    (field [_font font]
+           [isMark (andmap is-mark? codePoints)]
+           [isLigature (> (length codePoints) 1)]
+           [_metrics #f])
 
-  (as-methods
-   _getPath
-   _getCBox
-   _getBBox
-   _getTableMetrics
-   advanceWidth
-   _getMetrics))
+    (as-methods
+     advanceWidth
+     _getMetrics))
 
-(define-stub-stop _getPath)
-(define-stub-stop _getCBox)
-(define-stub-stop _getBBox)
-(define-stub-stop _getTableMetrics)
+(struct glyph (id codePoints font _font isMark isLigature _metrics) #:transparent #:mutable)
 
-(define/contract (advanceWidth this)
-  (->m number?)
-  (hash-ref (_getMetrics this) 'advanceWidth))
+(define (+glyph id codePoints font
+                [_font font]
+                [isMark (andmap is-mark? codePoints)]
+                [isLigature (> (length codePoints) 1)]
+                [_metrics #f]
+                #:constructor [constructor glyph])
+  (constructor id codePoints font _font isMark isLigature _metrics))
+
+#;(define-stub-stop _getPath)
+#;(define-stub-stop _getCBox)
+#;(define-stub-stop _getBBox)
+#;(define-stub-stop _getTableMetrics)
+
+(define (glyph-advance-width g)
+  (hash-ref (_getMetrics g) 'advanceWidth))
 
 
-(define/contract (_getMetrics this)
-  (->m hash?)
-  (unless (· this _metrics)
-    (define face (· this _font ft-face))
-    (FT_Load_Glyph face (· this id) FT_LOAD_NO_RECURSE)
+(define (_getMetrics g)
+  (unless (glyph-_metrics g)
+    (define face (· (glyph-_font g) ft-face))
+    (FT_Load_Glyph face (glyph-id g) FT_LOAD_NO_RECURSE)
     (define glyph (FT_FaceRec-glyph face))
     (define glyph-metrics (FT_GlyphSlotRec-metrics glyph))
-    (set-field! _metrics this (mhash))
-    (hash-set*! (· this _metrics)
+    (set-glyph-_metrics! g (mhash))
+    (hash-set*! (glyph-_metrics g)
                 'advanceWidth (FT_Glyph_Metrics-horiAdvance glyph-metrics)
                 'leftBearing (FT_Glyph_Metrics-horiBearingX glyph-metrics)))
-  (· this _metrics))
+  (glyph-_metrics g))
 
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 |#
 
-(define-subclass Glyph (CFFGlyph)
-  (error 'cff-glyph-unimplemented)
+#;(define-subclass Glyph (CFFGlyph)
+    (error 'cff-glyph-unimplemented)
 
-  #;(define/override (_getName this)
-      (->m any/c)
-      (if (send (· this _font) _getTable 'CFF2)
-          (super _getName)
-          (send (send (· this _font) _getTable 'CFF_) getGlyphName (· this id))))
-  (as-methods
-   #;_getName
-   #;bias
-   #;_getPath))
+    #;(define/override (_getName this)
+        (->m any/c)
+        (if (send (· this _font) _getTable 'CFF2)
+            (super _getName)
+            (send (send (· this _font) _getTable 'CFF_) getGlyphName (· this id))))
+    (as-methods
+     #;_getName
+     #;bias
+     #;_getPath))
 
 
 
@@ -146,117 +150,125 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
          [scale10 0]))
 
 ;; Represents a TrueType glyph.
-(define-subclass Glyph (TTFGlyph)
-  (inherit-field _font id)
+#;(define-subclass Glyph (TTFGlyph)
+    (inherit-field _font id))
 
-  ;; Parses just the glyph header and returns the bounding box
-  (define/override (_getCBox internal)
+(struct ttf-glyph glyph () #:transparent)
+
+(define (+ttf-glyph . args)
+  (apply +glyph #:constructor ttf-glyph args))
+  
+
+
+
+;; Parses just the glyph header and returns the bounding box
+#;(define/override (_getCBox internal)
     (unfinished))
 
-  ;; Parses a single glyph coordinate
-  (define/public (_parseGlyphCoord port prev short same)
-    (unless (input-port? port)
-      (raise-argument-error '_parseGlyphCoord "input port" port))
-    (unless (number? prev)
-      (raise-argument-error '_parseGlyphCoord "number" prev))
-    (unless (and (boolean? short) (boolean? same))
-      (raise-argument-error '_parseGlyphCoord "booleans" (list short same)))
-    (+ prev (if short 
-                ((if (not same) - +) (decode uint8 port))
-                (if same 0 (decode int16be port)))))
+;; Parses a single glyph coordinate
+(define (_parseGlyphCoord port prev short same)
+  (unless (input-port? port)
+    (raise-argument-error '_parseGlyphCoord "input port" port))
+  (unless (number? prev)
+    (raise-argument-error '_parseGlyphCoord "number" prev))
+  (unless (and (boolean? short) (boolean? same))
+    (raise-argument-error '_parseGlyphCoord "booleans" (list short same)))
+  (+ prev (if short 
+              ((if (not same) - +) (decode uint8 port))
+              (if same 0 (decode int16be port)))))
                  
 
-  ;; Decodes the glyph data into points for simple glyphs,
-  ;; or components for composite glyphs
-  (define/public (_decode)
-    (define offsets (· _font loca offsets))
-    (match-define (list glyfPos nextPos) (take (drop offsets id) 2))
+;; Decodes the glyph data into points for simple glyphs,
+;; or components for composite glyphs
+(define (glyph-decode ttfg)
+  (define offsets (· (glyph-_font ttfg) loca offsets))
+  (match-define (list glyfPos nextPos) (take (drop offsets (glyph-id ttfg)) 2))
 
-    ;; Nothing to do if there is no data for this glyph
-    (and (not (= glyfPos nextPos))
-         (let ()
-           (define port (send _font _getTableStream 'glyf))
-           (pos port (+ (pos port) glyfPos))
-           (define startPos (pos port))
-           (define glyph (decode GlyfHeader port))
-           (match (· glyph numberOfContours)
-             [(? positive?) (_decodeSimple glyph port)]
-             [(? negative?) (_decodeComposite glyph port startPos)])
-           glyph)))
+  ;; Nothing to do if there is no data for this glyph
+  (and (not (= glyfPos nextPos))
+       (let ()
+         (define port (send (glyph-_font ttfg) _getTableStream 'glyf))
+         (pos port (+ (pos port) glyfPos))
+         (define startPos (pos port))
+         (define glyph (decode GlyfHeader port))
+         (match (· glyph numberOfContours)
+           [(? positive?) (_decodeSimple glyph port)]
+           [(? negative?) (_decodeComposite glyph port startPos)])
+         glyph)))
 
-  (define/public (_decodeSimple glyph port)
-    (unless (dict? glyph)
-      (raise-argument-error 'TTFGlyph-_decodeSimple "decoded RGlyfHeader" glyph))
+(define (_decodeSimple glyph port)
+  (unless (dict? glyph)
+    (raise-argument-error 'TTFGlyph-_decodeSimple "decoded RGlyfHeader" glyph))
 
-    (unless (input-port? port)
-      (raise-argument-error 'TTFGlyph-_decodeSimple "input port" port))
+  (unless (input-port? port)
+    (raise-argument-error 'TTFGlyph-_decodeSimple "input port" port))
 
-    ;; this is a simple glyph
-    (dict-set! glyph 'points empty)
-    (define endPtsOfContours (decode (+Array uint16be (· glyph numberOfContours)) port))
-    (dict-set! glyph 'instructions (decode (+Array uint8be uint16be) port))
-    (define numCoords (add1 (last endPtsOfContours)))
+  ;; this is a simple glyph
+  (dict-set! glyph 'points empty)
+  (define endPtsOfContours (decode (+Array uint16be (· glyph numberOfContours)) port))
+  (dict-set! glyph 'instructions (decode (+Array uint8be uint16be) port))
+  (define numCoords (add1 (last endPtsOfContours)))
 
-    (define flags
-      (for*/lists (flags)
-                  ([i (in-naturals)]
-                   #:break (= (length flags) numCoords)
-                   [flag (in-value (decode uint8 port))]
-                   [count (in-range (add1 (if (not (zero? (bitwise-and flag REPEAT)))
-                                              (decode uint8 port)
-                                              0)))])
-        flag))
+  (define flags
+    (for*/lists (flags)
+                ([i (in-naturals)]
+                 #:break (= (length flags) numCoords)
+                 [flag (in-value (decode uint8 port))]
+                 [count (in-range (add1 (if (not (zero? (bitwise-and flag REPEAT)))
+                                            (decode uint8 port)
+                                            0)))])
+      flag))
 
-    (match-define-values
-      (points _ _)
-      (for/fold ([points empty] [px 0] [py 0])
-                ([(flag i) (in-indexed flags)])
-        (define point (+Point (zero? (bitwise-and flag ON_CURVE)) (and (index-of endPtsOfContours i) #t) 0 0))
-        (define next-px (_parseGlyphCoord port px (not (zero? (bitwise-and flag X_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_X)))))
-        (define next-py (_parseGlyphCoord port py (not (zero? (bitwise-and flag Y_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_Y)))))
-        (set-field! x point next-px)
-        (set-field! y point next-py)
-        (values (cons point points) next-px next-py)))
-    (dict-set! glyph 'points (reverse points)))
+  (match-define-values
+    (points _ _)
+    (for/fold ([points empty] [px 0] [py 0])
+              ([(flag i) (in-indexed flags)])
+      (define point (+Point (zero? (bitwise-and flag ON_CURVE)) (and (index-of endPtsOfContours i) #t) 0 0))
+      (define next-px (_parseGlyphCoord port px (not (zero? (bitwise-and flag X_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_X)))))
+      (define next-py (_parseGlyphCoord port py (not (zero? (bitwise-and flag Y_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_Y)))))
+      (set-field! x point next-px)
+      (set-field! y point next-py)
+      (values (cons point points) next-px next-py)))
+  (dict-set! glyph 'points (reverse points)))
 
-  (define/public (_decodeComposite glyph port [offset 0])
-    ;; this is a composite glyph
-    (dict-set! glyph 'components empty)
-    (define haveInstructions #f)
-    (define flags MORE_COMPONENTS)
+(define (_decodeComposite glyph port [offset 0])
+  ;; this is a composite glyph
+  (dict-set! glyph 'components empty)
+  (define haveInstructions #f)
+  (define flags MORE_COMPONENTS)
 
-    (dict-set! glyph 'components
-               (for/list ([i (in-naturals)]
-                          #:break (zero? (bitwise-and flags MORE_COMPONENTS)))
-                         (set! flags (send uint16be decode port))
-                         (define gPos (- (pos port) offset))
-                         (define glyphID (send uint16be decode port))
-                         (unless haveInstructions
-                           (set! haveInstructions (not (zero? (bitwise-and flags WE_HAVE_INSTRUCTIONS)))))
+  (dict-set! glyph 'components
+             (for/list ([i (in-naturals)]
+                        #:break (zero? (bitwise-and flags MORE_COMPONENTS)))
+                       (set! flags (send uint16be decode port))
+                       (define gPos (- (pos port) offset))
+                       (define glyphID (send uint16be decode port))
+                       (unless haveInstructions
+                         (set! haveInstructions (not (zero? (bitwise-and flags WE_HAVE_INSTRUCTIONS)))))
 
-                         (match-define
-                           (list dx dy)
-                           (let ([decoder (if (not (zero? (bitwise-and flags ARG_1_AND_2_ARE_WORDS))) int16be int8)])
-                             (list (send decoder decode port) (send decoder decode port))))
+                       (match-define
+                         (list dx dy)
+                         (let ([decoder (if (not (zero? (bitwise-and flags ARG_1_AND_2_ARE_WORDS))) int16be int8)])
+                           (list (send decoder decode port) (send decoder decode port))))
 
-                         (define component (+Component glyphID dx dy))
-                         (set-field! pos component gPos)
+                       (define component (+Component glyphID dx dy))
+                       (set-field! pos component gPos)
 
-                         (cond
-                           [(not (zero? (bitwise-and flags WE_HAVE_A_SCALE)))
-                            (define scale (read-fixed14 port))
-                            (set-field! scaleX component scale)
-                            (set-field! scaleY component scale)]
-                           [(not (zero? (bitwise-and flags WE_HAVE_AN_X_AND_Y_SCALE)))
-                            (set-field! scaleX component (read-fixed14 port))
-                            (set-field! scaleY component (read-fixed14 port))]
-                           [(not (zero? (bitwise-and flags WE_HAVE_A_TWO_BY_TWO)))
-                            (set-field! scaleX component (read-fixed14 port))
-                            (set-field! scale01 component (read-fixed14 port))
-                            (set-field! scale10 component (read-fixed14 port))
-                            (set-field! scaleY component (read-fixed14 port))])
-                         component))
-    haveInstructions))
+                       (cond
+                         [(not (zero? (bitwise-and flags WE_HAVE_A_SCALE)))
+                          (define scale (read-fixed14 port))
+                          (set-field! scaleX component scale)
+                          (set-field! scaleY component scale)]
+                         [(not (zero? (bitwise-and flags WE_HAVE_AN_X_AND_Y_SCALE)))
+                          (set-field! scaleX component (read-fixed14 port))
+                          (set-field! scaleY component (read-fixed14 port))]
+                         [(not (zero? (bitwise-and flags WE_HAVE_A_TWO_BY_TWO)))
+                          (set-field! scaleX component (read-fixed14 port))
+                          (set-field! scale01 component (read-fixed14 port))
+                          (set-field! scale10 component (read-fixed14 port))
+                          (set-field! scaleY component (read-fixed14 port))])
+                       component))
+  haveInstructions)
         
 
 (define (bytes->fixed14 b1 b2)
