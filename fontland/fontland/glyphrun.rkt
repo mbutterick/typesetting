@@ -1,8 +1,7 @@
 #lang racket/base
-(require (prefix-in Script- "script.rkt")
-         sugar/unstable/class
-         sugar/unstable/js
-         racket/class)
+(require sugar/unstable/js
+         racket/class
+         "glyph-position.rkt")
 (provide (all-defined-out))
 
 #|
@@ -10,30 +9,29 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/layout/GlyphRun.js
 |#
 
+
 ;; Represents a run of Glyph and GlyphPosition objects.
 ;; Returned by the font layout method.
-#;(define-subclass object% (GlyphRun
-                            glyphs ; An array of Glyph objects in the run
-                            positions) ; An array of GlyphPosition objects for each glyph in the run
-
-
-    (define/public (advanceWidth)
-      (for/sum ([pos (in-list positions)])
-               (· pos xAdvance))))
-
-
+; An array of Glyph objects in the run
+; An array of GlyphPosition objects for each glyph in the run
 (struct glyphrun (glyphs positions) #:transparent)
 
-(define (advanceWidth gr)
+(define (glyphrun-advance-width gr)
   (for/sum ([pos (in-list (glyphrun-positions gr))])
-           (· pos xAdvance)))
+           (glyph-position-x-advance pos)))
 
 (define (append-glyphruns . grs)
   (for/fold ([glyphss null]
              [positionss null]
-             #:result (make-object glyphrun
+             #:result (glyphrun
                         (apply append (reverse glyphss))
                         (apply append (reverse positionss))))
             ([gr (in-list grs)])
-    (values (cons (get-field glyphs gr) glyphss)
-            (cons (get-field positions gr) positionss))))
+    (values (cons (glyphrun-glyphs gr) glyphss)
+            (cons (glyphrun-positions gr) positionss))))
+
+(module+ test
+  (require rackunit)
+  (define gr (glyphrun null null))
+  (check-true (glyphrun? gr))
+  (check-equal? (append-glyphruns gr gr) gr))

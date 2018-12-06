@@ -5,7 +5,7 @@
          "subset.rkt"
          "glyph.rkt"
          "bbox.rkt"
-         (except-in "glyphrun.rkt" advanceWidth)
+         "glyphrun.rkt"
          "directory.rkt"
          "db.rkt"
          xenomorph
@@ -274,7 +274,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                               (send this getGlyph gidx cluster)))
      (define positions (for/list ([pos (in-list posns)])
                                  (match pos
-                                   [(list xad yad xoff yoff _) (+GlyphPosition xad yad xoff yoff)])))
+                                   [(list xad yad xoff yoff _) (+glyph-position xad yad xoff yoff)])))
      (glyphrun glyphs positions)]))
 
 
