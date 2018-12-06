@@ -67,11 +67,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
          [_hb-font (delay (and _src (hb_ft_font_create (· this ft-face))))]
          [_hb-buf (delay (hb_buffer_create))]
          [_crc (begin0 (crc32c-input-port _port) (pos _port 0))])
- 
-  (define/public (directory) (force _directory))
-  (define/public (ft-face) (or (force _ft-face) (error 'ft-face-not-available)))
-  (define/public (hb-font) (or (force _hb-font) (error 'hb-font-not-available)))
-  (define/public (hb-buf) (force _hb-buf))
+
 
   (define/public (_getTable table-tag)
     (unless (has-table? this table-tag)
@@ -116,7 +112,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
    getGlyph
    layout
    glyphsForString
-   glyphForCodePoint))
+   glyphForCodePoint
+   directory
+   ft-face
+   hb-font
+   hb-buf))
+
+
+  (define (directory this) (force (· this _directory)))
+  (define (ft-face this) (or (force (· this _ft-face)) (error 'ft-face-not-available)))
+  (define (hb-font this) (or (force (· this _hb-font)) (error 'hb-font-not-available)))
+  (define (hb-buf this) (force (· this _hb-buf)))
 
 
 ;; The unique PostScript name for this font
