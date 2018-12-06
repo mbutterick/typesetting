@@ -135,7 +135,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
   (hash-update! (get-field hmtx this) 'metrics (λ (ms) (append ms
                                                                (list (mhash 'advance (glyph-advance-width glyph)
-                                                                            'bearing (· (_getMetrics glyph) leftBearing))))))
+                                                                            'bearing (· (get-glyph-metrics glyph) leftBearing))))))
 
   (increment-field! offset this (bytes-length buffer))
   (sub1 (length (· this glyf))))

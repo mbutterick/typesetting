@@ -104,13 +104,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 ;; Decodes the glyph data into points for simple glyphs,
 ;; or components for composite glyphs
 (define (glyph-decode ttfg)
-  (define offsets (· (glyph-_font ttfg) loca offsets))
+  (define offsets (· (glyph-font ttfg) loca offsets))
   (match-define (list glyfPos nextPos) (take (drop offsets (glyph-id ttfg)) 2))
 
   ;; Nothing to do if there is no data for this glyph
   (and (not (= glyfPos nextPos))
        (let ()
-         (define port (send (glyph-_font ttfg) _getTableStream 'glyf))
+         (define port (send (glyph-font ttfg) _getTableStream 'glyf))
          (pos port (+ (pos port) glyfPos))
          (define startPos (pos port))
          (define glyph-data (decode GlyfHeader port))
@@ -128,14 +128,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 
   ;; this is a simple glyph
   (dict-set! glyph-data 'points empty)
-  (define endPtsOfContours (decode (+Array uint16be (· glyph-data numberOfContours)) port))
+  (define endpts-of-contours (decode (+Array uint16be (· glyph-data numberOfContours)) port))
   (dict-set! glyph-data 'instructions (decode (+Array uint8be uint16be) port))
-  (define numCoords (add1 (last endPtsOfContours)))
+  (define num-coords (add1 (last endpts-of-contours)))
 
   (define flags
-    (for*/lists (flags)
+    (for*/lists (flag-acc)
                 ([i (in-naturals)]
-                 #:break (= (length flags) numCoords)
+                 #:break (= (length flag-acc) num-coords)
                  [flag (in-value (decode uint8 port))]
                  [count (in-range (add1 (if (not (zero? (bitwise-and flag REPEAT)))
                                             (decode uint8 port)
@@ -146,7 +146,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
     (points _ _)
     (for/fold ([points empty] [px 0] [py 0])
               ([(flag i) (in-indexed flags)])
-      (define point (+tff-glyph-point (zero? (bitwise-and flag ON_CURVE)) (and (index-of endPtsOfContours i) #t) 0 0))
+      (define point (+tff-glyph-point (zero? (bitwise-and flag ON_CURVE)) (and (index-of endpts-of-contours i) #t) 0 0))
       (define next-px (parse-glyph-coord port px (not (zero? (bitwise-and flag X_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_X)))))
       (define next-py (parse-glyph-coord port py (not (zero? (bitwise-and flag Y_SHORT_VECTOR))) (not (zero? (bitwise-and flag SAME_Y)))))
       (set-ttf-glyph-point-x! point next-px)
