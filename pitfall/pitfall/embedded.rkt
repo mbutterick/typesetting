@@ -72,7 +72,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (set-glyph-position-advance-width! posn (glyph-advance-width g))
 
       (hash-ref! (· this widths) gid (λ () (glyph-position-advance-width posn)))
-      (hash-ref! (· this unicode) gid (λ () (glyph-codePoints g)))
+      (hash-ref! (· this unicode) gid (λ () (glyph-codepoints g)))
 
       (scale-glyph-position! posn (· this scale))
       (values subset-idx posn)))
