@@ -11,9 +11,12 @@
     [(_)
      (with-syntax ([(TABLE-TAG ...) (hash-keys table-codecs)])
        (with-syntax ([(GETTER-ID ...) (map (λ (tag) (datum->syntax stx (string->symbol (format "get-~a-table" (syntax->datum tag)))))
+                                           (syntax->list #'(TABLE-TAG ...)))]
+                     [(HAS-ID? ...) (map (λ (tag) (datum->syntax stx (string->symbol (format "has-~a-table?" (syntax->datum tag)))))
                                            (syntax->list #'(TABLE-TAG ...)))])
        #'(begin
-           (define (GETTER-ID this) (get-table this 'TABLE-TAG)) ...)))]))
+           (define (GETTER-ID this) (get-table this 'TABLE-TAG)) ...
+           (define (HAS-ID? this) (has-table? this 'TABLE-TAG)) ...)))]))
 
 (define (has-table? this tag)
   #;((or/c bytes? symbol?) . ->m . boolean?)

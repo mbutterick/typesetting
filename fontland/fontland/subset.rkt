@@ -3,7 +3,6 @@
          racket/class
          racket/list
          racket/match
-         racket/sequence
          sugar/unstable/dict
          sugar/unstable/js
          "table/loca.rkt"
@@ -106,7 +105,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 ;; additional tables required for standalone fonts:
 ;; name, cmap, OS/2, post
 
-(define (clone-deep val)  (deserialize (serialize val)))
+(define (clone-deep val) (deserialize (serialize val)))
 
 (define (encode ss port)  
   (set-ttf-subset-glyf! ss empty)
@@ -122,41 +121,35 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
     (define gid (list-ref (subset-glyphs ss) idx))
     (ttf-subset-add-glyph ss gid))
   
-  (define maxp (clone-deep (· (get-maxp-table (subset-font ss)) to-hash)))
-  (dict-set! maxp 'numGlyphs (length (ttf-subset-glyf ss)))
+  (define new-maxp-table (clone-deep (send (get-maxp-table (subset-font ss)) to-hash)))
+  (dict-set! new-maxp-table 'numGlyphs (length (ttf-subset-glyf ss)))
   
   ;; populate the new loca table
   (dict-update! (ttf-subset-loca ss) 'offsets (λ (vals) (append vals (list (ttf-subset-offset ss)))))
   (loca-pre-encode (ttf-subset-loca ss))
 
-  (define head (clone-deep (· (get-head-table (subset-font ss)) to-hash)))
-  (dict-set! head 'indexToLocFormat (· (ttf-subset-loca ss) version))
+  (define new-head-table (clone-deep (send (get-head-table (subset-font ss)) to-hash)))
+  (dict-set! new-head-table 'indexToLocFormat (dict-ref (ttf-subset-loca ss) 'version))
   
-  (define hhea (clone-deep (· (get-hhea-table (subset-font ss)) to-hash)))
-  (dict-set! hhea 'numberOfMetrics (length (· (ttf-subset-hmtx ss) metrics)))
+  (define new-hhea-table (clone-deep (send (get-hhea-table (subset-font ss)) to-hash)))
+  (dict-set! new-hhea-table 'numberOfMetrics (length (dict-ref (ttf-subset-hmtx ss) 'metrics)))
 
-  (define table-mhash
-    (let ([mh (make-hasheq)])
-      (define kvs (list 'head head
-                        'hhea hhea
-                        'loca (ttf-subset-loca ss)
-                        'maxp maxp
-                        'cvt_ (get-cvt_-table (subset-font ss))
-                        'prep (get-prep-table (subset-font ss))
-                        'glyf (ttf-subset-glyf ss)
-                        'hmtx (ttf-subset-hmtx ss)
-                        'fpgm (get-fpgm-table (subset-font ss))))
-      (for ([kv (in-slice 2 kvs)])
-        (unless (second kv)
-          (error 'encode (format "missing value for ~a" (first kv))))
-        (hash-set! mh (first kv) (second kv)))
-      mh))
+  (define new-tables
+    (let ()
+      (define kvs (dictify 'head new-head-table
+                           'hhea new-hhea-table
+                           'loca (ttf-subset-loca ss)
+                           'maxp new-maxp-table
+                           'cvt_ (get-cvt_-table (subset-font ss))
+                           'prep (get-prep-table (subset-font ss))
+                           'glyf (ttf-subset-glyf ss)
+                           'hmtx (ttf-subset-hmtx ss)
+                           'fpgm (get-fpgm-table (subset-font ss))))
+      (for ([(k v) (in-dict kvs)]
+            #:unless v)
+        (error 'encode (format "missing value for ~a" k)))
+      (make-hasheq kvs)))
   
-  (send Directory encode port (mhash 'tables table-mhash))
-
-  #;(report* (bytes-length (send stream dump)) (send stream dump))
-  #;(report* (bytes-length (file->bytes "out.bin")) (file->bytes "out.bin"))
-  
-  (void)
-  )
+  (send Directory encode port (mhash 'tables new-tables))
+  (void))
 
