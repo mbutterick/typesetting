@@ -154,14 +154,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 
 ;; The font’s bounding box, i.e. the box that encloses all glyphs in the font.
-(define (bbox this)
+(define (font-bbox this)
   (define head-table (get-head-table this))
-  (make-BBox (· head-table xMin) (· head-table yMin) (· head-table xMax) (· head-table yMax)))
-
-(define font-bbox bbox) ; todo: avoid name collision in pitfall/embedded
+  (+bbox (· head-table xMin) (· head-table yMin) (· head-table xMax) (· head-table yMax)))
 
 (test-module
- (check-equal? (bbox->list (bbox f)) '(-161 -236 1193 963)))
+ (check-equal? (bbox->list (font-bbox f)) '(-161 -236 1193 963)))
 
 
 (define current-layout-caching (make-parameter #false))
