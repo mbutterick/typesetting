@@ -182,6 +182,5 @@ https://github.com/mbutterick/fontkit/blob/master/src/layout/Script.js
   phlp ;; Psalter Pahlavi
   ))
 
-(define/contract (direction script)
-  ((option/c symbol?) . -> . (or/c 'rtl 'ltr))
+(define (direction script)
   (if (memq script RTL) 'rtl 'ltr))

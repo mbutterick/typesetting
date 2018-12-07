@@ -1,13 +1,11 @@
 #lang racket/base
 (require (for-syntax)
          sugar/unstable/dict
-         sugar/unstable/js
          "unsafe/freetype.rkt"
+         "table-stream.rkt"
          "struct.rkt"
          "helper.rkt")
 (provide (all-defined-out))
-
-
 
 #|
 approximates
@@ -21,7 +19,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
 ; There are several subclasses of the base Glyph class internally that may be returned depending
 ; on the font format, but they all inherit from this class.
 
-
 (struct glyph (id codepoints font is-mark? is-ligature? metrics) #:transparent #:mutable)
 
 (define (+glyph id codepoints font
@@ -30,11 +27,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
                 [metrics #f]
                 #:constructor [constructor glyph])
   (constructor id codepoints font is-mark? is-ligature? metrics))
-
-#;(define-stub-stop _getPath)
-#;(define-stub-stop _getCBox)
-#;(define-stub-stop _getBBox)
-#;(define-stub-stop _getTableMetrics)
 
 (define (glyph-advance-width g)
   (hash-ref (get-glyph-metrics g) 'advanceWidth))
@@ -51,22 +43,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
                 'leftBearing (FT_Glyph_Metrics-horiBearingX ft-glyph-metrics)))
   (glyph-metrics g))
 
-
-
 ;; Represents a TrueType glyph.
-
 (struct ttf-glyph glyph () #:transparent)
 
 (define (+ttf-glyph . args)
   (apply +glyph #:constructor ttf-glyph args))
 
-
 ;; Returns a glyph object for the given glyph id.
 ;; You can pass the array of code points this glyph represents for
 ;; your use later, and it will be stored in the glyph object.
-(define (get-glyph this glyph [characters null])
-  ;; no CFF
-  #;(make-object (if (· this has-cff-table?)
-                     CFFGlyph
-                     TTFGlyph) glyph characters this)
-  (+ttf-glyph glyph characters this))
+(define (get-glyph font gid [codepoints null])
+  ((if (has-table? font #"cff_")
+       (error 'cff-fonts-unsupported)
+       +ttf-glyph) gid codepoints font))

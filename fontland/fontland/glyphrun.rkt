@@ -9,7 +9,6 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/layout/GlyphRun.js
 |#
 
-
 ;; Represents a run of Glyph and GlyphPosition objects.
 ;; Returned by the font layout method.
 ; An array of Glyph objects in the run
