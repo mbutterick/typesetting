@@ -16,3 +16,7 @@
 
 (define (hb-buf this)
   (or (force (ttf-font-hb-buf this)) (error 'hp-buf-not-available)))
+
+(struct glyph (id codepoints font is-mark? is-ligature? metrics) #:transparent #:mutable)
+
+(struct ttf-glyph glyph () #:transparent)

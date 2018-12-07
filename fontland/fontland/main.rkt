@@ -9,4 +9,7 @@
      "bbox.rkt"
      "tables.rkt"
      "glyphrun.rkt"
-     "glyph.rkt")
+     "glyph.rkt"
+     "table-stream.rkt"
+     "subset.rkt"
+     "struct.rkt")

@@ -4,6 +4,7 @@
          racket/list
          racket/class
          "glyph.rkt"
+         "struct.rkt"
          sugar/unstable/dict
          sugar/unstable/js
          xenomorph
