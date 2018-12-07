@@ -126,8 +126,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                             'FontName name
                             'Flags flags
                             'FontBBox (map (λ (x) (* (· this scale) x))
-                                           (list (BBox-minX bbox) (BBox-minY bbox)
-                                                 (BBox-maxX bbox) (BBox-maxY bbox)))
+                                           (bbox->list bbox))
                             'ItalicAngle (italicAngle (· this font))
                             'Ascent (· this ascender)
                             'Descent (· this descender)
