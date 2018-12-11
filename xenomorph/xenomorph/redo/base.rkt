@@ -31,7 +31,12 @@
       [(list? x) (map loop x)]
       [else x])))
 
+(define (pos p [new-pos #f])
+  (when new-pos
+    (file-position p new-pos))
+  (file-position p))
+
 (define-generics xenomorphic
-  (encode xenomorphic val [port])
-  (decode xenomorphic [port])
-  (size xenomorphic))
+  (encode xenomorphic val [port] #:parent [parent])
+  (decode xenomorphic [port] #:parent [parent])
+  (size xenomorphic [item] [parent]))
