@@ -28,53 +28,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define (exact-if-possible x) (if (integer? x) (inexact->exact x) x))
 (define system-endian (if (system-big-endian?) 'be 'le))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; structing
-
-(struct $integer (bytes signed endian) #:transparent)
-
-(define (+$integer [bytes 2] [signed #false] [endian system-endian])
-  ($integer bytes signed endian))
-
-(define $int16 (+$integer))
-
-(define ($bits int) (* ($integer-bytes int) 8))
-
-(define ($bounds int)
-  ;; if a signed integer has n bits, it can contain a number
-  ;; between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
-  (let* ([signed-max (sub1 (arithmetic-shift 1 (sub1 ($bits int))))]
-         [signed-min (sub1 (- signed-max))]
-         [delta (if ($integer-signed int) 0 signed-min)])
-    (values (- signed-min delta) (- signed-max delta))))
-
-(define ($decode int [port-arg (current-input-port)])
-  (define bstr (read-bytes ($integer-bytes int) (->input-port port-arg)))
-  (define bs ((if (eq? ($integer-endian int) system-endian)
-                  values
-                  reverse-bytes) bstr))
-  (define uint (for/sum ([b (in-bytes bs)]
-                         [i (in-naturals)])
-                        (arithmetic-shift b (* 8 i))))
-  (if ($integer-signed int) (unsigned->signed uint ($bits int)) uint))
-
-(define ($encode int val [port-arg #f])
-  (define-values (bound-min bound-max) ($bounds int))
-  (unless (<= bound-min val bound-max)
-    (raise-argument-error '$encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if ($integer-signed int) "signed" "unsigned") ($integer-bytes int) bound-min bound-max) val))
-  (define-values (bs _)
-    (for/fold ([bs null]
-               [n (exact-if-possible val)])
-              ([i (in-range ($integer-bytes int))])
-      (values (cons (bitwise-and n #xff) bs) (arithmetic-shift n -8))))
-  (define res (apply bytes ((if (eq? ($integer-endian int) 'be) values reverse) bs)))
-  (if (and port-arg (output-port? port-arg))
-      (write-bytes res port-arg)
-      res))
-
-($decode $int16 ($encode $int16 123))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (define-subclass xenomorph-base% (Integer [type 'uint16] [endian system-endian])
   (getter-field [number-type (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
   (define _signed? (signed-type? type))
