@@ -32,12 +32,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
     [else (for/list ([i (in-range decoded-len)])
             (decode (xarray-type xa) port #:parent ctx))]))
 
-(define (xarray-encode xa array [port-arg #f] #:parent [parent #f])
+(define (xarray-encode xa array [port-arg (current-output-port)] #:parent [parent #f])
   (unless (sequence? array)
     (raise-argument-error 'xarray-encode "sequence" array))
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (define (encode-items ctx)
     ;; todo: should array with fixed length stop encoding after it reaches max?
+    ;; cf. xstring, which rejects input that is too big for fixed length.
     (let* (#;[items (sequence->list array)]
            #;[item-count (length items)]
            #;[max-items (if (number? (xarray-len xa)) (xarray-len xa) item-count)])
@@ -89,6 +90,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 (module+ test
   (require rackunit)
   (check-equal? (decode (+xarray uint16be 3) #"ABCDEF") '(16706 17220 17734))
-  (check-equal? (encode (+xarray uint16be 3) '(16706 17220 17734)) #"ABCDEF")
+  (check-equal? (encode (+xarray uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
   (check-equal? (size (+xarray uint16be) '(1 2 3)) 6)
   (check-equal? (size (+xarray doublebe) '(1 2 3 4 5)) 40))

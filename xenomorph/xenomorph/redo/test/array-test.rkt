@@ -79,11 +79,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (test-case 
  "encode using array length"
- (check-equal? (encode (+xarray uint8 10) '(1 2 3 4)) (bytes 1 2 3 4)))
+ (check-equal? (encode (+xarray uint8 10) '(1 2 3 4) #f) (bytes 1 2 3 4)))
 
 (test-case 
  "encode length as number before array"
- (check-equal? (encode (+xarray uint8 uint8) '(1 2 3 4)) (bytes 4 1 2 3 4)))
+ (check-equal? (encode (+xarray uint8 uint8) '(1 2 3 4) #f) (bytes 4 1 2 3 4)))
 
 ;; todo: reinstate pointer test
 #;(test-case 

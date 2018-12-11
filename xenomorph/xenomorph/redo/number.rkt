@@ -12,7 +12,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 (define system-endian (if (system-big-endian?) 'be 'le))
 
-(define (xint-encode i val [port #f] #:parent [parent #f])
+(define (xint-encode i val [port (current-output-port)] #:parent [parent #f])
   (unless (xint? i)
     (raise-argument-error 'encode "xint instance" i))
   (define-values (bound-min bound-max) (bounds i))
@@ -102,15 +102,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (module+ test
   (require rackunit)
   (check-exn exn:fail:contract? (λ () (+xint 'not-a-valid-type)))
-  (check-exn exn:fail:contract? (λ () (encode uint8 256)))
-  (check-not-exn (λ () (encode uint8 255)))
-  (check-exn exn:fail:contract? (λ () (encode int8 256)))
-  (check-exn exn:fail:contract? (λ () (encode int8 255)))
-  (check-not-exn (λ () (encode int8 127)))
-  (check-not-exn (λ () (encode int8 -128)))
-  (check-exn exn:fail:contract? (λ () (encode int8 -129)))
-  (check-exn exn:fail:contract? (λ () (encode uint16 (add1 #xffff))))
-  (check-not-exn (λ () (encode uint16 #xffff)))
+  (check-exn exn:fail:contract? (λ () (encode uint8 256 #f)))
+  (check-not-exn (λ () (encode uint8 255 #f)))
+  (check-exn exn:fail:contract? (λ () (encode int8 256 #f)))
+  (check-exn exn:fail:contract? (λ () (encode int8 255 #f)))
+  (check-not-exn (λ () (encode int8 127 #f)))
+  (check-not-exn (λ () (encode int8 -128 #f)))
+  (check-exn exn:fail:contract? (λ () (encode int8 -129 #f)))
+  (check-exn exn:fail:contract? (λ () (encode uint16 (add1 #xffff)  #f)))
+  (check-not-exn (λ () (encode uint16 #xffff #f)))
 
   (let ([i (+xint 2 #:signed #f #:endian 'le)]
         [ip (open-input-bytes (bytes 1 2 3 4))]
@@ -139,8 +139,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
   (check-equal? (decode int8 (bytes 127)) 127)
   (check-equal? (decode int8 (bytes 255)) -1)
-  (check-equal? (encode int8 -1) (bytes 255))
-  (check-equal? (encode int8 127) (bytes 127)))
+  (check-equal? (encode int8 -1 #f) (bytes 255))
+  (check-equal? (encode int8 127 #f) (bytes 127)))
 
 (define (xfloat-decode xf [port-arg (current-input-port)] #:parent [parent #f])
   (unless (xfloat? xf)
@@ -148,7 +148,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define bs (read-bytes (xfloat-size xf) (->input-port port-arg)))
   (floating-point-bytes->real bs (eq? (xfloat-endian xf) 'be)))
 
-(define (xfloat-encode xf val [port #f] #:parent [parent #f])
+(define (xfloat-encode xf val [port (current-output-port)] #:parent [parent #f])
   (unless (xfloat? xf)
     (raise-argument-error 'encode "xfloat instance" xf))
   (unless (or (not port) (output-port? port))
@@ -183,7 +183,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (define int (xint-decode xf port-arg))
   (exact-if-possible (/ int (fixed-shift xf) 1.0)))
 
-(define (xfixed-encode xf val [port #f] #:parent [parent #f])
+(define (xfixed-encode xf val [port (current-output-port)] #:parent [parent #f])
   (unless (xfixed? xf)
     (raise-argument-error 'encode "xfixed instance" xf))
   (define int (exact-if-possible (floor (* val (fixed-shift xf)))))
@@ -215,6 +215,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define fixed32le (+xfixed 4 #:endian 'le))
 
 (module+ test
-  (define bs (encode fixed16be 123.45))
+  (define bs (encode fixed16be 123.45 #f))
   (check-equal? bs #"{s")
   (check-equal? (ceiling (* (decode fixed16be bs) 100)) 12345.0))
