@@ -1,5 +1,7 @@
 #lang racket/base
-(require racket/generic)
+(require racket/generic
+         racket/dict
+         racket/port)
 (provide (all-defined-out))
 
 (define (->input-port arg)
@@ -16,6 +18,18 @@
 
 (define (signed->unsigned sint bits)
   (bitwise-and sint (arithmetic-shift 1 bits)))
+
+(define (dump x)
+  (define (dump-dict x)
+    (for/list ([(k v) (in-dict x)])
+      (cons (dump k) (dump v))))
+  (let loop ([x x])
+    (cond
+      [(input-port? x) (port->bytes x)]
+      [(output-port? x) (get-output-bytes x)]
+      [(dict? x) (dump-dict x)]
+      [(list? x) (map loop x)]
+      [else x])))
 
 (define-generics xenomorphic
   (encode xenomorphic val [port])

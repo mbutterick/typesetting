@@ -2,6 +2,12 @@
 (require "base.rkt")
 (provide (all-defined-out))
 
+#|
+approximates
+https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
+|#
+
+
 (define (exact-if-possible x) (if (integer? x) (inexact->exact x) x))
 
 (define system-endian (if (system-big-endian?) 'be 'le))
