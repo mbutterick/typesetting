@@ -1,4 +1,5 @@
 #lang racket/base
+(require racket/generic)
 (provide (all-defined-out))
 
 (define (->input-port arg)
@@ -15,3 +16,8 @@
 
 (define (signed->unsigned sint bits)
   (bitwise-and sint (arithmetic-shift 1 bits)))
+
+(define-generics xenomorphic
+  (encode xenomorphic val [port])
+  (decode xenomorphic [port])
+  (size xenomorphic))
