@@ -70,6 +70,19 @@
 (define (symbol-append . syms)
   (string->symbol (apply string-append (map symbol->string syms))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;; structing
+
+(define (->input-port arg)
+  (cond
+    [(bytes? arg) (open-input-bytes arg)]
+    [(input-port? arg) arg]
+    [else (raise-argument-error '->port "byte string or input port" arg)]))
+
+(define (reverse-bytes bstr) (apply bytes (reverse (bytes->list bstr))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define xenomorph-base%
   (class* object% (codable<%> sizable<%>)
     (super-new)
@@ -79,7 +92,7 @@
     (define/pubment (decode port [parent #f] . args)
       ;; todo: is `indexable?` really a necessary condition? doesn't seem to break anything withou it
       #;(when parent (unless (indexable? parent)
-                     #;(raise-argument-error (symbol-append (get-class-name) ':decode) "indexable" parent)))
+                       #;(raise-argument-error (symbol-append (get-class-name) ':decode) "indexable" parent)))
       (define ip (cond
                    [(bytes? port) (open-input-bytes port)]
                    [(input-port? port) port]
@@ -90,7 +103,7 @@
       #;(report* port val-in parent)
       (define val (pre-encode val-in port))
       #;(when parent (unless (indexable? parent)
-                     (raise-argument-error (symbol-append (get-class-name) ':encode) "indexable" parent)))
+                       (raise-argument-error (symbol-append (get-class-name) ':encode) "indexable" parent)))
       (define op (cond
                    [(output-port? port) port]
                    [(not port) (open-output-bytes)]
