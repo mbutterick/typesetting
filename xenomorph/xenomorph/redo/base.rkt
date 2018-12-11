@@ -20,16 +20,13 @@
   (bitwise-and sint (arithmetic-shift 1 bits)))
 
 (define (dump x)
-  (define (dump-dict x)
-    (for/list ([(k v) (in-dict x)])
-      (cons (dump k) (dump v))))
-  (let loop ([x x])
-    (cond
-      [(input-port? x) (port->bytes x)]
-      [(output-port? x) (get-output-bytes x)]
-      [(dict? x) (dump-dict x)]
-      [(list? x) (map loop x)]
-      [else x])))
+  (cond
+    [(input-port? x) (port->bytes x)]
+    [(output-port? x) (get-output-bytes x)]
+    [(dict? x) (for/list ([(k v) (in-dict x)])
+                         (cons (dump k) (dump v)))]
+    [(list? x) (map dump x)]
+    [else x]))
 
 (define (pos p [new-pos #f])
   (when new-pos
@@ -40,3 +37,5 @@
   (encode xenomorphic val [port] #:parent [parent])
   (decode xenomorphic [port] #:parent [parent])
   (size xenomorphic [item] [parent]))
+
+(struct lazy-thunk (proc) #:transparent)
