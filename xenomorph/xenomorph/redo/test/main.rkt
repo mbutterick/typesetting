@@ -11,5 +11,4 @@
          "reserved-test.rkt"
          "string-test.rkt"
          "struct-test.rkt"
-         ;"versioned-struct-test.rkt"
-         )
+         "versioned-struct-test.rkt")
