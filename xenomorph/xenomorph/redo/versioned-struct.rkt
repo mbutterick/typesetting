@@ -107,6 +107,6 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                            [(procedure? type) type]
                            [(symbol? type) (λ (parent version) (dict-set! parent type version))]))
   (define (no-op-pre-encode val port) val)
-  (define (no-op-post-decode xvs port ctx) xvs)
+  (define (no-op-post-decode xvs port parent) xvs)
   (xversioned-struct type versions version-getter version-setter no-op-pre-encode no-op-post-decode))
 

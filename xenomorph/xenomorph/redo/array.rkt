@@ -11,11 +11,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     (define new-parent (if (xint? (xarray-base-len xa))
-                    (mhasheq 'parent parent
-                             '_startOffset (pos port)
-                             '_currentOffset 0
-                             '_length (xarray-base-len xa))
-                    parent))
+                           (mhasheq 'parent parent
+                                    '_startOffset (pos port)
+                                    '_currentOffset 0
+                                    '_length (xarray-base-len xa))
+                           parent))
     (define decoded-len (resolve-length (xarray-base-len xa) #:parent parent))
     (cond
       [(or (not decoded-len) (eq? (xarray-length-type xa) 'bytes))
@@ -38,38 +38,38 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
     (raise-argument-error 'xarray-encode "sequence" array))
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
-    (define (encode-items ctx)
+    (define (encode-items parent)
       ;; todo: should array with fixed length stop encoding after it reaches max?
       ;; cf. xstring, which rejects input that is too big for fixed length.
       (let* (#;[items (sequence->list array)]
              #;[item-count (length items)]
              #;[max-items (if (number? (xarray-len xa)) (xarray-len xa) item-count)])
         (for ([item array])
-          (encode (xarray-base-type xa) item #:parent ctx))))
+          (encode (xarray-base-type xa) item #:parent parent))))
     (cond
       [(xint? (xarray-base-len xa))
-       (define ctx (mhash 'pointers null
-                          'startOffset (pos port)
-                          'parent parent))
-       (dict-set! ctx 'pointerOffset (+ (pos port) (size xa array ctx)))
-       (encode (xarray-base-len xa) (length array)) ; encode length at front
-       (encode-items ctx)
-       (for ([ptr (in-list (dict-ref ctx 'pointers))]) ; encode pointer data at end
-         (encode (dict-ref ptr 'type) (dict-ref ptr 'val)))]
+       (let ([parent (mhash 'pointers null
+                            'startOffset (pos port)
+                            'parent parent)])
+         (dict-set! parent 'pointerOffset (+ (pos port) (size xa array parent)))
+         (encode (xarray-base-len xa) (length array)) ; encode length at front
+         (encode-items parent)
+         (for ([ptr (in-list (dict-ref parent 'pointers))]) ; encode pointer data at end
+           (encode (dict-ref ptr 'type) (dict-ref ptr 'val))))]
       [else (encode-items parent)])
     (unless port-arg (get-output-bytes port))))
 
-(define (xarray-size xa [val #f] [ctx #f])
+(define (xarray-size xa [val #f] [parent #f])
   (when val (unless (sequence? val)
               (raise-argument-error 'xarray-size "sequence" val)))
   (cond
-    [val (let-values ([(ctx len-size) (if (xint? (xarray-base-len xa))
-                                          (values (mhasheq 'parent ctx) (size (xarray-base-len xa)))
-                                          (values ctx 0))])
+    [val (let-values ([(parent len-size) (if (xint? (xarray-base-len xa))
+                                             (values (mhasheq 'parent parent) (size (xarray-base-len xa)))
+                                             (values parent 0))])
            (+ len-size (for/sum ([item val])
-                         (size (xarray-base-type xa) item ctx))))]
-    [else (let ([item-count (resolve-length (xarray-base-len xa) #f #:parent ctx)]
-                [item-size (size (xarray-base-type xa) #f ctx)])
+                         (size (xarray-base-type xa) item parent))))]
+    [else (let ([item-count (resolve-length (xarray-base-len xa) #f #:parent parent)]
+                [item-size (size (xarray-base-type xa) #f parent)])
             (* item-size item-count))]))
 
 (struct xarray-base (type len) #:transparent)
