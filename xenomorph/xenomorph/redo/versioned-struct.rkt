@@ -6,7 +6,7 @@
 
 #|
 approximates
-https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.coffee
+https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
 (define (xversioned-struct-decode xvs [port-arg (current-input-port)] #:parent [parent #f] [length 0])
@@ -55,6 +55,7 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
 
 (define (xversioned-struct-encode xvs val-arg [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (parameterize ([current-output-port port])
   (define val ((xversioned-struct-pre-encode xvs) val-arg port))
 
   (unless (dict? val)
@@ -68,11 +69,11 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
   (dict-set! ctx 'pointerOffset (+ (pos port) (xversioned-struct-size xvs val ctx #f)))
 
   (when (not (or (symbol? (xversioned-struct-type xvs)) (procedure? (xversioned-struct-type xvs))))
-    (encode (xversioned-struct-type xvs) (dict-ref val 'version #f) port))
+    (encode (xversioned-struct-type xvs) (dict-ref val 'version #f)))
 
   (when (dict-ref (xversioned-struct-versions xvs) 'header #f)
     (for ([(key type) (in-dict (dict-ref (xversioned-struct-versions xvs) 'header))])
-      (encode type (dict-ref val key) port #:parent ctx)))
+      (encode type (dict-ref val key) #:parent ctx)))
 
   (define fields (or (dict-ref (xversioned-struct-versions xvs) (dict-ref val 'version #f))
                      (raise-argument-error 'xversioned-struct-encode "valid version key" version)))
@@ -81,11 +82,11 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
     (raise-argument-error 'xversioned-struct-encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys val)))
 
   (for ([(key type) (in-dict fields)])
-    (encode type (dict-ref val key) port #:parent ctx))
+    (encode type (dict-ref val key) #:parent ctx))
   (for ([ptr (in-list (dict-ref ctx 'pointers))])
-    (encode (dict-ref ptr 'type) (dict-ref ptr 'val) port #:parent (dict-ref ptr 'parent)))
+    (encode (dict-ref ptr 'type) (dict-ref ptr 'val) #:parent (dict-ref ptr 'parent)))
   
-  (unless port-arg (get-output-bytes port)))
+  (unless port-arg (get-output-bytes port))))
 
 (struct xversioned-struct structish (type versions version-getter version-setter pre-encode post-decode) #:transparent #:mutable
   #:methods gen:xenomorphic

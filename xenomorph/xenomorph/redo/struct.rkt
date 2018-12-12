@@ -54,15 +54,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 (define (xstruct-decode xs [port-arg (current-input-port)] #:parent [parent #f] [len 0])
   (define port (->input-port port-arg))
-  ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
-  (define res
-    (let* ([sdr (_setup port parent len)] ; returns StructDictRes
-           [sdr (_parse-fields port sdr (xstruct-fields xs))])
-      sdr))
-  (let* ([res ((xstruct-post-decode xs) res port parent)]
-         #;[res (inner res post-decode res . args)])
-    (unless (d:dict? res) (raise-result-error 'xstruct-decode "dict" res))
-    res))
+  (parameterize ([current-input-port port])
+    ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
+    (define res
+      (let* ([sdr (_setup port parent len)] ; returns StructDictRes
+             [sdr (_parse-fields port sdr (xstruct-fields xs))])
+        sdr))
+    (let* ([res ((xstruct-post-decode xs) res port parent)]
+           #;[res (inner res post-decode res . args)])
+      (unless (d:dict? res) (raise-result-error 'xstruct-decode "dict" res))
+      res)))
 
 (define (xstruct-size xs [val #f] [parent #f] [include-pointers #t])
   (define ctx (mhasheq 'parent parent
@@ -70,36 +71,37 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                        'pointerSize 0))
   (+ (for/sum ([(key type) (d:in-dict (xstruct-fields xs))]
                #:when (xenomorphic? type))
-              (size type (and val (d:dict-ref val key)) ctx))
+       (size type (and val (d:dict-ref val key)) ctx))
      (if include-pointers (d:dict-ref ctx 'pointerSize) 0)))
 
 (define (xstruct-encode xs val-arg [port-arg (current-output-port)] #:parent [parent #f])
   (unless (d:dict? val-arg)
     (raise-argument-error 'xstruct-encode "dict" val-arg))
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  ;; check keys first, since `size` also relies on keys being valid
-  (define val (let* ([val ((xstruct-pre-encode xs) val-arg port)]
-                     #;[val (inner res pre-encode val . args)])
-                (unless (d:dict? val) (raise-result-error 'xstruct-encode "dict" val))
-                val))
-  (unless (andmap (λ (key) (memq key (d:dict-keys val))) (d:dict-keys (xstruct-fields xs)))
-    (raise-argument-error 'xstruct-encode
-                          (format "dict that contains superset of Struct keys: ~a" (d:dict-keys (xstruct-fields xs))) (d:dict-keys val)))
+  (parameterize ([current-output-port port])
+    ;; check keys first, since `size` also relies on keys being valid
+    (define val (let* ([val ((xstruct-pre-encode xs) val-arg port)]
+                       #;[val (inner res pre-encode val . args)])
+                  (unless (d:dict? val) (raise-result-error 'xstruct-encode "dict" val))
+                  val))
+    (unless (andmap (λ (key) (memq key (d:dict-keys val))) (d:dict-keys (xstruct-fields xs)))
+      (raise-argument-error 'xstruct-encode
+                            (format "dict that contains superset of Struct keys: ~a" (d:dict-keys (xstruct-fields xs))) (d:dict-keys val)))
 
-  (define ctx (mhash 'pointers empty
-                     'startOffset (pos port)
-                     'parent parent
-                     'val val
-                     'pointerSize 0))
+    (define ctx (mhash 'pointers empty
+                       'startOffset (pos port)
+                       'parent parent
+                       'val val
+                       'pointerSize 0))
 
-  ; deliberately use `xstruct-size` instead of `size` to use extra arg
-  (d:dict-set! ctx 'pointerOffset (+ (pos port) (xstruct-size xs val ctx #f))) 
+    ; deliberately use `xstruct-size` instead of `size` to use extra arg
+    (d:dict-set! ctx 'pointerOffset (+ (pos port) (xstruct-size xs val ctx #f))) 
 
-  (for ([(key type) (d:in-dict (xstruct-fields xs))])
-       (encode type (d:dict-ref val key) port #:parent ctx))
-  (for ([ptr (in-list (d:dict-ref ctx 'pointers))])
-       (encode (d:dict-ref ptr 'type) (d:dict-ref ptr 'val) port #:parent (d:dict-ref ptr 'parent)))
-  (unless port-arg (get-output-bytes port)))
+    (for ([(key type) (d:in-dict (xstruct-fields xs))])
+      (encode type (d:dict-ref val key) #:parent ctx))
+    (for ([ptr (in-list (d:dict-ref ctx 'pointers))])
+      (encode (d:dict-ref ptr 'type) (d:dict-ref ptr 'val) #:parent (d:dict-ref ptr 'parent)))
+    (unless port-arg (get-output-bytes port))))
 
 (struct structish () #:transparent)
 (struct xstruct structish (fields post-decode pre-encode) #:transparent #:mutable
@@ -118,15 +120,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define (random-pick xs) (list-ref xs (random (length xs))))
   (check-exn exn:fail:contract? (λ () (+xstruct 42)))
   (for ([i (in-range 20)])
-       ;; make random structs and make sure we can round trip
-       (define field-types
-         (for/list ([i (in-range 40)])
-                   (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-       (define size-num-types
-         (for/sum ([num-type (in-list field-types)])
-                  (size num-type)))
-       (define xs (+xstruct (for/list ([num-type (in-list field-types)])
-                                      (cons (gensym) num-type))))
-       (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                                         (random 256))))
-       (check-equal? (encode xs (decode xs bs) #f) bs)))
+    ;; make random structs and make sure we can round trip
+    (define field-types
+      (for/list ([i (in-range 40)])
+        (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+    (define size-num-types
+      (for/sum ([num-type (in-list field-types)])
+        (size num-type)))
+    (define xs (+xstruct (for/list ([num-type (in-list field-types)])
+                           (cons (gensym) num-type))))
+    (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                              (random 256))))
+    (check-equal? (encode xs (decode xs bs) #f) bs)))

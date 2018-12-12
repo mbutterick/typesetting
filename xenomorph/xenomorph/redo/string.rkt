@@ -7,23 +7,23 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 |#
 
-(define (read-encoded-string port len [encoding 'ascii])
+(define (read-encoded-string len [encoding 'ascii])
   (define proc (case encoding
                  [(utf16le) (error 'bah)]
                  [(ucs2) (error 'bleh)]
                  [(utf8) bytes->string/utf-8]
                  [(ascii) bytes->string/latin-1]
                  [else values]))
-  (proc (read-bytes len port)))
+  (proc (read-bytes len)))
 
-(define (write-encoded-string port string [encoding 'ascii])
+(define (write-encoded-string string [encoding 'ascii])
   ;; todo: handle encodings correctly.
   ;; right now just utf8 and ascii are correct
   (define proc (case encoding
                  [(ucs2 utf8 ascii) string->bytes/utf-8]
                  [(utf16le) (error 'swap-bytes-unimplemented)]
                  [else (error 'unsupported-string-encoding)]))
-  (write-bytes (proc string) port))
+  (write-bytes (proc string)))
 
 (define (count-nonzero-chars port)
   ;; helper function for String
@@ -41,17 +41,19 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 
 (define (xstring-decode xs [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
-  (let ([len (or (resolve-length (xstring-len xs) port parent) (count-nonzero-chars port))]
+  (parameterize ([current-input-port port])
+  (let ([len (or (resolve-length (xstring-len xs) #:parent parent) (count-nonzero-chars port))]
         [encoding (if (procedure? (xstring-encoding xs))
                       (or ((xstring-encoding xs) parent) 'ascii)
                       (xstring-encoding xs))]
         [adjustment (if (and (not (xstring-len xs)) (bytes-left-in-port? port)) 1 0)])
-    (define string (read-encoded-string port len encoding))
+    (define string (read-encoded-string len encoding))
     (pos port (+ (pos port) adjustment))
-    string))
+    string)))
 
 (define (xstring-encode xs val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (parameterize ([current-output-port port])
   (let* ([val (format "~a" val)]
          [encoding (if (procedure? (xstring-encoding xs))
                        (or ((xstring-encoding xs) (and parent (dict-ref parent val)) 'ascii))
@@ -60,14 +62,14 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     (when (and (exact-nonnegative-integer? (xstring-len xs)) (> encoded-length (xstring-len xs)))
       (raise-argument-error 'xstring-encode (format "string no longer than ~a" (xstring-len xs)) val)) 
     (when (xint? (xstring-len xs))
-      (encode (xstring-len xs) encoded-length port))
-    (write-encoded-string port val encoding)
-    (when (not (xstring-len xs)) (write-byte #x00 port)) ; null terminated when no len
-    (unless port-arg (get-output-bytes port)))) 
+      (encode (xstring-len xs) encoded-length))
+    (write-encoded-string val encoding)
+    (when (not (xstring-len xs)) (write-byte #x00)) ; null terminated when no len
+    (unless port-arg (get-output-bytes port))))) 
 
 (define (xstring-size xs [val #f] [parent #f])
   (if (not val)
-      (resolve-length (xstring-len xs) #f parent)
+      (resolve-length (xstring-len xs) #f #:parent parent)
       (let* ([encoding (if (procedure? (xstring-encoding xs))
                            (or ((xstring-encoding xs) (and parent (dict-ref parent val)) 'ascii))
                            (xstring-encoding xs))]

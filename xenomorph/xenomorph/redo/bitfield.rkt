@@ -9,20 +9,22 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 
 (define (xbitfield-decode xb [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
-  (define flag-hash (mhasheq))
-  (define val (decode (xbitfield-type xb) port))
-  (for ([(flag i) (in-indexed (xbitfield-flags xb))]
-        #:when flag)
-    (hash-set! flag-hash flag (bitwise-bit-set? val i)))
-  flag-hash)
+  (parameterize ([current-input-port port])
+    (define flag-hash (mhasheq))
+    (define val (decode (xbitfield-type xb)))
+    (for ([(flag i) (in-indexed (xbitfield-flags xb))]
+          #:when flag)
+      (hash-set! flag-hash flag (bitwise-bit-set? val i)))
+    flag-hash))
 
 (define (xbitfield-encode xb flag-hash [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  (define bit-int (for/sum ([(flag i) (in-indexed (xbitfield-flags xb))]
-                            #:when (and flag (dict-ref flag-hash flag #f)))
-                    (arithmetic-shift 1 i)))
-  (encode (xbitfield-type xb) bit-int port)
-  (unless port-arg (get-output-bytes port)))
+  (parameterize ([current-output-port port])
+    (define bit-int (for/sum ([(flag i) (in-indexed (xbitfield-flags xb))]
+                              #:when (and flag (dict-ref flag-hash flag #f)))
+                      (arithmetic-shift 1 i)))
+    (encode (xbitfield-type xb) bit-int)
+    (unless port-arg (get-output-bytes port))))
 
 (define (xbitfield-size xb [val #f] [ctx #f])
   (size (xbitfield-type xb)))

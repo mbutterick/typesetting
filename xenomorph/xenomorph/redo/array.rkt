@@ -9,54 +9,55 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 
 (define (xarray-decode xa [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
-  (define ctx (if (xint? (xarray-base-len xa))
-                  (mhasheq 'parent parent
-                           '_startOffset (pos port)
-                           '_currentOffset 0
-                           '_length (xarray-base-len xa))
-                  parent))
-  (define decoded-len (resolve-length (xarray-base-len xa) port parent))
-  (cond
-    [(or (not decoded-len) (eq? (xarray-length-type xa) 'bytes))
-     (define end-pos (cond
-                       ;; decoded-len is byte length
-                       [decoded-len (+ (pos port) decoded-len)]
-                       ;; no decoded-len, but parent has length
-                       [(and parent (not (zero? (dict-ref parent '_length)))) (+ (dict-ref parent '_startOffset) (dict-ref parent '_length))]
-                       ;; no decoded-len or parent, so consume whole stream
-                       [else +inf.0]))
-     (for/list ([i (in-naturals)]
-                #:break (or (eof-object? (peek-byte port)) (= (pos port) end-pos)))
-       (decode (xarray-base-type xa) port #:parent ctx))]
-    ;; we have decoded-len, which is treated as count of items
-    [else (for/list ([i (in-range decoded-len)])
-            (decode (xarray-base-type xa) port #:parent ctx))]))
+  (parameterize ([current-input-port port])
+    (define ctx (if (xint? (xarray-base-len xa))
+                    (mhasheq 'parent parent
+                             '_startOffset (pos port)
+                             '_currentOffset 0
+                             '_length (xarray-base-len xa))
+                    parent))
+    (define decoded-len (resolve-length (xarray-base-len xa) #:parent parent))
+    (cond
+      [(or (not decoded-len) (eq? (xarray-length-type xa) 'bytes))
+       (define end-pos (cond
+                         ;; decoded-len is byte length
+                         [decoded-len (+ (pos port) decoded-len)]
+                         ;; no decoded-len, but parent has length
+                         [(and parent (not (zero? (dict-ref parent '_length)))) (+ (dict-ref parent '_startOffset) (dict-ref parent '_length))]
+                         ;; no decoded-len or parent, so consume whole stream
+                         [else +inf.0]))
+       (for/list ([i (in-naturals)]
+                  #:break (or (eof-object? (peek-byte)) (= (pos port) end-pos)))
+         (decode (xarray-base-type xa) #:parent ctx))]
+      ;; we have decoded-len, which is treated as count of items
+      [else (for/list ([i (in-range decoded-len)])
+              (decode (xarray-base-type xa) #:parent ctx))])))
 
 (define (xarray-encode xa array [port-arg (current-output-port)] #:parent [parent #f])
   (unless (sequence? array)
     (raise-argument-error 'xarray-encode "sequence" array))
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  (define (encode-items ctx)
-    ;; todo: should array with fixed length stop encoding after it reaches max?
-    ;; cf. xstring, which rejects input that is too big for fixed length.
-    (let* (#;[items (sequence->list array)]
-           #;[item-count (length items)]
-           #;[max-items (if (number? (xarray-len xa)) (xarray-len xa) item-count)])
-      (for ([item array])
-        (encode (xarray-base-type xa) item port #:parent ctx))))
-
-  (cond
-    [(xint? (xarray-base-len xa))
-     (define ctx (mhash 'pointers null
-                        'startOffset (pos port)
-                        'parent parent))
-     (dict-set! ctx 'pointerOffset (+ (pos port) (size xa array ctx)))
-     (encode (xarray-base-len xa) (length array) port) ; encode length at front
-     (encode-items ctx)
-     (for ([ptr (in-list (dict-ref ctx 'pointers))]) ; encode pointer data at end
-       (encode (dict-ref ptr 'type) (dict-ref ptr 'val) port))]
-    [else (encode-items parent)])
-  (unless port-arg (get-output-bytes port)))
+  (parameterize ([current-output-port port])
+    (define (encode-items ctx)
+      ;; todo: should array with fixed length stop encoding after it reaches max?
+      ;; cf. xstring, which rejects input that is too big for fixed length.
+      (let* (#;[items (sequence->list array)]
+             #;[item-count (length items)]
+             #;[max-items (if (number? (xarray-len xa)) (xarray-len xa) item-count)])
+        (for ([item array])
+          (encode (xarray-base-type xa) item #:parent ctx))))
+    (cond
+      [(xint? (xarray-base-len xa))
+       (define ctx (mhash 'pointers null
+                          'startOffset (pos port)
+                          'parent parent))
+       (dict-set! ctx 'pointerOffset (+ (pos port) (size xa array ctx)))
+       (encode (xarray-base-len xa) (length array)) ; encode length at front
+       (encode-items ctx)
+       (for ([ptr (in-list (dict-ref ctx 'pointers))]) ; encode pointer data at end
+         (encode (dict-ref ptr 'type) (dict-ref ptr 'val)))]
+      [else (encode-items parent)])
+    (unless port-arg (get-output-bytes port))))
 
 (define (xarray-size xa [val #f] [ctx #f])
   (when val (unless (sequence? val)
@@ -67,7 +68,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                                           (values ctx 0))])
            (+ len-size (for/sum ([item val])
                          (size (xarray-base-type xa) item ctx))))]
-    [else (let ([item-count (resolve-length (xarray-base-len xa) #f ctx)]
+    [else (let ([item-count (resolve-length (xarray-base-len xa) #f #:parent ctx)]
                 [item-size (size (xarray-base-type xa) #f ctx)])
             (* item-size item-count))]))
 

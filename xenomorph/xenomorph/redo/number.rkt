@@ -12,33 +12,37 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 (define system-endian (if (system-big-endian?) 'be 'le))
 
-(define (xint-encode i val [port (current-output-port)] #:parent [parent #f])
+(define (xint-encode i val [port-arg (current-output-port)] #:parent [parent #f])
   (unless (xint? i)
     (raise-argument-error 'encode "xint instance" i))
   (define-values (bound-min bound-max) (bounds i))
   (unless (<= bound-min val bound-max)
     (raise-argument-error 'encode (format "value that fits within ~a ~a-byte int (~a to ~a)" (if (xint-signed i) "signed" "unsigned") (xint-size i) bound-min bound-max) val))
-  (unless (or (not port) (output-port? port))
-    (raise-argument-error 'encode "output port or #f" port))
-  (define bs (for/fold ([bs null]
-                        [val (exact-if-possible val)]
-                        #:result bs)
-                       ([i (in-range (xint-size i))])
-               (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))
-  (define res (apply bytes ((if (eq? (xint-endian i) 'be) values reverse) bs)))
-  (if port (write-bytes res port) res))
+  (unless (or (not port-arg) (output-port? port-arg))
+    (raise-argument-error 'encode "output port or #f" port-arg))
+  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (parameterize ([current-output-port port])
+    (define bs (for/fold ([bs null]
+                          [val (exact-if-possible val)]
+                          #:result bs)
+                         ([i (in-range (xint-size i))])
+                 (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))
+    (define res (apply bytes ((if (eq? (xint-endian i) 'be) values reverse) bs)))
+    (if port-arg (write-bytes res) res)))
 
 (define (xint-decode i [port-arg (current-input-port)] #:parent [parent #f])
   (unless (xint? i)
     (raise-argument-error 'decode "xint instance" i))
-  (define bstr (read-bytes (xint-size i) (->input-port port-arg)))
-  (define bs ((if (eq? (xint-endian i) system-endian)
-                  values
-                  reverse-bytes) bstr))
-  (define uint (for/sum ([b (in-bytes bs)]
-                         [i (in-naturals)])
-                 (arithmetic-shift b (* 8 i))))
-  (if (xint-signed i) (unsigned->signed uint (bits i)) uint))
+  (define port (->input-port port-arg))
+  (parameterize ([current-input-port port])
+    (define bstr (read-bytes (xint-size i)))
+    (define bs ((if (eq? (xint-endian i) system-endian)
+                    values
+                    reverse-bytes) bstr))
+    (define uint (for/sum ([b (in-bytes bs)]
+                           [i (in-naturals)])
+                   (arithmetic-shift b (* 8 i))))
+    (if (xint-signed i) (unsigned->signed uint (bits i)) uint)))
 
 (struct xnumber () #:transparent)
 

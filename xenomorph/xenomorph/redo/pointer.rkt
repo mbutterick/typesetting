@@ -16,7 +16,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 
 (define (xpointer-decode xp [port-arg (current-input-port)] #:parent [ctx #f])
   (define port (->input-port port-arg))
-  (define offset (decode (xpointer-offset-type xp) port #:parent ctx))
+  (parameterize ([current-input-port port])
+  (define offset (decode (xpointer-offset-type xp) #:parent ctx))
   (cond
     [(and allow-null (= offset (null-value xp))) #f] ; handle null pointers
     [else
@@ -37,13 +38,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
             [else
              (define orig-pos (pos port))
              (pos port ptr)
-             (set! val (decode (xpointer-type xp) port #:parent ctx))
+             (set! val (decode (xpointer-type xp) #:parent ctx))
              (pos port orig-pos)
              val]))
         (if (lazy xp)
             (lazy-thunk decode-value)
             (decode-value))]
-       [else ptr])]))
+       [else ptr])])))
 
 (define (resolve-void-pointer type val)
   (cond
@@ -55,6 +56,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (unless ctx ; todo: furnish default pointer context? adapt from Struct?
     (raise-argument-error 'xpointer-encode "valid pointer context" ctx))
+  (parameterize ([current-output-port port])
   (if (not val)
       (encode (xpointer-offset-type xp) (null-value xp) port)
       (let* ([parent ctx]
@@ -68,13 +70,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                             [(immediate) (+ (pos port) (size (xpointer-offset-type xp) val parent))]
                             [(global) 0])
                           ((relative-getter-or-0 xp) (dict-ref parent 'val #f)))])
-        (encode (xpointer-offset-type xp) (- (dict-ref ctx 'pointerOffset) relative) port)
+        (encode (xpointer-offset-type xp) (- (dict-ref ctx 'pointerOffset) relative))
         (let-values ([(type val) (resolve-void-pointer (xpointer-type xp) val)])
           (dict-set! ctx 'pointers (append (dict-ref ctx 'pointers)
                                            (list (mhasheq 'type type
                                                           'val val
                                                           'parent parent))))
-          (dict-set! ctx 'pointerOffset (+ (dict-ref ctx 'pointerOffset) (size type val parent))))))
+          (dict-set! ctx 'pointerOffset (+ (dict-ref ctx 'pointerOffset) (size type val parent)))))))
   (unless port-arg (get-output-bytes port)))
 
 (define (xpointer-size xp [val #f] [ctx #f])
