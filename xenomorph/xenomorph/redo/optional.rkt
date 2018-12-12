@@ -26,9 +26,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
     (encode (xoptional-type xo) val #:parent parent))
   (unless port-arg (get-output-bytes port))))
 
-(define (xoptional-size xo [val #f] [parent #f])
+(define (xoptional-size xo [val #f] #:parent [parent #f])
   (if (resolve-condition xo parent)
-      (size (xoptional-type xo) val parent)
+      (size (xoptional-type xo) val #:parent parent)
       0))
 
 (struct xoptional (type condition) #:transparent

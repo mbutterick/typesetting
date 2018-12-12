@@ -65,13 +65,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (unless (d:dict? res) (raise-result-error 'xstruct-decode "dict" res))
       res)))
 
-(define (xstruct-size xs [val #f] [parent-arg #f] [include-pointers #t])
+(define (xstruct-size xs [val #f] #:parent [parent-arg #f] [include-pointers #t])
   (define parent (mhasheq 'parent parent-arg
                        'val val
                        'pointerSize 0))
   (+ (for/sum ([(key type) (d:in-dict (xstruct-fields xs))]
                #:when (xenomorphic? type))
-       (size type (and val (d:dict-ref val key)) parent))
+       (size type (and val (d:dict-ref val key)) #:parent parent))
      (if include-pointers (d:dict-ref parent 'pointerSize) 0)))
 
 (define (xstruct-encode xs val-arg [port-arg (current-output-port)] #:parent [parent-arg #f])
@@ -95,7 +95,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                        'pointerSize 0))
 
     ; deliberately use `xstruct-size` instead of `size` to use extra arg
-    (d:dict-set! parent 'pointerOffset (+ (pos port) (xstruct-size xs val parent #f))) 
+    (d:dict-set! parent 'pointerOffset (+ (pos port) (xstruct-size xs val #:parent parent #f))) 
 
     (for ([(key type) (d:in-dict (xstruct-fields xs))])
       (encode type (d:dict-ref val key) #:parent parent))

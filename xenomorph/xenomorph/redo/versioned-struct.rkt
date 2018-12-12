@@ -34,22 +34,22 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
      [else (_parse-fields port res fields)
            res]) port parent))
 
-(define (xversioned-struct-size xvs [val #f] [parent-arg #f] [include-pointers #t])
+(define (xversioned-struct-size xvs [val #f] #:parent [parent-arg #f] [include-pointers #t])
   (unless val
     (raise-argument-error 'xversioned-struct-size "value" val))
   (define parent (mhash 'parent parent-arg 'val val 'pointerSize 0))
   (define version-size
     (if (not (or (symbol? (xversioned-struct-type xvs)) (procedure? (xversioned-struct-type xvs))))
-        (size (xversioned-struct-type xvs) (dict-ref val 'version) parent)
+        (size (xversioned-struct-type xvs) (dict-ref val 'version) #:parent parent)
         0))
   (define header-size
     (for/sum ([(key type) (in-dict (or (dict-ref (xversioned-struct-versions xvs) 'header #f) null))])
-      (size type (and val (dict-ref val key)) parent)))
+      (size type (and val (dict-ref val key)) #:parent parent)))
   (define fields-size
     (let ([fields (or (dict-ref (xversioned-struct-versions xvs) (dict-ref val 'version))
                       (raise-argument-error 'xversioned-struct-size "valid version key" version))])
       (for/sum ([(key type) (in-dict fields)])
-        (size type (and val (dict-ref val key)) parent))))
+        (size type (and val (dict-ref val key)) #:parent parent))))
   (define pointer-size (if include-pointers (dict-ref parent 'pointerSize) 0))
   (+ version-size header-size fields-size pointer-size))
 
@@ -66,7 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                      'parent parent-arg
                      'val val
                      'pointerSize 0))
-  (dict-set! parent 'pointerOffset (+ (pos port) (xversioned-struct-size xvs val parent #f)))
+  (dict-set! parent 'pointerOffset (+ (pos port) (xversioned-struct-size xvs val #:parent parent #f)))
 
   (when (not (or (symbol? (xversioned-struct-type xvs)) (procedure? (xversioned-struct-type xvs))))
     (encode (xversioned-struct-type xvs) (dict-ref val 'version #f)))

@@ -67,7 +67,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     (when (not (xstring-len xs)) (write-byte #x00)) ; null terminated when no len
     (unless port-arg (get-output-bytes port))))) 
 
-(define (xstring-size xs [val #f] [parent #f])
+(define (xstring-size xs [val #f] #:parent [parent #f])
   (if (not val)
       (resolve-length (xstring-len xs) #f #:parent parent)
       (let* ([encoding (if (procedure? (xstring-encoding xs))

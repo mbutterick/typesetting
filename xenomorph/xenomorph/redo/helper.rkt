@@ -27,6 +27,6 @@
 (define-generics xenomorphic
   (encode xenomorphic val [port] #:parent [parent])
   (decode xenomorphic [port] #:parent [parent])
-  (size xenomorphic [item] [parent]))
+  (size xenomorphic [item] #:parent [parent]))
 
 (struct lazy-thunk (proc) #:transparent)

@@ -23,7 +23,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
     (write-bytes buf)
     (unless port-arg (get-output-bytes port))))
 
-(define (xbuffer-size xb [val #f] [parent #f])
+(define (xbuffer-size xb [val #f] #:parent [parent #f])
   (when val (unless (bytes? val)
               (raise-argument-error 'xbuffer-size "bytes" val)))
   (if (bytes? val)

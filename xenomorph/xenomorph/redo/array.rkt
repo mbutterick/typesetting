@@ -51,7 +51,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
        (let ([parent (mhash 'pointers null
                             'startOffset (pos port)
                             'parent parent)])
-         (dict-set! parent 'pointerOffset (+ (pos port) (size xa array parent)))
+         (dict-set! parent 'pointerOffset (+ (pos port) (size xa array #:parent parent)))
          (encode (xarray-base-len xa) (length array)) ; encode length at front
          (encode-items parent)
          (for ([ptr (in-list (dict-ref parent 'pointers))]) ; encode pointer data at end
@@ -59,7 +59,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       [else (encode-items parent)])
     (unless port-arg (get-output-bytes port))))
 
-(define (xarray-size xa [val #f] [parent #f])
+(define (xarray-size xa [val #f] #:parent [parent #f])
   (when val (unless (sequence? val)
               (raise-argument-error 'xarray-size "sequence" val)))
   (cond
@@ -67,9 +67,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                                              (values (mhasheq 'parent parent) (size (xarray-base-len xa)))
                                              (values parent 0))])
            (+ len-size (for/sum ([item val])
-                         (size (xarray-base-type xa) item parent))))]
+                         (size (xarray-base-type xa) item #:parent parent))))]
     [else (let ([item-count (resolve-length (xarray-base-len xa) #f #:parent parent)]
-                [item-size (size (xarray-base-type xa) #f parent)])
+                [item-size (size (xarray-base-type xa) #f #:parent parent)])
             (* item-size item-count))]))
 
 (struct xarray-base (type len) #:transparent)

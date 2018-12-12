@@ -26,7 +26,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     (encode (xbitfield-type xb) bit-int)
     (unless port-arg (get-output-bytes port))))
 
-(define (xbitfield-size xb [val #f] [parent #f])
+(define (xbitfield-size xb [val #f] #:parent [parent #f])
   (size (xbitfield-type xb)))
 
 (struct xbitfield (type flags) #:transparent

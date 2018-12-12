@@ -66,7 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                     [else (error 'unknown-pointer-style)])]
              [relative (+ (case (pointer-style xp)
                             [(local parent) (dict-ref new-parent 'startOffset)]
-                            [(immediate) (+ (pos port) (size (xpointer-offset-type xp) val parent))]
+                            [(immediate) (+ (pos port) (size (xpointer-offset-type xp) val #:parent parent))]
                             [(global) 0])
                           ((relative-getter-or-0 xp) (dict-ref parent 'val #f)))])
         (encode (xpointer-offset-type xp) (- (dict-ref new-parent 'pointerOffset) relative))
@@ -75,10 +75,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                                            (list (mhasheq 'type type
                                                           'val val
                                                           'parent parent))))
-          (dict-set! new-parent 'pointerOffset (+ (dict-ref new-parent 'pointerOffset) (size type val parent)))))))
+          (dict-set! new-parent 'pointerOffset (+ (dict-ref new-parent 'pointerOffset) (size type val #:parent  parent)))))))
   (unless port-arg (get-output-bytes port)))
 
-(define (xpointer-size xp [val #f] [parent #f])
+(define (xpointer-size xp [val #f] #:parent [parent #f])
   (let*-values ([(parent) (case (pointer-style xp)
                          [(local immediate) parent]
                          [(parent) (dict-ref parent 'parent)]
@@ -87,7 +87,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                 [(type val) (resolve-void-pointer (xpointer-type xp) val)])
     (when (and val parent)
       (dict-set! parent 'pointerSize (and (dict-ref parent 'pointerSize #f)
-                                       (+ (dict-ref parent 'pointerSize) (size type val parent)))))
+                                       (+ (dict-ref parent 'pointerSize) (size type val #:parent parent)))))
     (size (xpointer-offset-type xp))))
 
 (struct xpointer (offset-type type options) #:transparent

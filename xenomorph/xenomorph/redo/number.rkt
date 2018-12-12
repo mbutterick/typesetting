@@ -61,7 +61,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   #:methods gen:xenomorphic
   [(define decode xint-decode)
    (define encode xint-encode)
-   (define size (λ (i [item #f] [parent #f]) (xint-size i)))])
+   (define size (λ (i [item #f] #:parent [parent #f]) (xint-size i)))])
 
 (define (+xint [size 2] #:signed [signed #true] #:endian [endian system-endian])
   (unless (exact-positive-integer? size)
@@ -175,7 +175,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   #:methods gen:xenomorphic
   [(define decode xfloat-decode)
    (define encode xfloat-encode)
-   (define size (λ (i [item #f] [parent #f]) (xfloat-size i)))])
+   (define size (λ (i [item #f] #:parent [parent #f]) (xfloat-size i)))])
 
 (define (+xfloat [size 4] #:endian [endian system-endian])
   (unless (exact-positive-integer? size)
@@ -208,7 +208,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   #:methods gen:xenomorphic
   [(define decode xfixed-decode)
    (define encode xfixed-encode)
-   (define size (λ (i [item #f] [parent #f]) (xint-size i)))])
+   (define size (λ (i [item #f] #:parent [parent #f]) (xint-size i)))])
 
 (define (+xfixed [size 2] #:signed [signed #true] #:endian [endian system-endian] [fracbits (/ (* size 8) 2)])
   (unless (exact-positive-integer? size)

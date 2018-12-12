@@ -13,7 +13,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
   (define index (decode (xenum-type xe)))
   (or (list-ref (xenum-options xe) index) index)))
 
-(define (xenum-size xe [val #f] [parent #f]) (size (xenum-type xe)))
+(define (xenum-size xe [val #f] #:parent [parent #f]) (size (xenum-type xe)))
 
 (define (xenum-encode xe val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
