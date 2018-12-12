@@ -7,6 +7,17 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 |#
 
+(define (unsigned->signed uint bits)
+  (define most-significant-bit-mask (arithmetic-shift 1 (sub1 bits)))
+  (- (bitwise-xor uint most-significant-bit-mask) most-significant-bit-mask))
+
+(define (signed->unsigned sint bits)
+  (bitwise-and sint (arithmetic-shift 1 bits)))
+
+(define (reverse-bytes bstr)
+  (apply bytes
+         (for/list ([b (in-bytes bstr (sub1 (bytes-length bstr)) -1 -1)])
+           b)))
 
 (define (exact-if-possible x) (if (integer? x) (inexact->exact x) x))
 
