@@ -19,15 +19,16 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
                                '_length (xarray-base-len xla))
                       parent)])
       (define starting-pos (pos port))
-      (define res (for/stream ([index (in-range decoded-len)])
-                    (define type (xarray-base-type xla))
-                    (define orig-pos (pos port))
-                    (pos port (+ starting-pos (* (size type #f #:parent parent) index)))
-                    (define new-item (decode type port #:parent parent))
-                    (pos port orig-pos)
-                    new-item))
-      (pos port (+ (pos port) (* decoded-len (size (xarray-base-type xla) #f #:parent parent))))
-      res)))
+      (define type (xarray-base-type xla))
+      (begin0
+        (for/stream ([index (in-range decoded-len)])
+          (define orig-pos (pos port))
+          (pos port (+ starting-pos (* (size type #f #:parent parent) index)))
+          ;; use explicit `port` arg below because this evaluation is delayed
+          (begin0
+            (decode type port #:parent parent)
+            (pos port orig-pos)))
+        (pos port (+ (pos port) (* decoded-len (size (xarray-base-type xla) #f #:parent parent))))))))
 
 (define (xlazy-array-encode xla val [port-arg (current-output-port)] #:parent [parent #f])
   (xarray-encode xla (if (stream? val) (stream->list val) val) port-arg #:parent parent))
