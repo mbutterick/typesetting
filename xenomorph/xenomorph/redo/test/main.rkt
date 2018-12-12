@@ -3,7 +3,7 @@
 (require "array-test.rkt"
          "bitfield-test.rkt"
          "buffer-test.rkt"
-         ;"enum-test.rkt"
+         "enum-test.rkt"
          ;"lazy-array-test.rkt"
          "number-test.rkt"
          ;"optional-test.rkt"
