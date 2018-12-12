@@ -3,6 +3,7 @@
          "../helper.rkt"
          "../struct.rkt"
          "../string.rkt"
+         "../pointer.rkt"
          "../number.rkt"
          sugar/unstable/dict)
 
@@ -44,13 +45,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
                                 'age uint8))
                      (hasheq 'name "roxyb" 'age 32)) 7))
 
-;; todo: reinstate pointer test
-#;(test-case
+(test-case
    "compute the correct size with pointers"
    (check-equal? (size (+xstruct (dictify
                                   'name (+xstring uint8)
                                   'age uint8
-                                  'ptr (+Pointer uint8 (+xstring uint8))))
+                                  'ptr (+xpointer uint8 (+xstring uint8))))
                        (mhash 'name "roxyb" 'age 21 'ptr "hello")) 14))
 
 (test-case
@@ -79,12 +79,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
    (encode struct (mhasheq 'name "roxyb" 'age 21))
    (check-equal? (dump (current-output-port)) #"\x05roxyb\x15")))
 
-;; todo: reinstate pointer test
-#;(test-case
+(test-case
    "encode pointer data after structure"
    (parameterize ([current-output-port (open-output-bytes)])
      (define struct (+xstruct (dictify 'name (+xstring uint8)
                                        'age uint8
-                                       'ptr (+Pointer uint8 (+xstring uint8)))))
+                                       'ptr (+xpointer uint8 (+xstring uint8)))))
      (encode struct (hasheq 'name "roxyb" 'age 21 'ptr "hello"))
      (check-equal? (dump (current-output-port)) #"\x05roxyb\x15\x08\x05hello")))
