@@ -14,13 +14,13 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
   (define res (_setup port parent length))
 
   (dict-set! res 'version
-            (cond
-              #;[forced-version] ; for testing purposes: pass an explicit version
-              [(or (symbol? (xversioned-struct-type xvs)) (procedure? (xversioned-struct-type xvs)))
-               (unless parent
-                 (raise-argument-error 'xversioned-struct-decode "valid parent" parent))
-               ((xversioned-struct-version-getter xvs) parent)]
-              [else (decode (xversioned-struct-type xvs) port)]))
+             (cond
+               #;[forced-version] ; for testing purposes: pass an explicit version
+               [(or (symbol? (xversioned-struct-type xvs)) (procedure? (xversioned-struct-type xvs)))
+                (unless parent
+                  (raise-argument-error 'xversioned-struct-decode "valid parent" parent))
+                ((xversioned-struct-version-getter xvs) parent)]
+               [else (decode (xversioned-struct-type xvs) port)]))
 
   (when (dict-ref (xversioned-struct-versions xvs) 'header #f)
     (_parse-fields port res (dict-ref (xversioned-struct-versions xvs) 'header)))
@@ -28,20 +28,66 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
   (define fields (or (dict-ref (xversioned-struct-versions xvs) (dict-ref res 'version #f) #f)
                      (raise-argument-error 'xversioned-struct-decode "valid version key" (cons version (xversioned-struct-versions xvs)))))
     
-  (cond
-    [(xversioned-struct? fields) (decode fields port #:parent parent)]
-    [else (_parse-fields port res fields)
-     res]))
+  ((xversioned-struct-post-decode xvs)
+   (cond
+     [(xversioned-struct? fields) (decode fields port #:parent parent)]
+     [else (_parse-fields port res fields)
+           res]) port parent))
 
-(define (xversioned-struct-size xvs [val #f] [parent #f])
-  42)
+(define (xversioned-struct-size xvs [val #f] [parent #f] [include-pointers #t])
+  (unless val
+    (raise-argument-error 'xversioned-struct-size "value" val))
+  (define ctx (mhash 'parent parent 'val val 'pointerSize 0))
+  (define version-size
+    (if (not (or (symbol? (xversioned-struct-type xvs)) (procedure? (xversioned-struct-type xvs))))
+        (size (xversioned-struct-type xvs) (dict-ref val 'version) ctx)
+        0))
+  (define header-size
+    (for/sum ([(key type) (in-dict (or (dict-ref (xversioned-struct-versions xvs) 'header #f) null))])
+      (size type (and val (dict-ref val key)) ctx)))
+  (define fields-size
+    (let ([fields (or (dict-ref (xversioned-struct-versions xvs) (dict-ref val 'version))
+                      (raise-argument-error 'xversioned-struct-size "valid version key" version))])
+      (for/sum ([(key type) (in-dict fields)])
+        (size type (and val (dict-ref val key)) ctx))))
+  (define pointer-size (if include-pointers (dict-ref ctx 'pointerSize) 0))
+  (+ version-size header-size fields-size pointer-size))
 
 (define (xversioned-struct-encode xvs val-arg [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  42
+  (define val ((xversioned-struct-pre-encode xvs) val-arg port))
+
+  (unless (dict? val)
+    (raise-argument-error 'xversioned-struct-encode "dict" val))
+
+  (define ctx (mhash 'pointers null
+                     'startOffset (pos port)
+                     'parent parent
+                     'val val
+                     'pointerSize 0))
+  (dict-set! ctx 'pointerOffset (+ (pos port) (xversioned-struct-size xvs val ctx #f)))
+
+  (when (not (or (symbol? (xversioned-struct-type xvs)) (procedure? (xversioned-struct-type xvs))))
+    (encode (xversioned-struct-type xvs) (dict-ref val 'version #f) port))
+
+  (when (dict-ref (xversioned-struct-versions xvs) 'header #f)
+    (for ([(key type) (in-dict (dict-ref (xversioned-struct-versions xvs) 'header))])
+      (encode type (dict-ref val key) port #:parent ctx)))
+
+  (define fields (or (dict-ref (xversioned-struct-versions xvs) (dict-ref val 'version #f))
+                     (raise-argument-error 'xversioned-struct-encode "valid version key" version)))
+
+  (unless (andmap (λ (key) (member key (dict-keys val))) (dict-keys fields))
+    (raise-argument-error 'xversioned-struct-encode (format "hash that contains superset of Struct keys: ~a" (dict-keys fields)) (hash-keys val)))
+
+  (for ([(key type) (in-dict fields)])
+    (encode type (dict-ref val key) port #:parent ctx))
+  (for ([ptr (in-list (dict-ref ctx 'pointers))])
+    (encode (dict-ref ptr 'type) (dict-ref ptr 'val) port #:parent (dict-ref ptr 'parent)))
+  
   (unless port-arg (get-output-bytes port)))
 
-(struct xversioned-struct (type versions version-getter version-setter) #:transparent
+(struct xversioned-struct structish (type versions version-getter version-setter pre-encode post-decode) #:transparent #:mutable
   #:methods gen:xenomorphic
   [(define decode xversioned-struct-decode)
    (define encode xversioned-struct-encode)
@@ -51,15 +97,17 @@ https://github.com/mbuttrackerick/restructure/blob/master/src/VersionedStruct.co
   (unless (for/or ([proc (list integer? procedure? xenomorphic? symbol?)])
             (proc type))
     (raise-argument-error '+xversioned-struct "integer, procedure, symbol, or xenomorphic" type))
-  (unless (and (dict? versions) (andmap (λ (v) (or (dict? v) (xstruct? v))) (dict-values versions)))
-    (raise-argument-error '+xversioned-struct "dict of dicts or xstructs" versions))
+  (unless (and (dict? versions) (andmap (λ (v) (or (dict? v) (structish? v))) (dict-values versions)))
+    (raise-argument-error '+xversioned-struct "dict of dicts or structish" versions))
   (define version-getter (cond
                            [(procedure? type) type]
                            [(symbol? type) (λ (parent) (dict-ref parent type))]))
   (define version-setter (cond
                            [(procedure? type) type]
                            [(symbol? type) (λ (parent version) (dict-set! parent type version))]))
-  (xversioned-struct type versions version-getter version-setter))
+  (define (no-op-pre-encode val port) val)
+  (define (no-op-post-decode xvs port ctx) xvs)
+  (xversioned-struct type versions version-getter version-setter no-op-pre-encode no-op-post-decode))
 
 #|
 (define-subclass Struct (VersionedStruct type [versions (dictify)])

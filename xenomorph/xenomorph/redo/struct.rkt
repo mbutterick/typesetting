@@ -101,7 +101,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
        (encode (d:dict-ref ptr 'type) (d:dict-ref ptr 'val) port #:parent (d:dict-ref ptr 'parent)))
   (unless port-arg (get-output-bytes port)))
 
-(struct xstruct (fields post-decode pre-encode) #:transparent #:mutable
+(struct structish () #:transparent)
+(struct xstruct structish (fields post-decode pre-encode) #:transparent #:mutable
   #:methods gen:xenomorphic
   [(define decode xstruct-decode)
    (define encode xstruct-encode)
