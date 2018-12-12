@@ -1,5 +1,5 @@
 #lang racket/base
-(require rackunit "../number.rkt" "../base.rkt")
+(require rackunit "../number.rkt" "../helper.rkt")
 
 #|
 approximates

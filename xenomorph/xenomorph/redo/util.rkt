@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/dict "number.rkt" "base.rkt")
+(require racket/dict "number.rkt" "helper.rkt")
 (provide (all-defined-out))
 
 (define (length-resolvable? x)

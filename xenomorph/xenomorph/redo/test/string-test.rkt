@@ -1,6 +1,6 @@
 #lang racket/base
 (require rackunit
-         "../base.rkt"
+         "../helper.rkt"
          "../string.rkt"
          "../number.rkt"
          sugar/unstable/dict)

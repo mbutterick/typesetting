@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require rackunit racket/dict
-         "../base.rkt"
+         "../helper.rkt"
          "../struct.rkt"
          "../string.rkt"
          "../number.rkt"

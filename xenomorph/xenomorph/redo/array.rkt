@@ -1,5 +1,5 @@
 #lang debug racket/base
-(require racket/dict racket/sequence "base.rkt" "number.rkt" "util.rkt" sugar/unstable/dict)
+(require racket/dict racket/sequence "helper.rkt" "number.rkt" "util.rkt" sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|
