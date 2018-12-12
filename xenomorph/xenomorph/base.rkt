@@ -70,19 +70,6 @@
 (define (symbol-append . syms)
   (string->symbol (apply string-append (map symbol->string syms))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;; structing
-
-(define (->input-port arg)
-  (cond
-    [(bytes? arg) (open-input-bytes arg)]
-    [(input-port? arg) arg]
-    [else (raise-argument-error '->port "byte string or input port" arg)]))
-
-(define (reverse-bytes bstr) (apply bytes (reverse (bytes->list bstr))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (define xenomorph-base%
   (class* object% (codable<%> sizable<%>)
     (super-new)
