@@ -3,6 +3,7 @@
          "../helper.rkt"
          "../array.rkt"
          "../number.rkt"
+         "../pointer.rkt"
          sugar/unstable/dict)
 
 #|
@@ -85,7 +86,6 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
  "encode length as number before array"
  (check-equal? (encode (+xarray uint8 uint8) '(1 2 3 4) #f) (bytes 4 1 2 3 4)))
 
-;; todo: reinstate pointer test
-#;(test-case 
+(test-case 
    "add pointers after array if length is encoded at start"
-   (check-equal? (encode (+xarray (+Pointer uint8 uint8) uint8) '(1 2 3 4)) (bytes 4 5 6 7 8 1 2 3 4)))
+   (check-equal? (encode (+xarray (+xpointer uint8 uint8) uint8) '(1 2 3 4) #f) (bytes 4 5 6 7 8 1 2 3 4)))

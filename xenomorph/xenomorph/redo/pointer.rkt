@@ -86,7 +86,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                          [else (error 'unknown-pointer-style)])]
                 [(type val) (resolve-void-pointer (xpointer-type xp) val)])
     (when (and val ctx)
-      (dict-set! ctx 'pointerSize (and (dict-ref ctx 'pointerSize)
+      (dict-set! ctx 'pointerSize (and (dict-ref ctx 'pointerSize #f)
                                        (+ (dict-ref ctx 'pointerSize) (size type val parent)))))
     (size (xpointer-offset-type xp))))
 
