@@ -10,7 +10,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 (define (xarray-decode xa [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
-    (define ctx (if (xint? (xarray-base-len xa))
+    (define new-parent (if (xint? (xarray-base-len xa))
                     (mhasheq 'parent parent
                              '_startOffset (pos port)
                              '_currentOffset 0
@@ -28,10 +28,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                          [else +inf.0]))
        (for/list ([i (in-naturals)]
                   #:break (or (eof-object? (peek-byte)) (= (pos port) end-pos)))
-         (decode (xarray-base-type xa) #:parent ctx))]
+         (decode (xarray-base-type xa) #:parent new-parent))]
       ;; we have decoded-len, which is treated as count of items
       [else (for/list ([i (in-range decoded-len)])
-              (decode (xarray-base-type xa) #:parent ctx))])))
+              (decode (xarray-base-type xa) #:parent new-parent))])))
 
 (define (xarray-encode xa array [port-arg (current-output-port)] #:parent [parent #f])
   (unless (sequence? array)

@@ -32,8 +32,8 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 (define (xlazy-array-encode xla val [port-arg (current-output-port)] #:parent [parent #f])
   (xarray-encode xla (if (stream? val) (stream->list val) val) port-arg #:parent parent))
 
-(define (xlazy-array-size xla [val #f] [ctx #f])
-  (xarray-size xla (if (stream? val) (stream->list val) val) ctx))
+(define (xlazy-array-size xla [val #f] [parent #f])
+  (xarray-size xla (if (stream? val) (stream->list val) val) parent))
 
 ;; xarray-base holds type and len fields
 (struct xlazy-array xarray-base () #:transparent

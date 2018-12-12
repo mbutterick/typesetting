@@ -1,5 +1,5 @@
 #lang debug racket/base
-(require (prefix-in d: racket/dict) racket/list "helper.rkt" "util.rkt" "number.rkt" sugar/unstable/dict)
+(require (prefix-in d: racket/dict) racket/list "helper.rkt" "number.rkt" sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|
@@ -65,16 +65,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (unless (d:dict? res) (raise-result-error 'xstruct-decode "dict" res))
       res)))
 
-(define (xstruct-size xs [val #f] [parent #f] [include-pointers #t])
-  (define ctx (mhasheq 'parent parent
+(define (xstruct-size xs [val #f] [parent-arg #f] [include-pointers #t])
+  (define parent (mhasheq 'parent parent-arg
                        'val val
                        'pointerSize 0))
   (+ (for/sum ([(key type) (d:in-dict (xstruct-fields xs))]
                #:when (xenomorphic? type))
-       (size type (and val (d:dict-ref val key)) ctx))
-     (if include-pointers (d:dict-ref ctx 'pointerSize) 0)))
+       (size type (and val (d:dict-ref val key)) parent))
+     (if include-pointers (d:dict-ref parent 'pointerSize) 0)))
 
-(define (xstruct-encode xs val-arg [port-arg (current-output-port)] #:parent [parent #f])
+(define (xstruct-encode xs val-arg [port-arg (current-output-port)] #:parent [parent-arg #f])
   (unless (d:dict? val-arg)
     (raise-argument-error 'xstruct-encode "dict" val-arg))
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
@@ -88,18 +88,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (raise-argument-error 'xstruct-encode
                             (format "dict that contains superset of Struct keys: ~a" (d:dict-keys (xstruct-fields xs))) (d:dict-keys val)))
 
-    (define ctx (mhash 'pointers empty
+    (define parent (mhash 'pointers empty
                        'startOffset (pos port)
-                       'parent parent
+                       'parent parent-arg
                        'val val
                        'pointerSize 0))
 
     ; deliberately use `xstruct-size` instead of `size` to use extra arg
-    (d:dict-set! ctx 'pointerOffset (+ (pos port) (xstruct-size xs val ctx #f))) 
+    (d:dict-set! parent 'pointerOffset (+ (pos port) (xstruct-size xs val parent #f))) 
 
     (for ([(key type) (d:in-dict (xstruct-fields xs))])
-      (encode type (d:dict-ref val key) #:parent ctx))
-    (for ([ptr (in-list (d:dict-ref ctx 'pointers))])
+      (encode type (d:dict-ref val key) #:parent parent))
+    (for ([ptr (in-list (d:dict-ref parent 'pointers))])
       (encode (d:dict-ref ptr 'type) (d:dict-ref ptr 'val) #:parent (d:dict-ref ptr 'parent)))
     (unless port-arg (get-output-bytes port))))
 
@@ -110,7 +110,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
    (define encode xstruct-encode)
    (define size xstruct-size)])
 
-(define (+xstruct [fields null] [post-decode (λ (val port ctx) val)] [pre-encode (λ (val port) val)])
+(define (+xstruct [fields null] [post-decode (λ (val port parent) val)] [pre-encode (λ (val port) val)])
   (unless (d:dict? fields)
     (raise-argument-error '+xstruct "dict" fields))
   (xstruct fields post-decode pre-encode))

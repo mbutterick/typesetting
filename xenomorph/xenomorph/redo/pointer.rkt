@@ -9,25 +9,25 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 |#
 
-(define (find-top-ctx ctx)
+(define (find-top-parent parent)
   (cond
-    [(dict-ref ctx 'parent #f) => find-top-ctx]
-    [else ctx]))
+    [(dict-ref parent 'parent #f) => find-top-parent]
+    [else parent]))
 
-(define (xpointer-decode xp [port-arg (current-input-port)] #:parent [ctx #f])
+(define (xpointer-decode xp [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
-  (define offset (decode (xpointer-offset-type xp) #:parent ctx))
+  (define offset (decode (xpointer-offset-type xp) #:parent parent))
   (cond
     [(and allow-null (= offset (null-value xp))) #f] ; handle null pointers
     [else
      (define relative (+ (case (pointer-style xp)
-                           [(local) (dict-ref ctx '_startOffset)]
+                           [(local) (dict-ref parent '_startOffset)]
                            [(immediate) (- (pos port) (size (xpointer-offset-type xp)))]
-                           [(parent) (dict-ref (dict-ref ctx 'parent) '_startOffset)]
-                           [(global) (or (dict-ref (find-top-ctx ctx) '_startOffset) 0)]
+                           [(parent) (dict-ref (dict-ref parent 'parent) '_startOffset)]
+                           [(global) (or (dict-ref (find-top-parent parent) '_startOffset) 0)]
                            [else (error 'unknown-pointer-style)])
-                         ((relative-getter-or-0 xp) ctx)))
+                         ((relative-getter-or-0 xp) parent)))
      (define ptr (+ offset relative))
      (cond
        [(xpointer-type xp)
@@ -38,7 +38,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
             [else
              (define orig-pos (pos port))
              (pos port ptr)
-             (set! val (decode (xpointer-type xp) #:parent ctx))
+             (set! val (decode (xpointer-type xp) #:parent parent))
              (pos port orig-pos)
              val]))
         (if (lazy xp)
@@ -52,44 +52,42 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [(xvoid-pointer? val) (values (xvoid-pointer-type val) (xvoid-pointer-value val))]
     [else (raise-argument-error 'Pointer:size "VoidPointer" val)]))
 
-(define (xpointer-encode xp val [port-arg (current-output-port)] #:parent [ctx #f])
+(define (xpointer-encode xp val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  (unless ctx ; todo: furnish default pointer context? adapt from Struct?
-    (raise-argument-error 'xpointer-encode "valid pointer context" ctx))
+  (unless parent ; todo: furnish default pointer context? adapt from Struct?
+    (raise-argument-error 'xpointer-encode "valid pointer context" parent))
   (parameterize ([current-output-port port])
   (if (not val)
       (encode (xpointer-offset-type xp) (null-value xp) port)
-      (let* ([parent ctx]
-             [ctx (case (pointer-style xp)
-                    [(local immediate) ctx]
-                    [(parent) (dict-ref ctx 'parent)]
-                    [(global) (find-top-ctx ctx)]
+      (let* ([new-parent (case (pointer-style xp)
+                    [(local immediate) parent]
+                    [(parent) (dict-ref parent 'parent)]
+                    [(global) (find-top-parent parent)]
                     [else (error 'unknown-pointer-style)])]
              [relative (+ (case (pointer-style xp)
-                            [(local parent) (dict-ref ctx 'startOffset)]
+                            [(local parent) (dict-ref new-parent 'startOffset)]
                             [(immediate) (+ (pos port) (size (xpointer-offset-type xp) val parent))]
                             [(global) 0])
                           ((relative-getter-or-0 xp) (dict-ref parent 'val #f)))])
-        (encode (xpointer-offset-type xp) (- (dict-ref ctx 'pointerOffset) relative))
+        (encode (xpointer-offset-type xp) (- (dict-ref new-parent 'pointerOffset) relative))
         (let-values ([(type val) (resolve-void-pointer (xpointer-type xp) val)])
-          (dict-set! ctx 'pointers (append (dict-ref ctx 'pointers)
+          (dict-set! new-parent 'pointers (append (dict-ref new-parent 'pointers)
                                            (list (mhasheq 'type type
                                                           'val val
                                                           'parent parent))))
-          (dict-set! ctx 'pointerOffset (+ (dict-ref ctx 'pointerOffset) (size type val parent)))))))
+          (dict-set! new-parent 'pointerOffset (+ (dict-ref new-parent 'pointerOffset) (size type val parent)))))))
   (unless port-arg (get-output-bytes port)))
 
-(define (xpointer-size xp [val #f] [ctx #f])
-  (let*-values ([(parent) ctx]
-                [(ctx) (case (pointer-style xp)
-                         [(local immediate) ctx]
-                         [(parent) (dict-ref ctx 'parent)]
-                         [(global) (find-top-ctx ctx)]
+(define (xpointer-size xp [val #f] [parent #f])
+  (let*-values ([(parent) (case (pointer-style xp)
+                         [(local immediate) parent]
+                         [(parent) (dict-ref parent 'parent)]
+                         [(global) (find-top-parent parent)]
                          [else (error 'unknown-pointer-style)])]
                 [(type val) (resolve-void-pointer (xpointer-type xp) val)])
-    (when (and val ctx)
-      (dict-set! ctx 'pointerSize (and (dict-ref ctx 'pointerSize #f)
-                                       (+ (dict-ref ctx 'pointerSize) (size type val parent)))))
+    (when (and val parent)
+      (dict-set! parent 'pointerSize (and (dict-ref parent 'pointerSize #f)
+                                       (+ (dict-ref parent 'pointerSize) (size type val parent)))))
     (size (xpointer-offset-type xp))))
 
 (struct xpointer (offset-type type options) #:transparent
@@ -105,7 +103,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define (allow-null xp) (or (dict-ref (xpointer-options xp) 'allowNull #f) #t)) 
 (define (null-value xp) (or (dict-ref (xpointer-options xp) 'nullValue #f) 0))
 (define (lazy xp) (dict-ref (xpointer-options xp) 'lazy #f))
-(define (relative-getter-or-0 xp) (or (dict-ref (xpointer-options xp) 'relativeTo #f) (λ (ctx) 0))) ; changed this to a simple lambda
+(define (relative-getter-or-0 xp) (or (dict-ref (xpointer-options xp) 'relativeTo #f) (λ (parent) 0))) ; changed this to a simple lambda
 
 ;; A pointer whose type is determined at decode time
 (struct xvoid-pointer (type value) #:transparent)
