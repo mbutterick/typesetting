@@ -4,7 +4,7 @@
          "bitfield-test.rkt"
          "buffer-test.rkt"
          "enum-test.rkt"
-         ;"lazy-array-test.rkt"
+         "lazy-array-test.rkt"
          "number-test.rkt"
          "optional-test.rkt"
          "pointer-test.rkt"

@@ -9,13 +9,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 
 (define (xarray-decode xa [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
-  (define ctx (if (xint? (xarray-len xa))
+  (define ctx (if (xint? (xarray-base-len xa))
                   (mhasheq 'parent parent
                            '_startOffset (pos port)
                            '_currentOffset 0
-                           '_length (xarray-len xa))
+                           '_length (xarray-base-len xa))
                   parent))
-  (define decoded-len (resolve-length (xarray-len xa) port parent))
+  (define decoded-len (resolve-length (xarray-base-len xa) port parent))
   (cond
     [(or (not decoded-len) (eq? (xarray-length-type xa) 'bytes))
      (define end-pos (cond
@@ -27,10 +27,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                        [else +inf.0]))
      (for/list ([i (in-naturals)]
                 #:break (or (eof-object? (peek-byte port)) (= (pos port) end-pos)))
-       (decode (xarray-type xa) port #:parent ctx))]
+       (decode (xarray-base-type xa) port #:parent ctx))]
     ;; we have decoded-len, which is treated as count of items
     [else (for/list ([i (in-range decoded-len)])
-            (decode (xarray-type xa) port #:parent ctx))]))
+            (decode (xarray-base-type xa) port #:parent ctx))]))
 
 (define (xarray-encode xa array [port-arg (current-output-port)] #:parent [parent #f])
   (unless (sequence? array)
@@ -43,15 +43,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
            #;[item-count (length items)]
            #;[max-items (if (number? (xarray-len xa)) (xarray-len xa) item-count)])
       (for ([item array])
-        (encode (xarray-type xa) item port #:parent ctx))))
+        (encode (xarray-base-type xa) item port #:parent ctx))))
 
   (cond
-    [(xint? (xarray-len xa))
+    [(xint? (xarray-base-len xa))
      (define ctx (mhash 'pointers null
                         'startOffset (pos port)
                         'parent parent))
      (dict-set! ctx 'pointerOffset (+ (pos port) (size xa array ctx)))
-     (encode (xarray-len xa) (length array) port) ; encode length at front
+     (encode (xarray-base-len xa) (length array) port) ; encode length at front
      (encode-items ctx)
      (for ([ptr (in-list (dict-ref ctx 'pointers))]) ; encode pointer data at end
        (encode (dict-ref ptr 'type) (dict-ref ptr 'val) port))]
@@ -62,16 +62,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   (when val (unless (sequence? val)
               (raise-argument-error 'xarray-size "sequence" val)))
   (cond
-    [val (let-values ([(ctx len-size) (if (xint? (xarray-len xa))
-                                          (values (mhasheq 'parent ctx) (size (xarray-len xa)))
+    [val (let-values ([(ctx len-size) (if (xint? (xarray-base-len xa))
+                                          (values (mhasheq 'parent ctx) (size (xarray-base-len xa)))
                                           (values ctx 0))])
            (+ len-size (for/sum ([item val])
-                         (size (xarray-type xa) item ctx))))]
-    [else (let ([item-count (resolve-length (xarray-len xa) #f ctx)]
-                [item-size (size (xarray-type xa) #f ctx)])
+                         (size (xarray-base-type xa) item ctx))))]
+    [else (let ([item-count (resolve-length (xarray-base-len xa) #f ctx)]
+                [item-size (size (xarray-base-type xa) #f ctx)])
             (* item-size item-count))]))
 
-(struct xarray (type len length-type) #:transparent
+(struct xarray-base (type len) #:transparent)
+(struct xarray xarray-base (length-type) #:transparent
   #:methods gen:xenomorphic
   [(define decode xarray-decode)
    (define encode xarray-encode)
