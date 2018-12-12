@@ -91,8 +91,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                      'parent parent
                      'val val
                      'pointerSize 0))
-  
-  (d:dict-set! ctx 'pointerOffset (+ (pos port) (if (xenomorphic? val) (size val #f ctx) 0)))
+
+  ; deliberately use `xstruct-size` instead of `size` to use extra arg
+  (d:dict-set! ctx 'pointerOffset (+ (pos port) (xstruct-size xs val ctx #f))) 
 
   (for ([(key type) (d:in-dict (xstruct-fields xs))])
        (encode type (d:dict-ref val key) port #:parent ctx))
