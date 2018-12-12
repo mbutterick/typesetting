@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require "array-test.rkt"
-         ;"bitfield-test.rkt"
+         "bitfield-test.rkt"
          ;"buffer-test.rkt"
          ;"enum-test.rkt"
          ;"lazy-array-test.rkt"
