@@ -102,4 +102,5 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (test-case 
    "add pointers after array if length is encoded at start"
-   (check-equal? (encode (+xarray (+xpointer uint8 uint8) uint8) '(1 2 3 4) #f) (bytes 4 5 6 7 8 1 2 3 4)))
+   (check-equal? (encode (+xarray (+xpointer #:offset-type uint8
+                                             #:type uint8) uint8) '(1 2 3 4) #f) (bytes 4 5 6 7 8 1 2 3 4)))

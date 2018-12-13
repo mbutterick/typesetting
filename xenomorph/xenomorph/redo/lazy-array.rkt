@@ -43,7 +43,10 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
    (define encode xlazy-array-encode)
    (define size xlazy-array-size)])
 
-(define (+xlazy-array type [len #f])
+(define (+xlazy-array [type-arg #f] [len-arg #f]
+                      #:type [type-kwarg #f] #:length [len-kwarg #f])
+  (define type (or type-arg type-kwarg))
+  (define len (or len-arg len-kwarg))
   (unless (xenomorphic? type)
     (raise-argument-error '+xarray "xenomorphic type" type))
   (unless (length-resolvable? len)

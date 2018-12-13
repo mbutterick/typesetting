@@ -80,7 +80,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
    (define encode xarray-encode)
    (define size xarray-size)])
 
-(define (+xarray type [len #f] [length-type 'count])
+(define (+xarray [type-arg #f] [len-arg #f] [length-type-arg 'count]
+                 #:type [type-kwarg #f] #:length [len-kwarg #f] #:count-bytes [count-bytes? #f])
+  (define type (or type-arg type-kwarg))
+  (define len (or len-arg len-kwarg))
+  (define length-type (if count-bytes? 'bytes length-type-arg))
   (unless (xenomorphic? type)
     (raise-argument-error '+xarray "xenomorphic type" type))
   (unless (length-resolvable? len)

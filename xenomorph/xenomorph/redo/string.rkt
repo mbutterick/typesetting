@@ -87,7 +87,10 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
    (define size xstring-size)])
 
 (define supported-encodings '(ascii utf8))
-(define (+xstring [len #f] [encoding 'ascii])
+(define (+xstring [len-arg #f] [enc-arg #f]
+                  #:length [len-kwarg #f] #:encoding [enc-kwarg #f])
+  (define len (or len-arg len-kwarg))
+  (define encoding (or enc-arg enc-kwarg 'ascii))
   (unless (length-resolvable? len)
     (raise-argument-error '+xarray "length-resolvable?" len))
   (unless (or (procedure? encoding) (memq encoding supported-encodings))
@@ -110,7 +113,10 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
    (define encode xsymbol-encode)
    (define size xstring-size)])
 
-(define (+xsymbol [len #f] [encoding 'ascii])
+(define (+xsymbol [len-arg #f] [enc-arg #f]
+                  #:length [len-kwarg #f] #:encoding [enc-kwarg #f])
+  (define len (or len-arg len-kwarg))
+  (define encoding (or enc-arg enc-kwarg 'ascii))
   (xsymbol len encoding))
 
 (module+ test

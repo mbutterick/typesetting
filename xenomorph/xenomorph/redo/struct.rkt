@@ -1,6 +1,7 @@
 #lang debug racket/base
 (require (prefix-in d: racket/dict)
          racket/promise
+         racket/sequence
          racket/list
          "helper.rkt"
          "number.rkt"
@@ -116,7 +117,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
    (define encode xstruct-encode)
    (define size xstruct-size)])
 
-(define (+xstruct [fields null])
+(define (+xstruct . dicts)
+  (define args (flatten dicts))
+  (unless (even? (length args))
+    (raise-argument-error '+xstruct "equal keys and values" dicts))
+  (define fields (for/list ([kv (in-slice 2 args)])
+                   (unless (symbol? (car kv))
+                     (raise-argument-error '+xstruct "symbol" (car kv)))
+                   (apply cons kv)))
   (unless (d:dict? fields)
     (raise-argument-error '+xstruct "dict" fields))
   (xstruct fields))

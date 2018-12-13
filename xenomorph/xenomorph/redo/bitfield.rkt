@@ -35,7 +35,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
    (define encode xbitfield-encode)
    (define size xbitfield-size)])
 
-(define (+xbitfield type [flags null])
+(define (+xbitfield [type-arg #f] [flag-arg #f]
+                    #:type [type-kwarg #f] #:flags [flag-kwarg #f])
+  (define type (or type-arg type-kwarg))
+  (define flags (or flag-arg flag-kwarg null))
   (unless (andmap (λ (f) (or (symbol? f) (not f))) flags)
     (raise-argument-error '+xbitfield "list of symbols" flags))
   (xbitfield type flags))
