@@ -15,6 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
   (dict-set! res 'version
              (cond
+               [(integer? (xversioned-struct-type xvs)) (xversioned-struct-type xvs)]
                #;[forced-version] ; for testing purposes: pass an explicit version
                [(or (symbol? (xversioned-struct-type xvs)) (procedure? (xversioned-struct-type xvs)))
                 (unless parent

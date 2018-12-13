@@ -1,6 +1,7 @@
 #lang debug racket/base
 (require "helper.rkt"
          racket/dict
+         racket/promise
          sugar/unstable/dict)
 (provide (all-defined-out))
 
@@ -42,7 +43,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
              (pos port orig-pos)
              val]))
         (if (pointer-lazy? xp)
-            (lazy-thunk decode-value)
+            (delay (decode-value))
             (decode-value))]
        [else ptr])])))
 

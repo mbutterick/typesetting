@@ -57,5 +57,3 @@
     [(void? size) 0]
     [(and (integer? size) (not (negative? size))) size]
     [else (raise-argument-error 'size "nonnegative integer" size)]))
-
-(struct lazy-thunk (proc) #:transparent)

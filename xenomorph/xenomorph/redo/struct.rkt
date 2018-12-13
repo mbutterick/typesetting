@@ -1,5 +1,10 @@
 #lang debug racket/base
-(require (prefix-in d: racket/dict) racket/list "helper.rkt" "number.rkt" sugar/unstable/dict)
+(require (prefix-in d: racket/dict)
+         racket/promise
+         racket/list
+         "helper.rkt"
+         "number.rkt"
+         sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|
@@ -19,7 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   [(define (dict-set! d k v) (d:dict-set! (choose-dict d k) k v))
    (define (dict-ref d k [thunk #f])
      (define res (d:dict-ref (choose-dict d k) k thunk))
-     (if (lazy-thunk? res) ((lazy-thunk-proc res)) res))
+     (force res))
    (define (dict-remove! d k) (d:dict-remove! (choose-dict d k) k))
    ;; public keys only
    (define (dict-keys d) (d:dict-keys (struct-dict-res-_kv d)))
