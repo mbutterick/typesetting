@@ -19,15 +19,16 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 
 (test-case
  "uint8: decode with post-decode, size, encode with pre-encode"
+ (define myuint8 (+xint 1 #:signed #f))
  (parameterize ([current-input-port (open-input-bytes (bytes #xab #xff))])
-   (set-post-decode! uint8 (λ (b) #xdeadbeef))
-   (check-equal? (decode uint8) #xdeadbeef)
-   (check-equal? (decode uint8) #xdeadbeef))
- (check-equal? (size uint8) 1)
+   (set-post-decode! myuint8 (λ (b) #xdeadbeef))
+   (check-equal? (decode myuint8) #xdeadbeef)
+   (check-equal? (decode myuint8) #xdeadbeef))
+ (check-equal? (size myuint8) 1)
  (let ([port (open-output-bytes)])
-   (set-pre-encode! uint8 (λ (b) #xcc))
-   (encode uint8 #xab port)
-   (encode uint8 #xff port)
+   (set-pre-encode! myuint8 (λ (b) #xcc))
+   (encode myuint8 #xab port)
+   (encode myuint8 #xff port)
    (check-equal? (dump port) (bytes #xcc #xcc))))
 
 (test-case
