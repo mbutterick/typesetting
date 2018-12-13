@@ -23,7 +23,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 (define system-endian (if (system-big-endian?) 'be 'le))
 
-(define (xint-encode i val [port-arg (current-output-port)] #:parent [parent #f])
+(define/pre-encode (xint-encode i val [port-arg (current-output-port)] #:parent [parent #f])
   (unless (xint? i)
     (raise-argument-error 'encode "xint instance" i))
   (define-values (bound-min bound-max) (bounds i))
@@ -41,7 +41,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define res (apply bytes ((if (eq? (xint-endian i) 'be) values reverse) bs)))
     (if port-arg (write-bytes res) res)))
 
-(define (xint-decode i [port-arg (current-input-port)] #:parent [parent #f])
+(define/post-decode (xint-decode i [port-arg (current-input-port)] #:parent [parent #f])
   (unless (xint? i)
     (raise-argument-error 'decode "xint instance" i))
   (define port (->input-port port-arg))
@@ -55,7 +55,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                    (arithmetic-shift b (* 8 i))))
     (if (xint-signed i) (unsigned->signed uint (bits i)) uint)))
 
-(struct xnumber () #:transparent)
+(struct xnumber xbase () #:transparent)
 
 (struct xint xnumber (size signed endian) #:transparent
   #:methods gen:xenomorphic
@@ -157,13 +157,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (check-equal? (encode int8 -1 #f) (bytes 255))
   (check-equal? (encode int8 127 #f) (bytes 127)))
 
-(define (xfloat-decode xf [port-arg (current-input-port)] #:parent [parent #f])
+(define/post-decode (xfloat-decode xf [port-arg (current-input-port)] #:parent [parent #f])
   (unless (xfloat? xf)
     (raise-argument-error 'decode "xfloat instance" xf))
   (define bs (read-bytes (xfloat-size xf) (->input-port port-arg)))
   (floating-point-bytes->real bs (eq? (xfloat-endian xf) 'be)))
 
-(define (xfloat-encode xf val [port (current-output-port)] #:parent [parent #f])
+(define/pre-encode (xfloat-encode xf val [port (current-output-port)] #:parent [parent #f])
   (unless (xfloat? xf)
     (raise-argument-error 'encode "xfloat instance" xf))
   (unless (or (not port) (output-port? port))
@@ -192,13 +192,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define doublebe (+xfloat 8 #:endian 'be))
 (define doublele (+xfloat 8 #:endian 'le))
 
-(define (xfixed-decode xf [port-arg (current-input-port)] #:parent [parent #f])
+(define/post-decode (xfixed-decode xf [port-arg (current-input-port)] #:parent [parent #f])
   (unless (xfixed? xf)
     (raise-argument-error 'decode "xfixed instance" xf))
   (define int (xint-decode xf port-arg))
   (exact-if-possible (/ int (fixed-shift xf) 1.0)))
 
-(define (xfixed-encode xf val [port (current-output-port)] #:parent [parent #f])
+(define/pre-encode (xfixed-encode xf val [port (current-output-port)] #:parent [parent #f])
   (unless (xfixed? xf)
     (raise-argument-error 'encode "xfixed instance" xf))
   (define int (exact-if-possible (floor (* val (fixed-shift xf)))))

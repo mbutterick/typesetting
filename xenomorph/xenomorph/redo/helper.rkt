@@ -24,7 +24,28 @@
     (file-position p new-pos))
   (file-position p))
 
-(struct xbase (pre-encode post-decode) #:transparent #:mutable)
+(struct xbase ([pre-encode #:auto] [post-decode #:auto]) #:transparent #:mutable
+  #:auto-value values)
+
+(define (pre-encode xb val)
+  ((xbase-pre-encode xb) val))
+
+(define (set-pre-encode! xb func)
+  (set-xbase-pre-encode! xb func))
+
+(define (post-decode xb val)
+  ((xbase-post-decode xb) val))
+
+(define (set-post-decode! xb func)
+  (set-xbase-post-decode! xb func))
+
+(define-syntax-rule (define/post-decode (ID X VAL . ARGS) . BODY)
+  (define (ID X VAL . ARGS) (post-decode X (let () . BODY))))
+
+(define-syntax-rule (define/pre-encode (ID X VAL . ARGS) . BODY)
+  (define (ID X val-in . ARGS) (let ([VAL (pre-encode X val-in)]) . BODY)))
+
+(define-syntax-rule (define/finalize-size ID+ARGS . BODY) (define ID+ARGS (finalize-size (let () . BODY)))) 
 
 (define-generics xenomorphic
   (encode xenomorphic val [port] #:parent [parent])

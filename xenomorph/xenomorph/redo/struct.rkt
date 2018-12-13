@@ -60,20 +60,20 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (let* ([sdr (_setup port parent len)] ; returns StructDictRes
              [sdr (_parse-fields port sdr (xstruct-fields xs))])
         sdr))
-    (let* ([res ((xstruct-post-decode xs) res port parent)]
+    (let* ([res (post-decode xs res)]
            #;[res (inner res post-decode res . args)])
       (unless (d:dict? res) (raise-result-error 'xstruct-decode "dict" res))
       res)))
 
-(define (xstruct-size xs [val #f] #:parent [parent-arg #f] [include-pointers #t])
+(define/finalize-size (xstruct-size xs [val #f] #:parent [parent-arg #f] [include-pointers #t])
   (define parent (mhasheq 'parent parent-arg
-                       'val val
-                       'pointerSize 0))
+                          'val val
+                          'pointerSize 0))
   (define fields-size (for/sum ([(key type) (d:in-dict (xstruct-fields xs))]
-               #:when (xenomorphic? type))
-       (size type (and val (d:dict-ref val key)) #:parent parent)))
+                                #:when (xenomorphic? type))
+                        (size type (and val (d:dict-ref val key)) #:parent parent)))
   (define pointers-size (if include-pointers (d:dict-ref parent 'pointerSize) 0))
-  (finalize-size (+ fields-size pointers-size)))
+  (+ fields-size pointers-size))
 
 (define (xstruct-encode xs val-arg [port-arg (current-output-port)] #:parent [parent-arg #f])
   (unless (d:dict? val-arg)
@@ -81,7 +81,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
     ;; check keys first, since `size` also relies on keys being valid
-    (define val (let* ([val ((xstruct-pre-encode xs) val-arg port)]
+    (define val (let* ([val (pre-encode xs val-arg)]
                        #;[val (inner res pre-encode val . args)])
                   (unless (d:dict? val) (raise-result-error 'xstruct-encode "dict" val))
                   val))
@@ -90,10 +90,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                             (format "dict that contains superset of Struct keys: ~a" (d:dict-keys (xstruct-fields xs))) (d:dict-keys val)))
 
     (define parent (mhash 'pointers empty
-                       'startOffset (pos port)
-                       'parent parent-arg
-                       'val val
-                       'pointerSize 0))
+                          'startOffset (pos port)
+                          'parent parent-arg
+                          'val val
+                          'pointerSize 0))
 
     ; deliberately use `xstruct-size` instead of `size` to use extra arg
     (d:dict-set! parent 'pointerOffset (+ (pos port) (xstruct-size xs val #:parent parent #f))) 
@@ -104,17 +104,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (encode (d:dict-ref ptr 'type) (d:dict-ref ptr 'val) #:parent (d:dict-ref ptr 'parent)))
     (unless port-arg (get-output-bytes port))))
 
-(struct structish () #:transparent)
-(struct xstruct structish (fields post-decode pre-encode) #:transparent #:mutable
+(struct structish xbase () #:transparent)
+(struct xstruct structish (fields) #:transparent #:mutable
   #:methods gen:xenomorphic
   [(define decode xstruct-decode)
    (define encode xstruct-encode)
    (define size xstruct-size)])
 
-(define (+xstruct [fields null] [post-decode (λ (val port parent) val)] [pre-encode (λ (val port) val)])
+(define (+xstruct [fields null])
   (unless (d:dict? fields)
     (raise-argument-error '+xstruct "dict" fields))
-  (xstruct fields post-decode pre-encode))
+  (xstruct fields))
 
 (module+ test
   (require rackunit "number.rkt")

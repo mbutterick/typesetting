@@ -7,7 +7,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
 |#
 
-(define (xenum-decode xe [port-arg (current-input-port)] #:parent [parent #f])
+(define/post-decode (xenum-decode xe [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
   (define index (decode (xenum-type xe)))
@@ -16,7 +16,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
 (define (xenum-size xe [val #f] #:parent [parent #f])
   (size (xenum-type xe)))
 
-(define (xenum-encode xe val [port-arg (current-output-port)] #:parent [parent #f])
+(define/pre-encode (xenum-encode xe val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
   (define index (index-of (xenum-options xe) val))
@@ -25,7 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
   (encode (xenum-type xe) index)
   (unless port-arg (get-output-bytes port))))
 
-(struct xenum (type options) #:transparent
+(struct xenum xbase (type options) #:transparent
   #:methods gen:xenomorphic
   [(define decode xenum-decode)
    (define encode xenum-encode)

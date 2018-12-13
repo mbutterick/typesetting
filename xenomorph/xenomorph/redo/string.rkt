@@ -39,7 +39,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       [(ascii utf8) string->bytes/utf-8]))
   (bytes-length (encoder (format "~a" val))))
 
-(define (xstring-decode xs [port-arg (current-input-port)] #:parent [parent #f])
+(define/post-decode (xstring-decode xs [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     (let ([len (or (resolve-length (xstring-len xs) #:parent parent) (count-nonzero-chars port))]
@@ -51,7 +51,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       (pos port (+ (pos port) adjustment))
       string)))
 
-(define (xstring-encode xs val [port-arg (current-output-port)] #:parent [parent #f])
+(define/pre-encode (xstring-encode xs val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
     (let* ([val (format "~a" val)]
@@ -67,21 +67,20 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       (when (not (xstring-len xs)) (write-byte #x00)) ; null terminated when no len
       (unless port-arg (get-output-bytes port))))) 
 
-(define (xstring-size xs [val #f] #:parent [parent #f])
-  (finalize-size
-   (cond
-     [val (define encoding (if (procedure? (xstring-encoding xs))
-                               (or ((xstring-encoding xs) (and parent (dict-ref parent val)) 'ascii))
-                               (xstring-encoding xs)))
-          (define string-size (byte-length val (if (eq? encoding 'utf16be) 'utf16le encoding)))
-          (define strlen-size (cond
-                                [(not (xstring-len xs)) 1]
-                                [(xint? (xstring-len xs)) (size (xstring-len xs))]
-                                [else 0]))
-          (+ string-size strlen-size)]
-     [else (resolve-length (xstring-len xs) #f #:parent parent)])))
+(define/finalize-size (xstring-size xs [val #f] #:parent [parent #f])
+  (cond
+    [val (define encoding (if (procedure? (xstring-encoding xs))
+                              (or ((xstring-encoding xs) (and parent (dict-ref parent val)) 'ascii))
+                              (xstring-encoding xs)))
+         (define string-size (byte-length val (if (eq? encoding 'utf16be) 'utf16le encoding)))
+         (define strlen-size (cond
+                               [(not (xstring-len xs)) 1]
+                               [(xint? (xstring-len xs)) (size (xstring-len xs))]
+                               [else 0]))
+         (+ string-size strlen-size)]
+    [else (resolve-length (xstring-len xs) #f #:parent parent)]))
 
-(struct xstring (len encoding) #:transparent
+(struct xstring xbase (len encoding) #:transparent
   #:methods gen:xenomorphic
   [(define decode xstring-decode)
    (define encode xstring-encode)

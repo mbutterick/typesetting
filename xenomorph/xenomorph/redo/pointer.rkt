@@ -14,7 +14,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [(dict-ref parent 'parent #f) => find-top-parent]
     [else parent]))
 
-(define (xpointer-decode xp [port-arg (current-input-port)] #:parent [parent #f])
+(define/post-decode (xpointer-decode xp [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
   (define offset (decode (xpointer-offset-type xp) #:parent parent))
@@ -52,7 +52,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [(xvoid-pointer? val) (values (xvoid-pointer-type val) (xvoid-pointer-value val))]
     [else (raise-argument-error 'Pointer:size "VoidPointer" val)]))
 
-(define (xpointer-encode xp val [port-arg (current-output-port)] #:parent [parent #f])
+(define/pre-encode (xpointer-encode xp val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (unless parent ; todo: furnish default pointer context? adapt from Struct?
     (raise-argument-error 'xpointer-encode "valid pointer context" parent))
@@ -90,7 +90,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                                        (+ (dict-ref parent 'pointerSize) (size type val #:parent parent)))))
     (size (xpointer-offset-type xp))))
 
-(struct xpointer (offset-type type options) #:transparent
+(struct xpointer xbase (offset-type type options) #:transparent
   #:methods gen:xenomorphic
   [(define decode xpointer-decode)
    (define encode xpointer-encode)

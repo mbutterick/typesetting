@@ -7,7 +7,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
-(define (xarray-decode xa [port-arg (current-input-port)] #:parent [parent #f])
+(define/post-decode (xarray-decode xa [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     (define new-parent (if (xint? (xarray-base-len xa))
@@ -33,7 +33,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       [else (for/list ([i (in-range decoded-len)])
               (decode (xarray-base-type xa) #:parent new-parent))])))
 
-(define (xarray-encode xa array [port-arg (current-output-port)] #:parent [parent #f])
+(define/pre-encode (xarray-encode xa array [port-arg (current-output-port)] #:parent [parent #f])
   (unless (sequence? array)
     (raise-argument-error 'xarray-encode "sequence" array))
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
@@ -59,22 +59,21 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       [else (encode-items parent)])
     (unless port-arg (get-output-bytes port))))
 
-(define (xarray-size xa [val #f] #:parent [parent #f])
+(define/finalize-size (xarray-size xa [val #f] #:parent [parent #f])
   (when val (unless (sequence? val)
               (raise-argument-error 'xarray-size "sequence" val)))
-  (finalize-size
-   (cond
-     [val (define-values (new-parent len-size) (if (xint? (xarray-base-len xa))
-                                                   (values (mhasheq 'parent parent) (size (xarray-base-len xa)))
-                                                   (values parent 0)))
-          (define items-size (for/sum ([item val])
-                               (size (xarray-base-type xa) item #:parent new-parent)))
-          (+ items-size len-size)]
-     [else (define item-count (resolve-length (xarray-base-len xa) #f #:parent parent))
-           (define item-size (size (xarray-base-type xa) #f #:parent parent))
-           (* item-size item-count)])))
+  (cond
+    [val (define-values (new-parent len-size) (if (xint? (xarray-base-len xa))
+                                                  (values (mhasheq 'parent parent) (size (xarray-base-len xa)))
+                                                  (values parent 0)))
+         (define items-size (for/sum ([item val])
+                              (size (xarray-base-type xa) item #:parent new-parent)))
+         (+ items-size len-size)]
+    [else (define item-count (resolve-length (xarray-base-len xa) #f #:parent parent))
+          (define item-size (size (xarray-base-type xa) #f #:parent parent))
+          (* item-size item-count)]))
 
-(struct xarray-base (type len) #:transparent)
+(struct xarray-base xbase (type len) #:transparent)
 (struct xarray xarray-base (length-type) #:transparent
   #:methods gen:xenomorphic
   [(define decode xarray-decode)

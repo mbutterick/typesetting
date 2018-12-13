@@ -7,7 +7,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 |#
 
-(define (xbitfield-decode xb [port-arg (current-input-port)] #:parent [parent #f])
+(define/post-decode (xbitfield-decode xb [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     (define flag-hash (mhasheq))
@@ -17,7 +17,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
       (hash-set! flag-hash flag (bitwise-bit-set? val i)))
     flag-hash))
 
-(define (xbitfield-encode xb flag-hash [port-arg (current-output-port)] #:parent [parent #f])
+(define/pre-encode (xbitfield-encode xb flag-hash [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
     (define bit-int (for/sum ([(flag i) (in-indexed (xbitfield-flags xb))]
@@ -29,7 +29,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 (define (xbitfield-size xb [val #f] #:parent [parent #f])
   (size (xbitfield-type xb)))
 
-(struct xbitfield (type flags) #:transparent
+(struct xbitfield xbase (type flags) #:transparent
   #:methods gen:xenomorphic
   [(define decode xbitfield-decode)
    (define encode xbitfield-encode)
