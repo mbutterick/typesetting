@@ -8,6 +8,7 @@
      "redo/bitfield.rkt"
      "redo/buffer.rkt"
      "redo/enum.rkt"
+     "redo/helper.rkt"
      "redo/lazy-array.rkt"
      "redo/number.rkt"
      "redo/optional.rkt"

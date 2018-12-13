@@ -41,7 +41,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
              (set! val (decode (xpointer-type xp) #:parent parent))
              (pos port orig-pos)
              val]))
-        (if (lazy xp)
+        (if (pointer-lazy? xp)
             (lazy-thunk decode-value)
             (decode-value))]
        [else ptr])])))
@@ -102,7 +102,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define (pointer-style xp) (or (dict-ref (xpointer-options xp) 'type #f) 'local))
 (define (allow-null xp) (or (dict-ref (xpointer-options xp) 'allowNull #f) #t)) 
 (define (null-value xp) (or (dict-ref (xpointer-options xp) 'nullValue #f) 0))
-(define (lazy xp) (dict-ref (xpointer-options xp) 'lazy #f))
+(define (pointer-lazy? xp) (dict-ref (xpointer-options xp) 'lazy #f))
 (define (relative-getter-or-0 xp) (or (dict-ref (xpointer-options xp) 'relativeTo #f) (λ (parent) 0))) ; changed this to a simple lambda
 
 ;; A pointer whose type is determined at decode time
