@@ -26,9 +26,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 (define (xbuffer-size xb [val #f] #:parent [parent #f])
   (when val (unless (bytes? val)
               (raise-argument-error 'xbuffer-size "bytes" val)))
-  (if (bytes? val)
-      (bytes-length val)
-      (resolve-length (xbuffer-len xb) val #:parent parent)))
+  (finalize-size
+   (if (bytes? val)
+       (bytes-length val)
+       (resolve-length (xbuffer-len xb) val #:parent parent))))
 
 (struct xbuffer (len) #:transparent
   #:methods gen:xenomorphic

@@ -62,15 +62,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 (define (xarray-size xa [val #f] #:parent [parent #f])
   (when val (unless (sequence? val)
               (raise-argument-error 'xarray-size "sequence" val)))
-  (cond
-    [val (let-values ([(parent len-size) (if (xint? (xarray-base-len xa))
-                                             (values (mhasheq 'parent parent) (size (xarray-base-len xa)))
-                                             (values parent 0))])
-           (+ len-size (for/sum ([item val])
-                         (size (xarray-base-type xa) item #:parent parent))))]
-    [else (let ([item-count (resolve-length (xarray-base-len xa) #f #:parent parent)]
-                [item-size (size (xarray-base-type xa) #f #:parent parent)])
-            (* item-size item-count))]))
+  (finalize-size
+   (cond
+     [val (define-values (new-parent len-size) (if (xint? (xarray-base-len xa))
+                                                   (values (mhasheq 'parent parent) (size (xarray-base-len xa)))
+                                                   (values parent 0)))
+          (define items-size (for/sum ([item val])
+                               (size (xarray-base-type xa) item #:parent new-parent)))
+          (+ items-size len-size)]
+     [else (define item-count (resolve-length (xarray-base-len xa) #f #:parent parent))
+           (define item-size (size (xarray-base-type xa) #f #:parent parent))
+           (* item-size item-count)])))
 
 (struct xarray-base (type len) #:transparent)
 (struct xarray xarray-base (length-type) #:transparent

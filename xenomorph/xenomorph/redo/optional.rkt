@@ -16,20 +16,20 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
 (define (xoptional-decode xo [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
-  (when (resolve-condition xo parent)
-    (decode (xoptional-type xo) #:parent parent))))
+    (when (resolve-condition xo parent)
+      (decode (xoptional-type xo) #:parent parent))))
 
 (define (xoptional-encode xo val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
-  (when (resolve-condition xo parent)
-    (encode (xoptional-type xo) val #:parent parent))
-  (unless port-arg (get-output-bytes port))))
+    (when (resolve-condition xo parent)
+      (encode (xoptional-type xo) val #:parent parent))
+    (unless port-arg (get-output-bytes port))))
 
 (define (xoptional-size xo [val #f] #:parent [parent #f])
-  (if (resolve-condition xo parent)
-      (size (xoptional-type xo) val #:parent parent)
-      0))
+  (finalize-size
+   (when (resolve-condition xo parent)
+     (size (xoptional-type xo) val #:parent parent))))
 
 (struct xoptional (type condition) #:transparent
   #:methods gen:xenomorphic

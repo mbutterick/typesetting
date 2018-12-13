@@ -69,10 +69,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define parent (mhasheq 'parent parent-arg
                        'val val
                        'pointerSize 0))
-  (+ (for/sum ([(key type) (d:in-dict (xstruct-fields xs))]
+  (define fields-size (for/sum ([(key type) (d:in-dict (xstruct-fields xs))]
                #:when (xenomorphic? type))
-       (size type (and val (d:dict-ref val key)) #:parent parent))
-     (if include-pointers (d:dict-ref parent 'pointerSize) 0)))
+       (size type (and val (d:dict-ref val key)) #:parent parent)))
+  (define pointers-size (if include-pointers (d:dict-ref parent 'pointerSize) 0))
+  (finalize-size (+ fields-size pointers-size)))
 
 (define (xstruct-encode xs val-arg [port-arg (current-output-port)] #:parent [parent-arg #f])
   (unless (d:dict? val-arg)

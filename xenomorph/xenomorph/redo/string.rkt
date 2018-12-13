@@ -42,42 +42,44 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (define (xstring-decode xs [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
-  (let ([len (or (resolve-length (xstring-len xs) #:parent parent) (count-nonzero-chars port))]
-        [encoding (if (procedure? (xstring-encoding xs))
-                      (or ((xstring-encoding xs) parent) 'ascii)
-                      (xstring-encoding xs))]
-        [adjustment (if (and (not (xstring-len xs)) (bytes-left-in-port? port)) 1 0)])
-    (define string (read-encoded-string len encoding))
-    (pos port (+ (pos port) adjustment))
-    string)))
+    (let ([len (or (resolve-length (xstring-len xs) #:parent parent) (count-nonzero-chars port))]
+          [encoding (if (procedure? (xstring-encoding xs))
+                        (or ((xstring-encoding xs) parent) 'ascii)
+                        (xstring-encoding xs))]
+          [adjustment (if (and (not (xstring-len xs)) (bytes-left-in-port? port)) 1 0)])
+      (define string (read-encoded-string len encoding))
+      (pos port (+ (pos port) adjustment))
+      string)))
 
 (define (xstring-encode xs val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
-  (let* ([val (format "~a" val)]
-         [encoding (if (procedure? (xstring-encoding xs))
-                       (or ((xstring-encoding xs) (and parent (dict-ref parent val)) 'ascii))
-                       (xstring-encoding xs))])
-    (define encoded-length (byte-length val encoding))
-    (when (and (exact-nonnegative-integer? (xstring-len xs)) (> encoded-length (xstring-len xs)))
-      (raise-argument-error 'xstring-encode (format "string no longer than ~a" (xstring-len xs)) val)) 
-    (when (xint? (xstring-len xs))
-      (encode (xstring-len xs) encoded-length))
-    (write-encoded-string val encoding)
-    (when (not (xstring-len xs)) (write-byte #x00)) ; null terminated when no len
-    (unless port-arg (get-output-bytes port))))) 
+    (let* ([val (format "~a" val)]
+           [encoding (if (procedure? (xstring-encoding xs))
+                         (or ((xstring-encoding xs) (and parent (dict-ref parent val)) 'ascii))
+                         (xstring-encoding xs))])
+      (define encoded-length (byte-length val encoding))
+      (when (and (exact-nonnegative-integer? (xstring-len xs)) (> encoded-length (xstring-len xs)))
+        (raise-argument-error 'xstring-encode (format "string no longer than ~a" (xstring-len xs)) val)) 
+      (when (xint? (xstring-len xs))
+        (encode (xstring-len xs) encoded-length))
+      (write-encoded-string val encoding)
+      (when (not (xstring-len xs)) (write-byte #x00)) ; null terminated when no len
+      (unless port-arg (get-output-bytes port))))) 
 
 (define (xstring-size xs [val #f] #:parent [parent #f])
-  (if (not val)
-      (resolve-length (xstring-len xs) #f #:parent parent)
-      (let* ([encoding (if (procedure? (xstring-encoding xs))
-                           (or ((xstring-encoding xs) (and parent (dict-ref parent val)) 'ascii))
-                           (xstring-encoding xs))]
-             [encoding (if (eq? encoding 'utf16be) 'utf16le encoding)])
-        (+ (byte-length val encoding) (cond
-                                        [(not (xstring-len xs)) 1]
-                                        [(xint? (xstring-len xs)) (size (xstring-len xs))]
-                                        [else 0])))))
+  (finalize-size
+   (cond
+     [val (define encoding (if (procedure? (xstring-encoding xs))
+                               (or ((xstring-encoding xs) (and parent (dict-ref parent val)) 'ascii))
+                               (xstring-encoding xs)))
+          (define string-size (byte-length val (if (eq? encoding 'utf16be) 'utf16le encoding)))
+          (define strlen-size (cond
+                                [(not (xstring-len xs)) 1]
+                                [(xint? (xstring-len xs)) (size (xstring-len xs))]
+                                [else 0]))
+          (+ string-size strlen-size)]
+     [else (resolve-length (xstring-len xs) #f #:parent parent)])))
 
 (struct xstring (len encoding) #:transparent
   #:methods gen:xenomorphic

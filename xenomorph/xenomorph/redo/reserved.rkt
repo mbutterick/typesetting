@@ -18,7 +18,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
   (unless port-arg (get-output-bytes port)))
 
 (define (xreserved-size xo [val #f] #:parent [parent #f])
-  (* (size (xreserved-type xo)) (resolve-length (xreserved-count xo) #f #:parent parent)))
+  (define item-size (size (xreserved-type xo)))
+  (define count (resolve-length (xreserved-count xo) #f #:parent parent))
+  (finalize-size (* item-size count)))
 
 (struct xreserved (type count) #:transparent
   #:methods gen:xenomorphic

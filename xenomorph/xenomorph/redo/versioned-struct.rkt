@@ -51,7 +51,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (for/sum ([(key type) (in-dict fields)])
         (size type (and val (dict-ref val key)) #:parent parent))))
   (define pointer-size (if include-pointers (dict-ref parent 'pointerSize) 0))
-  (+ version-size header-size fields-size pointer-size))
+  (finalize-size (+ version-size header-size fields-size pointer-size)))
 
 (define (xversioned-struct-encode xvs val-arg [port-arg (current-output-port)] #:parent [parent-arg #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
