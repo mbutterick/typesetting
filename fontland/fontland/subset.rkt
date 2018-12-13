@@ -11,7 +11,8 @@
          "struct.rkt"
          fontland/glyph
          fontland/ttf-glyph
-         xenomorph)
+         xenomorph/redo
+         racket/dict)
 
 (provide subset +subset ttf-subset +ttf-subset subset-add-glyph! encode-to-port create-subset)
 
@@ -150,6 +151,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
         (error 'encode (format "missing value for ~a" k)))
       (make-hasheq kvs)))
   
-  (send Directory encode port (mhash 'tables new-tables))
+  (encode Directory port (mhash 'tables new-tables))
   (void))
 

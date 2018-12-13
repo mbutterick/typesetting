@@ -1,17 +1,14 @@
 #lang racket/base
 (require sugar/unstable/class
-         "../helper.rkt")
-
-(require xenomorph)
+         "../helper.rkt"
+         xenomorph/redo)
 (provide (all-defined-out))
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/glyf.js
 |#
 
-(define-subclass Struct (Rglyf))
-
-(define glyf (+Array (+BufferT)))
+(define glyf (+xarray #:type (+xbuffer)))
 
 (test-module
  (require sugar/unstable/js

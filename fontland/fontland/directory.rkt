@@ -1,6 +1,7 @@
 #lang racket/base
-(require xenomorph
+(require xenomorph/redo
          "tables.rkt"
+         racket/dict
          sugar/unstable/dict
          racket/string
          sugar/unstable/class
@@ -13,11 +14,13 @@
 https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 |#
 
-(define TableEntry (+Struct
-                    (dictify 'tag (+Symbol 4)
-                             'checkSum uint32be
-                             'offset (+Pointer uint32be 'void (mhash 'type 'global))
-                             'length uint32be)))
+(define table-entry (+xstruct
+                    'tag (+xsymbol #:length 4)
+                    'checkSum uint32be
+                    'offset (+xpointer #:offset-type uint32be
+                                       #:type 'void
+                                       #:style 'global)
+                    'length uint32be))
 
 ;; for stupid tags like 'cvt '
 (define (symbol-replace sym this that)
@@ -25,45 +28,43 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define (escape-tag tag) (symbol-replace tag " " "_"))
 (define (unescape-tag tag) (symbol-replace tag "_" " "))
 
-(define-subclass Struct (RDirectory)
-  (define/augride (post-decode this-res stream ctx)
-    (define new-tables-val (mhash))
-    (for ([table (in-list (· this-res tables))])
-         (hash-set! new-tables-val (escape-tag (· table tag)) table))
-    (dict-set! this-res 'tables new-tables-val)
-    this-res)
+(define (directory-post-decode this-res)
+  (define new-tables-val (mhash))
+  (for ([table (in-list (· this-res tables))])
+    (hash-set! new-tables-val (escape-tag (· table tag)) table))
+  (dict-set! this-res 'tables new-tables-val)
+  this-res)
 
-  (define/augride (pre-encode this-val port)
-    (define tables (for/list ([(tag table) (in-hash (· this-val tables))])
-                             (define table-codec (hash-ref table-codecs tag))
-                             (mhash 'tag (unescape-tag tag)
-                                    'checkSum 0
-                                    'offset (+VoidPointer table-codec table)
-                                    'length (send table-codec size table))))
+(define (directory-pre-encode this-val)
+  (define tables (for/list ([(tag table) (in-hash (· this-val tables))])
+                   (define table-codec (hash-ref table-codecs tag))
+                   (mhash 'tag (unescape-tag tag)
+                          'checkSum 0
+                          'offset (+xvoid-pointer table-codec table)
+                          'length (send table-codec size table))))
+  (define numTables (length tables))
+  (define searchRange (* (floor (log numTables 2)) 16))
+  (hash-set*! this-val
+              'tag 'true
+              'numTables numTables
+              'tables tables
+              'searchRange searchRange
+              'entrySelector (floor (/ searchRange (log 2)))
+              'rangeShift (- (* numTables 16) searchRange))
+  this-val)
 
-    (define numTables (length tables))
-    (define searchRange (* (floor (log numTables 2)) 16))
-    
-    (hash-set*! this-val
-                'tag 'true
-                'numTables numTables
-                'tables tables
-                'searchRange searchRange
-                'entrySelector (floor (/ searchRange (log 2)))
-                'rangeShift (- (* numTables 16) searchRange))
+(define Directory (+xstruct 'tag (+xsymbol #:length 4)
+                            'numTables uint16be
+                            'searchRange uint16be
+                            'entrySelector uint16be
+                            'rangeShift uint16be
+                            'tables (+xarray #:type table-entry #:length 'numTables)))
 
-    this-val))
-
-(define Directory (+RDirectory (dictify 'tag (+Symbol 4)
-                                        'numTables uint16be
-                                        'searchRange uint16be
-                                        'entrySelector uint16be
-                                        'rangeShift uint16be
-                                        'tables (+Array TableEntry 'numTables))))
-                            
+(set-pre-encode! Directory directory-pre-encode)
+(set-post-decode! Directory directory-post-decode)
 
 (define (directory-decode ip [options (mhash)])
-  (send Directory decode ip))
+  (decode Directory ip))
 
 (define (file-directory-decode ps)
   (directory-decode (open-input-file ps)))

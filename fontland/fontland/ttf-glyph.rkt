@@ -3,11 +3,12 @@
          racket/match
          racket/list
          racket/class
+         racket/dict
          "glyph.rkt"
          "struct.rkt"
          sugar/unstable/dict
          sugar/unstable/js
-         xenomorph
+         xenomorph/redo
          racket/struct)
 (provide (all-defined-out))
 
@@ -18,12 +19,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 
 
 ;; The header for both simple and composite glyphs
-(define GlyfHeader (+Struct
-                    (dictify 'numberOfContours int16be ;; if negative, this is a composite glyph
+(define GlyfHeader (+xstruct 'numberOfContours int16be ;; if negative, this is a composite glyph
                              'xMin int16be
                              'yMin int16be
                              'xMax int16be
-                             'yMax int16be)))
+                             'yMax int16be))
 
 ;; Flags for simple glyphs
 (define-syntax (define-flag-series stx)
@@ -122,8 +122,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 
   ;; this is a simple glyph
   (dict-set! glyph-data 'points empty)
-  (define endpts-of-contours (decode (+Array uint16be (· glyph-data numberOfContours)) port))
-  (dict-set! glyph-data 'instructions (decode (+Array uint8be uint16be) port))
+  (define endpts-of-contours (decode (+xarray #:type uint16be #:length (· glyph-data numberOfContours)) port))
+  (dict-set! glyph-data 'instructions (decode (+xarray #:type uint8be #:length uint16be) port))
   (define num-coords (add1 (last endpts-of-contours)))
 
   (define flags

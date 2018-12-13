@@ -8,8 +8,8 @@
 (define (ft-face this)
   (or (force (ttf-font-ft-face this)) (error 'ft-face-not-available)))
 
-(define (directory this)
-  (or (force (ttf-font-directory directory))  (error 'directory-not-available)))
+(define (font-directory this)
+  (or (force (ttf-font-directory this))  (error 'directory-not-available)))
 
 (define (hb-font this)
   (or (force (ttf-font-hb-font this)) (error 'hb-font-not-available)))

@@ -1,5 +1,5 @@
 #lang racket/base
-(require xenomorph
+(require xenomorph/redo
          sugar/unstable/class
          sugar/unstable/dict
          sugar/unstable/js
@@ -11,10 +11,7 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
 |#
 
-
-(define-subclass VersionedStruct (Rpost))
-
-(define post (+Rpost
+(define post (+xversioned-struct
                fixed32be
                (dictify
                 'header (dictify 'italicAngle        fixed32be ;; Italic angle in counter-clockwise degrees from the vertical.
@@ -28,16 +25,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
                           
                 1 null
                 2 (dictify 'numberOfGlyphs uint16be
-                                                 'glyphNameIndex (+Array uint16be 'numberOfGlyphs)
-                                                 'names (+Array (+String uint8))
+                                                 'glyphNameIndex (+xarray #:type uint16be #:length 'numberOfGlyphs)
+                                                 'names (+xarray (+xstring #:length uint8))
                                                  )
                 2.5 (dictify 'numberOfGlyphs uint16be
-                                                   'offsets (+Array uint8))
+                                                   'offsets (+xarray #:type uint8))
                 3 null
-                4 (dictify 'map (+Array uint32be (λ (t) (· t parent maxp numGlyphs)))))))
+                4 (dictify 'map (+xarray #:type uint32be #:length (λ (t) (· t parent maxp numGlyphs)))))))
 
-(test-module
- (require racket/class)
+(module+ test
+ (require rackunit racket/serialize racket/class)
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
  (define offset (· dir tables post offset))
@@ -46,8 +43,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
  (check-equal? len 514)
  (define ds (open-input-bytes (peek-bytes len offset ip)))
  (define version (decode fixed32be ds)) ; version = 2
- (send post force-version! version)
+ #|
+(send post force-version! version)
  (define table-data (decode post ds))
  (check-equal? (· table-data underlineThickness) 58)
  (check-equal? (· table-data underlinePosition) -178)
- (check-equal? (· table-data names) '("periodcentered" "macron")))
+ (check-equal? (· table-data names) '("periodcentered" "macron"))
+|#
+  )

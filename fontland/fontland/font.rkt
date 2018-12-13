@@ -8,7 +8,7 @@
          "db.rkt"
          "struct.rkt"
          "table-stream.rkt"
-         xenomorph
+         xenomorph/redo
          racket/match
          sugar/unstable/dict
          sugar/unstable/js
@@ -95,10 +95,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (struct hb-position (xad yad xoff yoff etc) #:transparent)
 (struct hb-layout (hb-gids hb-clusters hb-positions) #:transparent)
 
-(define hb-output (+Struct (dictify
-                            'hb-gids (+Array uint16 uint16)
-                            'hb-clusters (+Array (+Array uint16 uint16) uint16)
-                            'hb-positions (+Array (+Array uint16 5) uint16))))
+(define hb-output (+xstruct 'hb-gids (+xarray #:type uint16 #:length uint16)
+                            'hb-clusters (+xarray #:type (+xarray #:type uint16 #:length uint16) #:length uint16)
+                            'hb-positions (+xarray #:type (+xarray #:type uint16 #:length 5) #:length uint16)))
 
 (define (hb-layout->glyphrun font hbr)
   (match hbr
@@ -125,10 +124,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define layout-cache (make-hasheqv))
 
-(define hb-input (+Struct (dictify
-                           'font-crc uint32
-                           'codepoints (+Array uint16)
-                           'userFeatures (+Array (+String uint8)))))
+(define hb-input (+xstruct 'font-crc uint32
+                           'codepoints (+xarray #:type uint16)
+                           'userFeatures (+xarray #:type (+xstring #:length uint8))))
 
 (define (layout-cache-key font-crc codepoints user-features . _)
   (crc32c-bytes (encode hb-input (dictify 
@@ -231,12 +229,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
        (font-format port)))
    (error 'create-font "unknown font format")))
 
-(test-module
- (check-equal? (measure-string f "f" (font-units-per-em f)) 321.0)
- (check-true (has-table? f #"cmap"))
- (check-exn exn:fail:contract? (λ () (get-table f 'nonexistent-table-tag)))
- (check-true
-  (let ([h (layout fira "Rifle" #:test #t)])
-    (and (equal? (hash-ref h 'hb-gids) '(227 480 732 412))
-         (equal? (hash-ref h 'hb-clusters) '((82) (105) (102 108) (101)))
-         (equal? (hash-ref h 'hb-positions) '((601 0 0 0 0) (279 0 0 0 0) (580 0 0 0 0) (547 0 0 0 0)))))))
+(module+ test
+  (require rackunit racket/dict)
+  (check-equal? (measure-string f "f" (font-units-per-em f)) 321.0)
+  (check-true (has-table? f #"cmap"))
+  (check-exn exn:fail:contract? (λ () (get-table f 'nonexistent-table-tag)))
+  (check-true
+   (let ([h (layout fira "Rifle" #:test #t)])
+     (and (equal? (dict-ref h 'hb-gids) '(227 480 732 412))
+          (equal? (dict-ref h 'hb-clusters) '((82) (105) (102 108) (101)))
+          (equal? (dict-ref h 'hb-positions) '((601 0 0 0 0) (279 0 0 0 0) (580 0 0 0 0) (547 0 0 0 0)))))))
