@@ -24,6 +24,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
    (check-equal? (decode e) "foo")))
 
 (test-case
+ "decode should decode with post-decode"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 0))])
+   (set-post-decode! e (λ (val) "foobar"))
+   (check-equal? (decode e) "foobar")
+   (check-equal? (decode e) "foobar")
+   (check-equal? (decode e) "foobar")))
+
+(test-case
  "encode should encode"
  (parameterize ([current-output-port (open-output-bytes)])
    (encode e "bar")
@@ -32,5 +40,16 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
    (check-equal? (dump (current-output-port)) (bytes 1 2 0))))
 
 (test-case
+ "encode should encode with pre-encode"
+ (parameterize ([current-output-port (open-output-bytes)])
+   (set-pre-encode! e (λ (val) "foo"))
+   (encode e "bar")
+   (encode e "baz")
+   (encode e "foo")
+   (check-equal? (dump (current-output-port)) (bytes 0 0 0))))
+
+(test-case
  "should throw on unknown option"
+ (set-pre-encode! e values)
+ (set-post-decode! e values)
  (check-exn exn:fail:contract? (λ () (encode e "unknown" (open-output-bytes)))))

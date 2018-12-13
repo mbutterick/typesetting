@@ -17,6 +17,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
    (check-equal? (pos (current-input-port)) 0)))
 
 (test-case
+ "decode with post-decode"
+ (parameterize ([current-input-port (open-input-bytes (bytes 0))])
+   (define optional (+xoptional uint8 #f))
+   (set-post-decode! optional (λ (val) 42))
+   (check-equal? (decode optional) 42)
+   (check-equal? (pos (current-input-port)) 0)))
+
+(test-case
  "decode should not decode when condition is a function and falsy"
  (parameterize ([current-input-port (open-input-bytes (bytes 0))])
    (define optional (+xoptional uint8 (λ _ #f)))
@@ -70,6 +78,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
    (define optional (+xoptional uint8 #f))
    (encode optional 128)
    (check-equal? (dump (current-output-port)) (bytes))))
+
+(test-case
+ "encode with pre-encode"
+ (parameterize ([current-output-port (open-output-bytes)])
+   (define optional (+xoptional uint8))
+   (set-pre-encode! optional (λ (val) 42))
+   (encode optional 128)
+   (check-equal? (dump (current-output-port)) (bytes 42))))
 
 (test-case
  "encode should not encode when condition is a function and falsy"

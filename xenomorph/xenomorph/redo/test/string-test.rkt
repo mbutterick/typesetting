@@ -16,6 +16,13 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
    (check-equal? (decode (+xstring 7)) "testing")))
 
 (test-case
+ "decode fixed length with post-decode"
+ (parameterize ([current-input-port (open-input-bytes #"testing")])
+   (define xs (+xstring 7))
+   (set-post-decode! xs (λ (val) "ring a ding"))
+   (check-equal? (decode xs) "ring a ding")))
+
+(test-case
  "decode length from parent key"
  (parameterize ([current-input-port (open-input-bytes #"testing")])
    (check-equal? (decode (+xstring 'len) #:parent (mhash 'len 7)) "testing")))
@@ -62,7 +69,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
  "should add size of length field before string"
  (check-equal? (size (+xstring uint8 'utf8) "🍻") 5))
 
-; todo: it 'should work with utf16be encoding', ->
+; todo: it "should work with utf16be encoding"
 
 (test-case
  "size should take null-byte into account"
@@ -77,6 +84,14 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
  (parameterize ([current-output-port (open-output-bytes)])
    (encode (+xstring 7) "testing")
    (check-equal? (dump (current-output-port)) #"testing")))
+
+(test-case
+ "encode using string length and pre-encode"
+ (parameterize ([current-output-port (open-output-bytes)])
+   (define xs (+xstring 7))
+   (set-pre-encode! xs (compose1 list->string reverse string->list))
+   (encode xs "testing")
+   (check-equal? (dump (current-output-port)) #"gnitset")))
 
 (test-case
  "encode length as number before string"

@@ -33,6 +33,20 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
                                             'Kack #f))))
 
 (test-case
+ "bitfield should decode with post-decode"
+ (parameterize ([current-input-port (open-input-bytes (bytes (bitwise-ior JACK MACK PACK NACK QUACK)))])
+   (set-post-decode! bitfield (λ (fh . _) (hash-set! fh 'foo 42) fh))
+   (check-equal? (decode bitfield) (mhasheq 'Quack #t
+                                            'Nack #t
+                                            'Lack #f
+                                            'Oack #f
+                                            'Pack #t
+                                            'Mack #t
+                                            'Jack #t
+                                            'Kack #f
+                                            'foo 42))))
+
+(test-case
  "bitfield should encode"
  (check-equal? (encode bitfield (mhasheq 'Quack #t
                                          'Nack #t
@@ -43,3 +57,20 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
                                          'Jack #t
                                          'Kack #f) #f)
                (bytes (bitwise-ior JACK MACK PACK NACK QUACK))))
+
+(test-case
+ "bitfield should encode with pre-encode"
+ (set-pre-encode! bitfield (λ (fh . _)
+                             (hash-set! fh 'Jack #f)
+                             (hash-set! fh 'Mack #f)
+                             (hash-set! fh 'Pack #f)
+                             fh))
+ (check-equal? (encode bitfield (mhasheq 'Quack #t
+                                         'Nack #t
+                                         'Lack #f
+                                         'Oack #f
+                                         'Pack #t
+                                         'Mack #t
+                                         'Jack #t
+                                         'Kack #f) #f)
+               (bytes (bitwise-ior NACK QUACK))))

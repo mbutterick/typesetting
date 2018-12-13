@@ -18,6 +18,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
    (check-equal? (decode buf) (bytes #x1f #xb6))))
 
 (test-case
+ "buffer should decode with post-decode"
+ (parameterize ([current-input-port (open-input-bytes (bytes #xab #xff #x1f #xb6))])
+   (define buf (+xbuffer 2))
+   (set-post-decode! buf (λ (bs) (bytes 1 2)))
+   (check-equal? (decode buf) (bytes 1 2))
+   (check-equal? (decode buf) (bytes 1 2))))
+
+(test-case
  "buffer should decode with parent key length"
  (parameterize ([current-input-port (open-input-bytes (bytes #xab #xff #x1f #xb6))])
    (define buf (+xbuffer 'len))
@@ -38,6 +46,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
    (check-equal? (bytes-append
                   (encode buf (bytes #xab #xff) #f)
                   (encode buf (bytes #x1f #xb6) #f)) (bytes #xab #xff #x1f #xb6))))
+
+(test-case
+ "encode should encode with pre-encode"
+ (let ([buf (+xbuffer 2)])
+   (set-pre-encode! buf (λ (bs) (bytes 1 2)))
+   (check-equal? (bytes-append
+                  (encode buf (bytes #xab #xff) #f)
+                  (encode buf (bytes #x1f #xb6) #f)) (bytes 1 2 1 2))))
 
 (test-case
  "encode should encode length before buffer"

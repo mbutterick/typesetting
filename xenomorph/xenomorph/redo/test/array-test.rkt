@@ -17,6 +17,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
    (check-equal? (decode (+xarray uint8 4)) '(1 2 3 4))))
 
 (test-case 
+ "decode with post-decode"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (define xa (+xarray uint8 4))
+   (set-post-decode! xa (λ (val . _) (map (λ (x) (* 2 x)) val)))
+   (check-equal? (decode xa) '(2 4 6 8))))
+
+(test-case 
  "decode fixed number of bytes"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (check-equal? (decode (+xarray uint16be 4 'bytes)) '(258 772))))
@@ -81,6 +88,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "encode using array length"
  (check-equal? (encode (+xarray uint8 10) '(1 2 3 4) #f) (bytes 1 2 3 4)))
+
+(test-case 
+ "encode with pre-encode"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (define xa (+xarray uint8 4))
+   (set-pre-encode! xa (λ (val . _) (map (λ (x) (* 2 x)) val)))
+   (check-equal? (encode xa '(1 2 3 4) #f) (bytes 2 4 6 8))))
 
 (test-case 
  "encode length as number before array"

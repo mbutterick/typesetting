@@ -103,7 +103,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                      1 (dictify 'name (+xstring uint8 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
-   (set-xversioned-struct-post-decode! vstruct (λ (o stream parent) (dict-set! o 'processed "true") o))
+   (set-post-decode! vstruct (λ (val) (dict-set! val 'processed "true") val))
    (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
      (check-equal? (dump (decode vstruct))
                    '((processed . "true") (version . 0) (age . 21) (name . "roxyb"))))))
@@ -263,8 +263,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8
                                                 'gender uint8)))]
        [stream (open-output-bytes)])
-   (set-xversioned-struct-pre-encode! vstruct
-                                      (λ (val port) (dict-set! val 'version (if (dict-ref val 'gender #f) 1 0)) val))
+   (set-pre-encode! vstruct (λ (val) (dict-set! val 'version (if (dict-ref val 'gender #f) 1 0)) val))
    (encode vstruct (mhasheq 'name "roxyb"
                             'age 21
                             'version 0) stream)

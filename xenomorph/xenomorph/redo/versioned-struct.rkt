@@ -9,7 +9,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
-(define (xversioned-struct-decode xvs [port-arg (current-input-port)] #:parent [parent #f] [length 0])
+(define/post-decode (xversioned-struct-decode xvs [port-arg (current-input-port)] #:parent [parent #f] [length 0])
   (define port (->input-port port-arg))
   (define res (_setup port parent length))
 
@@ -28,13 +28,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
   (define fields (or (dict-ref (xversioned-struct-versions xvs) (dict-ref res 'version #f) #f)
                      (raise-argument-error 'xversioned-struct-decode "valid version key" (cons version (xversioned-struct-versions xvs)))))
     
-  ((xversioned-struct-post-decode xvs)
-   (cond
+  (cond
      [(xversioned-struct? fields) (decode fields port #:parent parent)]
      [else (_parse-fields port res fields)
-           res]) port parent))
+           res]))
 
-(define (xversioned-struct-size xvs [val #f] #:parent [parent-arg #f] [include-pointers #t])
+(define/finalize-size (xversioned-struct-size xvs [val #f] #:parent [parent-arg #f] [include-pointers #t])
   (unless val
     (raise-argument-error 'xversioned-struct-size "value" val))
   (define parent (mhash 'parent parent-arg 'val val 'pointerSize 0))
@@ -51,13 +50,11 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (for/sum ([(key type) (in-dict fields)])
         (size type (and val (dict-ref val key)) #:parent parent))))
   (define pointer-size (if include-pointers (dict-ref parent 'pointerSize) 0))
-  (finalize-size (+ version-size header-size fields-size pointer-size)))
+  (+ version-size header-size fields-size pointer-size))
 
-(define (xversioned-struct-encode xvs val-arg [port-arg (current-output-port)] #:parent [parent-arg #f])
+(define/pre-encode (xversioned-struct-encode xvs val [port-arg (current-output-port)] #:parent [parent-arg #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
-  (define val ((xversioned-struct-pre-encode xvs) val-arg port))
-
   (unless (dict? val)
     (raise-argument-error 'xversioned-struct-encode "dict" val))
 
@@ -88,7 +85,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
   
   (unless port-arg (get-output-bytes port))))
 
-(struct xversioned-struct structish (type versions version-getter version-setter pre-encode post-decode) #:transparent #:mutable
+(struct xversioned-struct structish (type versions version-getter version-setter) #:transparent #:mutable
   #:methods gen:xenomorphic
   [(define decode xversioned-struct-decode)
    (define encode xversioned-struct-encode)
@@ -106,7 +103,5 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
   (define version-setter (cond
                            [(procedure? type) type]
                            [(symbol? type) (λ (parent version) (dict-set! parent type version))]))
-  (define (no-op-pre-encode val port) val)
-  (define (no-op-post-decode xvs port parent) xvs)
-  (xversioned-struct type versions version-getter version-setter no-op-pre-encode no-op-post-decode))
+  (xversioned-struct type versions version-getter version-setter))
 

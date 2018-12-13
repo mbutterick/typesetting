@@ -23,12 +23,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (decode (+xpointer uint8 uint8) #:parent (mhash '_startOffset 0)) 53)))
 
 (test-case
- "decode 'should support immediate offsets"
+ "decode should support immediate offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
    (check-equal? (decode (+xpointer uint8 uint8 (mhash 'type 'immediate))) 53)))
 
 (test-case
- "decode 'should support offsets relative to the parent"
+ "decode should support offsets relative to the parent"
  (parameterize ([current-input-port (open-input-bytes (bytes 0 0 1 53))])
    (pos (current-input-port) 2)
    (check-equal? (decode (+xpointer uint8 uint8 (mhash 'type 'parent))

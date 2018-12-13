@@ -18,6 +18,19 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
    (check-equal? (dump port) (bytes #xab #xff))))
 
 (test-case
+ "uint8: decode with post-decode, size, encode with pre-encode"
+ (parameterize ([current-input-port (open-input-bytes (bytes #xab #xff))])
+   (set-post-decode! uint8 (λ (b) #xdeadbeef))
+   (check-equal? (decode uint8) #xdeadbeef)
+   (check-equal? (decode uint8) #xdeadbeef))
+ (check-equal? (size uint8) 1)
+ (let ([port (open-output-bytes)])
+   (set-pre-encode! uint8 (λ (b) #xcc))
+   (encode uint8 #xab port)
+   (encode uint8 #xff port)
+   (check-equal? (dump port) (bytes #xcc #xcc))))
+
+(test-case
  "uint16 is the same endianness as the platform"
  (check-equal? (decode uint16 (bytes 0 1))
                (decode (if (system-big-endian?) uint16be uint16le) (bytes 0 1))))

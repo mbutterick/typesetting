@@ -25,7 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
    (define struct (+xstruct (dictify 'name (+xstring uint8)
                                      'age uint8)))
-   (set-xstruct-post-decode! struct (λ (o . _) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o))
+   (set-post-decode! struct (λ (o . _) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o))
    (check-equal? (dump (decode struct))
                  '((name . "roxyb") (canDrink . #t) (age . 32)))))
 
@@ -75,7 +75,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
    (define struct (+xstruct (dictify 'nameLength uint8
                                      'name (+xstring 'nameLength)
                                      'age uint8)))
-   (set-xstruct-pre-encode! struct (λ (val port) (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val))
+   (set-pre-encode! struct (λ (val) (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val))
    (encode struct (mhasheq 'name "roxyb" 'age 21))
    (check-equal? (dump (current-output-port)) #"\x05roxyb\x15")))
 
