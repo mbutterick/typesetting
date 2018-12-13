@@ -36,5 +36,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
    (define encode xbuffer-encode)
    (define size xbuffer-size)])
 
-(define (+xbuffer [len #xffff])
+(define (+xbuffer [len-arg #f]
+                  #:length [len-kwarg #f])
+  (define len (or len-arg len-kwarg #xffff))
+  (unless (length-resolvable? len)
+    (raise-argument-error '+xbuffer "resolvable length" len))
   (xbuffer len))

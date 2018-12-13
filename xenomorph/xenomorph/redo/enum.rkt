@@ -31,5 +31,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
    (define encode xenum-encode)
    (define size xenum-size)])
 
-(define (+xenum type [options null])
-  (xenum type options))
+(define (+xenum [type-arg #f] [values-arg #f]
+                #:type [type-kwarg #f]
+                #:values [values-kwarg #f])
+  (define type (or type-arg type-kwarg))
+  (unless (xenomorphic? type)
+    (raise-argument-error '+xenum "xenomorphic type" type))
+  (define values (or values-arg values-kwarg))
+  (unless (list? values)
+    (raise-argument-error '+xenum "list of values" values))
+  (xenum type values))

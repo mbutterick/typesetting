@@ -10,7 +10,16 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 |#
 
-(define e (+xenum uint8 '("foo" "bar" "baz")))
+(define e (+xenum #:type uint8
+                  #:values '("foo" "bar" "baz")))
+
+(test-case
+ "should error with invalid type"
+ (check-exn exn:fail:contract? (λ () (+xenum 42))))
+
+(test-case
+ "should error with invalid values"
+ (check-exn exn:fail:contract? (λ () (+xenum #:values 42))))
 
 (test-case
  "should have the right size"

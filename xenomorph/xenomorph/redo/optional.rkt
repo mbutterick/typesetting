@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require "helper.rkt")
 (provide (all-defined-out))
 
@@ -28,7 +28,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
 
 (define/finalize-size (xoptional-size xo [val #f] #:parent [parent #f])
   (when (resolve-condition xo parent)
-     (size (xoptional-type xo) val #:parent parent)))
+    (size (xoptional-type xo) val #:parent parent)))
 
 (struct xoptional xbase (type condition) #:transparent
   #:methods gen:xenomorphic
@@ -36,5 +36,24 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
    (define encode xoptional-encode)
    (define size xoptional-size)])
 
-(define (+xoptional type [condition #t])
+#;(define (+xoptional [type-arg #f] [cond-arg #f]
+                      #:type [type-kwarg #f]
+                      #:condition [cond-kwarg #f])
+    (define type (or type-arg type-kwarg))
+    (unless (xenomorphic? type)
+      (raise-argument-error '+xoptional"xenomorphic type" type))
+    (define condition (or cond-arg cond-kwarg))
+    (xoptional type condition))
+
+(define no-val (gensym))
+(define (+xoptional [type-arg #f] [cond-arg no-val]
+                    #:type [type-kwarg #f]
+                    #:condition [cond-kwarg no-val])
+  (define type (or type-arg type-kwarg))
+  (unless (xenomorphic? type)
+    (raise-argument-error '+xoptional"xenomorphic type" type))
+  (define condition (cond
+                      [(and (eq? cond-arg no-val) (eq? cond-kwarg no-val)) #true]
+                      [(not (eq? cond-arg no-val)) cond-arg]
+                      [(not (eq? cond-kwarg no-val)) cond-kwarg]))
   (xoptional type condition))
