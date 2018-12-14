@@ -116,7 +116,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (define (+xsymbol [len-arg #f] [enc-arg #f]
                   #:length [len-kwarg #f] #:encoding [enc-kwarg #f])
   (define len (or len-arg len-kwarg))
-  (define encoding (or enc-arg enc-kwarg 'ascii))
+  (define encoding (or enc-arg enc-kwarg 'utf8))
   (xsymbol len encoding))
 
 (module+ test
