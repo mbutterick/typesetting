@@ -1,11 +1,9 @@
-#lang racket/base
-(require racket/class
-         sugar/unstable/class
-         sugar/unstable/case
-         sugar/unstable/dict
-         sugar/unstable/js
-         "private/generic.rkt"
-         "private/helper.rkt")
+#lang debug racket/base
+(require "helper.rkt"
+         "number.rkt"
+         racket/dict
+         racket/promise
+         sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|
@@ -13,95 +11,119 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 |#
 
+(define (find-top-parent parent)
+  (cond
+    [(dict-ref parent 'parent #f) => find-top-parent]
+    [else parent]))
+
+(define/post-decode (xpointer-decode xp [port-arg (current-input-port)] #:parent [parent #f])
+  (define port (->input-port port-arg))
+  (parameterize ([current-input-port port])
+    (define offset (decode (xpointer-offset-type xp) #:parent parent))
+    (cond
+      [(and allow-null (= offset (null-value xp))) #f] ; handle null pointers
+      [else
+       (define relative (+ (case (pointer-style xp)
+                             [(local) (dict-ref parent '_startOffset)]
+                             [(immediate) (- (pos port) (size (xpointer-offset-type xp)))]
+                             [(parent) (dict-ref (dict-ref parent 'parent) '_startOffset)]
+                             [(global) (or (dict-ref (find-top-parent parent) '_startOffset) 0)]
+                             [else (error 'unknown-pointer-style)])
+                           ((relative-getter-or-0 xp) parent)))
+       (define ptr (+ offset relative))
+       (cond
+         [(xpointer-type xp)
+          (define val (void))
+          (define (decode-value)
+            (cond
+              [(not (void? val)) val]
+              [else
+               (define orig-pos (pos port))
+               (pos port ptr)
+               (set! val (decode (xpointer-type xp) #:parent parent))
+               (pos port orig-pos)
+               val]))
+          (if (pointer-lazy? xp)
+              (delay (decode-value))
+              (decode-value))]
+         [else ptr])])))
+
 (define (resolve-void-pointer type val)
   (cond
     [type (values type val)]
-    [(VoidPointer? val) (values (· val type) (· val value))]
+    [(xvoid-pointer? val) (values (xvoid-pointer-type val) (xvoid-pointer-value val))]
     [else (raise-argument-error 'Pointer:size "VoidPointer" val)]))
 
-(define (find-top-ctx ctx)
-  (cond
-    [(· ctx parent) => find-top-ctx]
-    [else ctx]))
-
-(define-subclass xenomorph-base% (Pointer offset-type type-in [options (mhasheq)])
-  (field [type (and (not (eq? type-in 'void)) type-in)])
-  (define pointer-style (or (· options type) 'local))
-  (define allow-null (or (· options allowNull) #t)) 
-  (define null-value (or (· options nullValue) 0))
-  (define lazy (· options lazy))
-  (define relative-getter-or-0 (or (· options relativeTo) (λ (ctx) 0))) ; changed this to a simple lambda
-
-  (define/augment (decode port [ctx #f])
-    (define offset (send offset-type decode port ctx))
-    (cond
-      [(and allow-null (= offset null-value)) #f] ; handle null pointers
-      [else
-       (define relative (+ (caseq pointer-style
-                                  [(local) (· ctx _startOffset)]
-                                  [(immediate) (- (pos port) (send offset-type size))]
-                                  [(parent) (· ctx parent _startOffset)]
-                                  [(global) (or (· (find-top-ctx ctx) _startOffset) 0)]
-                                  [else (error 'unknown-pointer-style)])
-                           (relative-getter-or-0 ctx)))
-       (define ptr (+ offset relative))
-       (cond
-         [type (define val (void))
-               (define (decode-value)
-                 (cond
-                   [(not (void? val)) val]
-                   [else
-                    (define orig-pos (pos port))
-                    (pos port ptr)
-                    (set! val (send type decode port ctx))
-                    (pos port orig-pos)
-                    val]))
-               (if lazy
-                   (LazyThunk decode-value)
-                   (decode-value))]
-         [else ptr])]))
-
-  
-  (define/augment (size [val #f] [ctx #f])
-    (let*-values ([(parent) ctx]
-                  [(ctx) (caseq pointer-style
-                                [(local immediate) ctx]
-                                [(parent) (· ctx parent)]
-                                [(global) (find-top-ctx ctx)]
-                                [else (error 'unknown-pointer-style)])]
-                  [(type val) (resolve-void-pointer type val)])
-      (when (and val ctx)
-        (ref-set! ctx 'pointerSize (and (· ctx pointerSize)
-                                        (+ (· ctx pointerSize) (send type size val parent)))))
-      (send offset-type size)))
-                 
-
-  (define/augment (encode port val [ctx #f])
-    (unless ctx
-      ;; todo: furnish default pointer context? adapt from Struct?
-      (raise-argument-error 'Pointer:encode "valid pointer context" ctx))
+(define/pre-encode (xpointer-encode xp val [port-arg (current-output-port)] #:parent [parent #f])
+  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (unless parent ; todo: furnish default pointer context? adapt from Struct?
+    (raise-argument-error 'xpointer-encode "valid pointer context" parent))
+  (parameterize ([current-output-port port])
     (if (not val)
-        (send offset-type encode port null-value)
-        (let* ([parent ctx]
-               [ctx (caseq pointer-style
-                           [(local immediate) ctx]
-                           [(parent) (· ctx parent)]
-                           [(global) (find-top-ctx ctx)]
-                           [else (error 'unknown-pointer-style)])]
-               [relative (+ (caseq pointer-style
-                                   [(local parent) (· ctx startOffset)]
-                                   [(immediate) (+ (pos port) (send offset-type size val parent))]
-                                   [(global) 0])
-                            (relative-getter-or-0 (· parent val)))])
+        (encode (xpointer-offset-type xp) (null-value xp) port)
+        (let* ([new-parent (case (pointer-style xp)
+                             [(local immediate) parent]
+                             [(parent) (dict-ref parent 'parent)]
+                             [(global) (find-top-parent parent)]
+                             [else (error 'unknown-pointer-style)])]
+               [relative (+ (case (pointer-style xp)
+                              [(local parent) (dict-ref new-parent 'startOffset)]
+                              [(immediate) (+ (pos port) (size (xpointer-offset-type xp) val #:parent parent))]
+                              [(global) 0])
+                            ((relative-getter-or-0 xp) (dict-ref parent 'val #f)))])
+          (encode (xpointer-offset-type xp) (- (dict-ref new-parent 'pointerOffset) relative))
+          (let-values ([(type val) (resolve-void-pointer (xpointer-type xp) val)])
+            (dict-set! new-parent 'pointers (append (dict-ref new-parent 'pointers)
+                                                    (list (mhasheq 'type type
+                                                                   'val val
+                                                                   'parent parent))))
+            (dict-set! new-parent 'pointerOffset (+ (dict-ref new-parent 'pointerOffset) (size type val #:parent  parent)))))))
+  (unless port-arg (get-output-bytes port)))
 
-          (send offset-type encode port (- (· ctx pointerOffset) relative))
-         
-          (let-values ([(type val) (resolve-void-pointer type val)])
-            (ref-set! ctx 'pointers (append (· ctx pointers) (list (mhasheq 'type type
-                                                                            'val val
-                                                                            'parent parent))))
-            (ref-set! ctx 'pointerOffset (+ (· ctx pointerOffset) (send type size val parent))))))))
+(define (xpointer-size xp [val #f] #:parent [parent #f])
+  (let*-values ([(parent) (case (pointer-style xp)
+                            [(local immediate) parent]
+                            [(parent) (dict-ref parent 'parent)]
+                            [(global) (find-top-parent parent)]
+                            [else (error 'unknown-pointer-style)])]
+                [(type val) (resolve-void-pointer (xpointer-type xp) val)])
+    (when (and val parent)
+      (dict-set! parent 'pointerSize (and (dict-ref parent 'pointerSize #f)
+                                          (+ (dict-ref parent 'pointerSize) (size type val #:parent parent)))))
+    (size (xpointer-offset-type xp))))
 
+(struct xpointer xbase (offset-type type options) #:transparent
+  #:methods gen:xenomorphic
+  [(define decode xpointer-decode)
+   (define encode xpointer-encode)
+   (define size xpointer-size)])
+
+(define (+xpointer [offset-arg #f] [type-arg #f]
+                   #:offset-type [offset-kwarg #f]
+                   #:type [type-kwarg #f]
+                   #:style [style 'local]
+                   #:relative-to [relative-to #f]
+                   #:lazy [lazy? #f]
+                   #:allow-null [allow-null? #t]
+                   #:null [null-value 0])
+  (define valid-pointer-styles '(local immediate parent global))
+  (unless (memq style valid-pointer-styles)
+    (raise-argument-error '+xpointer (format "~v" valid-pointer-styles) style))
+  (define options (mhasheq 'style style
+                           'relativeTo relative-to
+                           'lazy lazy?
+                           'allowNull allow-null?
+                           'nullValue null-value))
+  (define offset-type (or offset-arg offset-kwarg uint8))
+  (define type-in (or type-arg type-kwarg uint8))
+  (xpointer offset-type (case type-in [(void) #f][else type-in]) options))
+
+(define (pointer-style xp) (dict-ref (xpointer-options xp) 'style))
+(define (allow-null xp) (dict-ref (xpointer-options xp) 'allowNull)) 
+(define (null-value xp) (dict-ref (xpointer-options xp) 'nullValue))
+(define (pointer-lazy? xp) (dict-ref (xpointer-options xp) 'lazy))
+(define (relative-getter-or-0 xp) (or (dict-ref (xpointer-options xp) 'relativeTo #f) (λ (parent) 0))) ; changed this to a simple lambda
 
 ;; A pointer whose type is determined at decode time
-(define-subclass object% (VoidPointer type value))
+(struct xvoid-pointer (type value) #:transparent)
+(define +xvoid-pointer xvoid-pointer)

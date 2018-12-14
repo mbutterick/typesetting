@@ -1,15 +1,12 @@
-#lang racket/base
-(require racket/list
-         sugar/unstable/class
-         sugar/unstable/dict
-         sugar/unstable/js
-         racket/class
-         "private/helper.rkt"
-         "private/generic.rkt"
-         racket/dict
-         racket/private/generic-methods)
-(provide (all-defined-out) ref* ref*-set! (all-from-out racket/dict))
-(require (prefix-in d: racket/dict))
+#lang debug racket/base
+(require (prefix-in d: racket/dict)
+         racket/promise
+         racket/sequence
+         racket/list
+         "helper.rkt"
+         "number.rkt"
+         sugar/unstable/dict)
+(provide (all-defined-out))
 
 #|
 approximates
@@ -17,145 +14,137 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
 
-(define private-keys '(parent _startOffset _currentOffset _length))
-
 (define (choose-dict d k)
   (if (memq k private-keys)
-      (get-field _pvt d)
-      (get-field _kv d)))
+      (struct-dict-res-_pvt d)
+      (struct-dict-res-_kv d)))
 
-(define dictable<%>
-  (interface* ()
-              ([(generic-property gen:dict)
-                (generic-method-table gen:dict
-                                      (define (dict-set! d k v) (d:dict-set! (choose-dict d k) k v))
-                                      (define (dict-ref d k [thunk #f])
-                                        (define res (d:dict-ref (choose-dict d k) k thunk))
-                                        (if (LazyThunk? res) ((LazyThunk-proc res)) res))
-                                      (define (dict-remove! d k) (d:dict-remove! (choose-dict d k) k))
-                                      ;; public keys only
-                                      (define (dict-keys d) (d:dict-keys (get-field _kv d)))
-                                      (define (dict-iterate-first d) (and (pair? (dict-keys d)) 0))
-                                      (define (dict-iterate-next d i) (and (< (add1 i) (length (dict-keys d))) (add1 i)))
-                                      (define (dict-iterate-key d i) (list-ref (dict-keys d) i))
-                                      (define (dict-iterate-value d i) (dict-ref d (dict-iterate-key d i))))]
-               [(generic-property gen:custom-write)
-                (generic-method-table gen:custom-write
-                                      (define (write-proc o port mode)
-                                        (define proc (case mode
-                                                       [(#t) write]
-                                                       [(#f) display]
-                                                       [else (λ (p port) (print p port mode))]))
-                                        (proc (dump o) port)))])))
+(struct struct-dict-res (_kv _pvt) #:transparent
+  #:methods d:gen:dict
+  [(define (dict-set! d k v) (d:dict-set! (choose-dict d k) k v))
+   (define (dict-ref d k [thunk #f])
+     (define res (d:dict-ref (choose-dict d k) k thunk))
+     (force res))
+   (define (dict-remove! d k) (d:dict-remove! (choose-dict d k) k))
+   ;; public keys only
+   (define (dict-keys d) (d:dict-keys (struct-dict-res-_kv d)))
+   (define (dict-iterate-first d) (and (pair? (dict-keys d)) 0))
+   (define (dict-iterate-next d i) (and (< (add1 i) (length (dict-keys d))) (add1 i)))
+   (define (dict-iterate-key d i) (list-ref (dict-keys d) i))
+   (define (dict-iterate-value d i) (dict-ref d (dict-iterate-key d i)))])
 
-(define-subclass*/interfaces xenomorph-base% (dictable<%>)
-  (StructDictRes)
-  (super-make-object)
-  (field [_kv (mhasheq)]
-         [_pvt (mhasheq)])
-                        
-  (define/override (dump)
-    ;; convert to immutable for display & debug
-    (for/hasheq ([(k v) (in-hash _kv)])
-                                      (values k v)))
+(define (+struct-dict-res [_kv (mhasheq)] [_pvt (mhasheq)])
+  (struct-dict-res _kv _pvt))
 
-  (define/public (to-hash) _kv))
-
-
-(define-subclass xenomorph-base% (Struct [fields (dictify)])
-  (field [[_post-decode post-decode] (λ (val port ctx) val)]
-         [[_pre-encode pre-encode] (λ (val port) val)]) ; store as field so it can be mutated from outside
-  
-  (define/overment (post-decode res . args)
-    (let* ([res (apply _post-decode res args)]
-           [res (inner res post-decode res . args)])
-      (unless (dict? res) (raise-result-error 'Struct:post-decode "dict" res))
-      res))
-  
-  (define/overment (pre-encode res . args)
-    (let* ([res (apply _pre-encode res args)]
-           [res (inner res pre-encode res . args)])
-      (unless (dict? res) (raise-result-error 'Struct:pre-encode "dict" res))
-      res))
-  
-  (unless (or (assocs? fields) (Struct? fields)) ; should be Versioned Struct but whatever
-    (raise-argument-error 'Struct "assocs or Versioned Struct" fields))
-
-  (define/augride (decode stream [parent #f] [len 0])
-    ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
-    (let* ([sdr (_setup stream parent len)] ; returns StructDictRes
-           [sdr (_parse-fields stream sdr fields)])
-      sdr))
-
-  (define/public-final (_setup port parent len)
-    (define sdr (make-object StructDictRes)) ; not mere hash
-    (dict-set*! sdr 'parent parent
+(define (_setup port parent len)
+  (define sdr (+struct-dict-res)) ; not mere hash
+  (d:dict-set*! sdr 'parent parent
                 '_startOffset (pos port)
                 '_currentOffset 0
                 '_length len)
-    sdr)
+  sdr)
 
-  (define/public-final (_parse-fields port sdr fields)
-    (unless (assocs? fields)
-      (raise-argument-error '_parse-fields "assocs" fields))
-    (for/fold ([sdr sdr])
-              ([(key type) (in-dict fields)])
-      (define val (if (procedure? type)
-                      (type sdr)
-                      (send type decode port sdr)))
-      (unless (void? val)
-        (dict-set! sdr key val))
-      (dict-set! sdr '_currentOffset (- (pos port) (· sdr _startOffset)))
-      sdr))
-  
+(define (_parse-fields port sdr fields)
+  (unless (assocs? fields)
+    (raise-argument-error '_parse-fields "assocs" fields))
+  (for/fold ([sdr sdr])
+            ([(key type) (d:in-dict fields)])
+    (define val (if (procedure? type)
+                    (type sdr)
+                    (decode type port #:parent sdr)))
+    (unless (void? val)
+      (d:dict-set! sdr key val))
+    (d:dict-set! sdr '_currentOffset (- (pos port) (d:dict-ref sdr '_startOffset)))
+    sdr))
 
-  (define/augride (size [val #f] [parent #f] [include-pointers #t])
-    (define ctx (mhasheq 'parent parent
-                         'val val
-                         'pointerSize 0))
-    (+ (for/sum ([(key type) (in-dict fields)]
-                 #:when (object? type))
-                (send type size (and val (ref val key)) ctx))
-       (if include-pointers (· ctx pointerSize) 0)))
+(define-syntax-rule (decode/hash . ARGS)
+  (dump (decode . ARGS)))
 
-  (define/augride (encode port val [parent #f])
-    (unless (dict? val)
-      (raise-argument-error 'Struct:encode "dict" val))
+(define (xstruct-decode xs [port-arg (current-input-port)] #:parent [parent #f] [len 0])
+  (define port (->input-port port-arg))
+  (parameterize ([current-input-port port])
+    ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
+    (define res
+      (post-decode xs
+                   (let* ([sdr (_setup port parent len)] ; returns StructDictRes
+                          [sdr (_parse-fields port sdr (xstruct-fields xs))])
+                     sdr)))
+    (unless (d:dict? res)
+      (raise-result-error 'xstruct-decode "dict" res))
+    res))
 
+(define/finalize-size (xstruct-size xs [val #f] #:parent [parent-arg #f] [include-pointers #t])
+  (define parent (mhasheq 'parent parent-arg
+                          'val val
+                          'pointerSize 0))
+  (define fields-size (for/sum ([(key type) (d:in-dict (xstruct-fields xs))]
+                                #:when (xenomorphic? type))
+                        (size type (and val (d:dict-ref val key)) #:parent parent)))
+  (define pointers-size (if include-pointers (d:dict-ref parent 'pointerSize) 0))
+  (+ fields-size pointers-size))
+
+(define (xstruct-encode xs val-arg [port-arg (current-output-port)] #:parent [parent-arg #f])
+  (unless (d:dict? val-arg)
+    (raise-argument-error 'xstruct-encode "dict" val-arg))
+  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (parameterize ([current-output-port port])
     ;; check keys first, since `size` also relies on keys being valid
-    (unless (andmap (λ (key) (memq key (dict-keys val))) (dict-keys fields))
-      (raise-argument-error 'Struct:encode
-                            (format "dict that contains superset of Struct keys: ~a" (dict-keys fields)) (dict-keys val)))
+    (define val (let* ([val (pre-encode xs val-arg)]
+                       #;[val (inner res pre-encode val . args)])
+                  (unless (d:dict? val) (raise-result-error 'xstruct-encode "dict" val))
+                  val))
+    (unless (andmap (λ (key) (memq key (d:dict-keys val))) (d:dict-keys (xstruct-fields xs)))
+      (raise-argument-error 'xstruct-encode
+                            (format "dict that contains superset of Struct keys: ~a" (d:dict-keys (xstruct-fields xs))) (d:dict-keys val)))
 
-    (define ctx (mhash 'pointers empty
-                       'startOffset (pos port)
-                       'parent parent
-                       'val val
-                       'pointerSize 0))
-    (ref-set! ctx 'pointerOffset (+ (pos port) (size val ctx #f)))
+    (define parent (mhash 'pointers empty
+                          'startOffset (pos port)
+                          'parent parent-arg
+                          'val val
+                          'pointerSize 0))
 
-    (for ([(key type) (in-dict fields)])
-         (send type encode port (ref val key) ctx))
-    (for ([ptr (in-list (· ctx pointers))])
-         (send (· ptr type) encode port (· ptr val) (· ptr parent)))))
+    ; deliberately use `xstruct-size` instead of `size` to use extra arg
+    (d:dict-set! parent 'pointerOffset (+ (pos port) (xstruct-size xs val #:parent parent #f))) 
 
+    (for ([(key type) (d:in-dict (xstruct-fields xs))])
+      (encode type (d:dict-ref val key) #:parent parent))
+    (for ([ptr (in-list (d:dict-ref parent 'pointers))])
+      (encode (d:dict-ref ptr 'type) (d:dict-ref ptr 'val) #:parent (d:dict-ref ptr 'parent)))
+    (unless port-arg (get-output-bytes port))))
 
-(test-module
- (require "number.rkt")
- (define (random-pick xs) (list-ref xs (random (length xs))))
- (check-exn exn:fail:contract? (λ () (+Struct 42)))
+(struct structish xbase () #:transparent)
+(struct xstruct structish (fields) #:transparent #:mutable
+  #:methods gen:xenomorphic
+  [(define decode xstruct-decode)
+   (define encode xstruct-encode)
+   (define size xstruct-size)])
 
- ;; make random structs and make sure we can round trip
- (for ([i (in-range 20)])
-      (define field-types (for/list ([i (in-range 40)])
-                                    (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-      (define size-num-types (for/sum ([num-type (in-list field-types)])
-                                      (send num-type size)))
-      (define s (+Struct (for/list ([num-type (in-list field-types)])
-                                   (cons (gensym) num-type))))
-      (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                                        (random 256))))
-      (check-equal? (send s encode #f (send s decode bs)) bs)))
-                   
- 
+(define (+xstruct . dicts)
+  (define args (flatten dicts))
+  (unless (even? (length args))
+    (raise-argument-error '+xstruct "equal keys and values" dicts))
+  (define fields (for/list ([kv (in-slice 2 args)])
+                   (unless (symbol? (car kv))
+                     (raise-argument-error '+xstruct "symbol" (car kv)))
+                   (apply cons kv)))
+  (unless (d:dict? fields)
+    (raise-argument-error '+xstruct "dict" fields))
+  (xstruct fields))
 
+(module+ test
+  (require rackunit "number.rkt")
+  (define (random-pick xs) (list-ref xs (random (length xs))))
+  (check-exn exn:fail:contract? (λ () (+xstruct 42)))
+  (for ([i (in-range 20)])
+    ;; make random structs and make sure we can round trip
+    (define field-types
+      (for/list ([i (in-range 40)])
+        (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+    (define size-num-types
+      (for/sum ([num-type (in-list field-types)])
+        (size num-type)))
+    (define xs (+xstruct (for/list ([num-type (in-list field-types)])
+                           (cons (gensym) num-type))))
+    (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                              (random 256))))
+    (check-equal? (encode xs (decode xs bs) #f) bs)))

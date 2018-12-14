@@ -1,12 +1,5 @@
-#lang racket/base
-(require (for-syntax racket/base
-                     racket/syntax
-                     "sizes.rkt"
-                     racket/match)
-         racket/class
-         sugar/unstable/class
-         "private/helper.rkt"
-         "sizes.rkt")
+#lang debug racket/base
+(require "helper.rkt")
 (provide (all-defined-out))
 
 #|
@@ -14,184 +7,229 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 |#
 
-(define (ends-with-8? type)
-  (define str (symbol->string type))
-  (equal? (substring str (sub1 (string-length str))) "8"))
+(define (unsigned->signed uint bits)
+  (define most-significant-bit-mask (arithmetic-shift 1 (sub1 bits)))
+  (- (bitwise-xor uint most-significant-bit-mask) most-significant-bit-mask))
 
-(define (signed-type? type)
-  (not (equal? "u" (substring (symbol->string type) 0 1))))
+(define (signed->unsigned sint bits)
+  (bitwise-and sint (arithmetic-shift 1 bits)))
 
-(test-module
- (check-false (signed-type? 'uint16))
- (check-true (signed-type? 'int16)))
+(define (reverse-bytes bstr)
+  (apply bytes
+         (for/list ([b (in-bytes bstr (sub1 (bytes-length bstr)) -1 -1)])
+           b)))
 
 (define (exact-if-possible x) (if (integer? x) (inexact->exact x) x))
+
 (define system-endian (if (system-big-endian?) 'be 'le))
 
-(define-subclass xenomorph-base% (Integer [type 'uint16] [endian system-endian])
-  (getter-field [number-type (string->symbol (format "~a~a" type (if (ends-with-8? type) "" endian)))])
-  (define _signed? (signed-type? type))
+(define/pre-encode (xint-encode i val [port-arg (current-output-port)] #:parent [parent #f])
+  (unless (xint? i)
+    (raise-argument-error 'encode "xint instance" i))
+  (define-values (bound-min bound-max) (bounds i))
+  (unless (<= bound-min val bound-max)
+    (raise-argument-error 'encode (format "value that fits within ~a ~a-byte int (~a to ~a)" (if (xint-signed i) "signed" "unsigned") (xint-size i) bound-min bound-max) val))
+  (unless (or (not port-arg) (output-port? port-arg))
+    (raise-argument-error 'encode "output port or #f" port-arg))
+  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (parameterize ([current-output-port port])
+    (define bs (for/fold ([bs null]
+                          [val (exact-if-possible val)]
+                          #:result bs)
+                         ([i (in-range (xint-size i))])
+                 (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))
+    (define res (apply bytes ((if (eq? (xint-endian i) 'be) values reverse) bs)))
+    (if port-arg (write-bytes res) res)))
 
-  ;; `get-type-size` will raise error if number-type is invalid: use this as check of input
-  ;; size of a number doesn't change, so we can stash it as `_size`
-  (define _size (with-handlers ([exn:fail:contract?
-                                 (λ (exn) 
-                                   (raise-argument-error 'Integer "valid type and endian" (format "~v ~v" type endian)))])
-                  (get-type-size number-type)))
+(define/post-decode (xint-decode i [port-arg (current-input-port)] #:parent [parent #f])
+  (unless (xint? i)
+    (raise-argument-error 'decode "xint instance" i))
+  (define port (->input-port port-arg))
+  (parameterize ([current-input-port port])
+    (define bstr (read-bytes (xint-size i)))
+    (define bs ((if (eq? (xint-endian i) system-endian)
+                    values
+                    reverse-bytes) bstr))
+    (define uint (for/sum ([b (in-bytes bs)]
+                           [i (in-naturals)])
+                   (arithmetic-shift b (* 8 i))))
+    (if (xint-signed i) (unsigned->signed uint (bits i)) uint)))
 
-  (define bits (* _size 8))
-  
-  (define/augment (size . args) _size)
+(struct xnumber xbase () #:transparent)
 
-  (define-values (bound-min bound-max)
-    ;; if a signed integer has n bits, it can contain a number
-    ;; between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
-    (let* ([signed-max (sub1 (arithmetic-shift 1 (sub1 bits)))]
-           [signed-min (sub1 (- signed-max))]
-           [delta (if _signed? 0 signed-min)])
-      (values (- signed-min delta) (- signed-max delta))))
+(struct xint xnumber (size signed endian) #:transparent
+  #:methods gen:xenomorphic
+  [(define decode xint-decode)
+   (define encode xint-encode)
+   (define size (λ (i [item #f] #:parent [parent #f]) (xint-size i)))])
 
-  (define/augment (decode port [parent #f])
-    (define bstr (read-bytes _size port))
-    (define bs ((if (eq? endian system-endian) values reverse) (bytes->list bstr)))
-    (define unsigned-int (for/sum ([(b i) (in-indexed bs)])
-                                  (arithmetic-shift b (* 8 i))))
-    unsigned-int)
+(define (+xint [size 2] #:signed [signed #true] #:endian [endian system-endian])
+  (unless (exact-positive-integer? size)
+    (raise-argument-error '+xint "exact positive integer" size))
+  (unless (memq endian '(le be))
+    (raise-argument-error '+xint "'le or 'be" endian))
+  (xint size signed endian))
 
-  (define/override (post-decode unsigned-val . _)
-    (if _signed? (unsigned->signed unsigned-val bits) unsigned-val))
+(define (type-tag i)
+  (string->symbol
+   (string-append (if (xint-signed i) "" "u")
+                  "int"
+                  (number->string (bits i))
+                  (if (> (xint-size i) 1) (symbol->string (xint-endian i)) ""))))
 
-  (define/override (pre-encode val . _)
-    (exact-if-possible val))
+(define (bits i) (* (xint-size i) 8))
 
-  (define/augment (encode port val [parent #f])
-    (unless (<= bound-min val bound-max)
-      (raise-argument-error 'Integer:encode (format "value within range of ~a ~a-byte int (~a to ~a)" (if _signed? "signed" "unsigned") _size bound-min bound-max) val))
-    (define-values (bs _) (for/fold ([bs null] [n val])
-                                    ([i (in-range _size)])
-                            (values (cons (bitwise-and n #xff) bs) (arithmetic-shift n -8))))
-    (apply bytes ((if (eq? endian 'be) values reverse) bs))))
+(define (bounds i)
+  (unless (xint? i)
+    (raise-argument-error 'bounds "integer instance" i))
+  ;; if a signed integer has n bits, it can contain a number
+  ;; between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
+  (let* ([signed-max (sub1 (arithmetic-shift 1 (sub1 (bits i))))]
+         [signed-min (sub1 (- signed-max))]
+         [delta (if (xint-signed i) 0 signed-min)])
+    (values (- signed-min delta) (- signed-max delta))))
 
-(define-values (NumberT NumberT? +NumberT) (values Integer Integer? +Integer))
-(define-values (Number Number? +Number) (values Integer Integer? +Integer))
+(define int8 (+xint 1))
+(define int16 (+xint 2))
+(define int24 (+xint 3))
+(define int32 (+xint 4))
+(define uint8 (+xint 1 #:signed #f))
+(define uint16 (+xint 2 #:signed #f))
+(define uint24 (+xint 3 #:signed #f))
+(define uint32 (+xint 4 #:signed #f))
+(define int8be (+xint 1 #:endian 'be))
+(define int16be (+xint 2 #:endian 'be))
+(define int24be (+xint 3 #:endian 'be))
+(define int32be (+xint 4 #:endian 'be))
+(define uint8be (+xint 1 #:signed #f #:endian 'be))
+(define uint16be (+xint 2 #:signed #f #:endian 'be))
+(define uint24be (+xint 3 #:signed #f #:endian 'be))
+(define uint32be (+xint 4 #:signed #f #:endian 'be))
+(define int8le (+xint 1 #:endian 'le))
+(define int16le (+xint 2 #:endian 'le))
+(define int24le (+xint 3 #:endian 'le))
+(define int32le (+xint 4 #:endian 'le))
+(define uint8le (+xint 1 #:signed #f #:endian 'le))
+(define uint16le (+xint 2 #:signed #f #:endian 'le))
+(define uint24le (+xint 3 #:signed #f #:endian 'le))
+(define uint32le (+xint 4 #:signed #f #:endian 'le))
 
+(module+ test
+  (require rackunit)
+  (check-exn exn:fail:contract? (λ () (+xint 'not-a-valid-type)))
+  (check-exn exn:fail:contract? (λ () (encode uint8 256 #f)))
+  (check-not-exn (λ () (encode uint8 255 #f)))
+  (check-exn exn:fail:contract? (λ () (encode int8 256 #f)))
+  (check-exn exn:fail:contract? (λ () (encode int8 255 #f)))
+  (check-not-exn (λ () (encode int8 127 #f)))
+  (check-not-exn (λ () (encode int8 -128 #f)))
+  (check-exn exn:fail:contract? (λ () (encode int8 -129 #f)))
+  (check-exn exn:fail:contract? (λ () (encode uint16 (add1 #xffff)  #f)))
+  (check-not-exn (λ () (encode uint16 #xffff #f)))
 
-(define-subclass xenomorph-base% (Float _size [endian system-endian])
-  (define byte-size (/ _size 8))
-  
-  (define/augment (decode port [parent #f]) ;  convert int to float
-    (define bs (read-bytes byte-size port))
-    (floating-point-bytes->real bs (eq? endian 'be)))
+  (let ([i (+xint 2 #:signed #f #:endian 'le)]
+        [ip (open-input-bytes (bytes 1 2 3 4))]
+        [op (open-output-bytes)])
+    (check-equal? (decode i ip) 513)  ;; 1000 0000 0100 0000
+    (check-equal? (decode i ip) 1027) ;; 1100 0000 0010 0000
+    (encode i 513 op)
+    (check-equal? (get-output-bytes op) (bytes 1 2))
+    (encode i 1027 op)
+    (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
 
-  (define/augment (encode port val [parent #f]) ; convert float to int
-    (define bs (real->floating-point-bytes val byte-size (eq? endian 'be)))
-    bs)
+  (let ([i (+xint 2 #:signed #f #:endian 'be)]
+        [ip (open-input-bytes (bytes 1 2 3 4))]
+        [op (open-output-bytes)])
+    (check-equal? (decode i ip) 258) ;; 0100 0000 1000 0000 
+    (check-equal? (decode i ip) 772) ;; 0010 0000 1100 0000
+    (encode i 258 op)
+    (check-equal? (get-output-bytes op) (bytes 1 2))
+    (encode i 772 op)
+    (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
 
-  (define/augment (size . args) byte-size))
+  (check-equal? (size (+xint 1)) 1)
+  (check-equal? (size (+xint)) 2)
+  (check-equal? (size (+xint 4)) 4)
+  (check-equal? (size (+xint 8)) 8)
 
+  (check-equal? (decode int8 (bytes 127)) 127)
+  (check-equal? (decode int8 (bytes 255)) -1)
+  (check-equal? (encode int8 -1 #f) (bytes 255))
+  (check-equal? (encode int8 127 #f) (bytes 127)))
 
-(define-instance float (make-object Float 32))
-(define-instance floatbe (make-object Float 32 'be))
-(define-instance floatle (make-object Float 32 'le))
+(define/post-decode (xfloat-decode xf [port-arg (current-input-port)] #:parent [parent #f])
+  (unless (xfloat? xf)
+    (raise-argument-error 'decode "xfloat instance" xf))
+  (define bs (read-bytes (xfloat-size xf) (->input-port port-arg)))
+  (floating-point-bytes->real bs (eq? (xfloat-endian xf) 'be)))
 
-(define-instance double (make-object Float 64))
-(define-instance doublebe (make-object Float 64 'be))
-(define-instance doublele (make-object Float 64 'le))
+(define/pre-encode (xfloat-encode xf val [port (current-output-port)] #:parent [parent #f])
+  (unless (xfloat? xf)
+    (raise-argument-error 'encode "xfloat instance" xf))
+  (unless (or (not port) (output-port? port))
+    (raise-argument-error 'encode "output port or #f" port))
+  (define res (real->floating-point-bytes val (xfloat-size xf) (eq? (xfloat-endian xf) 'be)))
+  (if port (write-bytes res port) res))
 
+(struct xfloat xnumber (size endian) #:transparent
+  #:methods gen:xenomorphic
+  [(define decode xfloat-decode)
+   (define encode xfloat-encode)
+   (define size (λ (i [item #f] #:parent [parent #f]) (xfloat-size i)))])
 
-(define-subclass* Integer (Fixed size [fixed-endian system-endian] [fracBits (floor (/ size 2))])
-  (super-make-object (string->symbol (format "int~a" size)) fixed-endian)
-  (define _point (arithmetic-shift 1 fracBits))
+(define (+xfloat [size 4] #:endian [endian system-endian])
+  (unless (exact-positive-integer? size)
+    (raise-argument-error '+xfloat "exact positive integer" size))
+  (unless (memq endian '(le be))
+    (raise-argument-error '+xfloat "'le or 'be" endian))
+  (xfloat size endian))
 
-  (define/override (post-decode int . _)
-    (exact-if-possible (/ int _point 1.0)))
+(define float (+xfloat 4))
+(define floatbe (+xfloat 4 #:endian 'be))
+(define floatle (+xfloat 4 #:endian 'le))
 
-  (define/override (pre-encode fixed . _)
-    (exact-if-possible (floor (* fixed _point)))))
+(define double (+xfloat 8))
+(define doublebe (+xfloat 8 #:endian 'be))
+(define doublele (+xfloat 8 #:endian 'le))
 
-(define-instance fixed16 (make-object Fixed 16))
-(define-instance fixed16be (make-object Fixed 16 'be))
-(define-instance fixed16le (make-object Fixed 16 'le))
-(define-instance fixed32 (make-object Fixed 32))
-(define-instance fixed32be (make-object Fixed 32 'be))
-(define-instance fixed32le (make-object Fixed 32 'le))
+(define/post-decode (xfixed-decode xf [port-arg (current-input-port)] #:parent [parent #f])
+  (unless (xfixed? xf)
+    (raise-argument-error 'decode "xfixed instance" xf))
+  (define int (xint-decode xf port-arg))
+  (exact-if-possible (/ int (fixed-shift xf) 1.0)))
 
+(define/pre-encode (xfixed-encode xf val [port (current-output-port)] #:parent [parent #f])
+  (unless (xfixed? xf)
+    (raise-argument-error 'encode "xfixed instance" xf))
+  (define int (exact-if-possible (floor (* val (fixed-shift xf)))))
+  (xint-encode xf int port))
 
-(test-module
- (check-exn exn:fail:contract? (λ () (+Integer 'not-a-valid-type)))
- (check-exn exn:fail:contract? (λ () (encode uint8 256 #f)))
- (check-not-exn (λ () (encode uint8 255 #f)))
- (check-exn exn:fail:contract? (λ () (encode int8 256 #f)))
- (check-exn exn:fail:contract? (λ () (encode int8 255 #f)))
- (check-not-exn (λ () (encode int8 127 #f)))
- (check-not-exn (λ () (encode int8 -128 #f )))
- (check-exn exn:fail:contract? (λ () (encode int8 -129 #f)))
- (check-exn exn:fail:contract? (λ () (encode uint16 (add1 #xffff) #f)))
- (check-not-exn (λ () (encode uint16 #xffff #f)))
- 
- (let ([o (+Integer 'uint16 'le)]
-       [ip (open-input-bytes (bytes 1 2 3 4))]
-       [op (open-output-bytes)])
-   (check-equal? (send o decode ip) 513) ;; 1000 0000  0100 0000
-   (check-equal? (send o decode ip) 1027)  ;; 1100 0000 0010 0000
-   (encode o 513 op)
-   (check-equal? (get-output-bytes op) (bytes 1 2))
-   (encode o 1027 op)
-   (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
+(struct xfixed xint (fracbits) #:transparent
+  #:methods gen:xenomorphic
+  [(define decode xfixed-decode)
+   (define encode xfixed-encode)
+   (define size (λ (i [item #f] #:parent [parent #f]) (xint-size i)))])
 
- (let ([o (+Integer 'uint16 'be)]
-       [ip (open-input-bytes (bytes 1 2 3 4))]
-       [op (open-output-bytes)])
-   (check-equal? (send o decode ip) 258) ;; 0100 0000 1000 0000 
-   (check-equal? (send o decode ip) 772) ;; 0010 0000 1100 0000
-   (encode o 258 op)
-   (check-equal? (get-output-bytes op) (bytes 1 2))
-   (encode o 772 op)
-   (check-equal? (get-output-bytes op) (bytes 1 2 3 4))))
+(define (+xfixed [size 2] #:signed [signed #true] #:endian [endian system-endian] [fracbits (/ (* size 8) 2)])
+  (unless (exact-positive-integer? size)
+    (raise-argument-error '+xfixed "exact positive integer" size))
+  (unless (exact-positive-integer? fracbits)
+    (raise-argument-error '+xfixed "exact positive integer" fracbits))
+  (unless (memq endian '(le be))
+    (raise-argument-error '+xfixed "'le or 'be" endian))
+  (xfixed size signed endian fracbits))
 
+(define (fixed-shift xf)
+  (arithmetic-shift 1 (xfixed-fracbits xf)))
 
-(test-module
- (check-equal? (send (+Integer 'uint8) size) 1)
- (check-equal? (send (+Integer) size) 2)
- (check-equal? (send (+Integer 'uint32) size) 4)
- (check-equal? (send (+Integer 'double) size) 8)
+(define fixed16 (+xfixed 2))
+(define fixed16be (+xfixed 2 #:endian 'be))
+(define fixed16le (+xfixed 2 #:endian 'le))
+(define fixed32 (+xfixed 4))
+(define fixed32be (+xfixed 4 #:endian 'be))
+(define fixed32le (+xfixed 4 #:endian 'le))
 
- (check-equal? (send (+Number 'uint8) size) 1)
- (check-equal? (send (+Number) size) 2)
- (check-equal? (send (+Number 'uint32) size) 4)
- (check-equal? (send (+Number 'double) size) 8))
-
-;; use keys of type-sizes hash to generate corresponding number definitions
-(define-syntax (make-int-types stx)
-  (syntax-case stx ()
-    [(_) (with-syntax* ([((ID BASE ENDIAN) ...) (for*/list ([k (in-hash-keys type-sizes)]
-                                                            [kstr (in-value (format "~a" k))]
-                                                            #:unless (regexp-match #rx"^(float|double)" kstr))
-                                                           (match-define (list* prefix suffix _)
-                                                             (regexp-split #rx"(?=[bl]e|$)" kstr))
-                                                           (map string->symbol
-                                                                (list (string-downcase kstr)
-                                                                      prefix
-                                                                      (if (positive? (string-length suffix))
-                                                                          suffix
-                                                                          (if (system-big-endian?) "be" "le")))))]
-                        [(ID ...) (map (λ (s) (datum->syntax stx (syntax->datum s))) (syntax->list #'(ID ...)))])
-           #'(begin (define-instance ID (make-object Integer 'BASE 'ENDIAN)) ...))]))
-                                                            
-(make-int-types)
-
-(test-module
- (check-equal? (size uint8) 1)
- (check-equal? (size uint16) 2)
- (check-equal? (size uint32) 4)
- (check-equal? (size double) 8)
-
- (define bs (encode fixed16be 123.45 #f))
- (check-equal? bs #"{s")
- (check-equal? (ceiling (* (decode fixed16be  bs) 100)) 12345.0)
-
- (check-equal? (decode int8  (bytes 127)) 127)
- (check-equal? (decode int8 (bytes 255)) -1)
-
- (check-equal? (encode int8 -1 #f) (bytes 255))
- (check-equal? (encode int8 127 #f) (bytes 127)))
+(module+ test
+  (define bs (encode fixed16be 123.45 #f))
+  (check-equal? bs #"{s")
+  (check-equal? (ceiling (* (decode fixed16be bs) 100)) 12345.0))

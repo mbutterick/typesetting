@@ -1,62 +1,76 @@
 #lang racket/base
 (require rackunit
-         xenomorph
-         sugar/unstable/dict
-         "../private/generic.rkt")
+         racket/dict
+         racket/stream
+         "../array.rkt"
+         "../helper.rkt"
+         "../number.rkt"
+         "../lazy-array.rkt")
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 |#
 
-;describe 'LazyArray', ->
-;  describe 'decode', ->
-;    it 'should decode items lazily', ->
+(test-case
+ "decode should decode items lazily"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (define xla (+xlazy-array uint8 4))
+   (define arr (decode xla))
+   (check-false (xarray? arr))
+   (check-equal? (stream-length arr) 4)
+   (check-equal? (pos (current-input-port)) 4)
+   (check-equal? (stream-ref arr 0) 1)
+   (check-equal? (stream-ref arr 1) 2)
+   (check-equal? (stream-ref arr 2) 3)
+   (check-equal? (stream-ref arr 3) 4)))
 
-(parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-  (define array (+LazyArray uint8 4))
-  (define arr (decode array))
-  (check-false (Array? arr))
-  (check-equal? (ref arr 'len) 4)
-  (check-equal? (pos (current-input-port)) 4)
-  (check-equal? (get arr 0) 1)
-  (check-equal? (get arr 1) 2)
-  (check-equal? (get arr 2) 3)
-  (check-equal? (get arr 3) 4))
-      
-;    it 'should be able to convert to an array', ->
+(test-case
+ "decode should decode items lazily with post-decode"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (define xla (+xlazy-array uint8 4))
+   (set-post-decode! xla (λ (val) (* 2 val)))
+   (define arr (decode xla))
+   (check-false (xarray? arr))
+   (check-equal? (stream-length arr) 4)
+   (check-equal? (pos (current-input-port)) 4)
+   (check-equal? (stream-ref arr 0) 2)
+   (check-equal? (stream-ref arr 1) 4)
+   (check-equal? (stream-ref arr 2) 6)
+   (check-equal? (stream-ref arr 3) 8)))
 
-(parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-  (define array (+LazyArray uint8 4))
-  (define arr (decode array))
-  (check-equal? (LazyArray->list arr) '(1 2 3 4)))
+(test-case
+ "should be able to convert to an array"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (define xla (+xlazy-array uint8 4))
+   (define arr (decode xla))
+   (check-equal? (stream->list arr) '(1 2 3 4))))
 
-     
-;    it 'should have an inspect method', ->
-;    [skipped]
+(test-case
+ "decode should decode length as number before array"
+ (parameterize ([current-input-port (open-input-bytes (bytes 4 1 2 3 4 5))])
+   (define xla (+xlazy-array uint8 uint8))
+   (define arr (decode xla))
+   (check-equal? (stream->list arr) '(1 2 3 4))))
 
+(test-case
+ "size should work with xlazy-arrays"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (define xla (+xlazy-array uint8 4))
+   (define arr (decode xla))
+   (check-equal? (size xla arr) 4)))
 
-;    it 'should decode length as number before array', ->
+(test-case
+ "encode should work with xlazy-arrays"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (define xla (+xlazy-array uint8 4))
+   (define arr (decode xla))  
+   (check-equal? (encode xla arr #f) (bytes 1 2 3 4))))
 
-(parameterize ([current-input-port (open-input-bytes (bytes 4 1 2 3 4 5))])
-  (define array (+LazyArray uint8 uint8))
-  (define arr (decode array))
-  (check-equal? (LazyArray->list arr) '(1 2 3 4)))
-
-;      
-;  describe 'size', ->
-;    it 'should work with LazyArrays', ->
-
-(parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-  (define array (+LazyArray uint8 4))
-  (define arr (decode array))
-  (check-equal? (size array arr) 4))
-
-
-;  describe 'encode', ->
-;    it 'should work with LazyArrays', (done) ->
-
-(parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-  (define array (+LazyArray uint8 4))
-  (define arr (decode array))  
-  (check-equal? (encode array arr #f) (bytes 1 2 3 4)))
+(test-case
+ "encode should work with xlazy-arrays with pre-encode"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (define xla (+xlazy-array uint8 4))
+   (set-pre-encode! xla (λ (vals) (map (λ (val) (* 2 val)) vals)))
+   (define arr (decode xla))  
+   (check-equal? (encode xla arr #f) (bytes 2 4 6 8))))

@@ -1,8 +1,5 @@
 #lang racket/base
-(require racket/class
-         sugar/unstable/class
-         "private/helper.rkt"
-         "utils.rkt")
+(require "helper.rkt" "util.rkt")
 (provide (all-defined-out))
 
 #|
@@ -10,15 +7,26 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
 |#
 
-(define-subclass xenomorph-base% (Reserved type [count 1])
+(define/post-decode (xreserved-decode xo [port-arg (current-input-port)] #:parent [parent #f])
+  (define port (->input-port port-arg))
+  (pos port (+ (pos port) (size xo #f #:parent parent)))
+  (void))
 
-  (define/augment (decode port parent)
-    (pos port (+ (pos port) (size #f parent)))
-    (void))
+(define/pre-encode (xreserved-encode xo val [port-arg (current-output-port)] #:parent [parent #f])
+  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (write-bytes (make-bytes (size xo val #:parent parent) 0) port)
+  (unless port-arg (get-output-bytes port)))
 
-  (define/augment (size [val #f] [parent #f])
-    (* (send type size) (resolve-length count #f parent)))
+(define/finalize-size (xreserved-size xo [val #f] #:parent [parent #f])
+  (define item-size (size (xreserved-type xo)))
+  (define count (resolve-length (xreserved-count xo) #f #:parent parent))
+  (* item-size count))
 
-  (define/augment (encode port val [parent #f])
-    (make-bytes (size val parent) 0)))
+(struct xreserved xbase (type count) #:transparent
+  #:methods gen:xenomorphic
+  [(define decode xreserved-decode)
+   (define encode xreserved-encode)
+   (define size xreserved-size)])
 
+(define (+xreserved type [count 1])
+  (xreserved type count))

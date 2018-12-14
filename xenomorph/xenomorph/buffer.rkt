@@ -1,10 +1,5 @@
 #lang racket/base
-(require racket/class
-         sugar/unstable/class
-         "private/generic.rkt"
-         "private/helper.rkt"
-         "number.rkt"
-         "utils.rkt")
+(require "helper.rkt" "util.rkt" "number.rkt")
 (provide (all-defined-out))
 
 #|
@@ -12,49 +7,38 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 |#
 
-#|
-A Buffer is a container object for any data object that supports random access
-A Node Buffer object is basically a byte string.
-First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.
-A Restructure RBuffer object is separate.
-|#
+(define/post-decode (xbuffer-decode xb [port-arg (current-input-port)] #:parent [parent #f])
+  (define port (->input-port port-arg))
+  (parameterize ([current-input-port port])
+    (define decoded-len (resolve-length (xbuffer-len xb) #:parent parent))
+    (read-bytes decoded-len)))
 
-(define (+Buffer xs [type #f])
-  ((if (string? xs)
-       string->bytes/utf-8
-       list->bytes) xs))
-
-(define-subclass xenomorph-base% (RBuffer [len #xffff])
-  
-  (define/augment (decode port [parent #f])
-    (define decoded-len (resolve-length len port parent))
-    (read-bytes decoded-len port))
-
-  (define/augment (size [val #f] [parent #f])
-    (when val (unless (bytes? val)
-                (raise-argument-error 'Buffer:size "bytes" val)))
-    (if val
-        (bytes-length val)
-        (resolve-length len val parent)))
-
-  (define/augment (encode port buf [parent #f])
+(define/pre-encode (xbuffer-encode xb buf [port-arg (current-output-port)] #:parent [parent #f])
+  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (parameterize ([current-output-port port])
     (unless (bytes? buf)
-      (raise-argument-error 'Buffer:encode "bytes" buf))
-    (define op (or port (open-output-bytes)))
-    (when (NumberT? len)
-      (send len encode op (length buf)))
-    (write-bytes buf op)
-    (unless port (get-output-bytes op))))
+      (raise-argument-error 'xbuffer-encode "bytes" buf))
+    (when (xint? (xbuffer-len xb))
+      (encode (xbuffer-len xb) (bytes-length buf)))
+    (write-bytes buf)
+    (unless port-arg (get-output-bytes port))))
 
-(define-subclass RBuffer (BufferT))
+(define/finalize-size (xbuffer-size xb [val #f] #:parent [parent #f])
+  (when val (unless (bytes? val)
+              (raise-argument-error 'xbuffer-size "bytes" val)))
+  (if (bytes? val)
+      (bytes-length val)
+      (resolve-length (xbuffer-len xb) val #:parent parent)))
 
+(struct xbuffer xbase (len) #:transparent
+  #:methods gen:xenomorphic
+  [(define decode xbuffer-decode)
+   (define encode xbuffer-encode)
+   (define size xbuffer-size)])
 
-#;(test-module
-   (require "stream.rkt")
-   (define stream (+DecodeStream #"\2BCDEF"))
-   (define S (+String uint8 'utf8))
-   (check-equal? (send S decode stream) "BC")
-   (define os (+EncodeStream))
-   (send S encode os "Mike")
-   (check-equal? (send os dump) #"\4Mike")
-   (check-equal? (send (+String) size "foobar") 6))
+(define (+xbuffer [len-arg #f]
+                  #:length [len-kwarg #f])
+  (define len (or len-arg len-kwarg #xffff))
+  (unless (length-resolvable? len)
+    (raise-argument-error '+xbuffer "resolvable length" len))
+  (xbuffer len))

@@ -1,126 +1,80 @@
-#lang racket/base
-(require rackunit
-         xenomorph
-         racket/class
-         sugar/unstable/dict
-         sugar/unstable/js
-         "../private/generic.rkt")
+#lang debug racket/base
+(require rackunit racket/dict
+         "../helper.rkt"
+         "../struct.rkt"
+         "../string.rkt"
+         "../pointer.rkt"
+         "../number.rkt"
+         sugar/unstable/dict)
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 |#
 
+(test-case
+ "decode into an object"
+ (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
+   (check-equal?
+    (decode/hash (+xstruct 'name (+xstring #:length uint8) 'age uint8))
+    (hasheq 'name "roxyb" 'age 21))))
 
-;describe 'Struct', ->
-;  describe 'decode', ->
-;    it 'should decode into an object', ->
+(test-case
+ "decode with process hook"
+ (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
+   (define struct (+xstruct 'name (+xstring #:length uint8) 'age uint8))
+   (set-post-decode! struct (λ (o . _) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o))
+   (check-equal? (decode/hash struct)
+                 (hasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
-(parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
-  (check-equal?
-   (dump (decode (+Struct (dictify 'name (+StringT uint8)
-                                   'age uint8))))
-   (hasheq 'name "roxyb" 'age 21)))
+(test-case
+ "decode supports function keys"
+ (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
+   (define struct (+xstruct 'name (+xstring #:length uint8) 'age uint8 'canDrink (λ (o) (>= (dict-ref o 'age) 21))))
+   (check-equal? (decode/hash struct)
+                 (hasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
+(test-case
+ "compute the correct size"
+ (check-equal? (size (+xstruct 'name (+xstring #:length uint8) 'age uint8)
+                     (hasheq 'name "roxyb" 'age 32)) 7))
 
+(test-case
+ "compute the correct size with pointers"
+ (check-equal? (size (+xstruct 'name (+xstring #:length uint8)
+                               'age uint8
+                               'ptr (+xpointer #:type (+xstring #:length uint8)))
+                     (mhash 'name "roxyb" 'age 21 'ptr "hello")) 14))
 
-;    it 'should support process hook', ->
+(test-case
+ "get the correct size when no value is given"
+ (check-equal? (size (+xstruct 'name (+xstring 4) 'age uint8)) 5))
 
-(parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
-  (define struct (+Struct (dictify 'name (+StringT uint8)
-                                   'age uint8)))
-  (set-field! post-decode struct (λ (o . _) (ref-set! o 'canDrink (>= (· o age) 21)) o))
-  (check-equal? (dump (decode struct))
-                (hasheq 'name "roxyb" 'age 32 'canDrink #t)))
+(test-case
+ "throw when getting non-fixed length size and no value is given"
+ (check-exn exn:fail:contract? (λ () (size (+xstruct 'name (+xstring #:length uint8) 'age uint8)))))
 
+(test-case
+ "encode objects to buffers"
+ (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
+   (check-equal? (decode/hash (+xstruct 'name (+xstring #:length uint8) 'age uint8))
+                 (hasheq 'name "roxyb" 'age 21))))
 
+(test-case
+ "support pre-encode hook"
+ (parameterize ([current-output-port (open-output-bytes)])
+   (define struct (+xstruct 'nameLength uint8
+                            'name (+xstring 'nameLength)
+                            'age uint8))
+   (set-pre-encode! struct (λ (val) (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val))
+   (encode struct (mhasheq 'name "roxyb" 'age 21))
+   (check-equal? (dump (current-output-port)) #"\x05roxyb\x15")))
 
-;    it 'should support function keys', ->
-
-(parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
-  (define struct (+Struct (dictify 'name (+StringT uint8)
-                                   'age uint8
-                                   'canDrink (λ (o) (>= (ref o 'age) 21)))))
-  (check-equal? (dump (decode struct))
-                (hasheq 'name "roxyb" 'age 32 'canDrink #t)))
-
-
-
-
-;
-;  describe 'size', ->
-;    it 'should compute the correct size', ->
-
-(check-equal? (size (+Struct (dictify
-                              'name (+StringT uint8)
-                              'age uint8))
-                    (hasheq 'name "roxyb" 'age 32)) 7)
-
-
-
-;    it 'should compute the correct size with pointers', ->
-
-(check-equal? (size (+Struct (dictify
-                              'name (+StringT uint8)
-                              'age uint8
-                              'ptr (+Pointer uint8 (+StringT uint8))))
-                    (mhash 'name "roxyb" 'age 21 'ptr "hello")) 14)
-
-
-;    it 'should get the correct size when no value is given', ->
-
-(check-equal? (size (+Struct (dictify
-                              'name (+StringT 4)
-                              'age uint8))) 5)
-      
-;    it 'should throw when getting non-fixed length size and no value is given', ->
-
-(check-exn exn:fail:contract? (λ () (size (+Struct (dictify 'name (+StringT uint8)
-                                                            'age uint8)))))
-
-
-
-;      
-;  describe 'encode', ->
-;    it 'should encode objects to buffers', (done) ->
-;      stream = new EncodeStream
-;      stream.pipe concat (buf) ->
-;        buf.should.deep.equal new Buffer '\x05roxyb\x15'
-;        done()
-;
-;      struct = new Struct
-;        name: new StringT uint8
-;        age: uint8
-;
-;      struct.encode stream,
-;        name: 'roxyb'
-;        age: 21
-;
-;      stream.end()
-
-(parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
-  (check-equal? (dump (decode (+Struct (dictify 'name (+StringT uint8)
-                                                'age uint8))))
-                (hasheq 'name "roxyb" 'age 21)))
-
-
-;    it 'should support preEncode hook', (done) ->
-
-(parameterize ([current-output-port (open-output-bytes)])
-  (define struct (+Struct (dictify 'nameLength uint8
-                                   'name (+StringT 'nameLength)
-                                   'age uint8)))
-  (set-field! pre-encode struct (λ (val port) (ref-set! val 'nameLength (length (ref val 'name))) val))
-  (encode struct (mhasheq 'name "roxyb" 'age 21))
-  (check-equal? (dump (current-output-port)) #"\x05roxyb\x15"))
-
-
-;    it 'should encode pointer data after structure', (done) ->
-
-(parameterize ([current-output-port (open-output-bytes)])
-  (define struct (+Struct (dictify 'name (+StringT uint8)
-                                   'age uint8
-                                   'ptr (+Pointer uint8 (+StringT uint8)))))
-  (encode struct (hasheq 'name "roxyb" 'age 21 'ptr "hello"))
-  (check-equal? (dump (current-output-port)) #"\x05roxyb\x15\x08\x05hello"))
-
+(test-case
+ "encode pointer data after structure"
+ (parameterize ([current-output-port (open-output-bytes)])
+   (define struct (+xstruct 'name (+xstring #:length uint8)
+                            'age uint8
+                            'ptr (+xpointer #:type (+xstring #:length uint8))))
+   (encode struct (hasheq 'name "roxyb" 'age 21 'ptr "hello"))
+   (check-equal? (dump (current-output-port)) #"\x05roxyb\x15\x08\x05hello")))

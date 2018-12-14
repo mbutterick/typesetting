@@ -1,83 +1,69 @@
 #lang racket/base
-(require racket/class
-         sugar/unstable/class
-         sugar/unstable/dict
-         "private/generic.rkt"
-         "private/helper.rkt"
-         "utils.rkt"
-         "array.rkt"
-         "number.rkt")
+(require "helper.rkt" "util.rkt" "number.rkt" "array.rkt" racket/stream racket/dict sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 |#
-
-(define (get o i) (send o get i))
-(define (LazyArray->list o) (send o to-list))
-
-(define-subclass object% (InnerLazyArray type [len #f] [port-in #f] [ctx #f])
-  (field ([port port] (cond
-                        [(bytes? port-in) (open-input-bytes port-in)]
-                        [(port? port-in) port-in]
-                        [else (raise-argument-error 'LazyArray "port" port)])))
-  (define starting-pos (pos port))
-  (define item-cache (mhasheqv)) ;  integer-keyed hash, rather than list
   
-
-  (define/public-final (get index)
-    (unless (<= 0 index (sub1 len))
-      (raise-argument-error 'LazyArray:get (format "index in range 0 to ~a" (sub1 len)) index))
-    (ref! item-cache index (λ ()
-                             (define orig-pos (pos port))
-                             (pos port (+ starting-pos (* (send type size #f ctx) index)))
-                             (define new-item (send type decode port ctx))
-                             (pos port orig-pos)
-                             new-item)))
-
-  (define/public-final (to-list)
-    (for/list ([i (in-range len)])
-              (get i))))
-
-
-(define-subclass ArrayT (LazyArray)
-  (inherit-field len type)
-  
-  (define/override (decode port [parent #f])
+(define (xlazy-array-decode xla [port-arg (current-input-port)] #:parent [parent #f])
+  (define port (->input-port port-arg))
+  (parameterize ([current-input-port port])
     (define starting-pos (pos port)) ; ! placement matters. `resolve-length` will change `pos`
-    (define decoded-len (resolve-length len port parent))
-    (let ([parent (if (NumberT? len)
+    (define decoded-len (resolve-length (xarray-base-len xla) #:parent parent))
+    (let ([parent (if (xint? (xarray-base-len xla))
                       (mhasheq 'parent parent
                                '_startOffset starting-pos
                                '_currentOffset 0
-                               '_length len)
+                               '_length (xarray-base-len xla))
                       parent)])
-      (define res (+InnerLazyArray type decoded-len port parent))
-      (pos port (+ (pos port) (* decoded-len (send type size #f parent))))
-      res))
+      (define starting-pos (pos port))
+      (define type (xarray-base-type xla))
+      (begin0
+        (for/stream ([index (in-range decoded-len)])
+          (define orig-pos (pos port))
+          (pos port (+ starting-pos (* (size type #f #:parent parent) index)))
+          ;; use explicit `port` arg below because this evaluation is delayed
+          (begin0
+            (post-decode xla (decode type port #:parent parent))
+            (pos port orig-pos)))
+        (pos port (+ (pos port) (* decoded-len (size (xarray-base-type xla) #f #:parent parent))))))))
 
-  (define/override (size [val #f] [ctx #f])
-    (super size (if (InnerLazyArray? val)
-                    (send val to-list)
-                    val) ctx))
+(define (xlazy-array-encode xla val [port-arg (current-output-port)] #:parent [parent #f])
+  (xarray-encode xla (if (stream? val) (stream->list val) val) port-arg #:parent parent))
 
-  (define/override (encode port val [ctx #f])
-    (super encode port (if (InnerLazyArray? val)
-                           (send val to-list)
-                           val) ctx)))    
+(define (xlazy-array-size xla [val #f] #:parent [parent #f])
+  (xarray-size xla (if (stream? val) (stream->list val) val) #:parent parent))
 
-(test-module
- (define bstr #"ABCD1234")
- (define ds (open-input-bytes bstr))
- (define la (+LazyArray uint8 4))
- (define ila (decode la ds))
- (check-equal? (pos ds) 4)
- (check-equal? (get ila 1) 66)
- (check-equal? (get ila 3) 68)
- (check-equal? (pos ds) 4)
- (check-equal? (LazyArray->list ila) '(65 66 67 68))
- (define la2 (+LazyArray int16be (λ (t) 4))) 
- (check-equal? (encode la2 '(1 2 3 4) #f) #"\0\1\0\2\0\3\0\4")
- (check-equal? (send (decode la2 (open-input-bytes #"\0\1\0\2\0\3\0\4")) to-list) '(1 2 3 4)))
+;; xarray-base holds type and len fields
+(struct xlazy-array xarray-base () #:transparent
+  #:methods gen:xenomorphic
+  [(define decode xlazy-array-decode)
+   (define encode xlazy-array-encode)
+   (define size xlazy-array-size)])
 
+(define (+xlazy-array [type-arg #f] [len-arg #f]
+                      #:type [type-kwarg #f] #:length [len-kwarg #f])
+  (define type (or type-arg type-kwarg))
+  (define len (or len-arg len-kwarg))
+  (unless (xenomorphic? type)
+    (raise-argument-error '+xarray "xenomorphic type" type))
+  (unless (length-resolvable? len)
+    (raise-argument-error '+xarray "length-resolvable?" len))
+  (xlazy-array type len))
+
+(module+ test
+  (require rackunit "number.rkt")
+  (define bstr #"ABCD1234")
+  (define ds (open-input-bytes bstr))
+  (define la (+xlazy-array uint8 4))
+  (define ila (decode la ds))
+  (check-equal? (pos ds) 4)
+  (check-equal? (stream-ref ila 1) 66)
+  (check-equal? (stream-ref ila 3) 68)
+  (check-equal? (pos ds) 4)
+  (check-equal? (stream->list ila) '(65 66 67 68))
+  (define la2 (+xlazy-array int16be (λ (t) 4))) 
+  (check-equal? (encode la2 '(1 2 3 4) #f) #"\0\1\0\2\0\3\0\4")
+  (check-equal? (stream->list (decode la2 (open-input-bytes #"\0\1\0\2\0\3\0\4"))) '(1 2 3 4)))

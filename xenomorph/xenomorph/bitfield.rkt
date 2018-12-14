@@ -1,10 +1,5 @@
 #lang racket/base
-(require racket/class
-         racket/list
-         sugar/unstable/class
-         sugar/unstable/dict
-         "private/generic.rkt"
-         "private/helper.rkt")
+(require "helper.rkt" racket/dict sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|
@@ -12,38 +7,51 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 |#
 
-(define-subclass Streamcoder (Bitfield type [flags empty])
-  (unless (andmap (λ (f) (or (key? f) (not f))) flags)
-    (raise-argument-error 'Bitfield "list of keys" flags))
-          
-  (define/augment (decode stream . _)
+(define/post-decode (xbitfield-decode xb [port-arg (current-input-port)] #:parent [parent #f])
+  (define port (->input-port port-arg))
+  (parameterize ([current-input-port port])
     (define flag-hash (mhasheq))
-    (for* ([val (in-value (send type decode stream))]
-           [(flag i) (in-indexed flags)]
-           #:when flag)
+    (define val (decode (xbitfield-type xb)))
+    (for ([(flag i) (in-indexed (xbitfield-flags xb))]
+          #:when flag)
       (hash-set! flag-hash flag (bitwise-bit-set? val i)))
-    flag-hash)
+    flag-hash))
 
-  (define/augment (size . _) (send type size))
+(define/pre-encode (xbitfield-encode xb flag-hash [port-arg (current-output-port)] #:parent [parent #f])
+  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (parameterize ([current-output-port port])
+    (define bit-int (for/sum ([(flag i) (in-indexed (xbitfield-flags xb))]
+                              #:when (and flag (dict-ref flag-hash flag #f)))
+                      (arithmetic-shift 1 i)))
+    (encode (xbitfield-type xb) bit-int)
+    (unless port-arg (get-output-bytes port))))
 
-  (define/augment (encode port flag-hash [ctx #f])
-    (define bit-int (for/sum ([(flag i) (in-indexed flags)]
-                                       #:when (and flag (ref flag-hash flag)))
-                               (arithmetic-shift 1 i)))
-    (send type encode port bit-int))
+(define (xbitfield-size xb [val #f] #:parent [parent #f])
+  (size (xbitfield-type xb)))
 
-  (define/override (get-class-name) 'Bitfield))
+(struct xbitfield xbase (type flags) #:transparent
+  #:methods gen:xenomorphic
+  [(define decode xbitfield-decode)
+   (define encode xbitfield-encode)
+   (define size xbitfield-size)])
 
+(define (+xbitfield [type-arg #f] [flag-arg #f]
+                    #:type [type-kwarg #f] #:flags [flag-kwarg #f])
+  (define type (or type-arg type-kwarg))
+  (define flags (or flag-arg flag-kwarg null))
+  (unless (andmap (λ (f) (or (symbol? f) (not f))) flags)
+    (raise-argument-error '+xbitfield "list of symbols" flags))
+  (xbitfield type flags))
 
-(test-module
- (require "number.rkt")
- (define bfer (+Bitfield uint16be '(bold italic underline #f shadow condensed extended)))
- (define bf (send bfer decode #"\0\25"))
- (check-equal? (length (ref-keys bf)) 6) ; omits #f flag
- (check-true (ref bf 'bold))
- (check-true (ref bf 'underline))
- (check-true (ref bf 'shadow))
- (check-false (ref bf 'italic))
- (check-false (ref bf 'condensed))
- (check-false (ref bf 'extended))
- (check-equal? (encode bfer bf #f) #"\0\25"))
+(module+ test
+  (require rackunit "number.rkt")
+  (define bfer (+xbitfield uint16be '(bold italic underline #f shadow condensed extended)))
+  (define bf (decode bfer #"\0\25"))
+  (check-equal? (length (dict-keys bf)) 6) ; omits #f flag
+  (check-true (dict-ref bf 'bold))
+  (check-true (dict-ref bf 'underline))
+  (check-true (dict-ref bf 'shadow))
+  (check-false (dict-ref bf 'italic))
+  (check-false (dict-ref bf 'condensed))
+  (check-false (dict-ref bf 'extended))
+  (check-equal? (encode bfer bf #f) #"\0\25"))
