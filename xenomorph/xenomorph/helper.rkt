@@ -13,7 +13,8 @@
 (define private-keys '(parent _startOffset _currentOffset _length))
 (define (dict->mutable-hash x)
   (define h (make-hasheq))
-  (for ([(k v) (in-dict x)])
+  (for ([(k v) (in-dict x)]
+        #:unless (memq k private-keys))
     (hash-set! h k v))
   h)
 

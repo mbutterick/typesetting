@@ -73,7 +73,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (raise-result-error 'xstruct-decode "dict" res))
     res))
 
-(define/finalize-size (xstruct-size xs [val #f] #:parent [parent-arg #f] [include-pointers #t])
+(define/finalize-size (xstruct-size xs [val #f] #:parent [parent-arg #f]
+                                    #:include-pointers [include-pointers #t])
   (define parent (mhasheq 'parent parent-arg
                           'val val
                           'pointerSize 0))
@@ -95,7 +96,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                   val))
     (unless (andmap (λ (key) (memq key (d:dict-keys val))) (d:dict-keys (xstruct-fields xs)))
       (raise-argument-error 'xstruct-encode
-                            (format "dict that contains superset of Struct keys: ~a" (d:dict-keys (xstruct-fields xs))) (d:dict-keys val)))
+                            (format "dict that contains superset of xstruct keys: ~a" (d:dict-keys (xstruct-fields xs))) (d:dict-keys val)))
 
     (define parent (mhash 'pointers empty
                           'startOffset (pos port)
@@ -104,7 +105,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                           'pointerSize 0))
 
     ; deliberately use `xstruct-size` instead of `size` to use extra arg
-    (d:dict-set! parent 'pointerOffset (+ (pos port) (xstruct-size xs val #:parent parent #f))) 
+    (d:dict-set! parent 'pointerOffset
+                 (+ (pos port) (xstruct-size xs val #:parent parent #:include-pointers #f)))
 
     (for ([(key type) (d:in-dict (xstruct-fields xs))])
          (encode type (d:dict-ref val key) #:parent parent))
@@ -123,7 +125,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 (define (+xstruct . dicts)
   (define args (flatten dicts))
   (unless (even? (length args))
-    (raise-argument-error '+xstruct "equal keys and values" dicts))
+    (raise-argument-error '+xstruct "equal number of keys and values" dicts))
   (define fields (for/list ([kv (in-slice 2 args)])
                            (unless (symbol? (car kv))
                              (raise-argument-error '+xstruct "symbol" (car kv)))
