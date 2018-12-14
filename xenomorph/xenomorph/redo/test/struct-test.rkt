@@ -16,32 +16,27 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
  "decode into an object"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
    (check-equal?
-    (dump (decode (+xstruct 'name (+xstring #:length uint8)
-                            'age uint8)))
-    '((name . "roxyb") (age . 21)))))
+    (decode/hash (+xstruct 'name (+xstring #:length uint8) 'age uint8))
+    (hasheq 'name "roxyb" 'age 21))))
 
 (test-case
  "decode with process hook"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
-   (define struct (+xstruct 'name (+xstring #:length uint8)
-                            'age uint8))
+   (define struct (+xstruct 'name (+xstring #:length uint8) 'age uint8))
    (set-post-decode! struct (λ (o . _) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o))
-   (check-equal? (dump (decode struct))
-                 '((name . "roxyb") (canDrink . #t) (age . 32)))))
+   (check-equal? (decode/hash struct)
+                 (hasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
 (test-case
  "decode supports function keys"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
-   (define struct (+xstruct 'name (+xstring #:length uint8)
-                            'age uint8
-                            'canDrink (λ (o) (>= (dict-ref o 'age) 21))))
-   (check-equal? (dump (decode struct))
-                 '((name . "roxyb") (canDrink . #t) (age . 32)))))
+   (define struct (+xstruct 'name (+xstring #:length uint8) 'age uint8 'canDrink (λ (o) (>= (dict-ref o 'age) 21))))
+   (check-equal? (decode/hash struct)
+                 (hasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
 (test-case
  "compute the correct size"
- (check-equal? (size (+xstruct 'name (+xstring #:length uint8)
-                               'age uint8)
+ (check-equal? (size (+xstruct 'name (+xstring #:length uint8) 'age uint8)
                      (hasheq 'name "roxyb" 'age 32)) 7))
 
 (test-case
@@ -57,15 +52,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 
 (test-case
  "throw when getting non-fixed length size and no value is given"
- (check-exn exn:fail:contract? (λ () (size (+xstruct 'name (+xstring #:length uint8)
-                                                     'age uint8)))))
+ (check-exn exn:fail:contract? (λ () (size (+xstruct 'name (+xstring #:length uint8) 'age uint8)))))
 
 (test-case
  "encode objects to buffers"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
-   (check-equal? (dump (decode (+xstruct 'name (+xstring #:length uint8)
-                                         'age uint8)))
-                 '((name . "roxyb") (age . 21)))))
+   (check-equal? (decode/hash (+xstruct 'name (+xstring #:length uint8) 'age uint8))
+                 (hasheq 'name "roxyb" 'age 21))))
 
 (test-case
  "support pre-encode hook"

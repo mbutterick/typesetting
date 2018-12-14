@@ -2,7 +2,7 @@
 (require "helper.rkt" "struct.rkt"
          racket/dict
          sugar/unstable/dict)
-(provide (all-defined-out))
+(provide (all-defined-out) decode/hash)
 
 #|
 approximates

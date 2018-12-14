@@ -58,18 +58,26 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (d:dict-set! sdr '_currentOffset (- (pos port) (d:dict-ref sdr '_startOffset)))
     sdr))
 
+(define (sdr-to-hash sdr)
+  (for/hasheq ([(k v) (d:in-dict sdr)]
+               #:unless (memq k private-keys))
+    (values k v)))
+
+(define-syntax-rule (decode/hash . ARGS)
+  (sdr-to-hash (decode . ARGS)))
+
 (define (xstruct-decode xs [port-arg (current-input-port)] #:parent [parent #f] [len 0])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
     (define res
-      (let* ([sdr (_setup port parent len)] ; returns StructDictRes
-             [sdr (_parse-fields port sdr (xstruct-fields xs))])
-        sdr))
-    (let* ([res (post-decode xs res)]
-           #;[res (inner res post-decode res . args)])
-      (unless (d:dict? res) (raise-result-error 'xstruct-decode "dict" res))
-      res)))
+      (post-decode xs
+                   (let* ([sdr (_setup port parent len)] ; returns StructDictRes
+                          [sdr (_parse-fields port sdr (xstruct-fields xs))])
+                     sdr)))
+    (unless (d:dict? res)
+      (raise-result-error 'xstruct-decode "dict" res))
+    res))
 
 (define/finalize-size (xstruct-size xs [val #f] #:parent [parent-arg #f] [include-pointers #t])
   (define parent (mhasheq 'parent parent-arg
