@@ -19,7 +19,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                     'checkSum uint32be
                     'offset (+xpointer #:offset-type uint32be
                                        #:type 'void
-                                       #:style 'global)
+                                       #:relative-to 'global)
                     'length uint32be))
 
 ;; for stupid tags like 'cvt '
