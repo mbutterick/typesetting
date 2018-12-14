@@ -3,7 +3,7 @@
          sugar/unstable/dict
          "../helper.rkt"
          racket/dict
-         xenomorph/redo)
+         xenomorph)
 (provide (all-defined-out))
 
 #|

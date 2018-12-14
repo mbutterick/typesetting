@@ -2,7 +2,7 @@
 (require sugar/unstable/class
          sugar/unstable/dict
          "../helper.rkt"
-         xenomorph/redo)
+         xenomorph)
 (provide (all-defined-out))
 
 (define hhea (+xstruct

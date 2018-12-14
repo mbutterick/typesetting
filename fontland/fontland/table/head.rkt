@@ -2,7 +2,7 @@
 (require "../helper.rkt"
          sugar/unstable/class
          sugar/unstable/dict
-         xenomorph/redo)
+         xenomorph)
 (provide (all-defined-out))
 
 #|

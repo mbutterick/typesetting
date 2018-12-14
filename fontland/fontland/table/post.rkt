@@ -1,5 +1,5 @@
 #lang racket/base
-(require xenomorph/redo
+(require xenomorph
          sugar/unstable/class
          sugar/unstable/dict
          sugar/unstable/js

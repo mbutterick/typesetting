@@ -8,7 +8,7 @@
          "struct.rkt"
          sugar/unstable/dict
          sugar/unstable/js
-         xenomorph/redo
+         xenomorph
          racket/struct)
 (provide (all-defined-out))
 

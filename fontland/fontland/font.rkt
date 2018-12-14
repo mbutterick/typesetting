@@ -8,7 +8,7 @@
          "db.rkt"
          "struct.rkt"
          "table-stream.rkt"
-         xenomorph/redo
+         xenomorph
          racket/match
          sugar/unstable/dict
          sugar/unstable/js

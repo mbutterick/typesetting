@@ -3,7 +3,7 @@
          sugar/unstable/dict
          sugar/unstable/js
          "../helper.rkt"
-         xenomorph/redo)
+         xenomorph)
 (provide (all-defined-out))
 #|
 approximates

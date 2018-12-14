@@ -1,7 +1,7 @@
 #lang racket/base
 (require sugar/unstable/dict
          "../helper.rkt"
-         xenomorph/redo)
+         xenomorph)
 (provide (all-defined-out))
 #|
 approximates

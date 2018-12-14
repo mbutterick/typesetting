@@ -11,7 +11,7 @@
          "struct.rkt"
          fontland/glyph
          fontland/ttf-glyph
-         xenomorph/redo
+         xenomorph
          racket/dict)
 
 (provide subset +subset ttf-subset +ttf-subset subset-add-glyph! encode-to-port create-subset)

@@ -1,5 +1,5 @@
 #lang racket/base
-(require xenomorph/redo
+(require xenomorph
          "tables.rkt"
          racket/dict
          sugar/unstable/dict

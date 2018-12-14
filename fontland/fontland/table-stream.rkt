@@ -1,6 +1,6 @@
 #lang debug racket
 (require sugar/unstable/js
-         (only-in xenomorph/redo pos decode)
+         (only-in xenomorph pos decode)
          "tables.rkt"
          "struct.rkt"
          (for-syntax "tables.rkt"))
