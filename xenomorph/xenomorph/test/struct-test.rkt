@@ -16,23 +16,23 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
  "decode into an object"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
    (check-equal?
-    (decode/hash (+xstruct 'name (+xstring #:length uint8) 'age uint8))
-    (hasheq 'name "roxyb" 'age 21))))
+    (decode (+xstruct 'name (+xstring #:length uint8) 'age uint8))
+    (mhasheq 'name "roxyb" 'age 21))))
 
 (test-case
  "decode with process hook"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
    (define struct (+xstruct 'name (+xstring #:length uint8) 'age uint8))
    (set-post-decode! struct (λ (o . _) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o))
-   (check-equal? (decode/hash struct)
-                 (hasheq 'name "roxyb" 'age 32 'canDrink #t))))
+   (check-equal? (decode struct)
+                 (mhasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
 (test-case
  "decode supports function keys"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
    (define struct (+xstruct 'name (+xstring #:length uint8) 'age uint8 'canDrink (λ (o) (>= (dict-ref o 'age) 21))))
-   (check-equal? (decode/hash struct)
-                 (hasheq 'name "roxyb" 'age 32 'canDrink #t))))
+   (check-equal? (decode struct)
+                 (mhasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
 (test-case
  "compute the correct size"
@@ -57,8 +57,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (test-case
  "encode objects to buffers"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
-   (check-equal? (decode/hash (+xstruct 'name (+xstring #:length uint8) 'age uint8))
-                 (hasheq 'name "roxyb" 'age 21))))
+   (check-equal? (decode (+xstruct 'name (+xstring #:length uint8) 'age uint8))
+                 (mhasheq 'name "roxyb" 'age 21))))
 
 (test-case
  "support pre-encode hook"
@@ -68,7 +68,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
                             'age uint8))
    (set-pre-encode! struct (λ (val) (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val))
    (encode struct (mhasheq 'name "roxyb" 'age 21))
-   (check-equal? (dump (current-output-port)) #"\x05roxyb\x15")))
+   (check-equal? (get-output-bytes (current-output-port)) #"\x05roxyb\x15")))
 
 (test-case
  "encode pointer data after structure"
@@ -77,4 +77,4 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
                             'age uint8
                             'ptr (+xpointer #:type (+xstring #:length uint8))))
    (encode struct (hasheq 'name "roxyb" 'age 21 'ptr "hello"))
-   (check-equal? (dump (current-output-port)) #"\x05roxyb\x15\x08\x05hello")))
+   (check-equal? (get-output-bytes (current-output-port)) #"\x05roxyb\x15\x08\x05hello")))

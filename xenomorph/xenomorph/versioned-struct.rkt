@@ -2,14 +2,17 @@
 (require "helper.rkt" "struct.rkt"
          racket/dict
          sugar/unstable/dict)
-(provide (all-defined-out) decode/hash)
+(provide (all-defined-out))
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
-(define/post-decode (xversioned-struct-decode xvs [port-arg (current-input-port)] #:parent [parent #f] [length 0])
+(define (xversioned-struct-decode . args)
+  (dict->mutable-hash (apply xversioned-struct-xdecode args)))
+
+(define/post-decode (xversioned-struct-xdecode xvs [port-arg (current-input-port)] #:parent [parent #f] [length 0])
   (define port (->input-port port-arg))
   (define res (_setup port parent length))
 
@@ -89,7 +92,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 (struct xversioned-struct structish (type versions version-getter version-setter) #:transparent #:mutable
   #:methods gen:xenomorphic
   [(define decode xversioned-struct-decode)
-   (define xdecode xversioned-struct-decode)
+   (define xdecode xversioned-struct-xdecode)
    (define encode xversioned-struct-encode)
    (define size xversioned-struct-size)])
 

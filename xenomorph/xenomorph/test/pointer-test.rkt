@@ -52,7 +52,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "decode should support decoding pointers lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (define res (decode (+xstruct 'ptr (+xpointer #:lazy #t))))
+   (define res (xdecode (+xstruct 'ptr (+xpointer #:lazy #t))))
    (check-true (promise? (dict-ref (struct-dict-res-_kv res) 'ptr)))
    (check-equal? (dict-ref res 'ptr) 53)))
 
@@ -104,7 +104,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'pointers null))
    (encode (+xpointer) #f #:parent parent)
    (check-equal? (dict-ref parent 'pointerSize) 0)
-   (check-equal? (dump (current-output-port)) (bytes 0))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
 (test-case
  "encode should handle local offsets"
@@ -118,7 +118,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 10
                                                          'parent parent)))
-   (check-equal? (dump (current-output-port)) (bytes 1))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
  "encode should handle immediate offsets"
@@ -132,7 +132,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 10
                                                          'parent parent)))
-   (check-equal? (dump (current-output-port)) (bytes 0))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
 (test-case
  "encode should handle offsets relative to parent"
@@ -146,7 +146,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (dict-ref (dict-ref parent 'parent) 'pointers) (list (mhasheq 'type uint8
                                                                             'val 10
                                                                             'parent parent)))
-   (check-equal? (dump (current-output-port)) (bytes 2))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
 
 (test-case
  "encode should handle global offsets"
@@ -163,7 +163,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                  (list (mhasheq 'type uint8
                                 'val 10
                                 'parent parent)))
-   (check-equal? (dump (current-output-port)) (bytes 5))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 5))))
 
 (test-case
  "encode should support void pointers"
@@ -177,7 +177,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 55
                                                          'parent parent)))
-   (check-equal? (dump (current-output-port)) (bytes 1))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
  "encode should throw if not a void pointer instance"

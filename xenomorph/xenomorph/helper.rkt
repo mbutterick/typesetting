@@ -11,21 +11,11 @@
     [else (raise-argument-error '->input-port "byte string or input port" arg)]))
 
 (define private-keys '(parent _startOffset _currentOffset _length))
-(define (dump-mutable x)
+(define (dict->mutable-hash x)
   (define h (make-hasheq))
-  (for ([(k v) (in-dict (dump x))])
+  (for ([(k v) (in-dict x)])
     (hash-set! h k v))
   h)
-
-(define (dump x)
-  (cond
-    [(input-port? x) (port->bytes x)]
-    [(output-port? x) (get-output-bytes x)]
-    [(dict? x) (for/hasheq ([(k v) (in-dict x)]
-                            #:unless (memq k private-keys))
-                 (values k v))]
-    [(list? x) (map dump x)]
-    [else x]))
 
 (define (pos p [new-pos #f])
   (when new-pos

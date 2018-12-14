@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
  (let ([port (open-output-bytes)])
    (encode uint8 #xab port)
    (encode uint8 #xff port)
-   (check-equal? (dump port) (bytes #xab #xff))))
+   (check-equal? (get-output-bytes port) (bytes #xab #xff))))
 
 (test-case
  "uint8: decode with post-decode, size, encode with pre-encode"
@@ -29,7 +29,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
    (set-pre-encode! myuint8 (λ (b) #xcc))
    (encode myuint8 #xab port)
    (encode myuint8 #xff port)
-   (check-equal? (dump port) (bytes #xcc #xcc))))
+   (check-equal? (get-output-bytes port) (bytes #xcc #xcc))))
 
 (test-case
  "uint16 is the same endianness as the platform"
@@ -89,7 +89,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
  (let ([port (open-output-bytes)])
    (encode int8 127 port)
    (encode int8 -1 port)
-   (check-equal? (dump port) (bytes #x7f #xff))))
+   (check-equal? (get-output-bytes port) (bytes #x7f #xff))))
 
 (test-case
  "int32 is the same endianness as the platform"
@@ -102,7 +102,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
  (check-equal? (size int16be) 2)
  (let ([port (open-output-bytes)])
    (encode int16be -85 port)
-   (check-equal? (dump port) (bytes #xff #xab))))
+   (check-equal? (get-output-bytes port) (bytes #xff #xab))))
 
 (test-case
  "int16le: decode, size, encode"

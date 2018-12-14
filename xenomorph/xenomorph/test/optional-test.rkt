@@ -77,7 +77,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
  (parameterize ([current-output-port (open-output-bytes)])
    (define optional (+xoptional #:type uint8 #:condition #f))
    (encode optional 128)
-   (check-equal? (dump (current-output-port)) (bytes))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes))))
 
 (test-case
  "encode with pre-encode"
@@ -85,32 +85,32 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
    (define optional (+xoptional #:type uint8))
    (set-pre-encode! optional (λ (val) 42))
    (encode optional 128)
-   (check-equal? (dump (current-output-port)) (bytes 42))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 42))))
 
 (test-case
  "encode should not encode when condition is a function and falsy"
  (parameterize ([current-output-port (open-output-bytes)])
    (define optional (+xoptional #:type uint8 #:condition (λ _ #f)))
    (encode optional 128)
-   (check-equal? (dump (current-output-port)) (bytes))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes))))
 
 (test-case
  "encode should encode when condition is omitted"
  (parameterize ([current-output-port (open-output-bytes)])
    (define optional (+xoptional #:type uint8))
    (encode optional 128)
-   (check-equal? (dump (current-output-port)) (bytes 128))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 128))))
 
 (test-case
  "encode should encode when condition is truthy"
  (parameterize ([current-output-port (open-output-bytes)])
    (define optional (+xoptional #:type uint8 #:condition #t))
    (encode optional 128)
-   (check-equal? (dump (current-output-port)) (bytes 128))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 128))))
 
 (test-case
  "encode should encode when condition is a function and truthy"
  (parameterize ([current-output-port (open-output-bytes)])
    (define optional (+xoptional #:type uint8 #:condition (λ _ #t)))
    (encode optional 128)
-   (check-equal? (dump (current-output-port)) (bytes 128))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 128))))

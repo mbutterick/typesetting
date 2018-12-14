@@ -83,7 +83,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
  "encode using string length"
  (parameterize ([current-output-port (open-output-bytes)])
    (encode (+xstring 7) "testing")
-   (check-equal? (dump (current-output-port)) #"testing")))
+   (check-equal? (get-output-bytes (current-output-port)) #"testing")))
 
 (test-case
  "encode using string length and pre-encode"
@@ -91,34 +91,34 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
    (define xs (+xstring 7))
    (set-pre-encode! xs (compose1 list->string reverse string->list))
    (encode xs "testing")
-   (check-equal? (dump (current-output-port)) #"gnitset")))
+   (check-equal? (get-output-bytes (current-output-port)) #"gnitset")))
 
 (test-case
  "encode length as number before string"
  (parameterize ([current-output-port (open-output-bytes)])
    (encode (+xstring uint8) "testing")
-   (check-equal? (dump (current-output-port)) #"\x07testing")))
+   (check-equal? (get-output-bytes (current-output-port)) #"\x07testing")))
 
 (test-case
  "encode length as number before string utf8"
  (parameterize ([current-output-port (open-output-bytes)])
    (encode (+xstring uint8 'utf8) "testing 😜")
-   (check-equal? (dump (current-output-port)) (string->bytes/utf-8 "\x0ctesting 😜"))))
+   (check-equal? (get-output-bytes (current-output-port)) (string->bytes/utf-8 "\x0ctesting 😜"))))
 
 (test-case
  "encode utf8"
  (parameterize ([current-output-port (open-output-bytes)])
    (encode (+xstring 4 'utf8) "🍻" )
-   (check-equal? (dump (current-output-port)) (string->bytes/utf-8 "🍻"))))
+   (check-equal? (get-output-bytes (current-output-port)) (string->bytes/utf-8 "🍻"))))
 
 (test-case
  "encode encoding computed from function"
  (parameterize ([current-output-port (open-output-bytes)])
    (encode (+xstring 4 (λ _ 'utf8)) "🍻")
-   (check-equal? (dump (current-output-port)) (string->bytes/utf-8 "🍻"))))
+   (check-equal? (get-output-bytes (current-output-port)) (string->bytes/utf-8 "🍻"))))
 
 (test-case
  "encode null-terminated string"
  (parameterize ([current-output-port (open-output-bytes)])
    (encode (+xstring #f 'utf8) "🍻"  )
-   (check-equal? (dump (current-output-port)) (string->bytes/utf-8 "🍻\x00"))))
+   (check-equal? (get-output-bytes (current-output-port)) (string->bytes/utf-8 "🍻\x00"))))

@@ -46,7 +46,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
    (encode e "bar")
    (encode e "baz")
    (encode e "foo")
-   (check-equal? (dump (current-output-port)) (bytes 1 2 0))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 1 2 0))))
 
 (test-case
  "encode should encode with pre-encode"
@@ -55,7 +55,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
    (encode e "bar")
    (encode e "baz")
    (encode e "foo")
-   (check-equal? (dump (current-output-port)) (bytes 0 0 0))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 0 0 0))))
 
 (test-case
  "should throw on unknown option"

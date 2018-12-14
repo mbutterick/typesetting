@@ -57,10 +57,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (d:dict-set! sdr '_currentOffset (- (pos port) (d:dict-ref sdr '_startOffset)))
     sdr))
 
-(define-syntax-rule (decode/hash . ARGS)
-  (dump (xdecode . ARGS)))
+(define (xstruct-decode . args)
+  (dict->mutable-hash (apply xstruct-xdecode args)))
 
-(define (xstruct-decode xs [port-arg (current-input-port)] #:parent [parent #f] [len 0])
+(define (xstruct-xdecode xs [port-arg (current-input-port)] #:parent [parent #f] [len 0])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
@@ -79,7 +79,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                           'pointerSize 0))
   (define fields-size (for/sum ([(key type) (d:in-dict (xstruct-fields xs))]
                                 #:when (xenomorphic? type))
-                        (size type (and val (d:dict-ref val key)) #:parent parent)))
+                               (size type (and val (d:dict-ref val key)) #:parent parent)))
   (define pointers-size (if include-pointers (d:dict-ref parent 'pointerSize) 0))
   (+ fields-size pointers-size))
 
@@ -107,16 +107,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (d:dict-set! parent 'pointerOffset (+ (pos port) (xstruct-size xs val #:parent parent #f))) 
 
     (for ([(key type) (d:in-dict (xstruct-fields xs))])
-      (encode type (d:dict-ref val key) #:parent parent))
+         (encode type (d:dict-ref val key) #:parent parent))
     (for ([ptr (in-list (d:dict-ref parent 'pointers))])
-      (encode (d:dict-ref ptr 'type) (d:dict-ref ptr 'val) #:parent (d:dict-ref ptr 'parent)))
+         (encode (d:dict-ref ptr 'type) (d:dict-ref ptr 'val) #:parent (d:dict-ref ptr 'parent)))
     (unless port-arg (get-output-bytes port))))
 
 (struct structish xbase () #:transparent)
 (struct xstruct structish (fields) #:transparent #:mutable
   #:methods gen:xenomorphic
   [(define decode xstruct-decode)
-   (define xdecode xstruct-decode)
+   (define xdecode xstruct-xdecode)
    (define encode xstruct-encode)
    (define size xstruct-size)])
 
@@ -125,9 +125,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (unless (even? (length args))
     (raise-argument-error '+xstruct "equal keys and values" dicts))
   (define fields (for/list ([kv (in-slice 2 args)])
-                   (unless (symbol? (car kv))
-                     (raise-argument-error '+xstruct "symbol" (car kv)))
-                   (apply cons kv)))
+                           (unless (symbol? (car kv))
+                             (raise-argument-error '+xstruct "symbol" (car kv)))
+                           (apply cons kv)))
   (unless (d:dict? fields)
     (raise-argument-error '+xstruct "dict" fields))
   (xstruct fields))
@@ -137,15 +137,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define (random-pick xs) (list-ref xs (random (length xs))))
   (check-exn exn:fail:contract? (λ () (+xstruct 42)))
   (for ([i (in-range 20)])
-    ;; make random structs and make sure we can round trip
-    (define field-types
-      (for/list ([i (in-range 40)])
-        (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-    (define size-num-types
-      (for/sum ([num-type (in-list field-types)])
-        (size num-type)))
-    (define xs (+xstruct (for/list ([num-type (in-list field-types)])
-                           (cons (gensym) num-type))))
-    (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                              (random 256))))
-    (check-equal? (encode xs (decode xs bs) #f) bs)))
+       ;; make random structs and make sure we can round trip
+       (define field-types
+         (for/list ([i (in-range 40)])
+                   (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+       (define size-num-types
+         (for/sum ([num-type (in-list field-types)])
+                  (size num-type)))
+       (define xs (+xstruct (for/list ([num-type (in-list field-types)])
+                                      (cons (gensym) num-type))))
+       (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                                         (random 256))))
+       (check-equal? (encode xs (decode xs bs) #f) bs)))

@@ -37,7 +37,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
  (parameterize ([current-output-port (open-output-bytes)])
    (define reserved (+xreserved uint16be))
    (encode reserved #f)
-   (check-equal? (dump (current-output-port)) (bytes 0 0))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 0 0))))
 
 (test-case
  "should encode with pre-encode"
@@ -45,4 +45,4 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
    (define reserved (+xreserved uint32be))
    (set-pre-encode! reserved (λ (val) 42))
    (encode reserved #f)
-   (check-equal? (dump (current-output-port)) (bytes 0 0 0 0))))
+   (check-equal? (get-output-bytes (current-output-port)) (bytes 0 0 0 0))))
