@@ -23,13 +23,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     (cond
       [(and allow-null (= offset (null-value xp))) #f] ; handle null pointers
       [else
-       (define relative (+ (case (pointer-style xp)
+       (define relative (+ (case (pointer-relative-to xp)
                              [(local) (dict-ref parent '_startOffset)]
                              [(immediate) (- (pos port) (size (xpointer-offset-type xp)))]
                              [(parent) (dict-ref (dict-ref parent 'parent) '_startOffset)]
                              [(global) (or (dict-ref (find-top-parent parent) '_startOffset) 0)]
-                             [else (error 'unknown-pointer-style)])
-                           ((relative-getter-or-0 xp) parent)))
+                             [else (error 'unknown-pointer-style)])))
        (define ptr (+ offset relative))
        (cond
          [(xpointer-type xp)
@@ -61,16 +60,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
   (parameterize ([current-output-port port])
     (if (not val)
         (encode (xpointer-offset-type xp) (null-value xp) port)
-        (let* ([new-parent (case (pointer-style xp)
+        (let* ([new-parent (case (pointer-relative-to xp)
                              [(local immediate) parent]
                              [(parent) (dict-ref parent 'parent)]
                              [(global) (find-top-parent parent)]
                              [else (error 'unknown-pointer-style)])]
-               [relative (+ (case (pointer-style xp)
+               [relative (+ (case (pointer-relative-to xp)
                               [(local parent) (dict-ref new-parent 'startOffset)]
                               [(immediate) (+ (pos port) (size (xpointer-offset-type xp) val #:parent parent))]
-                              [(global) 0])
-                            ((relative-getter-or-0 xp) (dict-ref parent 'val #f)))])
+                              [(global) 0]))])
           (encode (xpointer-offset-type xp) (- (dict-ref new-parent 'pointerOffset) relative))
           (let-values ([(type val) (resolve-void-pointer (xpointer-type xp) val)])
             (dict-set! new-parent 'pointers (append (dict-ref new-parent 'pointers)
@@ -81,7 +79,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
   (unless port-arg (get-output-bytes port)))
 
 (define (xpointer-size xp [val #f] #:parent [parent #f])
-  (let*-values ([(parent) (case (pointer-style xp)
+  (let*-values ([(parent) (case (pointer-relative-to xp)
                             [(local immediate) parent]
                             [(parent) (dict-ref parent 'parent)]
                             [(global) (find-top-parent parent)]
@@ -101,16 +99,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define (+xpointer [offset-arg #f] [type-arg #f]
                    #:offset-type [offset-kwarg #f]
                    #:type [type-kwarg #f]
-                   #:style [style 'local]
-                   #:relative-to [relative-to #f]
+                   #:relative-to [relative-to 'local]
                    #:lazy [lazy? #f]
                    #:allow-null [allow-null? #t]
                    #:null [null-value 0])
-  (define valid-pointer-styles '(local immediate parent global))
-  (unless (memq style valid-pointer-styles)
-    (raise-argument-error '+xpointer (format "~v" valid-pointer-styles) style))
-  (define options (mhasheq 'style style
-                           'relativeTo relative-to
+  (define valid-pointer-relatives '(local immediate parent global))
+  (unless (memq relative-to valid-pointer-relatives)
+    (raise-argument-error '+xpointer (format "~v" valid-pointer-relatives) relative-to))
+  (define options (mhasheq 'relative-to relative-to
                            'lazy lazy?
                            'allowNull allow-null?
                            'nullValue null-value))
@@ -118,11 +114,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
   (define type-in (or type-arg type-kwarg uint8))
   (xpointer offset-type (case type-in [(void) #f][else type-in]) options))
 
-(define (pointer-style xp) (dict-ref (xpointer-options xp) 'style))
+(define (pointer-relative-to xp) (dict-ref (xpointer-options xp) 'relative-to))
 (define (allow-null xp) (dict-ref (xpointer-options xp) 'allowNull)) 
 (define (null-value xp) (dict-ref (xpointer-options xp) 'nullValue))
 (define (pointer-lazy? xp) (dict-ref (xpointer-options xp) 'lazy))
-(define (relative-getter-or-0 xp) (or (dict-ref (xpointer-options xp) 'relativeTo #f) (λ (parent) 0))) ; changed this to a simple lambda
 
 ;; A pointer whose type is determined at decode time
 (struct xvoid-pointer (type value) #:transparent)
