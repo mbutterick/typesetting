@@ -41,7 +41,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                    (mhash 'tag (unescape-tag tag)
                           'checkSum 0
                           'offset (+xvoid-pointer table-codec table)
-                          'length (send table-codec size table))))
+                          'length (size table-codec table))))
   (define numTables (length tables))
   (define searchRange (* (floor (log numTables 2)) 16))
   (hash-set*! this-val

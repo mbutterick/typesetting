@@ -32,7 +32,7 @@ https://github.com/devongovett/fontkit/blob/master/src/subset/Subset.js
 
 (define (encode-to-port ss)
   (define p (open-output-bytes))
-  (encode ss p)
+  (subset-encode ss p)
   p)
 
 (define (subset-add-glyph! ss glyph-or-gid)
@@ -88,7 +88,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
     (for ([ttf-glyph-component (in-list (· ttf-glyf-data components))])
       (define gid (subset-add-glyph! ss (ttf-glyph-component-glyph-id ttf-glyph-component)))
       ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
-      (bytes-copy! glyf-bytes (ttf-glyph-component-pos ttf-glyph-component) (send uint16be encode #f gid))))
+      (bytes-copy! glyf-bytes (ttf-glyph-component-pos ttf-glyph-component) (encode uint16be gid #f))))
   
   (set-ttf-subset-glyf! ss (append (ttf-subset-glyf ss) (list glyf-bytes)))
   (hash-update! (ttf-subset-loca ss) 'offsets
@@ -108,7 +108,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
 (define (clone-deep val) (deserialize (serialize val)))
 
-(define (encode ss port)  
+(define (subset-encode ss port)  
   (set-ttf-subset-glyf! ss empty)
   (set-ttf-subset-offset! ss 0)
   (set-ttf-subset-loca! ss (mhash 'offsets empty))
@@ -122,17 +122,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
     (define gid (list-ref (subset-glyphs ss) idx))
     (ttf-subset-add-glyph ss gid))
   
-  (define new-maxp-table (clone-deep (send (get-maxp-table (subset-font ss)) to-hash)))
+  (define new-maxp-table (clone-deep (dump-mutable (get-maxp-table (subset-font ss)))))
   (dict-set! new-maxp-table 'numGlyphs (length (ttf-subset-glyf ss)))
   
   ;; populate the new loca table
   (dict-update! (ttf-subset-loca ss) 'offsets (λ (vals) (append vals (list (ttf-subset-offset ss)))))
   (loca-pre-encode (ttf-subset-loca ss))
 
-  (define new-head-table (clone-deep (send (get-head-table (subset-font ss)) to-hash)))
+  (define new-head-table (clone-deep (dump-mutable (get-head-table (subset-font ss)))))
   (dict-set! new-head-table 'indexToLocFormat (dict-ref (ttf-subset-loca ss) 'version))
   
-  (define new-hhea-table (clone-deep (send (get-hhea-table (subset-font ss)) to-hash)))
+  (define new-hhea-table (clone-deep (dump-mutable (get-hhea-table (subset-font ss)))))
   (dict-set! new-hhea-table 'numberOfMetrics (length (dict-ref (ttf-subset-hmtx ss) 'metrics)))
 
   (define new-tables
@@ -151,6 +151,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
         (error 'encode (format "missing value for ~a" k)))
       (make-hasheq kvs)))
   
-  (encode Directory port (mhash 'tables new-tables))
+  (encode Directory (mhash 'tables new-tables) port)
   (void))
 

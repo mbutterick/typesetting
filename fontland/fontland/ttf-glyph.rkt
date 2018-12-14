@@ -158,16 +158,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
   (dict-set! glyph-data 'components
              (for/list ([i (in-naturals)]
                         #:break (zero? (bitwise-and flags MORE_COMPONENTS)))
-                       (set! flags (send uint16be decode port))
+                       (set! flags (decode uint16be port))
                        (define gPos (- (pos port) offset))
-                       (define glyphID (send uint16be decode port))
+                       (define glyphID (decode uint16be port))
                        (unless haveInstructions
                          (set! haveInstructions (not (zero? (bitwise-and flags WE_HAVE_INSTRUCTIONS)))))
 
                        (match-define
                          (list dx dy)
                          (let ([decoder (if (not (zero? (bitwise-and flags ARG_1_AND_2_ARE_WORDS))) int16be int8)])
-                           (list (send decoder decode port) (send decoder decode port))))
+                           (list (decode decoder port) (decode decoder port))))
 
                        (define component (+ttf-glyph-component glyphID dx dy))
                        (set-ttf-glyph-component-pos! component gPos)
@@ -193,6 +193,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
   (/ (+ (* b1 (expt 2 8)) b2) (expt 2 14) 1.0))
   
 (define (read-fixed14 stream)
-  (define b1 (send uint8 decode stream))
-  (define b2 (send uint8 decode stream))
+  (define b1 (decode uint8 stream))
+  (define b2 (decode uint8 stream))
   (bytes->fixed14 b1 b2))
