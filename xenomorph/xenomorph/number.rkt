@@ -60,6 +60,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (struct xint xnumber (size signed endian) #:transparent
   #:methods gen:xenomorphic
   [(define decode xint-decode)
+   (define xdecode xint-decode)
    (define encode xint-encode)
    (define size (λ (i [item #f] #:parent [parent #f]) (xint-size i)))])
 
@@ -174,6 +175,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (struct xfloat xnumber (size endian) #:transparent
   #:methods gen:xenomorphic
   [(define decode xfloat-decode)
+   (define xdecode xfloat-decode)
    (define encode xfloat-encode)
    (define size (λ (i [item #f] #:parent [parent #f]) (xfloat-size i)))])
 
@@ -207,6 +209,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (struct xfixed xint (fracbits) #:transparent
   #:methods gen:xenomorphic
   [(define decode xfixed-decode)
+   (define xdecode xfixed-decode)
    (define encode xfixed-encode)
    (define size (λ (i [item #f] #:parent [parent #f]) (xint-size i)))])
 

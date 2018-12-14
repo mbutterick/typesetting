@@ -83,6 +83,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (struct xstring xbase (len encoding) #:transparent
   #:methods gen:xenomorphic
   [(define decode xstring-decode)
+   (define xdecode xstring-decode)
    (define encode xstring-encode)
    (define size xstring-size)])
 
@@ -110,6 +111,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (struct xsymbol xstring () #:transparent
   #:methods gen:xenomorphic
   [(define decode xsymbol-decode)
+   (define xdecode xsymbol-decode)
    (define encode xsymbol-encode)
    (define size xstring-size)])
 

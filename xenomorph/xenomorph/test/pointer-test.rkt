@@ -16,12 +16,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "decode should handle null pointers"
  (parameterize ([current-input-port (open-input-bytes (bytes 0))])
-   (check-false (decode (+xpointer) #:parent (mhash '_startOffset 50)))))
+   (check-false (xdecode (+xpointer) #:parent (mhash '_startOffset 50)))))
 
 (test-case
  "decode should use local offsets from start of parent by default"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (check-equal? (decode (+xpointer) #:parent (mhash '_startOffset 0)) 53)))
+   (check-equal? (xdecode (+xpointer) #:parent (mhash '_startOffset 0)) 53)))
 
 (test-case
  "decode should support immediate offsets"
@@ -32,27 +32,27 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "decode should support offsets relative to the parent"
  (parameterize ([current-input-port (open-input-bytes (bytes 0 0 1 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (+xpointer #:relative-to 'parent)
+   (check-equal? (xdecode (+xpointer #:relative-to 'parent)
                          #:parent (mhash 'parent (mhash '_startOffset 2))) 53)))
 
 (test-case
  "decode should support global offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 4 0 0 0 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (+xpointer #:relative-to 'global)
+   (check-equal? (xdecode (+xpointer #:relative-to 'global)
                          #:parent (mhash 'parent (mhash 'parent (mhash '_startOffset 2))))
                  53)))
 
 (test-case
  "decode should support returning pointer if there is no decode type"
  (parameterize ([current-input-port (open-input-bytes (bytes 4))])
-   (check-equal? (decode (+xpointer uint8 'void)
+   (check-equal? (xdecode (+xpointer uint8 'void)
                          #:parent (mhash '_startOffset 0)) 4)))
 
 (test-case
  "decode should support decoding pointers lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (define res (decode (+xstruct (dictify 'ptr (+xpointer #:lazy #t)))))
+   (define res (decode (+xstruct 'ptr (+xpointer #:lazy #t))))
    (check-true (promise? (dict-ref (struct-dict-res-_kv res) 'ptr)))
    (check-equal? (dict-ref res 'ptr) 53)))
 

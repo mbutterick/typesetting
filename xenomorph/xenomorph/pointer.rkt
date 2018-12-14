@@ -19,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define/post-decode (xpointer-decode xp [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
-    (define offset (decode (xpointer-offset-type xp) #:parent parent))
+    (define offset (xdecode (xpointer-offset-type xp) #:parent parent))
     (cond
       [(and allow-null (= offset (null-value xp))) #f] ; handle null pointers
       [else
@@ -39,7 +39,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
               [else
                (define orig-pos (pos port))
                (pos port ptr)
-               (set! val (decode (xpointer-type xp) #:parent parent))
+               (set! val (xdecode (xpointer-type xp) #:parent parent))
                (pos port orig-pos)
                val]))
           (if (pointer-lazy? xp)
@@ -93,6 +93,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (struct xpointer xbase (offset-type type options) #:transparent
   #:methods gen:xenomorphic
   [(define decode xpointer-decode)
+   (define xdecode xpointer-decode)
    (define encode xpointer-encode)
    (define size xpointer-size)])
 

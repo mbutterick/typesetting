@@ -28,10 +28,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                          [else +inf.0]))
        (for/list ([i (in-naturals)]
                   #:break (or (eof-object? (peek-byte)) (= (pos port) end-pos)))
-         (decode (xarray-base-type xa) #:parent new-parent))]
+         (xdecode (xarray-base-type xa) #:parent new-parent))]
       ;; we have decoded-len, which is treated as count of items
       [else (for/list ([i (in-range decoded-len)])
-              (decode (xarray-base-type xa) #:parent new-parent))])))
+              (xdecode (xarray-base-type xa) #:parent new-parent))])))
 
 (define/pre-encode (xarray-encode xa array [port-arg (current-output-port)] #:parent [parent #f])
   (unless (sequence? array)
@@ -77,6 +77,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 (struct xarray xarray-base (length-type) #:transparent
   #:methods gen:xenomorphic
   [(define decode xarray-decode)
+   (define xdecode xarray-decode)
    (define encode xarray-encode)
    (define size xarray-size)])
 

@@ -33,6 +33,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 (struct xbuffer xbase (len) #:transparent
   #:methods gen:xenomorphic
   [(define decode xbuffer-decode)
+   (define xdecode xbuffer-decode)
    (define encode xbuffer-encode)
    (define size xbuffer-size)])
 

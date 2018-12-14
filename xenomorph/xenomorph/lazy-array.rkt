@@ -26,7 +26,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
           (pos port (+ starting-pos (* (size type #f #:parent parent) index)))
           ;; use explicit `port` arg below because this evaluation is delayed
           (begin0
-            (post-decode xla (decode type port #:parent parent))
+            (post-decode xla (xdecode type port #:parent parent))
             (pos port orig-pos)))
         (pos port (+ (pos port) (* decoded-len (size (xarray-base-type xla) #f #:parent parent))))))))
 
@@ -40,6 +40,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 (struct xlazy-array xarray-base () #:transparent
   #:methods gen:xenomorphic
   [(define decode xlazy-array-decode)
+   (define xdecode xlazy-array-decode)
    (define encode xlazy-array-encode)
    (define size xlazy-array-size)])
 

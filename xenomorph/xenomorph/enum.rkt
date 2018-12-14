@@ -28,6 +28,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
 (struct xenum xbase (type options) #:transparent
   #:methods gen:xenomorphic
   [(define decode xenum-decode)
+   (define xdecode xenum-decode)
    (define encode xenum-encode)
    (define size xenum-size)])
 

@@ -57,7 +57,8 @@
 
 (define-generics xenomorphic
   (encode xenomorphic val [port] #:parent [parent])
-  (decode xenomorphic [port] #:parent [parent])
+  (xdecode xenomorphic [port] #:parent [parent])
+  (decode xenomorphic [port])
   (size xenomorphic [item] #:parent [parent]))
 
 (define (finalize-size size)

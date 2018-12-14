@@ -51,14 +51,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
             ([(key type) (d:in-dict fields)])
     (define val (if (procedure? type)
                     (type sdr)
-                    (decode type port #:parent sdr)))
+                    (xdecode type port #:parent sdr)))
     (unless (void? val)
       (d:dict-set! sdr key val))
     (d:dict-set! sdr '_currentOffset (- (pos port) (d:dict-ref sdr '_startOffset)))
     sdr))
 
 (define-syntax-rule (decode/hash . ARGS)
-  (dump (decode . ARGS)))
+  (dump (xdecode . ARGS)))
 
 (define (xstruct-decode xs [port-arg (current-input-port)] #:parent [parent #f] [len 0])
   (define port (->input-port port-arg))
@@ -116,6 +116,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 (struct xstruct structish (fields) #:transparent #:mutable
   #:methods gen:xenomorphic
   [(define decode xstruct-decode)
+   (define xdecode xstruct-decode)
    (define encode xstruct-encode)
    (define size xstruct-size)])
 

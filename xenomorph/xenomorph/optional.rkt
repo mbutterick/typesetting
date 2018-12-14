@@ -1,3 +1,4 @@
+
 #lang debug racket/base
 (require "helper.rkt")
 (provide (all-defined-out))
@@ -17,7 +18,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     (when (resolve-condition xo parent)
-      (decode (xoptional-type xo) #:parent parent))))
+      (xdecode (xoptional-type xo) #:parent parent))))
 
 (define/pre-encode (xoptional-encode xo val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
@@ -33,6 +34,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
 (struct xoptional xbase (type condition) #:transparent
   #:methods gen:xenomorphic
   [(define decode xoptional-decode)
+   (define xdecode xoptional-decode)
    (define encode xoptional-encode)
    (define size xoptional-size)])
 

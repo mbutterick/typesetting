@@ -21,7 +21,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                 (unless parent
                   (raise-argument-error 'xversioned-struct-decode "valid parent" parent))
                 ((xversioned-struct-version-getter xvs) parent)]
-               [else (decode (xversioned-struct-type xvs) port)]))
+               [else (xdecode (xversioned-struct-type xvs) port)]))
 
   (when (dict-ref (xversioned-struct-versions xvs) 'header #f)
     (_parse-fields port res (dict-ref (xversioned-struct-versions xvs) 'header)))
@@ -30,7 +30,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                      (raise-argument-error 'xversioned-struct-decode "valid version key" (cons version (xversioned-struct-versions xvs)))))
     
   (cond
-     [(xversioned-struct? fields) (decode fields port #:parent parent)]
+     [(xversioned-struct? fields) (xdecode fields port #:parent parent)]
      [else (_parse-fields port res fields)
            res]))
 
@@ -89,6 +89,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 (struct xversioned-struct structish (type versions version-getter version-setter) #:transparent #:mutable
   #:methods gen:xenomorphic
   [(define decode xversioned-struct-decode)
+   (define xdecode xversioned-struct-decode)
    (define encode xversioned-struct-encode)
    (define size xversioned-struct-size)])
 

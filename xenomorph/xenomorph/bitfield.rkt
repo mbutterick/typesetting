@@ -11,7 +11,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     (define flag-hash (mhasheq))
-    (define val (decode (xbitfield-type xb)))
+    (define val (xdecode (xbitfield-type xb)))
     (for ([(flag i) (in-indexed (xbitfield-flags xb))]
           #:when flag)
       (hash-set! flag-hash flag (bitwise-bit-set? val i)))
@@ -32,6 +32,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 (struct xbitfield xbase (type flags) #:transparent
   #:methods gen:xenomorphic
   [(define decode xbitfield-decode)
+   (define xdecode xbitfield-decode)
    (define encode xbitfield-encode)
    (define size xbitfield-size)])
 

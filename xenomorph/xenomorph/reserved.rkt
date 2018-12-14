@@ -25,6 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
 (struct xreserved xbase (type count) #:transparent
   #:methods gen:xenomorphic
   [(define decode xreserved-decode)
+   (define xdecode xreserved-decode)
    (define encode xreserved-encode)
    (define size xreserved-size)])
 
