@@ -26,7 +26,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
           (pos port (+ starting-pos (* (size type #f #:parent parent) index)))
           ;; use explicit `port` arg below because this evaluation is delayed
           (begin0
-            (post-decode xla (xdecode type port #:parent parent))
+            (post-decode xla (decode type port))
             (pos port orig-pos)))
         (pos port (+ (pos port) (* decoded-len (size (xarray-base-type xla) #f #:parent parent))))))))
 
