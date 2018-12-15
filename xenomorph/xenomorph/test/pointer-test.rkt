@@ -72,13 +72,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "size should add to parent pointerSize"
  (let ([parent (mhash 'parent (mhash 'pointerSize 0))])
    (check-equal? (size (+xpointer #:relative-to 'parent) 10 #:parent parent) 1)
-   (check-equal? (dict-ref (dict-ref parent 'parent) 'pointerSize) 1)))
+   (check-equal? (dict-ref* parent 'parent 'pointerSize) 1)))
 
 (test-case
  "size should add to global pointerSize"
  (let ([parent (mhash 'parent (mhash 'parent (mhash 'parent (mhash 'pointerSize 0))))])
    (check-equal? (size (+xpointer #:relative-to 'global) 10 #:parent parent) 1)
-   (check-equal? (dict-ref (dict-ref (dict-ref (dict-ref parent 'parent) 'parent) 'parent) 'pointerSize) 1)))
+   (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointerSize) 1)))
 
 (test-case
  "size should handle void pointers"
@@ -142,8 +142,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                      'pointerOffset 5
                                      'pointers null)))
    (encode (+xpointer #:relative-to 'parent) 10 #:parent parent)
-   (check-equal? (dict-ref (dict-ref parent 'parent) 'pointerOffset) 6)
-   (check-equal? (dict-ref (dict-ref parent 'parent) 'pointers) (list (mhasheq 'type uint8
+   (check-equal? (dict-ref* parent 'parent 'pointerOffset) 6)
+   (check-equal? (dict-ref* parent 'parent 'pointers) (list (mhasheq 'type uint8
                                                                             'val 10
                                                                             'parent parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
@@ -158,8 +158,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                                    'pointerOffset 5
                                                    'pointers null)))))
    (encode (+xpointer #:relative-to 'global) 10 #:parent parent)
-   (check-equal? (dict-ref (dict-ref (dict-ref (dict-ref parent 'parent) 'parent) 'parent) 'pointerOffset) 6)
-   (check-equal? (dict-ref (dict-ref (dict-ref (dict-ref parent 'parent) 'parent) 'parent) 'pointers)
+   (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointerOffset) 6)
+   (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointers)
                  (list (mhasheq 'type uint8
                                 'val 10
                                 'parent parent)))
@@ -172,11 +172,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'startOffset 0
                       'pointerOffset 1
                       'pointers null))
-   (encode (+xpointer uint8 'void) (+xvoid-pointer uint8 55) #:parent  parent)
+   (encode (+xpointer uint8 'void) (+xvoid-pointer uint8 55) #:parent parent)
    (check-equal? (dict-ref parent 'pointerOffset) 2)
-   (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
-                                                         'val 55
-                                                         'parent parent)))
+   (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8 'val 55 'parent parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case

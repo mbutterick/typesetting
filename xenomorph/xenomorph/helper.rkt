@@ -10,6 +10,11 @@
     [(input-port? arg) arg]
     [else (raise-argument-error '->input-port "byte string or input port" arg)]))
 
+(define (dict-ref* d . keys)
+  (for/fold ([d d])
+            ([k (in-list keys)])
+    (dict-ref d k)))
+
 (define private-keys '(parent _startOffset _currentOffset _length))
 (define (dict->mutable-hash x)
   (define h (make-hasheq))
