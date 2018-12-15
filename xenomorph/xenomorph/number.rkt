@@ -24,7 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define system-endian (if (system-big-endian?) 'be 'le))
 
 (define xnumber%
-  (class* xenobase% ()
+  (class xenobase%
     (super-new)
     (init-field size endian)
     (unless (exact-positive-integer? size)
@@ -37,7 +37,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define (xint? x) (is-a? x xint%))
 
 (define xint%
-  (class* xnumber% ()
+  (class xnumber%
     (super-new)
     (init-field signed)
     (inherit-field endian size bits)
@@ -142,7 +142,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (check-equal? (encode int8 127 #f) (bytes 127)))
 
 (define xfloat%
-  (class* xnumber% ()
+  (class xnumber%
     (super-new)
     (inherit-field size endian)
                 

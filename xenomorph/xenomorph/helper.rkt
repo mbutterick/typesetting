@@ -71,7 +71,6 @@
     [(and (integer? size) (not (negative? size))) size]
     [else (raise-argument-error 'size "nonnegative integer" size)]))
 
-
 (define xenomorphic<%>
   (interface* ()
               ([(generic-property gen:xenomorphic)
