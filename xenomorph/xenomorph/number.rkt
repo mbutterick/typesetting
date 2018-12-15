@@ -36,21 +36,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 (define xint% (class* xnumber% ()
                 (super-new)
-                (init-field size
-                            signed
-                            endian)
+                (init-field size signed endian)
                 
-                (define/augment (xxdecode port [parent #f])
-                  (define bstr (read-bytes size port))
-                  (define bs ((if (eq? endian system-endian)
-                                  values
-                                  reverse-bytes) bstr))
+                (define/augment (xxdecode port . _)
+                  (define bs ((if (eq? endian system-endian) values reverse-bytes) (read-bytes size port)))
                   (define uint (for/sum ([b (in-bytes bs)]
                                          [i (in-naturals)])
                                  (arithmetic-shift b (* 8 i))))
                   (if signed (unsigned->signed uint (bits this)) uint))
                 
-                (define/augment (xxencode val port [parent #f])
+                (define/augment (xxencode val . _)
                   (define-values (bound-min bound-max) (bounds this))
                   (unless (<= bound-min val bound-max)
                     (raise-argument-error 'encode
@@ -61,7 +56,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                             ([i (in-range size)])
                     (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))
                 
-                (define/augment (xxsize [val #f] [parent #f]) size)))
+                (define/augment (xxsize . _) size)))
 
 
 (define (+xint [size 2] #:signed [signed #true] #:endian [endian system-endian])
@@ -70,13 +65,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (unless (memq endian '(le be))
     (raise-argument-error '+xint "'le or 'be" endian))
   (make-object xint% size signed endian))
-
-#;(define (type-tag i)
-    (string->symbol
-     (string-append (if signed "" "u")
-                    "int"
-                    (number->string (bits i))
-                    (if (> (xint-size i) 1) (symbol->string (xint-endian i)) ""))))
 
 (define (bits i) (* (get-field size i) 8))
 
@@ -157,3 +145,30 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (check-equal? (decode int8 (bytes 255)) -1)
   (check-equal? (encode int8 -1 #f) (bytes 255))
   (check-equal? (encode int8 127 #f) (bytes 127)))
+
+(define xfloat% (class* xnumber% ()
+                  (super-new)
+                  (init-field size endian)
+                
+                  (define/augment (xxdecode port . _)
+                    (floating-point-bytes->real (read-bytes size port) (eq? endian 'be)))
+                
+                  (define/augment (xxencode val . _)
+                    (real->floating-point-bytes val size (eq? endian 'be)))
+                
+                  (define/augment (xxsize . _) size)))
+
+(define (+xfloat [size 4] #:endian [endian system-endian])
+  (unless (exact-positive-integer? size)
+    (raise-argument-error '+xfloat "exact positive integer" size))
+  (unless (memq endian '(le be))
+    (raise-argument-error '+xfloat "'le or 'be" endian))
+  (make-object xfloat% size endian))
+
+(define float (+xfloat 4))
+(define floatbe (+xfloat 4 #:endian 'be))
+(define floatle (+xfloat 4 #:endian 'le))
+
+(define double (+xfloat 8))
+(define doublebe (+xfloat 8 #:endian 'be))
+(define doublele (+xfloat 8 #:endian 'le))
