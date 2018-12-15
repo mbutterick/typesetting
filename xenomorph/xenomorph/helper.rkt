@@ -6,7 +6,6 @@
          "generic.rkt")
 (provide (all-defined-out))
 
-
 (define private-keys '(parent _startOffset _currentOffset _length))
 
 (define (dump-mutable x)

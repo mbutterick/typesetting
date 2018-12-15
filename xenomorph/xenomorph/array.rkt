@@ -17,7 +17,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   (class xenobase%
     (super-new)
     (init-field type len)
-    (unless (is-a? type xenobase%)
+    (unless (xenomorphic-type? type)
       (raise-argument-error '+xarray "xenomorphic type" type))
     (unless (length-resolvable? len)
       (raise-argument-error '+xarray "length-resolvable?" len))))
@@ -31,7 +31,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 
     (inherit-field type len)
 
-    (define/augment (xxdecode port parent . _)
+    (define/augment (xxdecode port parent)
       (define new-parent (if (xint? len)
                              (mhasheq 'parent parent
                                       '_startOffset (pos port)
