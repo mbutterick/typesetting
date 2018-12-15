@@ -1,10 +1,13 @@
-#lang racket/base
+#lang debug racket/base
 (require racket/generic
+         racket/private/generic-methods
          racket/dict
-         racket/port)
+         racket/port
+         racket/class)
 (provide (all-defined-out))
 
-(define current-parent (make-parameter #f))
+(define (->output-port arg)
+  (if (output-port? arg) arg (open-output-bytes)))
 
 (define (->input-port arg)
   (cond
@@ -12,18 +15,22 @@
     [(input-port? arg) arg]
     [else (raise-argument-error '->input-port "byte string or input port" arg)]))
 
-(define (dict-ref* d . keys)
-  (for/fold ([d d])
-            ([k (in-list keys)])
-    (dict-ref d k)))
-
 (define private-keys '(parent _startOffset _currentOffset _length))
-(define (dict->mutable-hash x)
+(define (dump-mutable x)
   (define h (make-hasheq))
-  (for ([(k v) (in-dict x)]
-        #:unless (memq k private-keys))
+  (for ([(k v) (in-dict (dump x))])
     (hash-set! h k v))
   h)
+
+(define (dump x)
+  (cond
+    [(input-port? x) (port->bytes x)]
+    [(output-port? x) (get-output-bytes x)]
+    [(dict? x) (for/hasheq ([(k v) (in-dict x)]
+                            #:unless (memq k private-keys))
+                 (values k v))]
+    [(list? x) (map dump x)]
+    [else x]))
 
 (define (pos p [new-pos #f])
   (when new-pos
@@ -55,8 +62,7 @@
 
 (define-generics xenomorphic
   (encode xenomorphic val [port] #:parent [parent])
-  (xdecode xenomorphic [port] #:parent [parent])
-  (decode xenomorphic [port])
+  (decode xenomorphic [port] #:parent [parent])
   (size xenomorphic [item] #:parent [parent]))
 
 (define (finalize-size size)
@@ -64,3 +70,36 @@
     [(void? size) 0]
     [(and (integer? size) (not (negative? size))) size]
     [else (raise-argument-error 'size "nonnegative integer" size)]))
+
+
+(define codec<%>
+  (interface* ()
+              ([(generic-property gen:xenomorphic)
+                (generic-method-table gen:xenomorphic                                      
+                                      (define (decode o [port-arg (current-input-port)] #:parent [parent #f])
+                                        (send o xxdecode (->input-port port-arg) parent))
+                                      
+                                      (define (encode o val [port-arg (current-output-port)] #:parent [parent #f])
+                                        (define port (->output-port port-arg))
+                                        (send o xxencode val port parent)
+                                        (unless port-arg (get-output-bytes port)))
+                                      
+                                      (define (size o [val #f] #:parent [parent #f])
+                                        (send o xxsize val parent)))])))
+
+(define xenobase%
+  (class* object% (codec<%>)
+    (super-new)
+    
+    (define/pubment (xxdecode input-port [parent #f])
+      (post-decode (inner (void) xxdecode input-port parent)))
+    
+    (define/pubment (xxencode val output-port [parent #f])
+      (define encode-result (inner (void) xxencode (pre-encode val) output-port parent))
+      (when (bytes? encode-result) (write-bytes encode-result output-port)))
+    
+    (define/pubment (xxsize [val #f] [parent #f])
+      (finalize-size (inner (void) xxsize val parent)))
+    
+    (define/public (post-decode val) val)
+    (define/public (pre-encode val) val)))
