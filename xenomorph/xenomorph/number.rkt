@@ -23,60 +23,55 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 (define system-endian (if (system-big-endian?) 'be 'le))
 
-#;(define/pre-encode (xint-encode i val [port-arg (current-output-port)] #:parent [parent #f])
-    )
+(define xnumber%
+  (class* xenobase% ()
+    (super-new)
+    (init-field size endian)
+    (unless (exact-positive-integer? size)
+      (raise-argument-error 'xenomorph "exact positive integer" size))
+    (unless (memq endian '(le be))
+      (raise-argument-error 'xenomorph "'le or 'be" endian))
+    (field [bits (* size 8)])
+    (define/augment (xxsize . _) size)))
 
-#;(define/post-decode (xint-decode i [port-arg (current-input-port)] #:parent [parent #f])
-    (unless (xint? i)
-      (raise-argument-error 'decode "xint instance" i))
-    )
+(define (xint? x) (is-a? x xint%))
 
-(struct xnumber xbase () #:transparent)
-(define xnumber% (class* xenobase% () (super-new)))
-
-(define xint% (class* xnumber% ()
-                (super-new)
-                (init-field size signed endian)
+(define xint%
+  (class* xnumber% ()
+    (super-new)
+    (init-field signed)
+    (inherit-field endian size bits)
+    
+    ;; if a signed integer has n bits, it can contain a number
+    ;; between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
+    (define signed-max (sub1 (arithmetic-shift 1 (sub1 bits))))
+    (define signed-min (sub1 (- signed-max)))
+    (define delta (if signed 0 signed-min))
+    (field [bound-min (- signed-min delta)]
+           [bound-max (- signed-max delta)])
                 
-                (define/augment (xxdecode port . _)
-                  (define bs ((if (eq? endian system-endian) values reverse-bytes) (read-bytes size port)))
-                  (define uint (for/sum ([b (in-bytes bs)]
-                                         [i (in-naturals)])
-                                 (arithmetic-shift b (* 8 i))))
-                  (if signed (unsigned->signed uint (bits this)) uint))
+    (define/augment (xxdecode port . _)
+      (define bs ((if (eq? endian system-endian) values reverse-bytes) (read-bytes size port)))
+      (define uint (for/sum ([b (in-bytes bs)]
+                             [i (in-naturals)])
+                     (arithmetic-shift b (* 8 i))))
+      (if signed (unsigned->signed uint bits) uint))
                 
-                (define/augment (xxencode val . _)
-                  (define-values (bound-min bound-max) (bounds this))
-                  (unless (<= bound-min val bound-max)
-                    (raise-argument-error 'encode
-                                          (format "value that fits within ~a ~a-byte int (~a to ~a)" (if signed "signed" "unsigned") size bound-min bound-max) val))
-                  (for/fold ([bs null]
-                             [val (exact-if-possible val)]
-                             #:result (apply bytes ((if (eq? endian 'be) values reverse) bs)))
-                            ([i (in-range size)])
-                    (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))
-                
-                (define/augment (xxsize . _) size)))
+    (define/augment (xxencode val . _)
+      (unless (<= bound-min val bound-max)
+        (raise-argument-error 'encode
+                              (format "value that fits within ~a ~a-byte int (~a to ~a)" (if signed "signed" "unsigned") size bound-min bound-max) val))
+      (for/fold ([bs null]
+                 [val (exact-if-possible val)]
+                 #:result (apply bytes ((if (eq? endian 'be) values reverse) bs)))
+                ([i (in-range size)])
+        (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))))
 
-
-(define (+xint [size 2] #:signed [signed #true] #:endian [endian system-endian])
-  (unless (exact-positive-integer? size)
-    (raise-argument-error '+xint "exact positive integer" size))
-  (unless (memq endian '(le be))
-    (raise-argument-error '+xint "'le or 'be" endian))
-  (make-object xint% size signed endian))
-
-(define (bits i) (* (get-field size i) 8))
-
-(define (bounds i)
-  #;(unless (xint? i)
-      (raise-argument-error 'bounds "integer instance" i))
-  ;; if a signed integer has n bits, it can contain a number
-  ;; between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
-  (let* ([signed-max (sub1 (arithmetic-shift 1 (sub1 (bits i))))]
-         [signed-min (sub1 (- signed-max))]
-         [delta (if (get-field signed i) 0 signed-min)])
-    (values (- signed-min delta) (- signed-max delta))))
+(define (+xint [size 2]
+               #:signed [signed #true]
+               #:endian [endian system-endian]
+               #:subclass [class xint%])
+  (new class [size size] [signed signed] [endian endian]))
 
 (define int8 (+xint 1))
 (define int16 (+xint 2))
@@ -146,24 +141,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (check-equal? (encode int8 -1 #f) (bytes 255))
   (check-equal? (encode int8 127 #f) (bytes 127)))
 
-(define xfloat% (class* xnumber% ()
-                  (super-new)
-                  (init-field size endian)
+(define xfloat%
+  (class* xnumber% ()
+    (super-new)
+    (inherit-field size endian)
                 
-                  (define/augment (xxdecode port . _)
-                    (floating-point-bytes->real (read-bytes size port) (eq? endian 'be)))
+    (define/augment (xxdecode port . _)
+      (floating-point-bytes->real (read-bytes size port) (eq? endian 'be)))
                 
-                  (define/augment (xxencode val . _)
-                    (real->floating-point-bytes val size (eq? endian 'be)))
-                
-                  (define/augment (xxsize . _) size)))
+    (define/augment (xxencode val . _)
+      (real->floating-point-bytes val size (eq? endian 'be)))))
 
 (define (+xfloat [size 4] #:endian [endian system-endian])
-  (unless (exact-positive-integer? size)
-    (raise-argument-error '+xfloat "exact positive integer" size))
-  (unless (memq endian '(le be))
-    (raise-argument-error '+xfloat "'le or 'be" endian))
-  (make-object xfloat% size endian))
+  (new xfloat% [size size] [endian endian]))
 
 (define float (+xfloat 4))
 (define floatbe (+xfloat 4 #:endian 'be))
@@ -172,3 +162,36 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define double (+xfloat 8))
 (define doublebe (+xfloat 8 #:endian 'be))
 (define doublele (+xfloat 8 #:endian 'le))
+
+(define xfixed%
+  (class xint%
+    (super-new)
+    (init-field fracbits)
+    (unless (exact-positive-integer? fracbits)
+      (raise-argument-error '+xfixed "exact positive integer for fracbits" fracbits))
+
+    (define fixed-shift (arithmetic-shift 1 fracbits))
+                
+    (define/override (post-decode int)
+      (exact-if-possible (/ int fixed-shift 1.0)))
+                
+    (define/override (pre-encode val)
+      (exact-if-possible (floor (* val fixed-shift))))))
+
+(define (+xfixed [size 2]
+                 #:signed [signed #true]
+                 #:endian [endian system-endian]
+                 #:fracbits [fracbits (/ (* size 8) 2)])  
+  (new xfixed% [size size] [signed signed] [endian endian] [fracbits fracbits]))
+
+(define fixed16 (+xfixed 2))
+(define fixed16be (+xfixed 2 #:endian 'be))
+(define fixed16le (+xfixed 2 #:endian 'le))
+(define fixed32 (+xfixed 4))
+(define fixed32be (+xfixed 4 #:endian 'be))
+(define fixed32le (+xfixed 4 #:endian 'le))
+
+(module+ test
+  (define bs (encode fixed16be 123.45 #f))
+  (check-equal? bs #"{s")
+  (check-equal? (ceiling (* (decode fixed16be bs) 100)) 12345.0))

@@ -1,5 +1,8 @@
 #lang racket/base
-(require rackunit "../number.rkt" "../helper.rkt")
+(require rackunit
+         racket/class
+         "../number.rkt"
+         "../helper.rkt")
 
 #|
 approximates
@@ -19,14 +22,16 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 
 (test-case
  "uint8: decode with post-decode, size, encode with pre-encode"
- (define myuint8 (+xint 1 #:signed #f))
+ (define myuint8% (class xint%
+                   (super-new)
+                   (define/override (post-decode int) #xdeadbeef)
+                   (define/override (pre-encode val) #xcc)))
+ (define myuint8 (+xint 1 #:signed #f #:subclass myuint8%))
  (parameterize ([current-input-port (open-input-bytes (bytes #xab #xff))])
-   (set-post-decode! myuint8 (λ (b) #xdeadbeef))
    (check-equal? (decode myuint8) #xdeadbeef)
    (check-equal? (decode myuint8) #xdeadbeef))
  (check-equal? (size myuint8) 1)
  (let ([port (open-output-bytes)])
-   (set-pre-encode! myuint8 (λ (b) #xcc))
    (encode myuint8 #xab port)
    (encode myuint8 #xff port)
    (check-equal? (get-output-bytes port) (bytes #xcc #xcc))))

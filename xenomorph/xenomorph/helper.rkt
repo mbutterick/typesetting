@@ -72,34 +72,35 @@
     [else (raise-argument-error 'size "nonnegative integer" size)]))
 
 
-(define codec<%>
+(define xenomorphic<%>
   (interface* ()
               ([(generic-property gen:xenomorphic)
                 (generic-method-table gen:xenomorphic                                      
-                                      (define (decode o [port-arg (current-input-port)] #:parent [parent #f])
-                                        (send o xxdecode (->input-port port-arg) parent))
+                                      (define (decode xo [port-arg (current-input-port)] #:parent [parent #f])
+                                        (send xo xxdecode (->input-port port-arg) parent))
                                       
-                                      (define (encode o val [port-arg (current-output-port)] #:parent [parent #f])
+                                      (define (encode xo val [port-arg (current-output-port)]
+                                                      #:parent [parent #f])
                                         (define port (->output-port port-arg))
-                                        (send o xxencode val port parent)
+                                        (send xo xxencode val port parent)
                                         (unless port-arg (get-output-bytes port)))
                                       
-                                      (define (size o [val #f] #:parent [parent #f])
-                                        (send o xxsize val parent)))])))
+                                      (define (size xo [val #f] #:parent [parent #f])
+                                        (send xo xxsize val parent)))])))
 
 (define xenobase%
-  (class* object% (codec<%>)
+  (class* object% (xenomorphic<%>)
     (super-new)
     
     (define/pubment (xxdecode input-port [parent #f])
-      (post-decode (inner (void) xxdecode input-port parent)))
+      (post-decode (inner (error 'xxdecode-not-augmented) xxdecode input-port parent)))
     
     (define/pubment (xxencode val output-port [parent #f])
-      (define encode-result (inner (void) xxencode (pre-encode val) output-port parent))
+      (define encode-result (inner (error 'xxencode-not-augmented) xxencode (pre-encode val) output-port parent))
       (when (bytes? encode-result) (write-bytes encode-result output-port)))
     
     (define/pubment (xxsize [val #f] [parent #f])
-      (finalize-size (inner (void) xxsize val parent)))
+      (finalize-size (inner 0 xxsize val parent)))
     
     (define/public (post-decode val) val)
     (define/public (pre-encode val) val)))
