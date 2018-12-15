@@ -1,5 +1,6 @@
 #lang racket/base
 (require rackunit
+         racket/class
          "../helper.rkt"
          "../array.rkt"
          "../number.rkt"
@@ -19,8 +20,10 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (define xa (+xarray #:type uint8 #:length 4))
-   (set-post-decode! xa (λ (val . _) (map (λ (x) (* 2 x)) val)))
+   (define myarray% (class xarray%
+                   (super-new)
+                   (define/override (post-decode val) (map (λ (x) (* 2 x)) val))))
+   (define xa (+xarray #:type uint8 #:length 4 #:subclass myarray%))
    (check-equal? (decode xa) '(2 4 6 8))))
 
 (test-case 
@@ -31,12 +34,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "decode length from parent key"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (xdecode (+xarray #:type uint8 #:length 'len) #:parent (mhash 'len 4)) '(1 2 3 4))))
+   (check-equal? (send (+xarray #:type uint8 #:length 'len) xxdecode (current-input-port) (mhash 'len 4)) '(1 2 3 4))))
 
 (test-case 
  "decode byte count from parent key"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (xdecode (+xarray #:type uint16be #:length 'len #:count-bytes #t) #:parent (mhash 'len 4)) '(258 772))))
+   (check-equal? (send (+xarray #:type uint16be #:length 'len #:count-bytes #t) xxdecode (current-input-port) (mhash 'len 4)) '(258 772))))
 
 (test-case 
  "decode length as number before array"
@@ -61,12 +64,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "decode to the end of parent if no length given"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (xdecode (+xarray #:type uint8) #:parent (mhash '_length 4 '_startOffset 0)) '(1 2 3 4))))
+   (check-equal? (send (+xarray #:type uint8) xxdecode (current-input-port) (mhash '_length 4 '_startOffset 0)) '(1 2 3 4))))
 
 (test-case 
  "decode to the end of the stream if parent exists, but its length is 0"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (xdecode (+xarray #:type uint8) #:parent (mhash '_length 0 '_startOffset 0)) '(1 2 3 4 5))))
+   (check-equal? (send (+xarray #:type uint8) xxdecode (current-input-port) (mhash '_length 0 '_startOffset 0)) '(1 2 3 4 5))))
 
 (test-case 
  "decode to the end of the stream if no parent and length is given"
@@ -92,8 +95,10 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "encode with pre-encode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (define xa (+xarray #:type uint8 #:length 4))
-   (set-pre-encode! xa (λ (val . _) (map (λ (x) (* 2 x)) val)))
+   (define myarray% (class xarray%
+                   (super-new)
+                   (define/override (pre-encode val) (map (λ (x) (* 2 x)) val))))
+   (define xa (+xarray #:type uint8 #:length 4 #:subclass myarray%))
    (check-equal? (encode xa '(1 2 3 4) #f) (bytes 2 4 6 8))))
 
 (test-case 

@@ -2,6 +2,7 @@
 (require "helper.rkt"
          "number.rkt"
          racket/dict
+         racket/class
          racket/promise
          sugar/unstable/dict)
 (provide (all-defined-out))
@@ -16,7 +17,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [(dict-ref parent 'parent #f) => find-top-parent]
     [else parent]))
 
-(define/post-decode (xpointer-decode xp [port-arg (current-input-port)] #:parent [parent #f])
+#;(define/post-decode (xpointer-decode xp [port-arg (current-input-port)] #:parent [parent #f])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
     (define offset (xdecode (xpointer-offset-type xp) #:parent parent))
@@ -53,7 +54,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [(xvoid-pointer? val) (values (xvoid-pointer-type val) (xvoid-pointer-value val))]
     [else (raise-argument-error 'Pointer:size "VoidPointer" val)]))
 
-(define/pre-encode (xpointer-encode xp val [port-arg (current-output-port)] #:parent [parent #f])
+#;(define/pre-encode (xpointer-encode xp val [port-arg (current-output-port)] #:parent [parent #f])
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (unless parent ; todo: furnish default pointer context? adapt from Struct?
     (raise-argument-error 'xpointer-encode "valid pointer context" parent))
@@ -78,7 +79,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
             (dict-set! new-parent 'pointerOffset (+ (dict-ref new-parent 'pointerOffset) (size type val #:parent  parent)))))))
   (unless port-arg (get-output-bytes port)))
 
-(define (xpointer-size xp [val #f] #:parent [parent #f])
+#;(define (xpointer-size xp [val #f] #:parent [parent #f])
   (let*-values ([(parent) (case (pointer-relative-to xp)
                             [(local immediate) parent]
                             [(parent) (dict-ref parent 'parent)]
@@ -90,7 +91,20 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                                           (+ (dict-ref parent 'pointerSize) (size type val #:parent parent)))))
     (size (xpointer-offset-type xp))))
 
-(struct xpointer xbase (offset-type type options) #:transparent
+(define xpointer%
+  (class* xenobase% ()
+    (super-new)
+    (init-field offset-type type options)
+
+    (define pointer-relative-to (dict-ref options 'relative-to))
+(define allow-null (dict-ref options 'allowNull)) 
+(define null-value (dict-ref options 'nullValue))
+(define pointer-lazy? (dict-ref options 'lazy))
+
+
+    ))
+
+#;(struct xpointer xbase (offset-type type options) #:transparent
   #:methods gen:xenomorphic
   [(define decode xpointer-decode)
    (define xdecode xpointer-decode)
@@ -111,14 +125,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                            'lazy lazy?
                            'allowNull allow-null?
                            'nullValue null-value))
-  (define offset-type (or offset-arg offset-kwarg uint8))
   (define type-in (or type-arg type-kwarg uint8))
-  (xpointer offset-type (case type-in [(void) #f][else type-in]) options))
+  (new xpointer%
+       [offset-type (or offset-arg offset-kwarg uint8)]
+       [type (case type-in [(void) #f][else type-in])]
+       [options options]))
 
-(define (pointer-relative-to xp) (dict-ref (xpointer-options xp) 'relative-to))
-(define (allow-null xp) (dict-ref (xpointer-options xp) 'allowNull)) 
-(define (null-value xp) (dict-ref (xpointer-options xp) 'nullValue))
-(define (pointer-lazy? xp) (dict-ref (xpointer-options xp) 'lazy))
 
 ;; A pointer whose type is determined at decode time
 (struct xvoid-pointer (type value) #:transparent)
