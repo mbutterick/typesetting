@@ -12,8 +12,9 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 (define (xversioned-struct-decode . args)
   (dict->mutable-hash (apply xversioned-struct-xdecode args)))
 
-(define/post-decode (xversioned-struct-xdecode xvs [port-arg (current-input-port)] #:parent [parent #f] [length 0])
+(define/post-decode (xversioned-struct-xdecode xvs [port-arg (current-input-port)] #:parent [parent-arg #f] [length 0])
   (define port (->input-port port-arg))
+  (define parent (or (current-parent) parent-arg))
   (define res (xstruct-setup port parent length))
 
   (dict-set! res 'version

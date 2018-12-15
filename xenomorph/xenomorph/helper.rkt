@@ -4,6 +4,8 @@
          racket/port)
 (provide (all-defined-out))
 
+(define current-parent (make-parameter #f))
+
 (define (->input-port arg)
   (cond
     [(bytes? arg) (open-input-bytes arg)]
