@@ -17,7 +17,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   (class xenobase%
     (super-new)
     (init-field type len)
-    (unless (xenomorphic? type)
+    (unless (is-a? type xenobase%)
       (raise-argument-error '+xarray "xenomorphic type" type))
     (unless (length-resolvable? len)
       (raise-argument-error '+xarray "length-resolvable?" len))))
@@ -104,7 +104,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
        [length-type (if count-bytes? 'bytes length-type-arg)]))
   
 (module+ test
-  (require rackunit)
+  (require rackunit "generic.rkt")
   (check-equal? (decode (+xarray uint16be 3) #"ABCDEF") '(16706 17220 17734))
   (check-equal? (encode (+xarray uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
   (check-equal? (size (+xarray uint16be) '(1 2 3)) 6)
