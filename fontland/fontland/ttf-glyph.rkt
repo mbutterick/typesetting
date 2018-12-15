@@ -98,7 +98,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 ;; or components for composite glyphs
 (require "table-stream.rkt")
 (define (glyph-decode ttfg)
-  (define offsets (hash-ref (dump (get-table (glyph-font ttfg) 'loca)) 'offsets))
+  (define offsets (hash-ref (get-table (glyph-font ttfg) 'loca) 'offsets))
   (match-define (list glyfPos nextPos) (take (drop offsets (glyph-id ttfg)) 2))
 
   ;; Nothing to do if there is no data for this glyph

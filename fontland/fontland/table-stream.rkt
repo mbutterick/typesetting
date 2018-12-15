@@ -1,6 +1,6 @@
 #lang debug racket
 (require sugar/unstable/js
-         (only-in xenomorph pos decode)
+         xenomorph
          "tables.rkt"
          "struct.rkt"
          (for-syntax "tables.rkt"))
@@ -39,7 +39,7 @@
   (define table (hash-ref (· directory tables) tag))
   (and table (pos (ttf-font-port this) (· table offset)) (ttf-font-port this)))
   
-(define  (decode-table this table-tag)
+(define (decode-table this table-tag)
   (unless (hash-has-key? table-codecs table-tag)
     (raise-argument-error 'decode-table "decodable table" table-tag))
   (define directory (force (ttf-font-directory this)))
@@ -48,5 +48,6 @@
   (pos (ttf-font-port this) (· table offset))
   (define table-bytes (open-input-bytes (peek-bytes (· table length) 0 (ttf-font-port this))))
   (define table-decoder (hash-ref table-codecs table-tag))
-  (decode table-decoder table-bytes #:parent this))
+  (parameterize ([current-parent this])
+    (decode table-decoder table-bytes)))
 

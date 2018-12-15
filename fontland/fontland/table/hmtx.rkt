@@ -34,5 +34,5 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
   (define hmtx-data (decode hmtx-test hmtx-bytes))
   (check-equal? (size hmtx-test) (* 229 (size hmtx-entry)))
   (define H-gid 41) (define OE-gid 142)
-  (check-equal? (dump (stream-ref (· hmtx-data metrics) H-gid)) '((bearing . 33) (advance . 738)))
-  (check-equal? (dump (stream-ref (· hmtx-data metrics) OE-gid)) '((bearing . 43) (advance . 993))))
+  (check-equal? (stream-ref (· hmtx-data metrics) H-gid) (make-hasheq '((bearing . 33) (advance . 738))))
+  (check-equal? (stream-ref (· hmtx-data metrics) OE-gid) (make-hasheq '((bearing . 43) (advance . 993)))))

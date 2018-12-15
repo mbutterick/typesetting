@@ -35,7 +35,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define (+ttf-font port
                    [decoded-tables (mhash)]
                    [src (path->string (object-name port))]
-                   [directory (delay (decode Directory port #:parent (mhash '_startOffset 0)))]
+                   [directory (delay (parameterize ([current-parent (mhash '_startOffset 0)])
+                                       (xdecode Directory port)))]
                    [ft-face (delay (and src (FT_New_Face (force ft-library) src)))]
                    [hb-font (delay (and src (hb_ft_font_create (force ft-face))))]
                    [hb-buf (delay (hb_buffer_create))]
@@ -48,7 +49,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define font
     (ttf-font port decoded-tables src directory ft-face hb-font hb-buf crc get-head-table-proc))
   ;; needed for `loca` table decoding cross-reference
-  (set-ttf-font-get-head-table-proc! font (delay (dump (get-head-table font))))
+  (set-ttf-font-get-head-table-proc! font (delay  (get-head-table font)))
   font)
 
 (define (font-postscript-name font) (FT_Get_Postscript_Name (ft-face font)))
@@ -106,9 +107,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                  ('hb-positions posns))
      (define glyphs (for/list ([gidx (in-list gids)]
                                [cluster (in-list clusters)])
-                      (get-glyph font gidx cluster)))
+                              (get-glyph font gidx cluster)))
      (define positions (for/list ([posn (in-list posns)])
-                         (apply +glyph-position posn)))
+                                 (apply +glyph-position posn)))
      (glyphrun glyphs positions)]))
 
 (define (harfbuzz-layout font codepoints features script language)
@@ -146,7 +147,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                (λ ()
                  #;(encode hb-output (apply harfbuzz-layout font args) #f)
                  (match (get-layout-from-db key)
-                   [(? bytes? res) (dump (decode hb-output res))]
+                   [(? bytes? res) (decode hb-output res)]
                    [_  (define new-layout (apply harfbuzz-layout font args))
                        (add-record! (cons key (encode hb-output new-layout #f)))
                        (make-hasheq new-layout)])))) ;; `dump` converts to hash
@@ -158,7 +159,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
     [(current-layout-caching)
      (define substrs (for/list ([substr (in-list (regexp-match* " " string #:gap-select? #t))]
                                 #:when (positive? (string-length substr)))
-                       substr))
+                               substr))
      (apply append-glyphruns (map (λ (layout) (hb-layout->glyphrun font layout)) (map get-layout substrs)))]
     [else (if test
               (get-layout string)
@@ -175,7 +176,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   ;; for now, just use UTF-8
   (define codepoints (map char->integer (string->list string)))
   (for/list ([cp (in-list codepoints)])
-    (glyph-for-codepoint font cp)))
+            (glyph-for-codepoint font cp)))
 
 ;; Maps a single unicode code point to a Glyph object.
 ;; Does not perform any advanced substitutions (there is no context to do so).
@@ -192,7 +193,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define (measure-string font str size)
   (/ (* size
         (for/sum ([c (in-string str)])
-          (measure-char-width font c))) (font-units-per-em font)))
+                 (measure-char-width font c))) (font-units-per-em font)))
 
 #|
 approximates
@@ -225,8 +226,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
    ;; rather than use a `probe` function,
    ;; just try making a font with each format and see what happens
    (for/first ([font-format (in-list font-formats)])
-     (with-handlers ([probe-fail? (λ (exn) #f)])
-       (font-format port)))
+              (with-handlers ([probe-fail? (λ (exn) #f)])
+                (font-format port)))
    (error 'create-font "unknown font format")))
 
 (module+ test
