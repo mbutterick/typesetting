@@ -53,8 +53,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "decode should support decoding pointers lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
    (define res (xdecode (+xstruct 'ptr (+xpointer #:lazy #t))))
-   (check-true (promise? (dict-ref (struct-dict-res-_kv res) 'ptr)))
-   (check-equal? (dict-ref res 'ptr) 53)))
+   (check-true (promise? (dict-ref res 'ptr)))
+   (check-equal? (force (dict-ref res 'ptr)) 53)))
 
 (test-case
  "size"

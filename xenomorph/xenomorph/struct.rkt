@@ -14,39 +14,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
 
-(define (choose-dict d k)
-  (if (memq k private-keys)
-      (struct-dict-res-_pvt d)
-      (struct-dict-res-_kv d)))
-
-(struct struct-dict-res (_kv _pvt) #:transparent
-  #:methods d:gen:dict
-  [(define (dict-set! d k v) (d:dict-set! (choose-dict d k) k v))
-   (define (dict-ref d k [thunk #f])
-     (define res (d:dict-ref (choose-dict d k) k thunk))
-     (force res))
-   (define (dict-remove! d k) (d:dict-remove! (choose-dict d k) k))
-   ;; public keys only
-   (define (dict-keys d) (d:dict-keys (struct-dict-res-_kv d)))
-   (define (dict-iterate-first d) (and (pair? (dict-keys d)) 0))
-   (define (dict-iterate-next d i) (and (< (add1 i) (length (dict-keys d))) (add1 i)))
-   (define (dict-iterate-key d i) (list-ref (dict-keys d) i))
-   (define (dict-iterate-value d i) (dict-ref d (dict-iterate-key d i)))])
-
-(define (+struct-dict-res [_kv (mhasheq)] [_pvt (mhasheq)])
-  (struct-dict-res _kv _pvt))
-
-(define (_setup port parent len)
-  (define sdr (+struct-dict-res)) ; not mere hash
-  (d:dict-set*! sdr 'parent parent
+(define (xstruct-setup port parent len)
+  (define mheq (make-hasheq))
+  (d:dict-set*! mheq
+                'parent parent
                 '_startOffset (pos port)
                 '_currentOffset 0
                 '_length len)
-  sdr)
+  mheq)
 
-(define (_parse-fields port sdr fields)
+(define (xstruct-parse-fields port sdr fields-arg)
+  (define fields (if (xstruct? fields-arg) (xstruct-fields fields-arg) fields-arg))
   (unless (assocs? fields)
-    (raise-argument-error '_parse-fields "assocs" fields))
+    (raise-argument-error 'xstruct-parse-fields "assocs" fields))
   (for/fold ([sdr sdr])
             ([(key type) (d:in-dict fields)])
     (define val (if (procedure? type)
@@ -63,18 +43,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 (define (xstruct-xdecode xs [port-arg (current-input-port)] #:parent [parent #f] [len 0])
   (define port (->input-port port-arg))
   (parameterize ([current-input-port port])
-    ;; _setup and _parse-fields are separate to cooperate with VersionedStruct
-    (define res
+    ;; xstruct-setup and xstruct-parse-fields are separate to cooperate with VersionedStruct
+    (define decoded-hash
       (post-decode xs
-                   (let* ([sdr (_setup port parent len)] ; returns StructDictRes
-                          [sdr (_parse-fields port sdr (xstruct-fields xs))])
-                     sdr)))
-    (unless (d:dict? res)
-      (raise-result-error 'xstruct-decode "dict" res))
-    res))
+                   (let* ([mheq (xstruct-setup port parent len)] ; returns StructDictRes
+                          [mheq (xstruct-parse-fields port mheq (xstruct-fields xs))])
+                     mheq)))
+    (unless (d:dict? decoded-hash)
+      (raise-result-error 'xstruct-decode "dict" decoded-hash))
+    decoded-hash))
 
-(define/finalize-size (xstruct-size xs [val #f] #:parent [parent-arg #f]
-                                    #:include-pointers [include-pointers #t])
+(define/finalize-size (xstruct-size xs [val #f] #:parent [parent-arg #f] #:include-pointers [include-pointers #t])
   (define parent (mhasheq 'parent parent-arg
                           'val val
                           'pointerSize 0))
@@ -90,9 +69,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
   (parameterize ([current-output-port port])
     ;; check keys first, since `size` also relies on keys being valid
-    (define val (let* ([val (pre-encode xs val-arg)]
-                       #;[val (inner res pre-encode val . args)])
-                  (unless (d:dict? val) (raise-result-error 'xstruct-encode "dict" val))
+    (define val (let* ([val (pre-encode xs val-arg)])
+                  (unless (d:dict? val)
+                    (raise-result-error 'xstruct-encode "dict" val))
                   val))
     (unless (andmap (λ (key) (memq key (d:dict-keys val))) (d:dict-keys (xstruct-fields xs)))
       (raise-argument-error 'xstruct-encode

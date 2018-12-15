@@ -6,6 +6,7 @@
          "../number.rkt"
          "../string.rkt"
          "../pointer.rkt"
+         "../struct.rkt"
          "../versioned-struct.rkt")
 
 #|
@@ -19,7 +20,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
    (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
@@ -33,7 +34,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
    (parameterize ([current-input-port (open-input-bytes #"\x05\x05roxyb\x15")])
@@ -46,7 +47,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                      'header (dictify 'age uint8
                                                       'alive uint8)
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii))
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'gender uint8)))])
    (parameterize ([current-input-port (open-input-bytes #"\x00\x15\x01\x05roxyb")])
      (check-equal? (decode vstruct) (mhasheq 'name "roxyb"
@@ -66,7 +67,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
    (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
@@ -103,7 +104,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
    (set-post-decode! vstruct (λ (val) (dict-set! val 'processed "true") val))
@@ -117,7 +118,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
    (check-equal? (size vstruct (mhasheq 'name "roxyb"
@@ -134,7 +135,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
    (check-exn exn:fail:contract? (λ () (size vstruct (mhasheq 'name "roxyb" 'age 21 'version 5))))))
@@ -146,7 +147,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     'header (dictify 'age uint8
                                                      'alive uint8)
                                     0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii))
-                                    1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                    1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                'gender uint8)))])
    (check-equal? (size struct (mhasheq 'name "roxyb" 'age 21 'alive 1 'version 0)) 9)
    (check-equal? (size struct (mhasheq 'name "roxyb 🤘" 'gender 0 'age 21 'alive 1 'version 1)) 15)))
@@ -157,7 +158,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'ptr (+xpointer #:offset-type uint8
                                                                 #:type (+xstring uint8)))))])
@@ -172,7 +173,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
    (check-exn exn:fail:contract? (λ () (size vstruct)))))
@@ -183,7 +184,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))]
        [op (open-output-bytes)])
@@ -197,7 +198,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))]
        [op (open-output-bytes)])
@@ -210,7 +211,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                      'header (dictify 'age uint8
                                                       'alive uint8)
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii))
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'gender uint8)))]
        [op (open-output-bytes)])
    (encode vstruct (mhasheq 'name "roxyb" 'age 21 'alive 1 'version 0) op)
@@ -223,7 +224,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify 
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'ptr (+xpointer #:offset-type uint8
                                                                 #:type (+xstring uint8)))))]
@@ -238,7 +239,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
-                                     1 (dictify 'name (+xstring #:length uint8 #:encoding 'utf8)
+                                     1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))]
        [op (open-output-bytes)])
