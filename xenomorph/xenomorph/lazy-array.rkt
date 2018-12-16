@@ -1,5 +1,6 @@
 #lang racket/base
-(require "helper.rkt" "util.rkt" "number.rkt" "array.rkt" racket/stream racket/dict sugar/unstable/dict)
+(require racket/class
+         "helper.rkt" "util.rkt" "number.rkt" "array.rkt" racket/stream racket/dict sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|
@@ -7,55 +8,71 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 |#
   
-(define (xlazy-array-decode xla [port-arg (current-input-port)] #:parent [parent #f])
-  (define port (->input-port port-arg))
-  (parameterize ([current-input-port port])
-    (define starting-pos (pos port)) ; ! placement matters. `resolve-length` will change `pos`
-    (define decoded-len (resolve-length (xarray-base-len xla) #:parent parent))
-    (let ([parent (if (xint? (xarray-base-len xla))
-                      (mhasheq 'parent parent
-                               '_startOffset starting-pos
-                               '_currentOffset 0
-                               '_length (xarray-base-len xla))
-                      parent)])
-      (define starting-pos (pos port))
-      (define type (xarray-base-type xla))
-      (begin0
-        (for/stream ([index (in-range decoded-len)])
-          (define orig-pos (pos port))
-          (pos port (+ starting-pos (* (size type #f #:parent parent) index)))
-          ;; use explicit `port` arg below because this evaluation is delayed
-          (begin0
-            (post-decode xla (decode type port))
-            (pos port orig-pos)))
-        (pos port (+ (pos port) (* decoded-len (size (xarray-base-type xla) #f #:parent parent))))))))
+#;(define (xlazy-array-decode xla [port-arg (current-input-port)] #:parent [parent #f])
+    (define port (->input-port port-arg))
+    (parameterize ([current-input-port port])
+      ))
 
-(define (xlazy-array-encode xla val [port-arg (current-output-port)] #:parent [parent #f])
-  (xarray-encode xla (if (stream? val) (stream->list val) val) port-arg #:parent parent))
+#;(define (xlazy-array-encode xla val [port-arg (current-output-port)] #:parent [parent #f])
+    )
 
-(define (xlazy-array-size xla [val #f] #:parent [parent #f])
-  (xarray-size xla (if (stream? val) (stream->list val) val) #:parent parent))
+#;(define (xlazy-array-size xla [val #f] #:parent [parent #f]))
 
 ;; xarray-base holds type and len fields
-(struct xlazy-array xarray-base () #:transparent
-  #:methods gen:xenomorphic
-  [(define decode xlazy-array-decode)
-   (define xdecode xlazy-array-decode)
-   (define encode xlazy-array-encode)
-   (define size xlazy-array-size)])
+#;(struct xlazy-array xarray-base () #:transparent
+    #:methods gen:xenomorphic
+    [(define decode xlazy-array-decode)
+     (define xdecode xlazy-array-decode)
+     (define encode xlazy-array-encode)
+     (define size xlazy-array-size)])
+
+(define xlazy-array%
+  (class xarray-base%
+    (super-new)
+    (init-field lazy-type values)
+    (inherit-field len)
+
+    (define/override (xxdecode port parent)
+      (define starting-pos (pos port)) ; ! placement matters. `resolve-length` will change `pos`
+      (define decoded-len (resolve-length len #:parent parent))
+      (let ([parent (if (xint? len)
+                        (mhasheq 'parent parent
+                                 '_startOffset starting-pos
+                                 '_currentOffset 0
+                                 '_length len)
+                        parent)])
+        (define starting-pos (pos port))
+        (define type type)
+        (begin0
+          (for/stream ([index (in-range decoded-len)])
+            (define orig-pos (pos port))
+            (pos port (+ starting-pos (* (send type xxsize #f parent) index)))
+            ;; use explicit `port` arg below because this evaluation is delayed
+            (begin0
+              (send this post-decode (send type xxdecode port parent))
+              (pos port orig-pos)))
+          (pos port (+ (pos port) (* decoded-len (send type xxsize #f parent)))))))
+
+    (define/override (xxencode val port [parent #f])
+      (super xxencode (if (stream? val) (stream->list val) val) port parent))
+    
+    (define/override (xxsize [val #f] [parent #f])
+    (super xxsize (if (stream? val) (stream->list val) val) parent))))
 
 (define (+xlazy-array [type-arg #f] [len-arg #f]
-                      #:type [type-kwarg #f] #:length [len-kwarg #f])
+                      #:type [type-kwarg #f]
+                      #:length [len-kwarg #f]
+                      #:subclass [class xlazy-array%])
   (define type (or type-arg type-kwarg))
   (define len (or len-arg len-kwarg))
-  (unless (xenomorphic? type)
+  (unless (xenomorphic-type? type)
     (raise-argument-error '+xarray "xenomorphic type" type))
   (unless (length-resolvable? len)
     (raise-argument-error '+xarray "length-resolvable?" len))
-  (xlazy-array type len))
+  (new class [type type] [len len]))
 
 (module+ test
-  (require rackunit "number.rkt")
+  (require rackunit "number.rkt" "generic.rkt")
   (define bstr #"ABCD1234")
   (define ds (open-input-bytes bstr))
   (define la (+xlazy-array uint8 4))
