@@ -1,8 +1,10 @@
 #lang racket/base
 (require rackunit
+         racket/class
          "../helper.rkt"
          "../string.rkt"
          "../number.rkt"
+         "../generic.rkt"
          sugar/unstable/dict)
 
 #|
@@ -18,19 +20,21 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 (test-case
  "decode fixed length with post-decode"
  (parameterize ([current-input-port (open-input-bytes #"testing")])
-   (define xs (+xstring 7))
-   (set-post-decode! xs (λ (val) "ring a ding"))
+   (define mystr% (class xstring%
+                     (super-new)
+                     (define/override (post-decode val) "ring a ding")))
+   (define xs (+xstring 7 #:subclass mystr%))
    (check-equal? (decode xs) "ring a ding")))
 
 (test-case
  "decode length from parent key"
  (parameterize ([current-input-port (open-input-bytes #"testing")])
-   (check-equal? (xdecode (+xstring 'len) #:parent (mhash 'len 7)) "testing")))
+   (check-equal? (send (+xstring 'len) xxdecode (current-input-port) (mhash 'len 7)) "testing")))
 
 (test-case
  "decode length as number before string"
  (parameterize ([current-input-port (open-input-bytes #"\x07testing")])
-   (check-equal? (xdecode (+xstring uint8) #:parent (mhash 'len 7)) "testing")))
+   (check-equal? (send (+xstring uint8) xxdecode (current-input-port) (mhash 'len 7)) "testing")))
 
 (test-case
  "decode utf8"
@@ -88,8 +92,10 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 (test-case
  "encode using string length and pre-encode"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define xs (+xstring 7))
-   (set-pre-encode! xs (compose1 list->string reverse string->list))
+   (define mystr% (class xstring%
+                     (super-new)
+                     (define/override (pre-encode val) (list->string (reverse (string->list val))))))
+   (define xs (+xstring 7 #:subclass mystr%))
    (encode xs "testing")
    (check-equal? (get-output-bytes (current-output-port)) #"gnitset")))
 
