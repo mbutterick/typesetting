@@ -13,18 +13,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     (init-field type flags)
 
     (define/augment (xxdecode port parent)
-
-    (define flag-hash (mhasheq))
+      (define flag-hash (mhasheq))
       (define val (send type xxdecode port))
       (for ([(flag idx) (in-indexed flags)]
             #:when flag)
-           (hash-set! flag-hash flag (bitwise-bit-set? val idx)))
+        (hash-set! flag-hash flag (bitwise-bit-set? val idx)))
       flag-hash)
 
     (define/augment (xxencode flag-hash port [parent #f])
       (define bit-int (for/sum ([(flag idx) (in-indexed flags)]
                                 #:when (and flag (dict-ref flag-hash flag #f)))
-                               (arithmetic-shift 1 idx)))
+                        (arithmetic-shift 1 idx)))
       (send type xxencode bit-int port))
     
     (define/augment (xxsize [val #f] [parent #f])

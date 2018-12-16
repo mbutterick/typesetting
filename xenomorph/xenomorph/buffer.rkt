@@ -1,5 +1,5 @@
 #lang racket/base
-(require "helper.rkt" "util.rkt" "number.rkt")
+(require racket/class "helper.rkt" "util.rkt" "number.rkt")
 (provide (all-defined-out))
 
 #|
@@ -7,39 +7,33 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 |#
 
-(define/post-decode (xbuffer-decode xb [port-arg (current-input-port)] #:parent [parent #f])
-  (define port (->input-port port-arg))
-  (parameterize ([current-input-port port])
-    (define decoded-len (resolve-length (xbuffer-len xb) #:parent parent))
-    (read-bytes decoded-len)))
+(define xbuffer%
+  (class xenobase%
+    (super-new)
+    (init-field len)
 
-(define/pre-encode (xbuffer-encode xb buf [port-arg (current-output-port)] #:parent [parent #f])
-  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  (parameterize ([current-output-port port])
-    (unless (bytes? buf)
-      (raise-argument-error 'xbuffer-encode "bytes" buf))
-    (when (xint? (xbuffer-len xb))
-      (encode (xbuffer-len xb) (bytes-length buf)))
-    (write-bytes buf)
-    (unless port-arg (get-output-bytes port))))
+    (define/augment (xxdecode port parent)
+      (define decoded-len (resolve-length len #:parent parent))
+      (read-bytes decoded-len))
 
-(define/finalize-size (xbuffer-size xb [val #f] #:parent [parent #f])
-  (when val (unless (bytes? val)
-              (raise-argument-error 'xbuffer-size "bytes" val)))
-  (if (bytes? val)
-      (bytes-length val)
-      (resolve-length (xbuffer-len xb) val #:parent parent)))
-
-(struct xbuffer xbase (len) #:transparent
-  #:methods gen:xenomorphic
-  [(define decode xbuffer-decode)
-   (define xdecode xbuffer-decode)
-   (define encode xbuffer-encode)
-   (define size xbuffer-size)])
+    (define/augment (xxencode buf port [parent #f])
+      (unless (bytes? buf)
+        (raise-argument-error 'xbuffer-encode "bytes" buf))
+      (when (xint? len)
+        (send len xxencode (bytes-length buf) port))
+      (write-bytes buf port))
+    
+    (define/augment (xxsize [val #f] [parent #f])
+      (when val (unless (bytes? val)
+                  (raise-argument-error 'xbuffer-size "bytes" val)))
+      (if (bytes? val)
+          (bytes-length val)
+          (resolve-length len val #:parent parent)))))
 
 (define (+xbuffer [len-arg #f]
-                  #:length [len-kwarg #f])
+                  #:length [len-kwarg #f]
+                  #:subclass [class xbuffer%])
   (define len (or len-arg len-kwarg #xffff))
   (unless (length-resolvable? len)
     (raise-argument-error '+xbuffer "resolvable length" len))
-  (xbuffer len))
+  (new class [len len]))
