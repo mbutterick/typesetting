@@ -11,26 +11,26 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 (define xlazy-array%
   (class xarray%
     (super-new)
-    (inherit-field type len)
+    (inherit-field [@type type] [@len len])
 
     (define/override (xxdecode port parent)
       (define starting-pos (pos port)) ; ! placement matters. `resolve-length` will change `pos`
-      (define decoded-len (resolve-length len #:parent parent))
-      (let ([parent (if (xint? len)
-                        (mhasheq 'parent parent
-                                 '_startOffset starting-pos
-                                 '_currentOffset 0
-                                 '_length len)
-                        parent)])
-        (define starting-pos (pos port))
-        (begin0
-          (for/stream ([index (in-range decoded-len)])
-            (define orig-pos (pos port))
-            (pos port (+ starting-pos (* (send type xxsize #f parent) index)))
-            (begin0
-              (send type xxdecode port parent)
-              (pos port orig-pos)))
-          (pos port (+ (pos port) (* decoded-len (send type xxsize #f parent)))))))
+      (define len (resolve-length @len #:parent parent))
+      (define new-parent (if (xint? @len)
+                             (mhasheq 'parent parent
+                                      '_startOffset starting-pos
+                                      '_currentOffset 0
+                                      '_length @len)
+                             parent))
+      (define stream-starting-pos (pos port))
+      (begin0
+        (for/stream ([index (in-range len)])
+          (define orig-pos (pos port))
+          (pos port (+ stream-starting-pos (* (send @type xxsize #f new-parent) index)))
+          (begin0
+            (send @type xxdecode port new-parent)
+            (pos port orig-pos)))
+        (pos port (+ (pos port) (* len (send @type xxsize #f new-parent))))))
 
     (define/override (xxencode val port [parent #f])
       (super xxencode (if (stream? val) (stream->list val) val) port parent))

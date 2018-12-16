@@ -10,24 +10,26 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 (define xbitfield%
   (class xenobase%
     (super-new)
-    (init-field type flags)
+    (init-field [(@type type)][(@flags flags)])
+    (unless (andmap (λ (f) (or (symbol? f) (not f))) @flags)
+      (raise-argument-error '+xbitfield "list of symbols" @flags))
 
     (define/augment (xxdecode port parent)
+      (define val (send @type xxdecode port))
       (define flag-hash (mhasheq))
-      (define val (send type xxdecode port))
-      (for ([(flag idx) (in-indexed flags)]
+      (for ([(flag idx) (in-indexed @flags)]
             #:when flag)
         (hash-set! flag-hash flag (bitwise-bit-set? val idx)))
       flag-hash)
 
     (define/augment (xxencode flag-hash port [parent #f])
-      (define bit-int (for/sum ([(flag idx) (in-indexed flags)]
+      (define bit-int (for/sum ([(flag idx) (in-indexed @flags)]
                                 #:when (and flag (dict-ref flag-hash flag #f)))
                         (arithmetic-shift 1 idx)))
-      (send type xxencode bit-int port))
+      (send @type xxencode bit-int port))
     
     (define/augment (xxsize [val #f] [parent #f])
-      (send type xxsize))))
+      (send @type xxsize))))
   
 (define (+xbitfield [type-arg #f] [flag-arg #f]
                     #:type [type-kwarg #f]
@@ -35,8 +37,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
                     #:subclass [class xbitfield%])
   (define type (or type-arg type-kwarg))
   (define flags (or flag-arg flag-kwarg null))
-  (unless (andmap (λ (f) (or (symbol? f) (not f))) flags)
-    (raise-argument-error '+xbitfield "list of symbols" flags))
   (new class [type type] [flags flags]))
 
 (module+ test

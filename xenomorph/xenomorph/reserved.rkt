@@ -10,10 +10,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
 (define xreserved%
   (class xenobase%
     (super-new)
-    (init-field type count)
+    (init-field [(@type type)] [(@count count)])
 
-    (unless (xenomorphic-type? type)
-      (raise-argument-error '+xoptional"xenomorphic type" type))
+    (unless (xenomorphic-type? @type)
+      (raise-argument-error '+xoptional"xenomorphic type" @type))
 
     (define/augment (xxdecode port parent)
       (pos port (+ (pos port) (xxsize #f parent)))
@@ -23,7 +23,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
       (make-bytes (xxsize val parent) 0))
     
     (define/augment (xxsize [val #f] [parent #f])
-      (* (send type xxsize) (resolve-length count #f #:parent parent)))))
+      (* (send @type xxsize) (resolve-length @count #f #:parent parent)))))
 
 (define (+xreserved [type-arg #f] [count-arg #f]
                     #:type [type-kwarg #f]

@@ -26,13 +26,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define xnumber%
   (class xenobase%
     (super-new)
-    (init-field size endian)
-    (unless (exact-positive-integer? size)
-      (raise-argument-error 'xenomorph "exact positive integer" size))
-    (unless (memq endian '(le be))
-      (raise-argument-error 'xenomorph "'le or 'be" endian))
-    (field [bits (* size 8)])
-    (define/augment (xxsize . _) size)))
+    (init-field [(@size size)] [(@endian endian)])
+    
+    (unless (exact-positive-integer? @size)
+      (raise-argument-error 'xenomorph "exact positive integer" @size))
+    (unless (memq @endian '(le be))
+      (raise-argument-error 'xenomorph "'le or 'be" @endian))
+    
+    (field [@bits (* @size 8)])
+    
+    (define/augment (xxsize . _) @size)))
 
 (define (xint? x) (is-a? x xint%))
 
@@ -40,31 +43,31 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (class xnumber%
     (super-new)
     (init-field signed)
-    (inherit-field endian size bits)
+    (inherit-field (@endian endian) (@size size) @bits)
     
     ;; if a signed integer has n bits, it can contain a number
     ;; between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
-    (define signed-max (sub1 (arithmetic-shift 1 (sub1 bits))))
+    (define signed-max (sub1 (arithmetic-shift 1 (sub1 @bits))))
     (define signed-min (sub1 (- signed-max)))
     (define delta (if signed 0 signed-min))
     (field [bound-min (- signed-min delta)]
            [bound-max (- signed-max delta)])
                 
     (define/augment (xxdecode port . _)
-      (define bs ((if (eq? endian system-endian) values reverse-bytes) (read-bytes size port)))
+      (define bs ((if (eq? @endian system-endian) values reverse-bytes) (read-bytes @size port)))
       (define uint (for/sum ([b (in-bytes bs)]
                              [i (in-naturals)])
                      (arithmetic-shift b (* 8 i))))
-      (if signed (unsigned->signed uint bits) uint))
+      (if signed (unsigned->signed uint @bits) uint))
                 
     (define/augment (xxencode val . _)
       (unless (<= bound-min val bound-max)
         (raise-argument-error 'encode
-                              (format "value that fits within ~a ~a-byte int (~a to ~a)" (if signed "signed" "unsigned") size bound-min bound-max) val))
+                              (format "value that fits within ~a ~a-byte int (~a to ~a)" (if signed "signed" "unsigned") @size bound-min bound-max) val))
       (for/fold ([bs null]
                  [val (exact-if-possible val)]
-                 #:result (apply bytes ((if (eq? endian 'be) values reverse) bs)))
-                ([i (in-range size)])
+                 #:result (apply bytes ((if (eq? @endian 'be) values reverse) bs)))
+                ([i (in-range @size)])
         (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))))
 
 (define (+xint [size 2]
@@ -144,13 +147,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define xfloat%
   (class xnumber%
     (super-new)
-    (inherit-field size endian)
+    (inherit-field (@size size) (@endian endian))
                 
     (define/augment (xxdecode port . _)
-      (floating-point-bytes->real (read-bytes size port) (eq? endian 'be)))
+      (floating-point-bytes->real (read-bytes @size port) (eq? @endian 'be)))
                 
     (define/augment (xxencode val . _)
-      (real->floating-point-bytes val size (eq? endian 'be)))))
+      (real->floating-point-bytes val @size (eq? @endian 'be)))))
 
 (define (+xfloat [size 4] #:endian [endian system-endian])
   (new xfloat% [size size] [endian endian]))
@@ -166,11 +169,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define xfixed%
   (class xint%
     (super-new)
-    (init-field fracbits)
-    (unless (exact-positive-integer? fracbits)
-      (raise-argument-error '+xfixed "exact positive integer for fracbits" fracbits))
+    (init-field [(@fracbits fracbits)])
+    (unless (exact-positive-integer? @fracbits)
+      (raise-argument-error '+xfixed "exact positive integer for fracbits" @fracbits))
 
-    (define fixed-shift (arithmetic-shift 1 fracbits))
+    (define fixed-shift (arithmetic-shift 1 @fracbits))
                 
     (define/override (post-decode int)
       (exact-if-possible (/ int fixed-shift 1.0)))

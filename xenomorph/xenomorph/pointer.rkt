@@ -17,7 +17,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [(dict-ref parent 'parent #f) => find-top-parent]
     [else parent]))
 
-(define (resolve-void-pointer type val)
+(define (resolve-pointer type val)
   (cond
     [type (values type val)]
     [(xvoid-pointer? val) (values (xvoid-pointer-type val) (xvoid-pointer-value val))]
@@ -26,69 +26,69 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define xpointer%
   (class xenobase%
     (super-new)
-    (init-field offset-type type options)
+    (init-field [(@offset-type offset-type)][(@type type)] [(@options options)])
 
-    (define pointer-relative-to (dict-ref options 'relative-to))
-    (define allow-null (dict-ref options 'allowNull)) 
-    (define null-value (dict-ref options 'nullValue))
-    (define pointer-lazy? (dict-ref options 'lazy))
+    (define pointer-relative-to (dict-ref @options 'relative-to))
+    (define allow-null (dict-ref @options 'allowNull)) 
+    (define null-value (dict-ref @options 'nullValue))
+    (define pointer-lazy? (dict-ref @options 'lazy))
 
     (define/augment (xxdecode port parent)
-      (define offset (send offset-type xxdecode port parent))
+      (define offset (send @offset-type xxdecode port parent))
       (cond
         [(and allow-null (= offset null-value)) #f] ; handle null pointers
         [else
          (define relative (+ (case pointer-relative-to
                                [(local) (dict-ref parent '_startOffset)]
-                               [(immediate) (- (pos port) (send offset-type xxsize))]
+                               [(immediate) (- (pos port) (send @offset-type xxsize))]
                                [(parent) (dict-ref (dict-ref parent 'parent) '_startOffset)]
                                [(global) (or (dict-ref (find-top-parent parent) '_startOffset) 0)]
                                [else (error 'unknown-pointer-style)])))
          (define ptr (+ offset relative))
          (cond
-           [type (define (decode-value)
-                   (define orig-pos (pos port))
-                   (pos port ptr)
-                   (begin0
-                     (send type xxdecode port parent)
-                     (pos port orig-pos)))
-                 (if pointer-lazy? (delay (decode-value)) (decode-value))]
+           [@type (define (decode-value)
+                    (define orig-pos (pos port))
+                    (pos port ptr)
+                    (begin0
+                      (send @type xxdecode port parent)
+                      (pos port orig-pos)))
+                  (if pointer-lazy? (delay (decode-value)) (decode-value))]
            [else ptr])]))
 
-    (define/augment (xxencode val port [parent #f])
+    (define/augment (xxencode val-in port [parent #f])
       (unless parent ; todo: furnish default pointer context? adapt from Struct?
         (raise-argument-error 'xpointer-encode "valid pointer context" parent))
-      (if (not val)
-          (send offset-type xxencode null-value port)
-          (let* ([new-parent (case pointer-relative-to
-                               [(local immediate) parent]
-                               [(parent) (dict-ref parent 'parent)]
-                               [(global) (find-top-parent parent)]
-                               [else (error 'unknown-pointer-style)])]
-                 [relative (+ (case pointer-relative-to
-                                [(local parent) (dict-ref new-parent 'startOffset)]
-                                [(immediate) (+ (pos port) (send offset-type xxsize val parent))]
-                                [(global) 0]))])
-            (send offset-type xxencode (- (dict-ref new-parent 'pointerOffset) relative) port)
-            (let-values ([(type val) (resolve-void-pointer type val)])
-              (dict-set! new-parent 'pointers (append (dict-ref new-parent 'pointers)
-                                                      (list (mhasheq 'type type
-                                                                     'val val
-                                                                     'parent parent))))
-              (dict-set! new-parent 'pointerOffset
-                         (+ (dict-ref new-parent 'pointerOffset) (send type xxsize val parent)))))))
+      (cond
+        [val-in
+         (define new-parent (case pointer-relative-to
+                              [(local immediate) parent]
+                              [(parent) (dict-ref parent 'parent)]
+                              [(global) (find-top-parent parent)]
+                              [else (error 'unknown-pointer-style)]))
+         (define relative (+ (case pointer-relative-to
+                               [(local parent) (dict-ref new-parent 'startOffset)]
+                               [(immediate) (+ (pos port) (send @offset-type xxsize val-in parent))]
+                               [(global) 0])))
+         (send @offset-type xxencode (- (dict-ref new-parent 'pointerOffset) relative) port)
+         (define-values (type val) (resolve-pointer @type val-in))
+         (dict-update! new-parent 'pointers
+                       (λ (ptrs) (append ptrs (list (mhasheq 'type type 'val val 'parent parent)))))
+         (dict-set! new-parent 'pointerOffset
+                    (+ (dict-ref new-parent 'pointerOffset) (send type xxsize val parent)))]
+        [else (send @offset-type xxencode null-value port)]))
 
-    (define/augment (xxsize [val #f] [parent #f])
-      (let*-values ([(parent) (case pointer-relative-to
-                                [(local immediate) parent]
-                                [(parent) (dict-ref parent 'parent)]
-                                [(global) (find-top-parent parent)]
-                                [else (error 'unknown-pointer-style)])]
-                    [(type val) (resolve-void-pointer type val)])
-        (when (and val parent)
-          (dict-set! parent 'pointerSize (and (dict-ref parent 'pointerSize #f)
-                                              (+ (dict-ref parent 'pointerSize) (send type xxsize val parent)))))
-        (send offset-type xxsize)))))
+    (define/augment (xxsize [val-in #f] [parent #f])
+      (define new-parent (case pointer-relative-to
+                           [(local immediate) parent]
+                           [(parent) (dict-ref parent 'parent)]
+                           [(global) (find-top-parent parent)]
+                           [else (error 'unknown-pointer-style)]))
+      (define-values (type val) (resolve-pointer @type val-in))
+      (when (and val new-parent)
+        (dict-set! new-parent 'pointerSize
+                   (and (dict-ref new-parent 'pointerSize #f)
+                        (+ (dict-ref new-parent 'pointerSize) (send type xxsize val new-parent)))))
+      (send @offset-type xxsize))))
 
 (define (+xpointer [offset-arg #f] [type-arg #f]
                    #:offset-type [offset-kwarg #f]

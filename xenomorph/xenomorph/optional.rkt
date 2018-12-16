@@ -10,29 +10,25 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
 (define xoptional%
   (class xenobase%
     (super-new)
-    (init-field type condition)
+    (init-field [(@type type)] [(@condition condition)])
 
-    (unless (xenomorphic-type? type)
-      (raise-argument-error '+xoptional"xenomorphic type" type))
+    (unless (xenomorphic-type? @type)
+      (raise-argument-error '+xoptional"xenomorphic type" @type))
     
     (define (resolve-condition parent)
-      (define maybe-proc condition)
-      (if (procedure? maybe-proc)
-          (maybe-proc parent)
-          maybe-proc))
+      (define maybe-proc @condition)
+      (if (procedure? maybe-proc) (maybe-proc parent) maybe-proc))
 
     (define/augment (xxdecode port parent)
       (when (resolve-condition parent)
-        (send type xxdecode port parent)))
+        (send @type xxdecode port parent)))
 
     (define/augment (xxencode val port [parent #f])
       (when (resolve-condition parent)
-        (send type xxencode val port parent)))
+        (send @type xxencode val port parent)))
     
     (define/augment (xxsize [val #f] [parent #f])
-      (if (resolve-condition parent)
-          (send type xxsize val parent)
-          0))))
+      (if (resolve-condition parent) (send @type xxsize val parent) 0))))
 
 
 (define no-val (gensym))
