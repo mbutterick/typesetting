@@ -1,11 +1,13 @@
 #lang racket/base
 (require rackunit
          racket/match
+         racket/class
          racket/list
          sugar/unstable/dict
          "../helper.rkt"
          "../number.rkt"
-         "../bitfield.rkt")
+         "../bitfield.rkt"
+         "../generic.rkt")
 
 #|
 approximates
@@ -35,7 +37,10 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 (test-case
  "bitfield should decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes (bitwise-ior JACK MACK PACK NACK QUACK)))])
-   (set-post-decode! bitfield (λ (fh . _) (hash-set! fh 'foo 42) fh))
+   (define mybitfield% (class xbitfield%
+                         (super-new)
+                         (define/override (post-decode fh) (hash-set! fh 'foo 42) fh)))
+   (define bitfield (+xbitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack) #:subclass mybitfield%))
    (check-equal? (decode bitfield) (mhasheq 'Quack #t
                                             'Nack #t
                                             'Lack #f
@@ -60,11 +65,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 
 (test-case
  "bitfield should encode with pre-encode"
- (set-pre-encode! bitfield (λ (fh . _)
-                             (hash-set! fh 'Jack #f)
-                             (hash-set! fh 'Mack #f)
-                             (hash-set! fh 'Pack #f)
-                             fh))
+ (define mybitfield% (class xbitfield%
+                       (super-new)
+                       (define/override (pre-encode fh)
+                         (hash-set! fh 'Jack #f)
+                         (hash-set! fh 'Mack #f)
+                         (hash-set! fh 'Pack #f)
+                         fh)))
+ (define bitfield (+xbitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack) #:subclass mybitfield%))
  (check-equal? (encode bitfield (mhasheq 'Quack #t
                                          'Nack #t
                                          'Lack #f
