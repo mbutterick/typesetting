@@ -53,8 +53,8 @@
       (define encode-result (inner (error 'xxencode-not-augmented) xxencode (pre-encode val) output-port parent))
       (when (bytes? encode-result) (write-bytes encode-result output-port)))
     
-    (define/pubment (xxsize [val #f] [parent #f] . _)
-      (define size (inner 0 xxsize val parent))
+    (define/pubment (xxsize [val #f] [parent #f] . args)
+      (define size (inner 0 xxsize val parent . args))
       (unless (and (integer? size) (not (negative? size)))
         (raise-argument-error 'size "nonnegative integer" size))
       size)

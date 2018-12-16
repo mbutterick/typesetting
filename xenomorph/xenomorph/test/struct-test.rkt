@@ -75,7 +75,6 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
                             'nameLength uint8
                             'name (+xstring 'nameLength)
                             'age uint8))
-   ;(set-pre-encode! struct (λ (val) (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val))
    (encode struct (mhasheq 'name "roxyb" 'age 21))
    (check-equal? (get-output-bytes (current-output-port)) #"\x05roxyb\x15")))
 
