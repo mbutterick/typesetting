@@ -50,7 +50,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (super-new)
     (init-field [(@fields fields)])
 
-    (define/augment (xxdecode port parent [len 0])
+    (define/augride (xxdecode port parent [len 0])
       ;; xstruct-setup and xstruct-parse-fields are separate to cooperate with VersionedStruct
       (define decoded-hash
         (xstruct-parse-fields port (xstruct-setup port parent len) @fields))
@@ -61,7 +61,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (define/override (decode port parent)
       (dict->mutable-hash (xxdecode port parent)))
 
-    (define/augment (xxencode val port [parent-arg #f])
+    (define/augride (xxencode val port [parent-arg #f])
       ;; check keys first, since `size` also relies on keys being valid
       (unless (dict? val)
         (raise-result-error 'xstruct-encode "dict" val))
@@ -80,7 +80,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (for ([ptr (in-list (dict-ref parent 'pointers))])
         (send (dict-ref ptr 'type) xxencode (dict-ref ptr 'val) port (dict-ref ptr 'parent))))
     
-    (define/augment (xxsize [val #f] [parent-arg #f] [include-pointers #t])
+    (define/augride (xxsize [val #f] [parent-arg #f] [include-pointers #t])
       (define parent (mhasheq 'parent parent-arg
                               'val val
                               'pointerSize 0))
