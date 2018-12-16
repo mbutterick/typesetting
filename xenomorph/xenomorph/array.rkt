@@ -13,25 +13,19 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
-(define xarray-base%
+(define xarray%
   (class xenobase%
     (super-new)
-    (init-field type len)
+    (init-field type len length-type)
+    
     (unless (xenomorphic-type? type)
       (raise-argument-error '+xarray "xenomorphic type" type))
     (unless (length-resolvable? len)
-      (raise-argument-error '+xarray "length-resolvable?" len))))
-
-(define xarray%
-  (class xarray-base%
-    (super-new)
-    (init-field length-type)
+      (raise-argument-error '+xarray "length-resolvable?" len))
     (unless (memq length-type '(bytes count))
       (raise-argument-error '+xarray "'bytes or 'count" length-type))
 
-    (inherit-field type len)
-
-    (define/augment (xxdecode port parent)
+    (define/augride (xxdecode port parent)
       (define new-parent (if (xint? len)
                              (mhasheq 'parent parent
                                       '_startOffset (pos port)
@@ -56,7 +50,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
         [else (for/list ([i (in-range resolved-len)])
                 (send type xxdecode port new-parent))]))
 
-    (define/augment (xxencode array port [parent #f])
+    (define/augride (xxencode array port [parent #f])
       (unless (sequence? array)
         (raise-argument-error 'xarray-encode "sequence" array))
       (define (encode-items parent)
@@ -79,7 +73,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
              (send (dict-ref ptr 'type) xxencode (dict-ref ptr 'val) port)))]
         [else (encode-items parent)]))
 
-    (define/augment (xxsize [val #f] [parent #f])
+    (define/augride (xxsize [val #f] [parent #f])
       (when val (unless (sequence? val)
                   (raise-argument-error 'xarray-size "sequence" val)))
       (cond
@@ -102,6 +96,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   (new class [type (or type-arg type-kwarg)]
        [len (or len-arg len-kwarg)]
        [length-type (if count-bytes? 'bytes length-type-arg)]))
+
+(define (xarray? x) (is-a? x xarray%))
   
 (module+ test
   (require rackunit "generic.rkt")
