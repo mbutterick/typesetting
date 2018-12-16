@@ -1,5 +1,5 @@
 #lang racket/base
-(require "helper.rkt" "util.rkt")
+(require racket/class "helper.rkt" "util.rkt")
 (provide (all-defined-out))
 
 #|
@@ -7,27 +7,28 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
 |#
 
-(define/post-decode (xreserved-decode xo [port-arg (current-input-port)] #:parent [parent #f])
-  (define port (->input-port port-arg))
-  (pos port (+ (pos port) (size xo #f #:parent parent)))
-  (void))
+(define xreserved%
+  (class xenobase%
+    (super-new)
+    (init-field type count)
 
-(define/pre-encode (xreserved-encode xo val [port-arg (current-output-port)] #:parent [parent #f])
-  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  (write-bytes (make-bytes (size xo val #:parent parent) 0) port)
-  (unless port-arg (get-output-bytes port)))
+    (unless (xenomorphic-type? type)
+      (raise-argument-error '+xoptional"xenomorphic type" type))
 
-(define/finalize-size (xreserved-size xo [val #f] #:parent [parent #f])
-  (define item-size (size (xreserved-type xo)))
-  (define count (resolve-length (xreserved-count xo) #f #:parent parent))
-  (* item-size count))
+    (define/augment (xxdecode port parent)
+      (pos port (+ (pos port) (xxsize #f parent)))
+      (void))
 
-(struct xreserved xbase (type count) #:transparent
-  #:methods gen:xenomorphic
-  [(define decode xreserved-decode)
-   (define xdecode xreserved-decode)
-   (define encode xreserved-encode)
-   (define size xreserved-size)])
+    (define/augment (xxencode val port [parent #f])
+      (make-bytes (xxsize val parent) 0))
+    
+    (define/augment (xxsize [val #f] [parent #f])
+      (* (send type xxsize) (resolve-length count #f #:parent parent)))))
 
-(define (+xreserved type [count 1])
-  (xreserved type count))
+(define (+xreserved [type-arg #f] [count-arg #f]
+                    #:type [type-kwarg #f]
+                    #:count [count-kwarg #f]
+                    #:subclass [class xreserved%])
+  (define type (or type-arg type-kwarg))
+  (define count (or count-arg count-kwarg 1))
+  (new class [type type] [count count]))
