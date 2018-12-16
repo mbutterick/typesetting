@@ -6,23 +6,10 @@
          "generic.rkt")
 (provide (all-defined-out))
 
-(define private-keys '(parent _startOffset _currentOffset _length))
-
-(define (dump-mutable x)
-  (define h (make-hasheq))
-  (for ([(k v) (in-dict (dump x))])
-       (hash-set! h k v))
-  h)
-
-(define (dump x)
-  (cond
-    [(input-port? x) (port->bytes x)]
-    [(output-port? x) (get-output-bytes x)]
-    [(dict? x) (for/hasheq ([(k v) (in-dict x)]
-                            #:unless (memq k private-keys))
-                           (values k v))]
-    [(list? x) (map dump x)]
-    [else x]))
+(define (dict-ref* d . keys)
+  (for/fold ([d d])
+            ([k (in-list keys)])
+    (dict-ref d k)))
 
 (define (pos p [new-pos #f])
   (when new-pos
@@ -39,7 +26,7 @@
                                             [(input-port? port-arg) port-arg]
                                             [(bytes? port-arg) (open-input-bytes port-arg)]
                                             [else (raise-argument-error 'decode "byte string or input port" port-arg)]))
-                                        (send xo xxdecode port parent))
+                                        (send xo decode port parent))
                                       
                                       (define (encode xo val [port-arg (current-output-port)]
                                                       #:parent [parent #f])
@@ -58,12 +45,15 @@
     
     (define/pubment (xxdecode input-port [parent #f])
       (post-decode (inner (error 'xxdecode-not-augmented) xxdecode input-port parent)))
+
+    (define/public (decode input-port [parent #f])
+      (xxdecode input-port parent))
     
     (define/pubment (xxencode val output-port [parent #f])
       (define encode-result (inner (error 'xxencode-not-augmented) xxencode (pre-encode val) output-port parent))
       (when (bytes? encode-result) (write-bytes encode-result output-port)))
     
-    (define/pubment (xxsize [val #f] [parent #f])
+    (define/pubment (xxsize [val #f] [parent #f] . _)
       (define size (inner 0 xxsize val parent))
       (unless (and (integer? size) (not (negative? size)))
         (raise-argument-error 'size "nonnegative integer" size))
