@@ -8,6 +8,7 @@
      "bitfield.rkt"
      "buffer.rkt"
      "enum.rkt"
+     "generic.rkt"
      "helper.rkt"
      "lazy-array.rkt"
      "number.rkt"
