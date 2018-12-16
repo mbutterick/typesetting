@@ -1,10 +1,12 @@
 #lang debug racket/base
 (require rackunit racket/dict
+         racket/class
          "../helper.rkt"
          "../struct.rkt"
          "../string.rkt"
          "../pointer.rkt"
          "../number.rkt"
+         "../generic.rkt"
          sugar/unstable/dict)
 
 #|
@@ -22,8 +24,10 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (test-case
  "decode with process hook"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
-   (define struct (+xstruct 'name (+xstring #:length uint8) 'age uint8))
-   (set-post-decode! struct (λ (o . _) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o))
+   (define mystruct% (class xstruct%
+                       (super-new)
+                       (define/override (post-decode o) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o)))
+   (define struct (+xstruct #:subclass mystruct% 'name (+xstring #:length uint8) 'age uint8))
    (check-equal? (decode struct)
                  (mhasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
@@ -63,10 +67,15 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (test-case
  "support pre-encode hook"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define struct (+xstruct 'nameLength uint8
+   (define mystruct% (class xstruct%
+                       (super-new)
+                       (define/override (pre-encode val)
+                         (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val)))
+   (define struct (+xstruct #:subclass mystruct%
+                            'nameLength uint8
                             'name (+xstring 'nameLength)
                             'age uint8))
-   (set-pre-encode! struct (λ (val) (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val))
+   ;(set-pre-encode! struct (λ (val) (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val))
    (encode struct (mhasheq 'name "roxyb" 'age 21))
    (check-equal? (get-output-bytes (current-output-port)) #"\x05roxyb\x15")))
 
