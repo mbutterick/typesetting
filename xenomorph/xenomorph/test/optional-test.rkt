@@ -1,8 +1,10 @@
 #lang racket/base
 (require rackunit
+         racket/class
          "../helper.rkt"
          "../number.rkt"
-         "../optional.rkt")
+         "../optional.rkt"
+         "../generic.rkt")
 
 #|
 approximates
@@ -19,8 +21,10 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 (test-case
  "decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes 0))])
-   (define optional (+xoptional #:type uint8 #:condition #f))
-   (set-post-decode! optional (λ (val) 42))
+   (define myxopt% (class xoptional%
+                         (super-new)
+                         (define/override (post-decode val) 42)))
+   (define optional (+xoptional #:type uint8 #:condition #f #:subclass myxopt%))
    (check-equal? (decode optional) 42)
    (check-equal? (pos (current-input-port)) 0)))
 
@@ -82,8 +86,10 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 (test-case
  "encode with pre-encode"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define optional (+xoptional #:type uint8))
-   (set-pre-encode! optional (λ (val) 42))
+   (define myxopt% (class xoptional%
+                         (super-new)
+                         (define/override (pre-encode val) 42)))
+   (define optional (+xoptional #:type uint8 #:subclass myxopt%))
    (encode optional 128)
    (check-equal? (get-output-bytes (current-output-port)) (bytes 42))))
 

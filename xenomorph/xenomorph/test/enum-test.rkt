@@ -1,8 +1,6 @@
 #lang racket/base
 (require rackunit
          racket/class
-         sugar/unstable/dict
-         "../helper.rkt"
          "../number.rkt"
          "../enum.rkt"
          "../generic.rkt")

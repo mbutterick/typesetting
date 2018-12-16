@@ -1,7 +1,6 @@
 #lang racket/base
 (require rackunit
          racket/class
-         "../helper.rkt"
          "../array.rkt"
          "../number.rkt"
          "../pointer.rkt"

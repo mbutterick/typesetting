@@ -4,7 +4,6 @@
          racket/class
          racket/list
          sugar/unstable/dict
-         "../helper.rkt"
          "../number.rkt"
          "../bitfield.rkt"
          "../generic.rkt")
