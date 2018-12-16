@@ -16,10 +16,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 (define (xstruct-setup port parent len)
   (define mheq (make-hasheq))
   (dict-set*! mheq
-                'parent parent
-                '_startOffset (pos port)
-                '_currentOffset 0
-                '_length len)
+              'parent parent
+              '_startOffset (pos port)
+              '_currentOffset 0
+              '_length len)
   mheq)
 
 (define (xstruct-parse-fields port sdr fields-arg)
@@ -36,6 +36,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (dict-set! sdr '_currentOffset (- (pos port) (dict-ref sdr '_startOffset)))
     sdr))
 
+(define private-keys '(parent _startOffset _currentOffset _length))
+
+(define (dict->mutable-hash x)
+  (define h (make-hasheq))
+  (for ([(k v) (in-dict x)]
+        #:unless (memq k private-keys))
+    (hash-set! h k v))
+  h)
+
 (define xstruct%
   (class xenobase%
     (super-new)
@@ -48,6 +57,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (unless (dict? decoded-hash)
         (raise-result-error 'xstruct-decode "dict" decoded-hash))
       decoded-hash)
+
+    (define/override (decode port parent)
+      (dict->mutable-hash (xxdecode port parent)))
 
     (define/augment (xxencode val port [parent-arg #f])
       ;; check keys first, since `size` also relies on keys being valid
@@ -62,21 +74,21 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                             'parent parent-arg
                             'val val
                             'pointerSize 0)) 
-      (dict-set! parent 'pointerOffset (+ (pos port) (xxsize-without-pointers val parent))) 
+      (dict-set! parent 'pointerOffset (+ (pos port) (xxsize val parent #f))) 
       (for ([(key type) (in-dict @fields)])
         (send type xxencode (dict-ref val key) port parent))
       (for ([ptr (in-list (dict-ref parent 'pointers))])
         (send (dict-ref ptr 'type) xxencode (dict-ref ptr 'val) port (dict-ref ptr 'parent))))
-
-    (define (xxsize-without-pointers [val #f] [parent #f])
-      (define new-parent (mhasheq 'parent parent 'val val 'pointerSize 0))
-      (for/sum ([(key type) (in-dict @fields)]
-                #:when (xenomorphic-type? type))
-        (send type xxsize (and val (dict-ref val key)) new-parent)))
     
-    (define/augment (xxsize [val #f] [parent #f])
-      (define pointers-size (dict-ref parent 'pointerSize))
-      (+ (xxsize-without-pointers val parent) pointers-size))))
+    (define/augment (xxsize [val #f] [parent-arg #f] [include-pointers #t])
+      (define parent (mhasheq 'parent parent-arg
+                              'val val
+                              'pointerSize 0))
+      (define fields-size (for/sum ([(key type) (in-dict @fields)]
+                                    #:when (xenomorphic-type? type))
+                            (send type xxsize (and val (dict-ref val key)) parent)))
+      (define pointers-size (if include-pointers (dict-ref parent 'pointerSize) 0))
+      (+ fields-size pointers-size))))
 
 (define (xstruct? x) (is-a? x xstruct%))
 
