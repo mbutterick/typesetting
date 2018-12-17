@@ -14,7 +14,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
 |#
 
 (test-case
- "decode should decode items lazily"
+ "lazy-array: decode should decode items lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (+xlazy-array uint8 4))
    (define arr (decode xla))
@@ -26,7 +26,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
    (check-equal? (stream-ref arr 3) 4)))
 
 (test-case
- "decode should decode items lazily with post-decode"
+ "lazy-array: decode should decode items lazily with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (+xlazy-array uint8 4 #:post-decode (λ (str) (stream-map (λ (i) (* 2 i)) str))))
    (define arr (decode xla))
@@ -39,35 +39,35 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
    (check-equal? (stream-ref arr 3) 8)))
 
 (test-case
- "should be able to convert to an array"
+ "lazy-array: should be able to convert to an array"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (+xlazy-array uint8 4))
    (define arr (decode xla))
    (check-equal? (stream->list arr) '(1 2 3 4))))
 
 (test-case
- "decode should decode length as number before array"
+ "lazy-array: decode should decode length as number before array"
  (parameterize ([current-input-port (open-input-bytes (bytes 4 1 2 3 4 5))])
    (define xla (+xlazy-array uint8 uint8))
    (define arr (decode xla))
    (check-equal? (stream->list arr) '(1 2 3 4))))
 
 (test-case
- "size should work with xlazy-arrays"
+ "lazy-array: size should work with xlazy-arrays"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (+xlazy-array uint8 4))
    (define arr (decode xla))
    (check-equal? (size xla arr) 4)))
 
 (test-case
- "encode should work with xlazy-arrays"
+ "lazy-array: encode should work with xlazy-arrays"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (+xlazy-array uint8 4))
    (define arr (decode xla))  
    (check-equal? (encode xla arr #f) (bytes 1 2 3 4))))
 
 (test-case
- "encode should work with xlazy-arrays with pre-encode"
+ "lazy-array: encode should work with xlazy-arrays with pre-encode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (+xlazy-array uint8 4 #:pre-encode (λ (str) (stream-map (λ (val) (* 2 val)) str))))
    (define arr (decode xla))  

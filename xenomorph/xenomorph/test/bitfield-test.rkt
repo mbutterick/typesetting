@@ -18,11 +18,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
   (map (λ (x) (arithmetic-shift 1 x)) (range 8)))
 
 (test-case
- "bitfield should have the right size"
+ "bitfield: should have the right size"
  (check-equal? (size bitfield) 1))
 
 (test-case
- "bitfield should decode"
+ "bitfield: should decode"
  (parameterize ([current-input-port (open-input-bytes (bytes (bitwise-ior JACK MACK PACK NACK QUACK)))])
    (check-equal? (decode bitfield) (mhasheq 'Quack #t
                                             'Nack #t
@@ -34,7 +34,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
                                             'Kack #f))))
 
 (test-case
- "bitfield should decode with post-decode"
+ "bitfield: should decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes (bitwise-ior JACK MACK PACK NACK QUACK)))])
    (define bitfield (+xbitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)                                                                      #:post-decode (λ (fh) (hash-set! fh 'foo 42) fh)))
    (check-equal? (decode bitfield) (mhasheq 'Quack #t
@@ -48,7 +48,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
                                             'foo 42))))
 
 (test-case
- "bitfield should encode"
+ "bitfield: should encode"
  (check-equal? (encode bitfield (mhasheq 'Quack #t
                                          'Nack #t
                                          'Lack #f
@@ -60,7 +60,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
                (bytes (bitwise-ior JACK MACK PACK NACK QUACK))))
 
 (test-case
- "bitfield should encode with pre-encode"
+ "bitfield: should encode with pre-encode"
  (define bitfield (+xbitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)
                               #:pre-encode (λ (fh)
                                               (hash-set! fh 'Jack #f)

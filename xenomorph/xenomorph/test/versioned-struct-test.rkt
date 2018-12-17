@@ -16,7 +16,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
 |#
 
 (test-case
- "decode should get version from number type"
+ "versioned struct: decode should get version from number type"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -30,7 +30,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
      (check-equal? (decode vstruct) (mhasheq 'name "roxyb 🤘" 'age 21 'version 1 'gender 0)))))
 
 (test-case
- "decode should throw for unknown version"
+ "versioned struct: decode should throw for unknown version"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -42,7 +42,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
      (check-exn exn:fail:contract? (λ () (decode vstruct))))))
 
 (test-case
- "decode should support common header block"
+ "versioned struct: decode should support common header block"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      'header (dictify 'age uint8
@@ -63,7 +63,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                  'gender 0)))))
 
 (test-case
- "decode should support parent version key"
+ "versioned struct: decode should support parent version key"
  (let ([vstruct (+xversioned-struct 'version
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -79,7 +79,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                    (mhasheq 'name "roxyb 🤘"  'age 21 'version 1 'gender 0)))))
 
 (test-case
- "decode should support sub versioned structs"
+ "versioned struct: decode should support sub versioned structs"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -99,22 +99,22 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
      (check-equal? (decode vstruct #:parent (mhash 'version 0))
                    (mhasheq 'name "ice cream" 'isDessert 1 'version 1)))))
 
-#;(test-case
- "decode should support process hook"
- (let ([vstruct (+xversioned-struct uint8
+(test-case
+ "versioned struct: decode should support process hook"
+ (let ([vstruct (+xversioned-struct #:post-decode (λ (val) (dict-set! val 'processed "true") val)
+                                    uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
                                      1 (+xstruct 'name (+xstring #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
-   (set-post-decode! vstruct (λ (val) (dict-set! val 'processed "true") val))
    (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
      (check-equal? (decode vstruct)
                    (mhasheq 'name "roxyb" 'processed "true" 'age 21 'version 0)))))
 
 (test-case
- "size should compute the correct size"
+ "versioned struct: size should compute the correct size"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -131,7 +131,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                         'version 1)) 14)))
 
 (test-case
- "size should throw for unknown version"
+ "versioned struct: size should throw for unknown version"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -142,7 +142,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
    (check-exn exn:fail:contract? (λ () (size vstruct (mhasheq 'name "roxyb" 'age 21 'version 5))))))
 
 (test-case
- "size should support common header block"
+ "versioned struct: size should support common header block"
  (let ([struct (+xversioned-struct uint8
                                    (dictify
                                     'header (dictify 'age uint8
@@ -154,7 +154,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
    (check-equal? (size struct (mhasheq 'name "roxyb 🤘" 'gender 0 'age 21 'alive 1 'version 1)) 15)))
 
 (test-case
- "size should compute the correct size with pointers"
+ "versioned struct: size should compute the correct size with pointers"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -169,7 +169,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                         'ptr "hello")) 15)))
 
 (test-case
- "size should throw if no value is given"
+ "versioned struct: size should throw if no value is given"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -180,7 +180,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
    (check-exn exn:fail:contract? (λ () (size vstruct)))))
 
 (test-case
- "encode should encode objects to buffers"
+ "versioned struct: encode should encode objects to buffers"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -194,7 +194,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
    (check-equal? (get-output-bytes op) (string->bytes/utf-8 "\x00\x05roxyb\x15\x01\x0aroxyb 🤘\x15\x00"))))
 
 (test-case
- "encode should throw for unknown version"
+ "versioned struct: encode should throw for unknown version"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -206,7 +206,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
    (check-exn exn:fail:contract? (λ () (encode vstruct op (mhasheq 'name "roxyb" 'age 21 'version 5))))))
 
 (test-case
- "encode should support common header block"
+ "versioned struct: encode should support common header block"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      'header (dictify 'age uint8
@@ -220,7 +220,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
    (check-equal? (get-output-bytes op) (string->bytes/utf-8 "\x00\x15\x01\x05roxyb\x01\x15\x01\x0aroxyb 🤘\x00"))))
 
 (test-case
- "encode should encode pointer data after structure"
+ "versioned struct: encode should encode pointer data after structure"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify 
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)
@@ -235,7 +235,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
    (check-equal? (get-output-bytes op) (string->bytes/utf-8 "\x01\x05roxyb\x15\x09\x05hello"))))
 
 #;(test-case
- "encode should support preEncode hook"
+ "versioned struct: encode should support preEncode hook"
  (let ([vstruct (+xversioned-struct uint8
                                     (dictify
                                      0 (dictify 'name (+xstring #:length uint8 #:encoding 'ascii)

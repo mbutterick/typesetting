@@ -16,86 +16,86 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 |#
 
 (test-case
- "decode should handle null pointers"
+ "pointer: decode should handle null pointers"
  (parameterize ([current-input-port (open-input-bytes (bytes 0))])
    (check-false (decode (+xpointer) #:parent (mhash '_startOffset 50)))))
 
 (test-case
- "decode should use local offsets from start of parent by default"
+ "pointer: decode should use local offsets from start of parent by default"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
    (check-equal? (decode (+xpointer) #:parent (mhash '_startOffset 0)) 53)))
 
 (test-case
- "decode should support immediate offsets"
+ "pointer: decode should support immediate offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
    (check-equal? (decode (+xpointer #:relative-to 'immediate)) 53)))
 
 (test-case
- "decode should support offsets relative to the parent"
+ "pointer: decode should support offsets relative to the parent"
  (parameterize ([current-input-port (open-input-bytes (bytes 0 0 1 53))])
    (pos (current-input-port) 2)
    (check-equal? (decode (+xpointer #:relative-to 'parent) #:parent (mhash 'parent (mhash '_startOffset 2))) 53)))
 
 (test-case
- "decode should support global offsets"
+ "pointer: decode should support global offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 4 0 0 0 53))])
    (pos (current-input-port) 2)
    (check-equal? (decode (+xpointer #:relative-to 'global) #:parent (mhash 'parent (mhash 'parent (mhash '_startOffset 2))))
                  53)))
 
 (test-case
- "decode should support returning pointer if there is no decode type"
+ "pointer: decode should support returning pointer if there is no decode type"
  (parameterize ([current-input-port (open-input-bytes (bytes 4))])
    (check-equal? (decode (+xpointer uint8 'void) #:parent (mhash '_startOffset 0)) 4)))
 
 (test-case
- "decode should support decoding pointers lazily"
+ "pointer: decode should support decoding pointers lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
    (define res (decode (+xstruct 'ptr (+xpointer #:lazy #t))))
    (check-true (promise? (dict-ref res 'ptr)))
    (check-equal? (force (dict-ref res 'ptr)) 53)))
 
 (test-case
- "size"
+ "pointer: size"
  (let ([parent (mhash 'pointerSize 0)])
    (check-equal? (size (+xpointer) 10 #:parent parent) 1)
    (check-equal? (dict-ref parent 'pointerSize) 1)))
 
 (test-case
- "size should add to immediate pointerSize"
+ "pointer: size should add to immediate pointerSize"
  (let ([parent (mhash 'pointerSize 0)])
    (check-equal? (size (+xpointer #:relative-to 'immediate) 10 #:parent parent) 1)
    (check-equal? (dict-ref parent 'pointerSize) 1)))
 
 (test-case
- "size should add to parent pointerSize"
+ "pointer: size should add to parent pointerSize"
  (let ([parent (mhash 'parent (mhash 'pointerSize 0))])
    (check-equal? (size (+xpointer #:relative-to 'parent) 10 #:parent parent) 1)
    (check-equal? (dict-ref* parent 'parent 'pointerSize) 1)))
 
 (test-case
- "size should add to global pointerSize"
+ "pointer: size should add to global pointerSize"
  (let ([parent (mhash 'parent (mhash 'parent (mhash 'parent (mhash 'pointerSize 0))))])
    (check-equal? (size (+xpointer #:relative-to 'global) 10 #:parent parent) 1)
    (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointerSize) 1)))
 
 (test-case
- "size should handle void pointers"
+ "pointer: size should handle void pointers"
  (let ([parent (mhash 'pointerSize 0)])
    (check-equal? (size (+xpointer uint8 'void) (+xvoid-pointer uint8 50) #:parent parent) 1)
    (check-equal? (dict-ref parent 'pointerSize) 1)))
 
 (test-case
- "size should throw if no type and not a void pointer"
+ "pointer: size should throw if no type and not a void pointer"
  (let ([parent (mhash 'pointerSize 0)])
    (check-exn exn:fail:contract? (λ () (size (+xpointer uint8 'void) 30 #:parent parent)))))
 
 (test-case
- "size should return a fixed size without a value"
+ "pointer: size should return a fixed size without a value"
  (check-equal? (size (+xpointer)) 1))
 
 (test-case
- "encode should handle null pointers"
+ "pointer: encode should handle null pointers"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash 'pointerSize 0
                       'startOffset 0
@@ -106,7 +106,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
 (test-case
- "encode should handle local offsets"
+ "pointer: encode should handle local offsets"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash 'pointerSize 0
                       'startOffset 0
@@ -120,7 +120,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
- "encode should handle immediate offsets"
+ "pointer: encode should handle immediate offsets"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash 'pointerSize 0
                       'startOffset 0
@@ -134,7 +134,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
 (test-case
- "encode should handle offsets relative to parent"
+ "pointer: encode should handle offsets relative to parent"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash 'parent (mhash 'pointerSize 0
                                      'startOffset 3
@@ -148,7 +148,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
 
 (test-case
- "encode should handle global offsets"
+ "pointer: encode should handle global offsets"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash 'parent
                       (mhash 'parent
@@ -165,7 +165,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (get-output-bytes (current-output-port)) (bytes 5))))
 
 (test-case
- "encode should support void pointers"
+ "pointer: encode should support void pointers"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash 'pointerSize 0
                       'startOffset 0
@@ -177,7 +177,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
- "encode should throw if not a void pointer instance"
+ "pointer: encode should throw if not a void pointer instance"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash 'pointerSize 0
                       'startOffset 0
