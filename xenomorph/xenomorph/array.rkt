@@ -13,8 +13,8 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
-(define xarray%
-  (class xenobase%
+(define x:array%
+  (class x:enobase%
     (super-new)
     (init-field [(@type type)] [(@len len)] [(@length-type length-type)])
     
@@ -94,11 +94,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                  #:count-bytes [count-bytes? #f]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f])
-  (new (generate-subclass xarray% pre-proc post-proc) [type (or type-arg type-kwarg)]
+  (new (generate-subclass x:array% pre-proc post-proc) [type (or type-arg type-kwarg)]
        [len (or len-arg len-kwarg)]
        [length-type (if count-bytes? 'bytes length-type-arg)]))
 
-(define (xarray? x) (is-a? x xarray%))
+(define (xarray? x) (is-a? x x:array%))
   
 (module+ test
   (require rackunit "generic.rkt")

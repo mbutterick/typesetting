@@ -7,8 +7,8 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 |#
 
-(define xbuffer%
-  (class xenobase%
+(define x:buffer%
+  (class x:enobase%
     (super-new)
     (init-field [(@len len)])
     (unless (length-resolvable? @len)
@@ -37,4 +37,4 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
                   #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f])
   (define len (or len-arg len-kwarg #xffff))
-  (new (generate-subclass xbuffer% pre-proc post-proc) [len len]))
+  (new (generate-subclass x:buffer% pre-proc post-proc) [len len]))

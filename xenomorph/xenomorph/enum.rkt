@@ -7,8 +7,8 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
 |#
 
-(define xenum%
-  (class xenobase%
+(define x:enum%
+  (class x:enobase%
     (super-new)
     (init-field [(@type type)] [(@values values)])
      
@@ -37,4 +37,4 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
                 #:post-decode [post-proc #f])
   (define type (or type-arg type-kwarg))
   (define values (or values-arg values-kwarg))
-  (new (generate-subclass xenum% pre-proc post-proc) [type type] [values values]))
+  (new (generate-subclass x:enum% pre-proc post-proc) [type type] [values values]))

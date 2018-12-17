@@ -7,8 +7,8 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
 |#
 
-(define xoptional%
-  (class xenobase%
+(define x:optional%
+  (class x:enobase%
     (super-new)
     (init-field [(@type type)] [(@condition condition)])
 
@@ -42,4 +42,4 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
                       [(and (eq? cond-arg no-val) (eq? cond-kwarg no-val)) #true]
                       [(not (eq? cond-arg no-val)) cond-arg]
                       [(not (eq? cond-kwarg no-val)) cond-kwarg]))
-  (new (generate-subclass xoptional% pre-proc post-proc) [type type] [condition condition]))
+  (new (generate-subclass x:optional% pre-proc post-proc) [type type] [condition condition]))

@@ -23,8 +23,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [(xvoid-pointer? val) (values (xvoid-pointer-type val) (xvoid-pointer-value val))]
     [else (raise-argument-error 'Pointer:size "VoidPointer" val)]))
 
-(define xpointer%
-  (class xenobase%
+(define x:pointer%
+  (class x:enobase%
     (super-new)
     (init-field [(@offset-type offset-type)]
                 [(@type type)]
@@ -103,7 +103,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
   (unless (memq pointer-relative-to valid-pointer-relatives)
     (raise-argument-error '+xpointer (format "~v" valid-pointer-relatives) pointer-relative-to))
   (define type-in (or type-arg type-kwarg uint8))
-  (new (generate-subclass xpointer% pre-proc post-proc)
+  (new (generate-subclass x:pointer% pre-proc post-proc)
        [offset-type (or offset-arg offset-kwarg uint8)]
        [type (case type-in [(void) #f][else type-in])]
        [pointer-relative-to pointer-relative-to]
@@ -112,10 +112,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
        [null-value null-value]))
 
 ;; A pointer whose type is determined at decode time
-(define xvoid-pointer% (class xenobase%
+(define x:void-pointer% (class x:enobase%
                          (super-new)
                          (init-field type value)))
-(define (+xvoid-pointer . args) (apply make-object xvoid-pointer% args))
-(define (xvoid-pointer? x) (is-a? x xvoid-pointer%))
+(define (+xvoid-pointer . args) (apply make-object x:void-pointer% args))
+(define (xvoid-pointer? x) (is-a? x x:void-pointer%))
 (define (xvoid-pointer-type x) (get-field type x))
 (define (xvoid-pointer-value x) (get-field value x))

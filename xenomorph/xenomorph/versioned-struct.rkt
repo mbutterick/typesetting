@@ -10,8 +10,8 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
-(define xversioned-struct%
-  (class xstruct%
+(define x:versioned-struct%
+  (class x:struct%
     (super-new)
     (init-field [(@type type)] [(@versions versions)])
 
@@ -100,10 +100,10 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define pointer-size (if include-pointers (dict-ref parent 'pointerSize) 0))
       (+ version-size header-size fields-size pointer-size))))
 
-(define (xversioned-struct? x) (is-a? x xversioned-struct%))
+(define (xversioned-struct? x) (is-a? x x:versioned-struct%))
 
 (define (+xversioned-struct type [versions (dictify)]
                             #:pre-encode [pre-proc #f]
                             #:post-decode [post-proc #f])
-  (new (generate-subclass xversioned-struct% pre-proc post-proc) [type type] [versions versions][fields #f]))
+  (new (generate-subclass x:versioned-struct% pre-proc post-proc) [type type] [versions versions][fields #f]))
 

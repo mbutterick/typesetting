@@ -45,8 +45,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (hash-set! h k v))
   h)
 
-(define xstruct%
-  (class xenobase%
+(define x:struct%
+  (class x:enobase%
     (super-new)
     (init-field [(@fields fields)])
     
@@ -93,7 +93,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (define pointers-size (if include-pointers (dict-ref parent 'pointerSize) 0))
       (+ fields-size pointers-size))))
 
-(define (xstruct? x) (is-a? x xstruct%))
+(define (xstruct? x) (is-a? x x:struct%))
 
 (define (+xstruct #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f] . dicts)
@@ -104,7 +104,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                    (unless (symbol? (car kv))
                      (raise-argument-error '+xstruct "symbol" (car kv)))
                    (apply cons kv)))
-  (new (generate-subclass xstruct% pre-proc post-proc) [fields fields]))
+  (new (generate-subclass x:struct% pre-proc post-proc) [fields fields]))
 
 (module+ test
   (require rackunit "number.rkt" "generic.rkt")

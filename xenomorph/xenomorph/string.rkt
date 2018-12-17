@@ -28,8 +28,8 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (define (bytes-left-in-port? port)
   (not (eof-object? (peek-byte port))))
 
-(define xstring%
-  (class xenobase%
+(define x:string%
+  (class x:enobase%
     (super-new)
     (init-field [(@len len)] [(@encoding encoding)])
 
@@ -87,10 +87,10 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                   #:post-decode [post-proc #f])
   (define len (or len-arg len-kwarg))
   (define encoding (or enc-arg enc-kwarg 'ascii))
-  (new (generate-subclass xstring% pre-proc post-proc) [len len] [encoding encoding]))
+  (new (generate-subclass x:string% pre-proc post-proc) [len len] [encoding encoding]))
 
-(define xsymbol%
-  (class xstring%
+(define x:symbol%
+  (class x:string%
     (super-new)
     (inherit-field len encoding)
 
@@ -108,7 +108,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                   #:post-decode [post-proc #f])
   (define len (or len-arg len-kwarg))
   (define encoding (or enc-arg enc-kwarg 'utf8))
-  (new (generate-subclass xsymbol% pre-proc post-proc) [len len] [encoding encoding]))
+  (new (generate-subclass x:symbol% pre-proc post-proc) [len len] [encoding encoding]))
 
 (module+ test
   (require rackunit "generic.rkt")

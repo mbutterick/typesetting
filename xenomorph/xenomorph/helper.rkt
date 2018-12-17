@@ -16,7 +16,7 @@
     (file-position p new-pos))
   (file-position p))
 
-(define xenomorphic<%>
+(define x:enomorphic<%>
   (interface* ()
               ([(generic-property gen:xenomorphic)
                 (generic-method-table
@@ -38,7 +38,7 @@
                  (define (size xo [val #f] #:parent [parent #f])
                    (send xo x:size val parent)))])))
 
-(define (xenomorphic-type? x) (is-a? x xenobase%))
+(define (xenomorphic-type? x) (is-a? x x:enobase%))
 
 (define-syntax-rule (generate-subclass CLASS PRE-ENCODE-PROC POST-DECODE-PROC)
   (cond
@@ -57,8 +57,8 @@
        (define/override (post-decode x) (POST-DECODE-PROC (super post-decode x))))]
     [else CLASS]))
 
-(define xenobase%
-  (class* object% (xenomorphic<%>)
+(define x:enobase%
+  (class* object% (x:enomorphic<%>)
     (super-new)
     
     (define/pubment (x:decode input-port [parent #f])

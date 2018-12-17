@@ -23,8 +23,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 (define system-endian (if (system-big-endian?) 'be 'le))
 
-(define xnumber%
-  (class xenobase%
+(define x:number%
+  (class x:enobase%
     (super-new)
     (init-field [(@size size)] [(@endian endian)])
     
@@ -37,10 +37,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     
     (define/augment (x:size . _) @size)))
 
-(define (xint? x) (is-a? x xint%))
+(define (xint? x) (is-a? x x:int%))
 
-(define xint%
-  (class xnumber%
+(define x:int%
+  (class x:number%
     (super-new)
     (init-field signed)
     (inherit-field (@endian endian) (@size size) @bits)
@@ -75,7 +75,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                #:endian [endian system-endian]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f])
-  (new (generate-subclass xint% pre-proc post-proc) [size size] [signed signed] [endian endian]))
+  (new (generate-subclass x:int% pre-proc post-proc) [size size] [signed signed] [endian endian]))
 
 (define int8 (+xint 1))
 (define int16 (+xint 2))
@@ -145,8 +145,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (check-equal? (encode int8 -1 #f) (bytes 255))
   (check-equal? (encode int8 127 #f) (bytes 127)))
 
-(define xfloat%
-  (class xnumber%
+(define x:float%
+  (class x:number%
     (super-new)
     (inherit-field (@size size) (@endian endian))
                 
@@ -159,7 +159,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define (+xfloat [size 4] #:endian [endian system-endian]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f])
-  (new (generate-subclass xfloat% pre-proc post-proc) [size size] [endian endian]))
+  (new (generate-subclass x:float% pre-proc post-proc) [size size] [endian endian]))
 
 (define float (+xfloat 4))
 (define floatbe (+xfloat 4 #:endian 'be))
@@ -169,8 +169,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define doublebe (+xfloat 8 #:endian 'be))
 (define doublele (+xfloat 8 #:endian 'le))
 
-(define xfixed%
-  (class xint%
+(define x:fixed%
+  (class x:int%
     (super-new)
     (init-field [(@fracbits fracbits)])
     (unless (exact-positive-integer? @fracbits)
@@ -190,7 +190,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                  #:fracbits [fracbits (/ (* size 8) 2)]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f])  
-  (new (generate-subclass xfixed% pre-proc post-proc) [size size] [signed signed] [endian endian] [fracbits fracbits]))
+  (new (generate-subclass x:fixed% pre-proc post-proc) [size size] [signed signed] [endian endian] [fracbits fracbits]))
 
 (define fixed16 (+xfixed 2))
 (define fixed16be (+xfixed 2 #:endian 'be))

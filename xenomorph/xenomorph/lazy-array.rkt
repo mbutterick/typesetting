@@ -8,8 +8,8 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 |#
  
-(define xlazy-array%
-  (class xarray%
+(define x:lazy-array%
+  (class x:array%
     (super-new)
     (inherit-field [@type type] [@len len])
 
@@ -45,7 +45,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
                       #:post-decode [post-proc #f])
   (define type (or type-arg type-kwarg))
   (define len (or len-arg len-kwarg))
-  (new (generate-subclass xlazy-array% pre-proc post-proc) [type type]
+  (new (generate-subclass x:lazy-array% pre-proc post-proc) [type type]
        [len len]
        [length-type 'count]))
 

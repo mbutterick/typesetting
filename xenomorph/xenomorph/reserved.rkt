@@ -7,8 +7,8 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
 |#
 
-(define xreserved%
-  (class xenobase%
+(define x:reserved%
+  (class x:enobase%
     (super-new)
     (init-field [(@type type)] [(@count count)])
 
@@ -32,4 +32,4 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
                     #:post-decode [post-proc #f])
   (define type (or type-arg type-kwarg))
   (define count (or count-arg count-kwarg 1))
-  (new (generate-subclass xreserved% pre-proc post-proc) [type type] [count count]))
+  (new (generate-subclass x:reserved% pre-proc post-proc) [type type] [count count]))
