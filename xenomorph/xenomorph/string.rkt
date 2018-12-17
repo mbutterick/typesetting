@@ -57,7 +57,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       (define encoded-length (bytes-length encoded-str))
       (when (and (exact-nonnegative-integer? @len) (> encoded-length @len))
         (raise-argument-error 'xstring-encode (format "string no longer than ~a" @len) val)) 
-      (when (xint? @len)
+      (when (x:int? @len)
         (send @len x:encode encoded-length port parent))
       (define string-terminator (if (not @len) (bytes 0) (bytes))) ; null terminated when no len
       (bytes-append encoded-str string-terminator)) 
@@ -74,7 +74,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
              (define string-size (bytes-length (encode-string val encoding)))
              (define strlen-size (cond
                                    [(not @len) 1]
-                                   [(xint? @len) (send @len x:size)]
+                                   [(x:int? @len) (send @len x:size)]
                                    [else 0]))
              (+ string-size strlen-size)]
         [else (resolve-length @len #f #:parent parent)]))))

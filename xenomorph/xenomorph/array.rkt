@@ -26,7 +26,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       (raise-argument-error '+xarray "'bytes or 'count" @length-type))
 
     (define/augride (x:decode port parent)
-      (define new-parent (if (xint? @len)
+      (define new-parent (if (x:int? @len)
                              (mhasheq 'parent parent
                                       '_startOffset (pos port)
                                       '_currentOffset 0
@@ -62,7 +62,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
           (for ([item array])
             (send @type x:encode item port parent))))
       (cond
-        [(xint? @len)
+        [(x:int? @len)
          (define new-parent (mhash 'pointers null
                                    'startOffset (pos port)
                                    'parent parent))
@@ -78,7 +78,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                   (raise-argument-error 'xarray-size "sequence" val)))
       (cond
         [val (define-values (new-parent len-size)
-               (if (xint? @len)
+               (if (x:int? @len)
                    (values (mhasheq 'parent parent) (send @len x:size))
                    (values parent 0)))
              (define items-size (for/sum ([item val])

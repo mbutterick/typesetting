@@ -37,7 +37,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     
     (define/augment (x:size . _) @size)))
 
-(define (xint? x) (is-a? x x:int%))
+(define (x:int? x) (is-a? x x:int%))
 
 (define x:int%
   (class x:number%

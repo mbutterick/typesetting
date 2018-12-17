@@ -21,7 +21,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
     (define/augment (x:encode buf port [parent #f])
       (unless (bytes? buf)
         (raise-argument-error 'xbuffer-encode "bytes" buf))
-      (when (xint? @len)
+      (when (x:int? @len)
         (send @len x:encode (bytes-length buf) port))
       (write-bytes buf port))
     

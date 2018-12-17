@@ -11,5 +11,5 @@
     [(exact-nonnegative-integer? x) x]
     [(procedure? x) (x parent)]
     [(and parent (symbol? x)) (dict-ref parent x)]
-    [(and port (xint? x)) (decode x port)]
+    [(and port (x:int? x)) (decode x port)]
     [else (raise-argument-error 'resolve-length "fixed-size argument" x)]))
