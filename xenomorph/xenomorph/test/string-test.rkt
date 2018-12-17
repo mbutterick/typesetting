@@ -26,12 +26,12 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 (test-case
  "string: decode length from parent key"
  (parameterize ([current-input-port (open-input-bytes #"testing")])
-   (check-equal? (send (+xstring 'len) xxdecode (current-input-port) (mhash 'len 7)) "testing")))
+   (check-equal? (decode (+xstring 'len) (current-input-port) #:parent (mhash 'len 7)) "testing")))
 
 (test-case
  "string: decode length as number before string"
  (parameterize ([current-input-port (open-input-bytes #"\x07testing")])
-   (check-equal? (send (+xstring uint8) xxdecode (current-input-port) (mhash 'len 7)) "testing")))
+   (check-equal? (decode (+xstring uint8) (current-input-port) #:parent (mhash 'len 7)) "testing")))
 
 (test-case
  "string: decode utf8"
