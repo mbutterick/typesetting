@@ -10,16 +10,16 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 |#
 
-(define e (+xenum #:type uint8
+(define e (x:enum #:type uint8
                   #:values '("foo" "bar" "baz")))
 
 (test-case
  "enum: should error with invalid type"
- (check-exn exn:fail:contract? (λ () (+xenum 42))))
+ (check-exn exn:fail:contract? (λ () (x:enum 42))))
 
 (test-case
  "enum: should error with invalid values"
- (check-exn exn:fail:contract? (λ () (+xenum #:values 42))))
+ (check-exn exn:fail:contract? (λ () (x:enum #:values 42))))
 
 (test-case
  "enum: should have the right size"
@@ -35,7 +35,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 (test-case
  "enum: decode should decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 0))])
-   (define e2 (+xenum #:type uint8
+   (define e2 (x:enum #:type uint8
                   #:values '("foo" "bar" "baz")
                   #:post-decode (λ (val) "foobar")))
    (check-equal? (decode e2) "foobar")
@@ -53,7 +53,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 (test-case
  "enum: encode should encode with pre-encode"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define e2 (+xenum #:type uint8
+   (define e2 (x:enum #:type uint8
                   #:values '("foo" "bar" "baz")
                   #:pre-encode (λ (val) "foo")))
    (encode e2 "bar")

@@ -80,7 +80,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
         [else (resolve-length @len #f #:parent parent)]))))
 
 (define supported-encodings '(ascii utf8))
-(define (+xstring [len-arg #f] [enc-arg #f]
+(define (x:string [len-arg #f] [enc-arg #f]
                   #:length [len-kwarg #f]
                   #:encoding [enc-kwarg #f]
                   #:pre-encode [pre-proc #f]
@@ -101,7 +101,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     
     (define/override (post-decode val) (string->symbol val))))
 
-(define (+xsymbol [len-arg #f] [enc-arg #f]
+(define (x:symbol [len-arg #f] [enc-arg #f]
                   #:length [len-kwarg #f]
                   #:encoding [enc-kwarg #f]
                   #:pre-encode [pre-proc #f]
@@ -112,14 +112,14 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 
 (module+ test
   (require rackunit "generic.rkt")
-  (define S-fixed (+xstring 4 'utf8))
+  (define S-fixed (x:string 4 'utf8))
   (check-equal? (encode S-fixed "Mike" #f) #"Mike")
   (check-exn exn:fail? (λ () (encode S-fixed "Mikes" #f))) ; too long for fixed string 
-  (define S (+xstring uint8 'utf8))
+  (define S (x:string uint8 'utf8))
   (check-equal? (decode S #"\2BCDEF") "BC")
   (check-equal? (encode S "Mike" #f) #"\4Mike")
-  (check-equal? (size (+xstring) "foobar") 7) ; null terminated when no len
-  (check-equal? (decode (+xsymbol 4) #"Mike") 'Mike)
-  (check-equal? (encode (+xsymbol 4) 'Mike #f) #"Mike")
-  (check-equal? (encode (+xsymbol 4) "Mike" #f) #"Mike")
-  (check-exn exn:fail:contract? (λ () (encode (+xsymbol 4) 42 #f))))
+  (check-equal? (size (x:string) "foobar") 7) ; null terminated when no len
+  (check-equal? (decode (x:symbol 4) #"Mike") 'Mike)
+  (check-equal? (encode (x:symbol 4) 'Mike #f) #"Mike")
+  (check-equal? (encode (x:symbol 4) "Mike" #f) #"Mike")
+  (check-exn exn:fail:contract? (λ () (encode (x:symbol 4) 42 #f))))

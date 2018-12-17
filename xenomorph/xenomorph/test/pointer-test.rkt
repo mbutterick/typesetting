@@ -18,81 +18,81 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "pointer: decode should handle null pointers"
  (parameterize ([current-input-port (open-input-bytes (bytes 0))])
-   (check-false (decode (+xpointer) #:parent (mhash '_startOffset 50)))))
+   (check-false (decode (x:pointer) #:parent (mhash '_startOffset 50)))))
 
 (test-case
  "pointer: decode should use local offsets from start of parent by default"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (check-equal? (decode (+xpointer) #:parent (mhash '_startOffset 0)) 53)))
+   (check-equal? (decode (x:pointer) #:parent (mhash '_startOffset 0)) 53)))
 
 (test-case
  "pointer: decode should support immediate offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (check-equal? (decode (+xpointer #:relative-to 'immediate)) 53)))
+   (check-equal? (decode (x:pointer #:relative-to 'immediate)) 53)))
 
 (test-case
  "pointer: decode should support offsets relative to the parent"
  (parameterize ([current-input-port (open-input-bytes (bytes 0 0 1 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (+xpointer #:relative-to 'parent) #:parent (mhash 'parent (mhash '_startOffset 2))) 53)))
+   (check-equal? (decode (x:pointer #:relative-to 'parent) #:parent (mhash 'parent (mhash '_startOffset 2))) 53)))
 
 (test-case
  "pointer: decode should support global offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 4 0 0 0 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (+xpointer #:relative-to 'global) #:parent (mhash 'parent (mhash 'parent (mhash '_startOffset 2))))
+   (check-equal? (decode (x:pointer #:relative-to 'global) #:parent (mhash 'parent (mhash 'parent (mhash '_startOffset 2))))
                  53)))
 
 (test-case
  "pointer: decode should support returning pointer if there is no decode type"
  (parameterize ([current-input-port (open-input-bytes (bytes 4))])
-   (check-equal? (decode (+xpointer uint8 'void) #:parent (mhash '_startOffset 0)) 4)))
+   (check-equal? (decode (x:pointer uint8 'void) #:parent (mhash '_startOffset 0)) 4)))
 
 (test-case
  "pointer: decode should support decoding pointers lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (define res (decode (+xstruct 'ptr (+xpointer #:lazy #t))))
+   (define res (decode (x:struct 'ptr (x:pointer #:lazy #t))))
    (check-true (promise? (dict-ref res 'ptr)))
    (check-equal? (force (dict-ref res 'ptr)) 53)))
 
 (test-case
  "pointer: size"
  (let ([parent (mhash 'pointerSize 0)])
-   (check-equal? (size (+xpointer) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer) 10 #:parent parent) 1)
    (check-equal? (dict-ref parent 'pointerSize) 1)))
 
 (test-case
  "pointer: size should add to immediate pointerSize"
  (let ([parent (mhash 'pointerSize 0)])
-   (check-equal? (size (+xpointer #:relative-to 'immediate) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer #:relative-to 'immediate) 10 #:parent parent) 1)
    (check-equal? (dict-ref parent 'pointerSize) 1)))
 
 (test-case
  "pointer: size should add to parent pointerSize"
  (let ([parent (mhash 'parent (mhash 'pointerSize 0))])
-   (check-equal? (size (+xpointer #:relative-to 'parent) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer #:relative-to 'parent) 10 #:parent parent) 1)
    (check-equal? (dict-ref* parent 'parent 'pointerSize) 1)))
 
 (test-case
  "pointer: size should add to global pointerSize"
  (let ([parent (mhash 'parent (mhash 'parent (mhash 'parent (mhash 'pointerSize 0))))])
-   (check-equal? (size (+xpointer #:relative-to 'global) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer #:relative-to 'global) 10 #:parent parent) 1)
    (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointerSize) 1)))
 
 (test-case
  "pointer: size should handle void pointers"
  (let ([parent (mhash 'pointerSize 0)])
-   (check-equal? (size (+xpointer uint8 'void) (+xvoid-pointer uint8 50) #:parent parent) 1)
+   (check-equal? (size (x:pointer uint8 'void) (x:void-pointer uint8 50) #:parent parent) 1)
    (check-equal? (dict-ref parent 'pointerSize) 1)))
 
 (test-case
  "pointer: size should throw if no type and not a void pointer"
  (let ([parent (mhash 'pointerSize 0)])
-   (check-exn exn:fail:contract? (λ () (size (+xpointer uint8 'void) 30 #:parent parent)))))
+   (check-exn exn:fail:contract? (λ () (size (x:pointer uint8 'void) 30 #:parent parent)))))
 
 (test-case
  "pointer: size should return a fixed size without a value"
- (check-equal? (size (+xpointer)) 1))
+ (check-equal? (size (x:pointer)) 1))
 
 (test-case
  "pointer: encode should handle null pointers"
@@ -101,7 +101,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'startOffset 0
                       'pointerOffset 0
                       'pointers null))
-   (encode (+xpointer) #f #:parent parent)
+   (encode (x:pointer) #f #:parent parent)
    (check-equal? (dict-ref parent 'pointerSize) 0)
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
@@ -112,7 +112,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'startOffset 0
                       'pointerOffset 1
                       'pointers null))
-   (encode (+xpointer) 10 #:parent parent)
+   (encode (x:pointer) 10 #:parent parent)
    (check-equal? (dict-ref parent 'pointerOffset) 2)
    (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 10
@@ -126,7 +126,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'startOffset 0
                       'pointerOffset 1
                       'pointers null))
-   (encode (+xpointer #:relative-to 'immediate) 10 #:parent parent)
+   (encode (x:pointer #:relative-to 'immediate) 10 #:parent parent)
    (check-equal? (dict-ref parent 'pointerOffset) 2)
    (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 10
@@ -140,7 +140,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                      'startOffset 3
                                      'pointerOffset 5
                                      'pointers null)))
-   (encode (+xpointer #:relative-to 'parent) 10 #:parent parent)
+   (encode (x:pointer #:relative-to 'parent) 10 #:parent parent)
    (check-equal? (dict-ref* parent 'parent 'pointerOffset) 6)
    (check-equal? (dict-ref* parent 'parent 'pointers) (list (mhasheq 'type uint8
                                                                             'val 10
@@ -156,7 +156,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                                    'startOffset 3
                                                    'pointerOffset 5
                                                    'pointers null)))))
-   (encode (+xpointer #:relative-to 'global) 10 #:parent parent)
+   (encode (x:pointer #:relative-to 'global) 10 #:parent parent)
    (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointerOffset) 6)
    (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointers)
                  (list (mhasheq 'type uint8
@@ -171,7 +171,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'startOffset 0
                       'pointerOffset 1
                       'pointers null))
-   (encode (+xpointer uint8 'void) (+xvoid-pointer uint8 55) #:parent parent)
+   (encode (x:pointer uint8 'void) (x:void-pointer uint8 55) #:parent parent)
    (check-equal? (dict-ref parent 'pointerOffset) 2)
    (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8 'val 55 'parent parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
@@ -183,4 +183,4 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'startOffset 0
                       'pointerOffset 1
                       'pointers null))
-   (check-exn exn:fail:contract? (λ () (encode (+xpointer uint8 'void) 44 #:parent parent)))))
+   (check-exn exn:fail:contract? (λ () (encode (x:pointer uint8 'void) 44 #:parent parent)))))

@@ -30,7 +30,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
     (define/augment (x:size [val #f] [parent #f])
       (send @type x:size val parent))))
 
-(define (+xenum [type-arg #f] [values-arg #f]
+(define (x:enum [type-arg #f] [values-arg #f]
                 #:type [type-kwarg #f]
                 #:values [values-kwarg #f]
                 #:pre-encode [pre-proc #f]

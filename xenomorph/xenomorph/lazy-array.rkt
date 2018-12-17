@@ -38,7 +38,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
     (define/override (x:size [val #f] [parent #f])
       (super x:size (if (stream? val) (stream->list val) val) parent))))
 
-(define (+xlazy-array [type-arg #f] [len-arg #f]
+(define (x:lazy-array [type-arg #f] [len-arg #f]
                       #:type [type-kwarg #f]
                       #:length [len-kwarg #f]
                       #:pre-encode [pre-proc #f]
@@ -53,13 +53,13 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
   (require rackunit "number.rkt" "generic.rkt")
   (define bstr #"ABCD1234")
   (define ds (open-input-bytes bstr))
-  (define la (+xlazy-array uint8 4))
+  (define la (x:lazy-array uint8 4))
   (define ila (decode la ds))
   (check-equal? (pos ds) 4)
   (check-equal? (stream-ref ila 1) 66)
   (check-equal? (stream-ref ila 3) 68)
   (check-equal? (pos ds) 4)
   (check-equal? (stream->list ila) '(65 66 67 68))
-  (define la2 (+xlazy-array int16be (λ (t) 4))) 
+  (define la2 (x:lazy-array int16be (λ (t) 4))) 
   (check-equal? (encode la2 '(1 2 3 4) #f) #"\0\1\0\2\0\3\0\4")
   (check-equal? (stream->list (decode la2 (open-input-bytes #"\0\1\0\2\0\3\0\4"))) '(1 2 3 4)))

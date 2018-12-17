@@ -32,7 +32,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
           (bytes-length val)
           (resolve-length @len val #:parent parent)))))
 
-(define (+xbuffer [len-arg #f]
+(define (x:buffer [len-arg #f]
                   #:length [len-kwarg #f]
                   #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f])

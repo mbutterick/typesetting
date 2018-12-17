@@ -90,7 +90,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                         (+ (dict-ref new-parent 'pointerSize) (send type x:size val new-parent)))))
       (send @offset-type x:size))))
 
-(define (+xpointer [offset-arg #f] [type-arg #f]
+(define (x:pointer [offset-arg #f] [type-arg #f]
                    #:offset-type [offset-kwarg #f]
                    #:type [type-kwarg #f]
                    #:relative-to [pointer-relative-to 'local]
@@ -115,7 +115,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define x:void-pointer% (class x:enobase%
                          (super-new)
                          (init-field type value)))
-(define (+xvoid-pointer . args) (apply make-object x:void-pointer% args))
+(define (x:void-pointer . args) (apply make-object x:void-pointer% args))
 (define (xvoid-pointer? x) (is-a? x x:void-pointer%))
 (define (xvoid-pointer-type x) (get-field type x))
 (define (xvoid-pointer-value x) (get-field value x))

@@ -13,7 +13,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 |#
 
-(define bitfield (+xbitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)))
+(define bitfield (x:bitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)))
 (match-define (list JACK KACK LACK MACK NACK OACK PACK QUACK)
   (map (λ (x) (arithmetic-shift 1 x)) (range 8)))
 
@@ -36,7 +36,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 (test-case
  "bitfield: should decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes (bitwise-ior JACK MACK PACK NACK QUACK)))])
-   (define bitfield (+xbitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)                                                                      #:post-decode (λ (fh) (hash-set! fh 'foo 42) fh)))
+   (define bitfield (x:bitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)                                                                      #:post-decode (λ (fh) (hash-set! fh 'foo 42) fh)))
    (check-equal? (decode bitfield) (mhasheq 'Quack #t
                                             'Nack #t
                                             'Lack #f
@@ -61,7 +61,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 
 (test-case
  "bitfield: should encode with pre-encode"
- (define bitfield (+xbitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)
+ (define bitfield (x:bitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack)
                               #:pre-encode (λ (fh)
                                               (hash-set! fh 'Jack #f)
                                               (hash-set! fh 'Mack #f)

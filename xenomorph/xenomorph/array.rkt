@@ -88,7 +88,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
               (define size (send @type x:size #f parent))
               (* size count)]))))
 
-(define (+xarray [type-arg #f] [len-arg #f] [length-type-arg 'count]
+(define (x:array [type-arg #f] [len-arg #f] [length-type-arg 'count]
                  #:type [type-kwarg #f]
                  #:length [len-kwarg #f]
                  #:count-bytes [count-bytes? #f]
@@ -102,7 +102,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   
 (module+ test
   (require rackunit "generic.rkt")
-  (check-equal? (decode (+xarray uint16be 3) #"ABCDEF") '(16706 17220 17734))
-  (check-equal? (encode (+xarray uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
-  (check-equal? (size (+xarray uint16be) '(1 2 3)) 6)
-  (check-equal? (size (+xarray doublebe) '(1 2 3 4 5)) 40))
+  (check-equal? (decode (x:array uint16be 3) #"ABCDEF") '(16706 17220 17734))
+  (check-equal? (encode (x:array uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
+  (check-equal? (size (x:array uint16be) '(1 2 3)) 6)
+  (check-equal? (size (x:array doublebe) '(1 2 3 4 5)) 40))

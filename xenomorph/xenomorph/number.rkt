@@ -70,41 +70,41 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                 ([i (in-range @size)])
         (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))))
 
-(define (+xint [size 2]
+(define (x:int [size 2]
                #:signed [signed #true]
                #:endian [endian system-endian]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f])
   (new (generate-subclass x:int% pre-proc post-proc) [size size] [signed signed] [endian endian]))
 
-(define int8 (+xint 1))
-(define int16 (+xint 2))
-(define int24 (+xint 3))
-(define int32 (+xint 4))
-(define uint8 (+xint 1 #:signed #f))
-(define uint16 (+xint 2 #:signed #f))
-(define uint24 (+xint 3 #:signed #f))
-(define uint32 (+xint 4 #:signed #f))
-(define int8be (+xint 1 #:endian 'be))
-(define int16be (+xint 2 #:endian 'be))
-(define int24be (+xint 3 #:endian 'be))
-(define int32be (+xint 4 #:endian 'be))
-(define uint8be (+xint 1 #:signed #f #:endian 'be))
-(define uint16be (+xint 2 #:signed #f #:endian 'be))
-(define uint24be (+xint 3 #:signed #f #:endian 'be))
-(define uint32be (+xint 4 #:signed #f #:endian 'be))
-(define int8le (+xint 1 #:endian 'le))
-(define int16le (+xint 2 #:endian 'le))
-(define int24le (+xint 3 #:endian 'le))
-(define int32le (+xint 4 #:endian 'le))
-(define uint8le (+xint 1 #:signed #f #:endian 'le))
-(define uint16le (+xint 2 #:signed #f #:endian 'le))
-(define uint24le (+xint 3 #:signed #f #:endian 'le))
-(define uint32le (+xint 4 #:signed #f #:endian 'le))
+(define int8 (x:int 1))
+(define int16 (x:int 2))
+(define int24 (x:int 3))
+(define int32 (x:int 4))
+(define uint8 (x:int 1 #:signed #f))
+(define uint16 (x:int 2 #:signed #f))
+(define uint24 (x:int 3 #:signed #f))
+(define uint32 (x:int 4 #:signed #f))
+(define int8be (x:int 1 #:endian 'be))
+(define int16be (x:int 2 #:endian 'be))
+(define int24be (x:int 3 #:endian 'be))
+(define int32be (x:int 4 #:endian 'be))
+(define uint8be (x:int 1 #:signed #f #:endian 'be))
+(define uint16be (x:int 2 #:signed #f #:endian 'be))
+(define uint24be (x:int 3 #:signed #f #:endian 'be))
+(define uint32be (x:int 4 #:signed #f #:endian 'be))
+(define int8le (x:int 1 #:endian 'le))
+(define int16le (x:int 2 #:endian 'le))
+(define int24le (x:int 3 #:endian 'le))
+(define int32le (x:int 4 #:endian 'le))
+(define uint8le (x:int 1 #:signed #f #:endian 'le))
+(define uint16le (x:int 2 #:signed #f #:endian 'le))
+(define uint24le (x:int 3 #:signed #f #:endian 'le))
+(define uint32le (x:int 4 #:signed #f #:endian 'le))
 
 (module+ test
   (require rackunit "generic.rkt")
-  (check-exn exn:fail:contract? (λ () (+xint 'not-a-valid-type)))
+  (check-exn exn:fail:contract? (λ () (x:int 'not-a-valid-type)))
   (check-exn exn:fail:contract? (λ () (encode uint8 256 #f)))
   (check-not-exn (λ () (encode uint8 255 #f)))
   (check-exn exn:fail:contract? (λ () (encode int8 256 #f)))
@@ -115,7 +115,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
   (check-exn exn:fail:contract? (λ () (encode uint16 (add1 #xffff)  #f)))
   (check-not-exn (λ () (encode uint16 #xffff #f)))
 
-  (let ([i (+xint 2 #:signed #f #:endian 'le)]
+  (let ([i (x:int 2 #:signed #f #:endian 'le)]
         [ip (open-input-bytes (bytes 1 2 3 4))]
         [op (open-output-bytes)])
     (check-equal? (decode i ip) 513)  ;; 1000 0000 0100 0000
@@ -125,7 +125,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (encode i 1027 op)
     (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
 
-  (let ([i (+xint 2 #:signed #f #:endian 'be)]
+  (let ([i (x:int 2 #:signed #f #:endian 'be)]
         [ip (open-input-bytes (bytes 1 2 3 4))]
         [op (open-output-bytes)])
     (check-equal? (decode i ip) 258) ;; 0100 0000 1000 0000 
@@ -135,10 +135,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (encode i 772 op)
     (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
 
-  (check-equal? (size (+xint 1)) 1)
-  (check-equal? (size (+xint)) 2)
-  (check-equal? (size (+xint 4)) 4)
-  (check-equal? (size (+xint 8)) 8)
+  (check-equal? (size (x:int 1)) 1)
+  (check-equal? (size (x:int)) 2)
+  (check-equal? (size (x:int 4)) 4)
+  (check-equal? (size (x:int 8)) 8)
 
   (check-equal? (decode int8 (bytes 127)) 127)
   (check-equal? (decode int8 (bytes 255)) -1)
@@ -156,18 +156,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define/augment (x:encode val . _)
       (real->floating-point-bytes val @size (eq? @endian 'be)))))
 
-(define (+xfloat [size 4] #:endian [endian system-endian]
+(define (x:float [size 4] #:endian [endian system-endian]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f])
   (new (generate-subclass x:float% pre-proc post-proc) [size size] [endian endian]))
 
-(define float (+xfloat 4))
-(define floatbe (+xfloat 4 #:endian 'be))
-(define floatle (+xfloat 4 #:endian 'le))
+(define float (x:float 4))
+(define floatbe (x:float 4 #:endian 'be))
+(define floatle (x:float 4 #:endian 'le))
 
-(define double (+xfloat 8))
-(define doublebe (+xfloat 8 #:endian 'be))
-(define doublele (+xfloat 8 #:endian 'le))
+(define double (x:float 8))
+(define doublebe (x:float 8 #:endian 'be))
+(define doublele (x:float 8 #:endian 'le))
 
 (define x:fixed%
   (class x:int%
@@ -184,7 +184,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define/override (pre-encode val)
       (exact-if-possible (floor (* val fixed-shift))))))
 
-(define (+xfixed [size 2]
+(define (x:fixed [size 2]
                  #:signed [signed #true]
                  #:endian [endian system-endian]
                  #:fracbits [fracbits (/ (* size 8) 2)]
@@ -192,12 +192,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                  #:post-decode [post-proc #f])  
   (new (generate-subclass x:fixed% pre-proc post-proc) [size size] [signed signed] [endian endian] [fracbits fracbits]))
 
-(define fixed16 (+xfixed 2))
-(define fixed16be (+xfixed 2 #:endian 'be))
-(define fixed16le (+xfixed 2 #:endian 'le))
-(define fixed32 (+xfixed 4))
-(define fixed32be (+xfixed 4 #:endian 'be))
-(define fixed32le (+xfixed 4 #:endian 'le))
+(define fixed16 (x:fixed 2))
+(define fixed16be (x:fixed 2 #:endian 'be))
+(define fixed16le (x:fixed 2 #:endian 'le))
+(define fixed32 (x:fixed 4))
+(define fixed32be (x:fixed 4 #:endian 'be))
+(define fixed32le (x:fixed 4 #:endian 'le))
 
 (module+ test
   (define bs (encode fixed16be 123.45 #f))

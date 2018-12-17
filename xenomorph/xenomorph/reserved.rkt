@@ -25,7 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
     (define/augment (x:size [val #f] [parent #f])
       (* (send @type x:size) (resolve-length @count #f #:parent parent)))))
 
-(define (+xreserved [type-arg #f] [count-arg #f]
+(define (x:reserved [type-arg #f] [count-arg #f]
                     #:type [type-kwarg #f]
                     #:count [count-kwarg #f]
                     #:pre-encode [pre-proc #f]

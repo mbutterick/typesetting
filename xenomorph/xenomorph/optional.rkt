@@ -32,7 +32,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
 
 
 (define no-val (gensym))
-(define (+xoptional [type-arg #f] [cond-arg no-val]
+(define (x:optional [type-arg #f] [cond-arg no-val]
                     #:type [type-kwarg #f]
                     #:condition [cond-kwarg no-val]
                     #:pre-encode [pre-proc #f]

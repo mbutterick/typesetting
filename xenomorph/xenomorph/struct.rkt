@@ -95,7 +95,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 (define (xstruct? x) (is-a? x x:struct%))
 
-(define (+xstruct #:pre-encode [pre-proc #f]
+(define (x:struct #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f] . dicts)
   (define args (flatten dicts))
   (unless (even? (length args))
@@ -109,7 +109,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 (module+ test
   (require rackunit "number.rkt" "generic.rkt")
   (define (random-pick xs) (list-ref xs (random (length xs))))
-  (check-exn exn:fail:contract? (λ () (+xstruct 42)))
+  (check-exn exn:fail:contract? (λ () (x:struct 42)))
   (for ([i (in-range 20)])
     ;; make random structs and make sure we can round trip
     (define field-types
@@ -118,7 +118,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (define size-num-types
       (for/sum ([num-type (in-list field-types)])
         (size num-type)))
-    (define xs (+xstruct (for/list ([num-type (in-list field-types)])
+    (define xs (x:struct (for/list ([num-type (in-list field-types)])
                            (cons (gensym) num-type))))
     (define bs (apply bytes (for/list ([i (in-range size-num-types)])
                               (random 256))))

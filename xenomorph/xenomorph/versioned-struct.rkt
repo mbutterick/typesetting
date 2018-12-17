@@ -102,7 +102,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
 (define (xversioned-struct? x) (is-a? x x:versioned-struct%))
 
-(define (+xversioned-struct type [versions (dictify)]
+(define (x:versioned-struct type [versions (dictify)]
                             #:pre-encode [pre-proc #f]
                             #:post-decode [post-proc #f])
   (new (generate-subclass x:versioned-struct% pre-proc post-proc) [type type] [versions versions][fields #f]))

@@ -22,7 +22,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Number.coffee
 
 (test-case
  "number: uint8: decode with post-decode, size, encode with pre-encode"
- (define myuint8 (+xint 1 #:signed #f
+ (define myuint8 (x:int 1 #:signed #f
                         #:post-decode (λ (val) #xdeadbeef)
                         #:pre-encode (λ (val) #xcc)))
  (parameterize ([current-input-port (open-input-bytes (bytes #xab #xff))])

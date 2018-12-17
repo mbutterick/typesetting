@@ -31,7 +31,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     (define/augment (x:size [val #f] [parent #f])
       (send @type x:size))))
   
-(define (+xbitfield [type-arg #f] [flag-arg #f]
+(define (x:bitfield [type-arg #f] [flag-arg #f]
                     #:type [type-kwarg #f]
                     #:flags [flag-kwarg #f]
                     #:pre-encode [pre-proc #f]
@@ -42,7 +42,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 
 (module+ test
   (require rackunit "number.rkt" "generic.rkt")
-  (define bfer (+xbitfield uint16be '(bold italic underline #f shadow condensed extended)))
+  (define bfer (x:bitfield uint16be '(bold italic underline #f shadow condensed extended)))
   (define bf (decode bfer #"\0\25"))
   (check-equal? (length (dict-keys bf)) 6) ; omits #f flag
   (check-true (dict-ref bf 'bold))
