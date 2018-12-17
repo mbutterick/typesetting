@@ -32,7 +32,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                                       '_currentOffset 0
                                       '_length @len)
                              parent))
-      (define len (resolve-length @len #:parent parent))
+      (define len (resolve-length @len port #:parent parent))
       (cond
         [(or (not len) (eq? @length-type 'bytes))
          (define end-pos (cond

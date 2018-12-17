@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
       (raise-argument-error '+xbuffer "resolvable length" @len))
 
     (define/augment (xxdecode port parent)
-      (define len (resolve-length @len #:parent parent))
+      (define len (resolve-length @len port #:parent parent))
       (read-bytes len))
 
     (define/augment (xxencode buf port [parent #f])

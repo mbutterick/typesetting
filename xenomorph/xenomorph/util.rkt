@@ -5,7 +5,7 @@
 (define (length-resolvable? x)
   (or (not x) (symbol? x) (xenomorphic? x) (procedure? x) (exact-nonnegative-integer? x)))
 
-(define (resolve-length x [port (current-input-port)] #:parent [parent #f])
+(define (resolve-length x port #:parent [parent #f])
   (cond
     [(not x) #f]
     [(exact-nonnegative-integer? x) x]
