@@ -33,14 +33,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                 [(@null-value null-value)]
                 [(@pointer-lazy? pointer-lazy?)])
 
-    (define/augment (xxdecode port parent)
-      (define offset (send @offset-type xxdecode port parent))
+    (define/augment (x:decode port parent)
+      (define offset (send @offset-type x:decode port parent))
       (cond
         [(and @allow-null? (= offset @null-value)) #f] ; handle null pointers
         [else
          (define relative (+ (case @pointer-relative-to
                                [(local) (dict-ref parent '_startOffset)]
-                               [(immediate) (- (pos port) (send @offset-type xxsize))]
+                               [(immediate) (- (pos port) (send @offset-type x:size))]
                                [(parent) (dict-ref (dict-ref parent 'parent) '_startOffset)]
                                [(global) (or (dict-ref (find-top-parent parent) '_startOffset) 0)]
                                [else (error 'unknown-pointer-style)])))
@@ -50,12 +50,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                     (define orig-pos (pos port))
                     (pos port ptr)
                     (begin0
-                      (send @type xxdecode port parent)
+                      (send @type x:decode port parent)
                       (pos port orig-pos)))
                   (if @pointer-lazy? (delay (decode-value)) (decode-value))]
            [else ptr])]))
 
-    (define/augment (xxencode val-in port [parent #f])
+    (define/augment (x:encode val-in port [parent #f])
       (unless parent ; todo: furnish default pointer context? adapt from Struct?
         (raise-argument-error 'xpointer-encode "valid pointer context" parent))
       (cond
@@ -67,17 +67,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                               [else (error 'unknown-pointer-style)]))
          (define relative (+ (case @pointer-relative-to
                                [(local parent) (dict-ref new-parent 'startOffset)]
-                               [(immediate) (+ (pos port) (send @offset-type xxsize val-in parent))]
+                               [(immediate) (+ (pos port) (send @offset-type x:size val-in parent))]
                                [(global) 0])))
-         (send @offset-type xxencode (- (dict-ref new-parent 'pointerOffset) relative) port)
+         (send @offset-type x:encode (- (dict-ref new-parent 'pointerOffset) relative) port)
          (define-values (type val) (resolve-pointer @type val-in))
          (dict-update! new-parent 'pointers
                        (λ (ptrs) (append ptrs (list (mhasheq 'type type 'val val 'parent parent)))))
          (dict-set! new-parent 'pointerOffset
-                    (+ (dict-ref new-parent 'pointerOffset) (send type xxsize val parent)))]
-        [else (send @offset-type xxencode @null-value port)]))
+                    (+ (dict-ref new-parent 'pointerOffset) (send type x:size val parent)))]
+        [else (send @offset-type x:encode @null-value port)]))
 
-    (define/augment (xxsize [val-in #f] [parent #f])
+    (define/augment (x:size [val-in #f] [parent #f])
       (define new-parent (case @pointer-relative-to
                            [(local immediate) parent]
                            [(parent) (dict-ref parent 'parent)]
@@ -87,8 +87,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
       (when (and val new-parent)
         (dict-set! new-parent 'pointerSize
                    (and (dict-ref new-parent 'pointerSize #f)
-                        (+ (dict-ref new-parent 'pointerSize) (send type xxsize val new-parent)))))
-      (send @offset-type xxsize))))
+                        (+ (dict-ref new-parent 'pointerSize) (send type x:size val new-parent)))))
+      (send @offset-type x:size))))
 
 (define (+xpointer [offset-arg #f] [type-arg #f]
                    #:offset-type [offset-kwarg #f]

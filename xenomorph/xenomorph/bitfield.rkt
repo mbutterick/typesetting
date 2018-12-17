@@ -14,22 +14,22 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     (unless (andmap (λ (f) (or (symbol? f) (not f))) @flags)
       (raise-argument-error '+xbitfield "list of symbols" @flags))
 
-    (define/augment (xxdecode port parent)
-      (define val (send @type xxdecode port))
+    (define/augment (x:decode port parent)
+      (define val (send @type x:decode port))
       (define flag-hash (mhasheq))
       (for ([(flag idx) (in-indexed @flags)]
             #:when flag)
         (hash-set! flag-hash flag (bitwise-bit-set? val idx)))
       flag-hash)
 
-    (define/augment (xxencode flag-hash port [parent #f])
+    (define/augment (x:encode flag-hash port [parent #f])
       (define bit-int (for/sum ([(flag idx) (in-indexed @flags)]
                                 #:when (and flag (dict-ref flag-hash flag #f)))
                         (arithmetic-shift 1 idx)))
-      (send @type xxencode bit-int port))
+      (send @type x:encode bit-int port))
     
-    (define/augment (xxsize [val #f] [parent #f])
-      (send @type xxsize))))
+    (define/augment (x:size [val #f] [parent #f])
+      (send @type x:size))))
   
 (define (+xbitfield [type-arg #f] [flag-arg #f]
                     #:type [type-kwarg #f]

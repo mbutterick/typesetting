@@ -15,15 +15,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
     (unless (xenomorphic-type? @type)
       (raise-argument-error '+xoptional"xenomorphic type" @type))
 
-    (define/augment (xxdecode port parent)
-      (pos port (+ (pos port) (xxsize #f parent)))
+    (define/augment (x:decode port parent)
+      (pos port (+ (pos port) (x:size #f parent)))
       (void))
 
-    (define/augment (xxencode val port [parent #f])
-      (make-bytes (xxsize val parent) 0))
+    (define/augment (x:encode val port [parent #f])
+      (make-bytes (x:size val parent) 0))
     
-    (define/augment (xxsize [val #f] [parent #f])
-      (* (send @type xxsize) (resolve-length @count #f #:parent parent)))))
+    (define/augment (x:size [val #f] [parent #f])
+      (* (send @type x:size) (resolve-length @count #f #:parent parent)))))
 
 (define (+xreserved [type-arg #f] [count-arg #f]
                     #:type [type-kwarg #f]

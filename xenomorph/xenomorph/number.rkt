@@ -35,7 +35,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     
     (field [@bits (* @size 8)])
     
-    (define/augment (xxsize . _) @size)))
+    (define/augment (x:size . _) @size)))
 
 (define (xint? x) (is-a? x xint%))
 
@@ -53,14 +53,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (field [bound-min (- signed-min delta)]
            [bound-max (- signed-max delta)])
                 
-    (define/augment (xxdecode port . _)
+    (define/augment (x:decode port . _)
       (define bs ((if (eq? @endian system-endian) values reverse-bytes) (read-bytes @size port)))
       (define uint (for/sum ([b (in-bytes bs)]
                              [i (in-naturals)])
                      (arithmetic-shift b (* 8 i))))
       (if signed (unsigned->signed uint @bits) uint))
                 
-    (define/augment (xxencode val . _)
+    (define/augment (x:encode val . _)
       (unless (<= bound-min val bound-max)
         (raise-argument-error 'encode
                               (format "value that fits within ~a ~a-byte int (~a to ~a)" (if signed "signed" "unsigned") @size bound-min bound-max) val))
@@ -150,10 +150,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (super-new)
     (inherit-field (@size size) (@endian endian))
                 
-    (define/augment (xxdecode port . _)
+    (define/augment (x:decode port . _)
       (floating-point-bytes->real (read-bytes @size port) (eq? @endian 'be)))
                 
-    (define/augment (xxencode val . _)
+    (define/augment (x:encode val . _)
       (real->floating-point-bytes val @size (eq? @endian 'be)))))
 
 (define (+xfloat [size 4] #:endian [endian system-endian]

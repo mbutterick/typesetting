@@ -19,16 +19,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
       (define maybe-proc @condition)
       (if (procedure? maybe-proc) (maybe-proc parent) maybe-proc))
 
-    (define/augment (xxdecode port parent)
+    (define/augment (x:decode port parent)
       (when (resolve-condition parent)
-        (send @type xxdecode port parent)))
+        (send @type x:decode port parent)))
 
-    (define/augment (xxencode val port [parent #f])
+    (define/augment (x:encode val port [parent #f])
       (when (resolve-condition parent)
-        (send @type xxencode val port parent)))
+        (send @type x:encode val port parent)))
     
-    (define/augment (xxsize [val #f] [parent #f])
-      (if (resolve-condition parent) (send @type xxsize val parent) 0))))
+    (define/augment (x:size [val #f] [parent #f])
+      (if (resolve-condition parent) (send @type x:size val parent) 0))))
 
 
 (define no-val (gensym))

@@ -38,7 +38,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     (unless (or (procedure? @encoding) (memq @encoding supported-encodings))
       (raise-argument-error 'xstring (format "procedure or member of ~v" supported-encodings) @encoding))
 
-    (define/augment (xxdecode port parent)
+    (define/augment (x:decode port parent)
       (define len (or (resolve-length @len port #:parent parent) (count-nonzero-chars port)))
       (define encoding (if (procedure? @encoding)
                            (or (@encoding parent) 'ascii)
@@ -48,7 +48,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
         (decode-string len port encoding)
         (pos port (+ (pos port) adjustment))))
 
-    (define/augment (xxencode val-arg port [parent #f])
+    (define/augment (x:encode val-arg port [parent #f])
       (define val (if (string? val-arg) val-arg (format "~a" val-arg)))
       (define encoding (if (procedure? @encoding)
                            (or (@encoding (and parent (dict-ref parent val)) 'ascii))
@@ -58,11 +58,11 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       (when (and (exact-nonnegative-integer? @len) (> encoded-length @len))
         (raise-argument-error 'xstring-encode (format "string no longer than ~a" @len) val)) 
       (when (xint? @len)
-        (send @len xxencode encoded-length port parent))
+        (send @len x:encode encoded-length port parent))
       (define string-terminator (if (not @len) (bytes 0) (bytes))) ; null terminated when no len
       (bytes-append encoded-str string-terminator)) 
     
-    (define/augment (xxsize [val-arg #f] [parent #f])
+    (define/augment (x:size [val-arg #f] [parent #f])
       (define val (cond
                     [(string? val-arg) val-arg]
                     [(not val-arg) #false]
@@ -74,7 +74,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
              (define string-size (bytes-length (encode-string val encoding)))
              (define strlen-size (cond
                                    [(not @len) 1]
-                                   [(xint? @len) (send @len xxsize)]
+                                   [(xint? @len) (send @len x:size)]
                                    [else 0]))
              (+ string-size strlen-size)]
         [else (resolve-length @len #f #:parent parent)]))))

@@ -17,18 +17,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
     (unless (list? @values)
       (raise-argument-error '+xenum "list of values" @values))
 
-    (define/augment (xxdecode port parent)
-      (define index (send @type xxdecode port parent))
+    (define/augment (x:decode port parent)
+      (define index (send @type x:decode port parent))
       (or (list-ref @values index) index))
 
-    (define/augment (xxencode val port [parent #f])
+    (define/augment (x:encode val port [parent #f])
       (define index (index-of @values val))
       (unless index
         (raise-argument-error 'xenum-encode "valid option" val))
-      (send @type xxencode index port parent))
+      (send @type x:encode index port parent))
     
-    (define/augment (xxsize [val #f] [parent #f])
-      (send @type xxsize val parent))))
+    (define/augment (x:size [val #f] [parent #f])
+      (send @type x:size val parent))))
 
 (define (+xenum [type-arg #f] [values-arg #f]
                 #:type [type-kwarg #f]
