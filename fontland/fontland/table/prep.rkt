@@ -9,7 +9,7 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/prep.js
 |#
 
-(define prep (+xstruct 'controlValueProgram (+xarray #:type uint8)))
+(define prep (x:struct 'controlValueProgram (x:array #:type uint8)))
 
 (module+ test
  (require rackunit racket/dict racket/serialize sugar/unstable/port)

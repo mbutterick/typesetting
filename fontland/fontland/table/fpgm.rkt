@@ -12,7 +12,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/fpgm.js
 ;; These instructions are known as the font program. The main use of this table
 ;; is for the definition of functions that are used in many different glyph programs.
 
-(define fpgm (+xstruct 'instructions (+xarray #:type uint8)))
+(define fpgm (x:struct 'instructions (x:array #:type uint8)))
 
 (module+ test
  (require rackunit racket/serialize racket/dict

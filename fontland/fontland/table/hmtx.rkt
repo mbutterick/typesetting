@@ -10,20 +10,20 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
 |#
 
-(define hmtx-entry (+xstruct 'advance uint16be 'bearing int16be))
+(define hmtx-entry (x:struct 'advance uint16be 'bearing int16be))
 
-(define hmtx (+xstruct 'metrics (+xlazy-array #:type hmtx-entry
+(define hmtx (x:struct 'metrics (x:lazy-array #:type hmtx-entry
                                               #:length (λ (arr) (· arr parent hhea numberOfMetrics)))
-                       'bearings (+xlazy-array #:type int16be
+                       'bearings (x:lazy-array #:type int16be
                                                #:length (λ (arr) (- (· arr parent maxp numGlyphs)
                                                                     (· arr parent hhea numberOfMetrics))))))
 
 (module+ test
   (require rackunit racket/serialize racket/stream)
   ;; same as hmtx but doesn't require resolution of function to get length
-  (define hmtx-test (+xstruct
-                     'metrics (+xlazy-array hmtx-entry (λ (t) 229))
-                     'bearing (+xlazy-array int16be (λ (t) 0))))
+  (define hmtx-test (x:struct
+                     'metrics (x:lazy-array hmtx-entry (λ (t) 229))
+                     'bearing (x:lazy-array int16be (λ (t) 0))))
   (define ip (open-input-file charter-path))
   (define dir (deserialize (read (open-input-file charter-directory-path))))
   (define hmtx-offset (· dir tables hmtx offset))

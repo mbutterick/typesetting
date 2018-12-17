@@ -8,7 +8,7 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/glyf.js
 |#
 
-(define glyf (+xarray #:type (+xbuffer)))
+(define glyf (x:array #:type (x:buffer)))
 
 (test-module
  (require sugar/unstable/js

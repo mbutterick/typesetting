@@ -96,9 +96,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (struct hb-position (xad yad xoff yoff etc) #:transparent)
 (struct hb-layout (hb-gids hb-clusters hb-positions) #:transparent)
 
-(define hb-output (+xstruct 'hb-gids (+xarray #:type uint16 #:length uint16)
-                            'hb-clusters (+xarray #:type (+xarray #:type uint16 #:length uint16) #:length uint16)
-                            'hb-positions (+xarray #:type (+xarray #:type uint16 #:length 5) #:length uint16)))
+(define hb-output (x:struct 'hb-gids (x:array #:type uint16 #:length uint16)
+                            'hb-clusters (x:array #:type (x:array #:type uint16 #:length uint16) #:length uint16)
+                            'hb-positions (x:array #:type (x:array #:type uint16 #:length 5) #:length uint16)))
 
 (define (hb-layout->glyphrun font hbr)
   (match hbr
@@ -125,9 +125,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define layout-cache (make-hasheqv))
 
-(define hb-input (+xstruct 'font-crc uint32
-                           'codepoints (+xarray #:type uint16)
-                           'userFeatures (+xarray #:type (+xstring #:length uint8))))
+(define hb-input (x:struct 'font-crc uint32
+                           'codepoints (x:array #:type uint16)
+                           'userFeatures (x:array #:type (x:string #:length uint8))))
 
 (define (layout-cache-key font-crc codepoints user-features . _)
   (crc32c-bytes (encode hb-input (dictify 

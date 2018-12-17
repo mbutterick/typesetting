@@ -11,7 +11,7 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/cvt.js
 |#
 
-(define cvt_ (+xstruct 'controlValues (+xarray #:type int16be)))
+(define cvt_ (x:struct 'controlValues (x:array #:type int16be)))
 
 (module+ test
   (require rackunit racket/serialize

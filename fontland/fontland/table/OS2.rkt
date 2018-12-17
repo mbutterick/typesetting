@@ -17,7 +17,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
                               'typoLineGap        int16be
                               'winAscent          uint16be
                               'winDescent         uint16be
-                              'codePageRange      (+xarray #:type uint32be #:length 2)))
+                              'codePageRange      (x:array #:type uint32be #:length 2)))
 
                (define type-2
                  (dictify     'xHeight            int16be
@@ -30,14 +30,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
                  (dictify     'usLowerOpticalPointSize uint16be
                               'usUpperOpticalPointSize uint16be))
 
-               (+xversioned-struct
+               (x:versioned-struct
                 uint16be 
                 (dictify
                  'header (dictify 'xAvgCharWidth          int16be   ;; average weighted advance width of lower case letters and space
                                   'usWeightClass          uint16be  ;; visual weight of stroke in glyphs
                                   'usWidthClass           uint16be  ;; relative change from the normal aspect ratio (width to height ratio)
                                   ;; Indicates font embedding licensing rights
-                                  'fsType                 (+xbitfield #:type uint16be
+                                  'fsType                 (x:bitfield #:type uint16be
                                                                       #:flags '(null noEmbedding viewOnly editable null  null null null noSubsetting bitmapOnly))
                                   'ySubscriptXSize        int16be   ;; recommended horizontal size in pixels for subscripts
                                   'ySubscriptYSize        int16be   ;; recommended vertical size in pixels for subscripts
@@ -50,11 +50,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
                                   'yStrikeoutSize         int16be   ;; width of the strikeout stroke
                                   'yStrikeoutPosition     int16be   ;; position of the strikeout stroke relative to the baseline
                                   'sFamilyClass           int16be   ;; classification of font-family design
-                                  'panose                 (+xarray #:type uint8 #:length 10)   ;; describe the visual characteristics of a given typeface
-                                  'ulCharRange            (+xarray #:type uint32be #:length 4)
-                                  'vendorID               (+xsymbol #:length 4)          ;; four character identifier for the font vendor
+                                  'panose                 (x:array #:type uint8 #:length 10)   ;; describe the visual characteristics of a given typeface
+                                  'ulCharRange            (x:array #:type uint32be #:length 4)
+                                  'vendorID               (x:symbol #:length 4)          ;; four character identifier for the font vendor
                                   ;; bit field containing information about the font
-                                  'fsSelection            (+xbitfield #:type uint16
+                                  'fsSelection            (x:bitfield #:type uint16
                                                                       #:flags '(italic underscore negative outlined strikeout bold regular useTypoMetrics wws oblique))
                                   'usFirstCharIndex       uint16be  ;; The minimum Unicode index in this font
                                   'usLastCharIndex        uint16be)   ;; The maximum Unicode index in this font

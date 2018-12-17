@@ -11,20 +11,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
 |#
 
 
-(define head (+xstruct
+(define head (x:struct
                 'version            int32be                   ;; 0x00010000 (version 1.0)
                 'revision           int32be                   ;; set by font manufacturer
                 'checkSumAdjustment uint32be
                 'magicNumber        uint32be                  ;; set to 0x5F0F3CF5
                 'flags              uint16be
                 'unitsPerEm         uint16be                  ;; range from 64 to 16384
-                'created            (+xarray #:type int32be #:length 2)
-                'modified           (+xarray #:type int32be #:length 2)
+                'created            (x:array #:type int32be #:length 2)
+                'modified           (x:array #:type int32be #:length 2)
                 'xMin               int16be                   ;; for all glyph bounding boxes
                 'yMin               int16be                   ;; for all glyph bounding boxes
                 'xMax               int16be                   ;; for all glyph bounding boxes
                 'yMax               int16be                   ;; for all glyph bounding boxes
-                'macStyle           (+xbitfield #:type uint16be
+                'macStyle           (x:bitfield #:type uint16be
                                                 #:flags '(bold italic underline outline shadow condensed extended))
                 'lowestRecPPEM      uint16be                  ;; smallest readable size in pixels
                 'fontDirectionHint  int16be

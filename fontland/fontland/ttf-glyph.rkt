@@ -19,7 +19,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 
 
 ;; The header for both simple and composite glyphs
-(define GlyfHeader (+xstruct 'numberOfContours int16be ;; if negative, this is a composite glyph
+(define GlyfHeader (x:struct 'numberOfContours int16be ;; if negative, this is a composite glyph
                              'xMin int16be
                              'yMin int16be
                              'xMax int16be
@@ -122,8 +122,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 
   ;; this is a simple glyph
   (dict-set! glyph-data 'points empty)
-  (define endpts-of-contours (decode (+xarray #:type uint16be #:length (· glyph-data numberOfContours)) port))
-  (dict-set! glyph-data 'instructions (decode (+xarray #:type uint8be #:length uint16be) port))
+  (define endpts-of-contours (decode (x:array #:type uint16be #:length (· glyph-data numberOfContours)) port))
+  (dict-set! glyph-data 'instructions (decode (x:array #:type uint8be #:length uint16be) port))
   (define num-coords (add1 (last endpts-of-contours)))
 
   (define flags

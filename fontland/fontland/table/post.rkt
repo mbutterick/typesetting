@@ -11,7 +11,7 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
 |#
 
-(define post (+xversioned-struct
+(define post (x:versioned-struct
                fixed32be
                (dictify
                 'header (dictify 'italicAngle        fixed32be ;; Italic angle in counter-clockwise degrees from the vertical.
@@ -25,13 +25,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
                           
                 1 null
                 2 (dictify 'numberOfGlyphs uint16be
-                                                 'glyphNameIndex (+xarray #:type uint16be #:length 'numberOfGlyphs)
-                                                 'names (+xarray (+xstring #:length uint8))
+                                                 'glyphNameIndex (x:array #:type uint16be #:length 'numberOfGlyphs)
+                                                 'names (x:array (x:string #:length uint8))
                                                  )
                 2.5 (dictify 'numberOfGlyphs uint16be
-                                                   'offsets (+xarray #:type uint8))
+                                                   'offsets (x:array #:type uint8))
                 3 null
-                4 (dictify 'map (+xarray #:type uint32be #:length (λ (t) (· t parent maxp numGlyphs)))))))
+                4 (dictify 'map (x:array #:type uint32be #:length (λ (t) (· t parent maxp numGlyphs)))))))
 
 (module+ test
  (require rackunit racket/serialize racket/class)

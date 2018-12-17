@@ -5,7 +5,7 @@
          xenomorph)
 (provide (all-defined-out))
 
-(define hhea (+xstruct
+(define hhea (x:struct
               (dictify
                'version              int32be
                'ascent               int16be   ;; Distance from baseline of highest ascender
@@ -18,7 +18,7 @@
                'caretSlopeRise       int16be   ;; Used to calculate the slope of the cursor (rise/run); 1 for vertical
                'caretSlopeRun        int16be   ;; 0 for vertical
                'caretOffset          int16be   ;; Set to 0 for non-slanted fonts
-               'reserved             (+xarray #:type int16be #:length 4)
+               'reserved             (x:array #:type int16be #:length 4)
                'metricDataFormat     int16be   ;; 0 for current format
                'numberOfMetrics      uint16be   ;; Number of advance widths in 'hmtx' table
                )))

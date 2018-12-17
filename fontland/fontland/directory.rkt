@@ -14,10 +14,10 @@
 https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 |#
 
-(define table-entry (+xstruct
-                    'tag (+xsymbol #:length 4)
+(define table-entry (x:struct
+                    'tag (x:symbol #:length 4)
                     'checkSum uint32be
-                    'offset (+xpointer #:offset-type uint32be
+                    'offset (x:pointer #:offset-type uint32be
                                        #:type 'void
                                        #:relative-to 'global)
                     'length uint32be))
@@ -40,7 +40,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                    (define table-codec (hash-ref table-codecs tag))
                    (mhash 'tag (unescape-tag tag)
                           'checkSum 0
-                          'offset (+xvoid-pointer table-codec table)
+                          'offset (x:void-pointer table-codec table)
                           'length (size table-codec table))))
   (define numTables (length tables))
   (define searchRange (* (floor (log numTables 2)) 16))
@@ -53,14 +53,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
               'rangeShift (- (* numTables 16) searchRange))
   this-val)
 
-(define Directory (+xstruct #:pre-encode directory-pre-encode
+(define Directory (x:struct #:pre-encode directory-pre-encode
                             #:post-decode directory-post-decode
-                            'tag (+xsymbol #:length 4)
+                            'tag (x:symbol #:length 4)
                             'numTables uint16be
                             'searchRange uint16be
                             'entrySelector uint16be
                             'rangeShift uint16be
-                            'tables (+xarray #:type table-entry #:length 'numTables)))
+                            'tables (x:array #:type table-entry #:length 'numTables)))
 
 (define (directory-decode ip [options (mhash)])
   (decode Directory ip))

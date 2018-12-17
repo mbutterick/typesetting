@@ -5,7 +5,7 @@
          "../helper.rkt")
 (provide (all-defined-out))
 
-(define maxp (+xstruct
+(define maxp (x:struct
               'version                int32be
               'numGlyphs              uint16be  ;; The number of glyphs in the font
               'maxPoints              uint16be  ;; Maximum points in a non-composite glyph
