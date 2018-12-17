@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require racket/dict
          racket/class
          racket/sequence
@@ -98,7 +98,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
        [len (or len-arg len-kwarg)]
        [length-type (if count-bytes? 'bytes length-type-arg)]))
 
-(define (xarray? x) (is-a? x x:array%))
+(define (x:array? x) (is-a? x x:array%))
   
 (module+ test
   (require rackunit "generic.rkt")

@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require racket/class racket/dict "helper.rkt" "util.rkt" "number.rkt")
 (provide (all-defined-out))
 

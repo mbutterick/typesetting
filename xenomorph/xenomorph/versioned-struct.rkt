@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require "helper.rkt" "struct.rkt"
          racket/dict
          racket/class
@@ -18,7 +18,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (unless (for/or ([proc (list integer? procedure? xenomorphic-type? symbol?)])
               (proc @type))
       (raise-argument-error '+xversioned-struct "integer, procedure, symbol, or xenomorphic" @type))
-    (unless (and (dict? @versions) (andmap (λ (v) (or (dict? v) (xstruct? v))) (dict-values @versions)))
+    (unless (and (dict? @versions) (andmap (λ (v) (or (dict? v) (x:struct? v))) (dict-values @versions)))
       (raise-argument-error '+xversioned-struct "dict of dicts or structish" @versions))
 
     (define version-getter (cond
@@ -33,7 +33,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define field-object (dict-ref @versions (dict-ref val 'version #f) #f))
       (unless field-object
         (raise-argument-error 'xversioned-struct-encode "valid version key" version))
-      (if (xstruct? field-object) (get-field fields field-object) field-object))
+      (if (x:struct? field-object) (get-field fields field-object) field-object))
 
     (define/override (x:decode port parent [length 0])
       (define res (xstruct-setup port parent length))
@@ -54,7 +54,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
             (raise-argument-error 'xversioned-struct-decode "valid version key" (cons version @versions))))
     
       (cond
-        [(xversioned-struct? fields) (send fields x:decode port parent)]
+        [(x:versioned-struct? fields) (send fields x:decode port parent)]
         [else (xstruct-parse-fields port res fields)
               res]))
 
@@ -100,7 +100,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define pointer-size (if include-pointers (dict-ref parent 'pointerSize) 0))
       (+ version-size header-size fields-size pointer-size))))
 
-(define (xversioned-struct? x) (is-a? x x:versioned-struct%))
+(define (x:versioned-struct? x) (is-a? x x:versioned-struct%))
 
 (define (x:versioned-struct type [versions (dictify)]
                             #:pre-encode [pre-proc #f]

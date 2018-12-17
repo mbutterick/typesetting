@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require racket/private/generic-methods
          racket/dict
          racket/port

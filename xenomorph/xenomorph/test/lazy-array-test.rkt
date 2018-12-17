@@ -30,7 +30,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (x:lazy-array uint8 4 #:post-decode (λ (str) (stream-map (λ (i) (* 2 i)) str))))
    (define arr (decode xla))
-   (check-false (xarray? arr))
+   (check-false (x:array? arr))
    (check-equal? (stream-length arr) 4)
    (check-equal? (pos (current-input-port)) 4)
    (check-equal? (stream-ref arr 0) 2)

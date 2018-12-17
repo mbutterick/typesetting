@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require rackunit
          racket/dict
          sugar/unstable/dict

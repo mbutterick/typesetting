@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require racket/dict
          racket/class
          racket/sequence
@@ -23,7 +23,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   mheq)
 
 (define (xstruct-parse-fields port sdr fields-arg)
-  (define fields (if (xstruct? fields-arg) (get-field fields fields-arg) fields-arg))
+  (define fields (if (x:struct? fields-arg) (get-field fields fields-arg) fields-arg))
   (unless (assocs? fields)
     (raise-argument-error 'xstruct-parse-fields "assocs" fields))
   (for/fold ([sdr sdr])
@@ -93,7 +93,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (define pointers-size (if include-pointers (dict-ref parent 'pointerSize) 0))
       (+ fields-size pointers-size))))
 
-(define (xstruct? x) (is-a? x x:struct%))
+(define (x:struct? x) (is-a? x x:struct%))
 
 (define (x:struct #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f] . dicts)
