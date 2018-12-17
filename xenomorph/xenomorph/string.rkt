@@ -63,7 +63,10 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       (bytes-append encoded-str string-terminator)) 
     
     (define/augment (xxsize [val-arg #f] [parent #f])
-      (define val (if (string? val-arg) val-arg (format "~a" val-arg)))
+      (define val (cond
+                    [(string? val-arg) val-arg]
+                    [(not val-arg) #false]
+                    [else (format "~a" val-arg)]))
       (cond
         [val (define encoding (if (procedure? @encoding)
                                   (or (@encoding (and parent (dict-ref parent val)) 'ascii))
