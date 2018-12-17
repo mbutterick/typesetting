@@ -49,7 +49,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
         (pos port (+ (pos port) adjustment))))
 
     (define/augment (xxencode val-arg port [parent #f])
-      (define val (format "~a" val-arg))
+      (define val (if (string? val-arg) val-arg (format "~a" val-arg)))
       (define encoding (if (procedure? @encoding)
                            (or (@encoding (and parent (dict-ref parent val)) 'ascii))
                            @encoding))
@@ -62,7 +62,8 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       (define string-terminator (if (not @len) (bytes 0) (bytes))) ; null terminated when no len
       (bytes-append encoded-str string-terminator)) 
     
-    (define/augment (xxsize [val #f] [parent #f])
+    (define/augment (xxsize [val-arg #f] [parent #f])
+      (define val (if (string? val-arg) val-arg (format "~a" val-arg)))
       (cond
         [val (define encoding (if (procedure? @encoding)
                                   (or (@encoding (and parent (dict-ref parent val)) 'ascii))
