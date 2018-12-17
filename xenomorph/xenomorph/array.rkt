@@ -44,7 +44,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                            ;; no resolved-len or parent, so consume whole stream
                            [else +inf.0]))
          (for/list ([i (in-naturals)]
-                    #:break (or (eof-object? (peek-byte)) (= (pos port) end-pos)))
+                    #:break (or (eof-object? (peek-byte port)) (= (pos port) end-pos)))
            (send @type xxdecode port new-parent))]
         ;; we have resolved-len, which is treated as count of items
         [else (for/list ([i (in-range len)])
