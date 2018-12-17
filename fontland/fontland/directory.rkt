@@ -53,15 +53,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
               'rangeShift (- (* numTables 16) searchRange))
   this-val)
 
-(define Directory (+xstruct 'tag (+xsymbol #:length 4)
+(define Directory (+xstruct #:pre-encode directory-pre-encode
+                            #:post-decode directory-post-decode
+                            'tag (+xsymbol #:length 4)
                             'numTables uint16be
                             'searchRange uint16be
                             'entrySelector uint16be
                             'rangeShift uint16be
                             'tables (+xarray #:type table-entry #:length 'numTables)))
-
-(set-pre-encode! Directory directory-pre-encode)
-(set-post-decode! Directory directory-post-decode)
 
 (define (directory-decode ip [options (mhash)])
   (decode Directory ip))

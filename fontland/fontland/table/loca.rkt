@@ -37,24 +37,21 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
   val)
 
 (define loca (+xversioned-struct
+              #:pre-encode loca-pre-encode
+              #:post-decode loca-post-decode
               ;; todo: address ugliness to cross-ref head table from ttffont
               (λ (o) (hash-ref (force (ttf-font-get-head-table-proc o)) 'indexToLocFormat)) 
               (dictify
                0 (dictify 'offsets (+xarray #:type uint16be))
                1 (dictify 'offsets (+xarray #:type uint32be)))))
 
-(set-pre-encode! loca loca-pre-encode)
-(set-post-decode! loca loca-post-decode)
-
 (define loca-v0 (+xversioned-struct
-              ;; todo: address ugliness to cross-ref head table from ttffont
-              0 
-              (dictify
-               0 (dictify 'offsets (+xarray #:type uint16be))
-               1 (dictify 'offsets (+xarray #:type uint32be)))))
-
-(set-pre-encode! loca-v0 loca-pre-encode)
-(set-post-decode! loca-v0 loca-post-decode)
+                 #:pre-encode loca-pre-encode
+                 #:post-decode loca-post-decode
+                 0 
+                 (dictify
+                  0 (dictify 'offsets (+xarray #:type uint16be))
+                  1 (dictify 'offsets (+xarray #:type uint32be)))))
 
 (module+ test
   (require rackunit racket/serialize)

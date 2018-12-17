@@ -24,8 +24,6 @@
   (hash-has-key? (· directory tables) (match tag
                                              [(? bytes?) (string->symbol (bytes->string/latin-1 tag))]
                                              [_ tag])))
-  
-
 
 (define (get-table this table-tag)
   (unless (has-table? this table-tag)
@@ -48,6 +46,5 @@
   (pos (ttf-font-port this) (· table offset))
   (define table-bytes (open-input-bytes (peek-bytes (· table length) 0 (ttf-font-port this))))
   (define table-decoder (hash-ref table-codecs table-tag))
-  (parameterize ([current-parent this])
-    (decode table-decoder table-bytes)))
+  (decode table-decoder table-bytes #:parent this))
 
