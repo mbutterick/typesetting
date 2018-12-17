@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 
     (define/override (x:decode port parent)
       (define starting-pos (pos port)) ; ! placement matters. `resolve-length` will change `pos`
-      (define len (resolve-length @len port #:parent parent))
+      (define len (resolve-length @len port parent))
       (define new-parent (if (x:int? @len)
                              (mhasheq 'parent parent
                                       '_startOffset starting-pos

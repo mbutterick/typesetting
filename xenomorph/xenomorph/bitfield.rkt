@@ -8,7 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 |#
 
 (define x:bitfield%
-  (class x:enobase%
+  (class xenobase%
     (super-new)
     (init-field [(@type type)][(@flags flags)])
     (unless (andmap (λ (f) (or (symbol? f) (not f))) @flags)

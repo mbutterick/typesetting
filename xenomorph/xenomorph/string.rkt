@@ -29,7 +29,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
   (not (eof-object? (peek-byte port))))
 
 (define x:string%
-  (class x:enobase%
+  (class xenobase%
     (super-new)
     (init-field [(@len len)] [(@encoding encoding)])
 
@@ -39,7 +39,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
       (raise-argument-error 'xstring (format "procedure or member of ~v" supported-encodings) @encoding))
 
     (define/augment (x:decode port parent)
-      (define len (or (resolve-length @len port #:parent parent) (count-nonzero-chars port)))
+      (define len (or (resolve-length @len port parent) (count-nonzero-chars port)))
       (define encoding (if (procedure? @encoding)
                            (or (@encoding parent) 'ascii)
                            @encoding))
@@ -77,7 +77,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                                    [(x:int? @len) (send @len x:size)]
                                    [else 0]))
              (+ string-size strlen-size)]
-        [else (resolve-length @len #f #:parent parent)]))))
+        [else (resolve-length @len #f parent)]))))
 
 (define supported-encodings '(ascii utf8))
 (define (x:string [len-arg #f] [enc-arg #f]

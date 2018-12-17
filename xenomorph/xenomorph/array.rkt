@@ -14,7 +14,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
 (define x:array%
-  (class x:enobase%
+  (class xenobase%
     (super-new)
     (init-field [(@type type)] [(@len len)] [(@length-type length-type)])
     
@@ -32,7 +32,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                                       '_currentOffset 0
                                       '_length @len)
                              parent))
-      (define len (resolve-length @len port #:parent parent))
+      (define len (resolve-length @len port parent))
       (cond
         [(or (not len) (eq? @length-type 'bytes))
          (define end-pos (cond
@@ -84,7 +84,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
              (define items-size (for/sum ([item val])
                                   (send @type x:size item new-parent)))
              (+ items-size len-size)]
-        [else (define count (resolve-length @len #f #:parent parent))
+        [else (define count (resolve-length @len #f parent))
               (define size (send @type x:size #f parent))
               (* size count)]))))
 

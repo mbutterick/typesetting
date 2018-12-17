@@ -8,7 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
 |#
 
 (define x:optional%
-  (class x:enobase%
+  (class xenobase%
     (super-new)
     (init-field [(@type type)] [(@condition condition)])
 

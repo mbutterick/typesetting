@@ -38,7 +38,7 @@
                  (define (size xo [val #f] #:parent [parent #f])
                    (send xo x:size val parent)))])))
 
-(define (xenomorphic-type? x) (is-a? x x:enobase%))
+(define (xenomorphic-type? x) (is-a? x xenobase%))
 
 (define-syntax-rule (generate-subclass CLASS PRE-ENCODE-PROC POST-DECODE-PROC)
   (cond
@@ -57,7 +57,7 @@
        (define/override (post-decode x) (POST-DECODE-PROC (super post-decode x))))]
     [else CLASS]))
 
-(define x:enobase%
+(define xenobase%
   (class* object% (x:enomorphic<%>)
     (super-new)
     

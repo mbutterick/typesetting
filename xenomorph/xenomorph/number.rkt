@@ -24,7 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define system-endian (if (system-big-endian?) 'be 'le))
 
 (define x:number%
-  (class x:enobase%
+  (class xenobase%
     (super-new)
     (init-field [(@size size)] [(@endian endian)])
     
