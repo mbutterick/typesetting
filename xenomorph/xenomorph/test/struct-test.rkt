@@ -24,10 +24,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (test-case
  "decode with process hook"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
-   (define mystruct% (class xstruct%
-                       (super-new)
-                       (define/override (post-decode o) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o)))
-   (define struct (+xstruct #:subclass mystruct% 'name (+xstring #:length uint8) 'age uint8))
+   (define struct (+xstruct #:post-decode (λ (o) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o)
+                   'name (+xstring #:length uint8) 'age uint8))
    (check-equal? (decode struct)
                  (mhasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
@@ -67,11 +65,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (test-case
  "support pre-encode hook"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define mystruct% (class xstruct%
-                       (super-new)
-                       (define/override (pre-encode val)
-                         (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val)))
-   (define struct (+xstruct #:subclass mystruct%
+   (define struct (+xstruct #:pre-encode (λ (val)
+                         (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val)
                             'nameLength uint8
                             'name (+xstring 'nameLength)
                             'age uint8))

@@ -20,10 +20,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 (test-case
  "decode fixed length with post-decode"
  (parameterize ([current-input-port (open-input-bytes #"testing")])
-   (define mystr% (class xstring%
-                     (super-new)
-                     (define/override (post-decode val) "ring a ding")))
-   (define xs (+xstring 7 #:subclass mystr%))
+   (define xs (+xstring 7 #:post-decode (λ (val) "ring a ding")))
    (check-equal? (decode xs) "ring a ding")))
 
 (test-case
@@ -92,10 +89,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 (test-case
  "encode using string length and pre-encode"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define mystr% (class xstring%
-                     (super-new)
-                     (define/override (pre-encode val) (list->string (reverse (string->list val))))))
-   (define xs (+xstring 7 #:subclass mystr%))
+   (define xs (+xstring 7 #:pre-encode (λ (val) (list->string (reverse (string->list val))))))
    (encode xs "testing")
    (check-equal? (get-output-bytes (current-output-port)) #"gnitset")))
 

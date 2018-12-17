@@ -29,10 +29,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
 (test-case
  "should decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes 0 0))])
-   (define myxres% (class xreserved%
-                     (super-new)
-                     (define/override (post-decode val) 42)))
-   (define reserved (+xreserved uint16be #:subclass myxres%))
+   (define reserved (+xreserved uint16be #:post-decode (λ (val) 42)))
    (check-equal? (decode reserved) 42)
    (check-equal? (pos (current-input-port)) 2)))
 
@@ -46,9 +43,6 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
 (test-case
  "should encode with pre-encode"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define myxres% (class xreserved%
-                         (super-new)
-                         (define/override (pre-encode val) 42)))
-   (define reserved (+xreserved uint32be #:subclass myxres%))
+   (define reserved (+xreserved uint32be #:pre-encode (λ (val) 42)))
    (encode reserved #f)
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0 0 0 0))))

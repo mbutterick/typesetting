@@ -42,7 +42,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define h (make-hasheq))
   (for ([(k v) (in-dict x)]
         #:unless (memq k private-keys))
-       (hash-set! h k v))
+    (hash-set! h k v))
   h)
 
 (define xstruct%
@@ -79,9 +79,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                             'pointerSize 0)) 
       (dict-set! parent 'pointerOffset (+ (pos port) (xxsize val parent #f))) 
       (for ([(key type) (in-dict @fields)])
-           (send type xxencode (dict-ref val key) port parent))
+        (send type xxencode (dict-ref val key) port parent))
       (for ([ptr (in-list (dict-ref parent 'pointers))])
-           (send (dict-ref ptr 'type) xxencode (dict-ref ptr 'val) port (dict-ref ptr 'parent))))
+        (send (dict-ref ptr 'type) xxencode (dict-ref ptr 'val) port (dict-ref ptr 'parent))))
     
     (define/augride (xxsize [val #f] [parent-arg #f] [include-pointers #t])
       (define parent (mhasheq 'parent parent-arg
@@ -89,36 +89,37 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                               'pointerSize 0))
       (define fields-size (for/sum ([(key type) (in-dict @fields)]
                                     #:when (xenomorphic-type? type))
-                                   (send type xxsize (and val (dict-ref val key)) parent)))
+                            (send type xxsize (and val (dict-ref val key)) parent)))
       (define pointers-size (if include-pointers (dict-ref parent 'pointerSize) 0))
       (+ fields-size pointers-size))))
 
 (define (xstruct? x) (is-a? x xstruct%))
 
-(define (+xstruct #:subclass [class xstruct%] . dicts)
+(define (+xstruct #:pre-encode [pre-proc #f]
+                  #:post-decode [post-proc #f] . dicts)
   (define args (flatten dicts))
   (unless (even? (length args))
     (raise-argument-error '+xstruct "equal number of keys and values" dicts))
   (define fields (for/list ([kv (in-slice 2 args)])
-                           (unless (symbol? (car kv))
-                             (raise-argument-error '+xstruct "symbol" (car kv)))
-                           (apply cons kv)))
-  (new class [fields fields]))
+                   (unless (symbol? (car kv))
+                     (raise-argument-error '+xstruct "symbol" (car kv)))
+                   (apply cons kv)))
+  (new (generate-subclass xstruct% pre-proc post-proc) [fields fields]))
 
 (module+ test
   (require rackunit "number.rkt" "generic.rkt")
   (define (random-pick xs) (list-ref xs (random (length xs))))
   (check-exn exn:fail:contract? (λ () (+xstruct 42)))
   (for ([i (in-range 20)])
-       ;; make random structs and make sure we can round trip
-       (define field-types
-         (for/list ([i (in-range 40)])
-                   (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-       (define size-num-types
-         (for/sum ([num-type (in-list field-types)])
-                  (size num-type)))
-       (define xs (+xstruct (for/list ([num-type (in-list field-types)])
-                                      (cons (gensym) num-type))))
-       (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                                         (random 256))))
-       (check-equal? (encode xs (decode xs bs) #f) bs)))
+    ;; make random structs and make sure we can round trip
+    (define field-types
+      (for/list ([i (in-range 40)])
+        (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+    (define size-num-types
+      (for/sum ([num-type (in-list field-types)])
+        (size num-type)))
+    (define xs (+xstruct (for/list ([num-type (in-list field-types)])
+                           (cons (gensym) num-type))))
+    (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                              (random 256))))
+    (check-equal? (encode xs (decode xs bs) #f) bs)))

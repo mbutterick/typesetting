@@ -28,7 +28,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
 (define (+xreserved [type-arg #f] [count-arg #f]
                     #:type [type-kwarg #f]
                     #:count [count-kwarg #f]
-                    #:subclass [class xreserved%])
+                    #:pre-encode [pre-proc #f]
+                    #:post-decode [post-proc #f])
   (define type (or type-arg type-kwarg))
   (define count (or count-arg count-kwarg 1))
-  (new class [type type] [count count]))
+  (new (generate-subclass xreserved% pre-proc post-proc) [type type] [count count]))

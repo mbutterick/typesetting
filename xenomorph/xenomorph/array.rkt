@@ -92,8 +92,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                  #:type [type-kwarg #f]
                  #:length [len-kwarg #f]
                  #:count-bytes [count-bytes? #f]
-                 #:subclass [class xarray%])
-  (new class [type (or type-arg type-kwarg)]
+                 #:pre-encode [pre-proc #f]
+                 #:post-decode [post-proc #f])
+  (new (generate-subclass xarray% pre-proc post-proc) [type (or type-arg type-kwarg)]
        [len (or len-arg len-kwarg)]
        [length-type (if count-bytes? 'bytes length-type-arg)]))
 

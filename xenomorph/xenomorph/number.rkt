@@ -73,8 +73,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define (+xint [size 2]
                #:signed [signed #true]
                #:endian [endian system-endian]
-               #:subclass [class xint%])
-  (new class [size size] [signed signed] [endian endian]))
+                 #:pre-encode [pre-proc #f]
+                 #:post-decode [post-proc #f])
+  (new (generate-subclass xint% pre-proc post-proc) [size size] [signed signed] [endian endian]))
 
 (define int8 (+xint 1))
 (define int16 (+xint 2))
@@ -155,8 +156,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define/augment (xxencode val . _)
       (real->floating-point-bytes val @size (eq? @endian 'be)))))
 
-(define (+xfloat [size 4] #:endian [endian system-endian])
-  (new xfloat% [size size] [endian endian]))
+(define (+xfloat [size 4] #:endian [endian system-endian]
+                 #:pre-encode [pre-proc #f]
+                 #:post-decode [post-proc #f])
+  (new (generate-subclass xfloat% pre-proc post-proc) [size size] [endian endian]))
 
 (define float (+xfloat 4))
 (define floatbe (+xfloat 4 #:endian 'be))
@@ -184,8 +187,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define (+xfixed [size 2]
                  #:signed [signed #true]
                  #:endian [endian system-endian]
-                 #:fracbits [fracbits (/ (* size 8) 2)])  
-  (new xfixed% [size size] [signed signed] [endian endian] [fracbits fracbits]))
+                 #:fracbits [fracbits (/ (* size 8) 2)]
+                 #:pre-encode [pre-proc #f]
+                 #:post-decode [post-proc #f])  
+  (new (generate-subclass xfixed% pre-proc post-proc) [size size] [signed signed] [endian endian] [fracbits fracbits]))
 
 (define fixed16 (+xfixed 2))
 (define fixed16be (+xfixed 2 #:endian 'be))

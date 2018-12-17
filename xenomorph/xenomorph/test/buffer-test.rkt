@@ -24,10 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 (test-case
  "buffer should decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes #xab #xff #x1f #xb6))])
-   (define myboof% (class xbuffer%
-                         (super-new)
-                         (define/override (post-decode val) (bytes 1 2))))
-   (define buf (+xbuffer #:length 2 #:subclass myboof%))
+   (define buf (+xbuffer #:length 2 #:post-decode (λ (val) (bytes 1 2))))
    (check-equal? (decode buf) (bytes 1 2))
    (check-equal? (decode buf) (bytes 1 2))))
 
@@ -56,10 +53,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 (test-case
  "encode should encode with pre-encode"
  (let ()
-   (define myboof% (class xbuffer%
-                         (super-new)
-                         (define/override (pre-encode val) (bytes 1 2))))
-   (define buf (+xbuffer 2 #:subclass myboof%))
+   (define buf (+xbuffer 2 #:pre-encode (λ (val) (bytes 1 2))))
    (check-equal? (bytes-append
                   (encode buf (bytes #xab #xff) #f)
                   (encode buf (bytes #x1f #xb6) #f)) (bytes 1 2 1 2))))

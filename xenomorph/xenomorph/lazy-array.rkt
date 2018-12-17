@@ -41,10 +41,11 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 (define (+xlazy-array [type-arg #f] [len-arg #f]
                       #:type [type-kwarg #f]
                       #:length [len-kwarg #f]
-                      #:subclass [class xlazy-array%])
+                      #:pre-encode [pre-proc #f]
+                      #:post-decode [post-proc #f])
   (define type (or type-arg type-kwarg))
   (define len (or len-arg len-kwarg))
-  (new class [type type]
+  (new (generate-subclass xlazy-array% pre-proc post-proc) [type type]
        [len len]
        [length-type 'count]))
 

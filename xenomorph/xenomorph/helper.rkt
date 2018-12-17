@@ -19,25 +19,43 @@
 (define xenomorphic<%>
   (interface* ()
               ([(generic-property gen:xenomorphic)
-                (generic-method-table gen:xenomorphic                                      
-                                      (define (decode xo [port-arg (current-input-port)] #:parent [parent #f])
-                                        (define port
-                                          (cond
-                                            [(input-port? port-arg) port-arg]
-                                            [(bytes? port-arg) (open-input-bytes port-arg)]
-                                            [else (raise-argument-error 'decode "byte string or input port" port-arg)]))
-                                        (send xo decode port parent))
+                (generic-method-table
+                 gen:xenomorphic                                      
+                 (define (decode xo [port-arg (current-input-port)] #:parent [parent #f])
+                   (define port
+                     (cond
+                       [(input-port? port-arg) port-arg]
+                       [(bytes? port-arg) (open-input-bytes port-arg)]
+                       [else (raise-argument-error 'decode "byte string or input port" port-arg)]))
+                   (send xo decode port parent))
                                       
-                                      (define (encode xo val [port-arg (current-output-port)]
-                                                      #:parent [parent #f])
-                                        (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-                                        (send xo xxencode val port parent)
-                                        (unless port-arg (get-output-bytes port)))
+                 (define (encode xo val [port-arg (current-output-port)]
+                                 #:parent [parent #f])
+                   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+                   (send xo xxencode val port parent)
+                   (unless port-arg (get-output-bytes port)))
                                       
-                                      (define (size xo [val #f] #:parent [parent #f])
-                                        (send xo xxsize val parent)))])))
+                 (define (size xo [val #f] #:parent [parent #f])
+                   (send xo xxsize val parent)))])))
 
 (define (xenomorphic-type? x) (is-a? x xenobase%))
+
+(define-syntax-rule (generate-subclass CLASS PRE-ENCODE-PROC POST-DECODE-PROC)
+  (cond
+    [(and PRE-ENCODE-PROC POST-DECODE-PROC)
+     (class CLASS
+       (super-new)
+       (define/override (pre-encode x) (super pre-encode (PRE-ENCODE-PROC x)))
+       (define/override (post-decode x) (POST-DECODE-PROC (super post-decode x))))]
+    [PRE-ENCODE-PROC
+     (class CLASS
+       (super-new)
+       (define/override (pre-encode x) (super pre-encode (PRE-ENCODE-PROC x))))]
+    [POST-DECODE-PROC
+     (class CLASS
+       (super-new)
+       (define/override (post-decode x) (POST-DECODE-PROC (super post-decode x))))]
+    [else CLASS]))
 
 (define xenobase%
   (class* object% (xenomorphic<%>)

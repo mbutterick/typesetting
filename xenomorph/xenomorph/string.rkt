@@ -79,10 +79,11 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (define (+xstring [len-arg #f] [enc-arg #f]
                   #:length [len-kwarg #f]
                   #:encoding [enc-kwarg #f]
-                  #:subclass [class xstring%])
+                  #:pre-encode [pre-proc #f]
+                  #:post-decode [post-proc #f])
   (define len (or len-arg len-kwarg))
   (define encoding (or enc-arg enc-kwarg 'ascii))
-  (new class [len len] [encoding encoding]))
+  (new (generate-subclass xstring% pre-proc post-proc) [len len] [encoding encoding]))
 
 (define xsymbol%
   (class xstring%
@@ -99,10 +100,11 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (define (+xsymbol [len-arg #f] [enc-arg #f]
                   #:length [len-kwarg #f]
                   #:encoding [enc-kwarg #f]
-                  #:subclass [class xsymbol%])
+                  #:pre-encode [pre-proc #f]
+                  #:post-decode [post-proc #f])
   (define len (or len-arg len-kwarg))
   (define encoding (or enc-arg enc-kwarg 'utf8))
-  (new class [len len] [encoding encoding]))
+  (new (generate-subclass xsymbol% pre-proc post-proc) [len len] [encoding encoding]))
 
 (module+ test
   (require rackunit "generic.rkt")

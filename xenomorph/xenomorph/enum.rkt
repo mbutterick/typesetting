@@ -33,7 +33,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
 (define (+xenum [type-arg #f] [values-arg #f]
                 #:type [type-kwarg #f]
                 #:values [values-kwarg #f]
-                #:subclass [class xenum%])
+                #:pre-encode [pre-proc #f]
+                #:post-decode [post-proc #f])
   (define type (or type-arg type-kwarg))
   (define values (or values-arg values-kwarg))
-  (new class [type type] [values values]))
+  (new (generate-subclass xenum% pre-proc post-proc) [type type] [values values]))

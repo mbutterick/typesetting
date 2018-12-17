@@ -26,19 +26,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define xpointer%
   (class xenobase%
     (super-new)
-    (init-field [(@offset-type offset-type)][(@type type)] [(@options options)])
-
-    (define pointer-relative-to (dict-ref @options 'relative-to))
-    (define allow-null (dict-ref @options 'allowNull)) 
-    (define null-value (dict-ref @options 'nullValue))
-    (define pointer-lazy? (dict-ref @options 'lazy))
+    (init-field [(@offset-type offset-type)]
+                [(@type type)]
+                [(@pointer-relative-to pointer-relative-to)]
+                [(@allow-null? allow-null?)]
+                [(@null-value null-value)]
+                [(@pointer-lazy? pointer-lazy?)])
 
     (define/augment (xxdecode port parent)
       (define offset (send @offset-type xxdecode port parent))
       (cond
-        [(and allow-null (= offset null-value)) #f] ; handle null pointers
+        [(and @allow-null? (= offset @null-value)) #f] ; handle null pointers
         [else
-         (define relative (+ (case pointer-relative-to
+         (define relative (+ (case @pointer-relative-to
                                [(local) (dict-ref parent '_startOffset)]
                                [(immediate) (- (pos port) (send @offset-type xxsize))]
                                [(parent) (dict-ref (dict-ref parent 'parent) '_startOffset)]
@@ -52,7 +52,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                     (begin0
                       (send @type xxdecode port parent)
                       (pos port orig-pos)))
-                  (if pointer-lazy? (delay (decode-value)) (decode-value))]
+                  (if @pointer-lazy? (delay (decode-value)) (decode-value))]
            [else ptr])]))
 
     (define/augment (xxencode val-in port [parent #f])
@@ -60,12 +60,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
         (raise-argument-error 'xpointer-encode "valid pointer context" parent))
       (cond
         [val-in
-         (define new-parent (case pointer-relative-to
+         (define new-parent (case @pointer-relative-to
                               [(local immediate) parent]
                               [(parent) (dict-ref parent 'parent)]
                               [(global) (find-top-parent parent)]
                               [else (error 'unknown-pointer-style)]))
-         (define relative (+ (case pointer-relative-to
+         (define relative (+ (case @pointer-relative-to
                                [(local parent) (dict-ref new-parent 'startOffset)]
                                [(immediate) (+ (pos port) (send @offset-type xxsize val-in parent))]
                                [(global) 0])))
@@ -75,10 +75,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                        (λ (ptrs) (append ptrs (list (mhasheq 'type type 'val val 'parent parent)))))
          (dict-set! new-parent 'pointerOffset
                     (+ (dict-ref new-parent 'pointerOffset) (send type xxsize val parent)))]
-        [else (send @offset-type xxencode null-value port)]))
+        [else (send @offset-type xxencode @null-value port)]))
 
     (define/augment (xxsize [val-in #f] [parent #f])
-      (define new-parent (case pointer-relative-to
+      (define new-parent (case @pointer-relative-to
                            [(local immediate) parent]
                            [(parent) (dict-ref parent 'parent)]
                            [(global) (find-top-parent parent)]
@@ -93,24 +93,23 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define (+xpointer [offset-arg #f] [type-arg #f]
                    #:offset-type [offset-kwarg #f]
                    #:type [type-kwarg #f]
-                   #:relative-to [relative-to 'local]
-                   #:lazy [lazy? #f]
+                   #:relative-to [pointer-relative-to 'local]
+                   #:lazy [pointer-lazy? #f]
                    #:allow-null [allow-null? #t]
                    #:null [null-value 0]
-                   #:subclass [class xpointer%])
+                   #:pre-encode [pre-proc #f]
+                   #:post-decode [post-proc #f])
   (define valid-pointer-relatives '(local immediate parent global))
-  (unless (memq relative-to valid-pointer-relatives)
-    (raise-argument-error '+xpointer (format "~v" valid-pointer-relatives) relative-to))
-  (define options (mhasheq 'relative-to relative-to
-                           'lazy lazy?
-                           'allowNull allow-null?
-                           'nullValue null-value))
+  (unless (memq pointer-relative-to valid-pointer-relatives)
+    (raise-argument-error '+xpointer (format "~v" valid-pointer-relatives) pointer-relative-to))
   (define type-in (or type-arg type-kwarg uint8))
-  (new class
+  (new (generate-subclass xpointer% pre-proc post-proc)
        [offset-type (or offset-arg offset-kwarg uint8)]
        [type (case type-in [(void) #f][else type-in])]
-       [options options]))
-
+       [pointer-relative-to pointer-relative-to]
+       [pointer-lazy? pointer-lazy?]
+       [allow-null? allow-null?]
+       [null-value null-value]))
 
 ;; A pointer whose type is determined at decode time
 (define xvoid-pointer% (class xenobase%

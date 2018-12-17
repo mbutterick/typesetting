@@ -21,10 +21,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 (test-case
  "decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes 0))])
-   (define myxopt% (class xoptional%
-                         (super-new)
-                         (define/override (post-decode val) 42)))
-   (define optional (+xoptional #:type uint8 #:condition #f #:subclass myxopt%))
+   (define optional (+xoptional #:type uint8 #:condition #f #:post-decode (λ (val) 42)))
    (check-equal? (decode optional) 42)
    (check-equal? (pos (current-input-port)) 0)))
 
@@ -86,10 +83,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 (test-case
  "encode with pre-encode"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define myxopt% (class xoptional%
-                         (super-new)
-                         (define/override (pre-encode val) 42)))
-   (define optional (+xoptional #:type uint8 #:subclass myxopt%))
+   (define optional (+xoptional #:type uint8 #:pre-encode (λ (val) 42)))
    (encode optional 128)
    (check-equal? (get-output-bytes (current-output-port)) (bytes 42))))
 

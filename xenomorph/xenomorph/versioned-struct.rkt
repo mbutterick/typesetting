@@ -16,7 +16,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (init-field [(@type type)] [(@versions versions)])
 
     (unless (for/or ([proc (list integer? procedure? xenomorphic-type? symbol?)])
-                    (proc @type))
+              (proc @type))
       (raise-argument-error '+xversioned-struct "integer, procedure, symbol, or xenomorphic" @type))
     (unless (and (dict? @versions) (andmap (λ (v) (or (dict? v) (xstruct? v))) (dict-values @versions)))
       (raise-argument-error '+xversioned-struct "dict of dicts or structish" @versions))
@@ -72,15 +72,15 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define maybe-header-dict (dict-ref @versions 'header #f))
       (when maybe-header-dict
         (for ([(key type) (in-dict maybe-header-dict)])
-             (send type xxencode (dict-ref encode-me key) port parent)))
+          (send type xxencode (dict-ref encode-me key) port parent)))
 
       (define fields (extract-fields-dict encode-me))
       (unless (andmap (λ (key) (member key (dict-keys encode-me))) (dict-keys fields))
         (raise-argument-error 'xversioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (hash-keys encode-me)))
       (for ([(key type) (in-dict fields)])
-           (send type xxencode (dict-ref encode-me key) port parent))
+        (send type xxencode (dict-ref encode-me key) port parent))
       (for ([ptr (in-list (dict-ref parent 'pointers))])
-           (send (dict-ref ptr 'type) xxencode (dict-ref ptr 'val) port (dict-ref ptr 'parent))))
+        (send (dict-ref ptr 'type) xxencode (dict-ref ptr 'val) port (dict-ref ptr 'parent))))
     
     (define/override (xxsize [val #f] [parent-arg #f] [include-pointers #t])
       (unless val
@@ -93,15 +93,17 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
               (send @type xxsize (dict-ref val 'version) parent))))
       (define header-size
         (for/sum ([(key type) (in-dict (or (dict-ref @versions 'header #f) null))])
-                 (send type xxsize (and val (dict-ref val key)) parent)))
+          (send type xxsize (and val (dict-ref val key)) parent)))
       (define fields-size
         (for/sum ([(key type) (in-dict (extract-fields-dict val))])
-                 (send type xxsize (and val (dict-ref val key)) parent)))
+          (send type xxsize (and val (dict-ref val key)) parent)))
       (define pointer-size (if include-pointers (dict-ref parent 'pointerSize) 0))
       (+ version-size header-size fields-size pointer-size))))
 
 (define (xversioned-struct? x) (is-a? x xversioned-struct%))
 
-(define (+xversioned-struct #:subclass [class xversioned-struct%] type [versions (dictify)])
-  (new class [type type] [versions versions][fields #f]))
+(define (+xversioned-struct type [versions (dictify)]
+                            #:pre-encode [pre-proc #f]
+                            #:post-decode [post-proc #f])
+  (new (generate-subclass xversioned-struct% pre-proc post-proc) [type type] [versions versions][fields #f]))
 

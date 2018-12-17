@@ -35,12 +35,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 (test-case
  "decode should decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 0))])
-   (define myenum% (class xenum%
-                         (super-new)
-                         (define/override (post-decode val) "foobar")))
    (define e2 (+xenum #:type uint8
                   #:values '("foo" "bar" "baz")
-                  #:subclass myenum%))
+                  #:post-decode (λ (val) "foobar")))
    (check-equal? (decode e2) "foobar")
    (check-equal? (decode e2) "foobar")
    (check-equal? (decode e2) "foobar")))
@@ -56,12 +53,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 (test-case
  "encode should encode with pre-encode"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define myenum% (class xenum%
-                         (super-new)
-                         (define/override (pre-encode val) "foo")))
    (define e2 (+xenum #:type uint8
                   #:values '("foo" "bar" "baz")
-                  #:subclass myenum%))
+                  #:pre-encode (λ (val) "foo")))
    (encode e2 "bar")
    (encode e2 "baz")
    (encode e2 "foo")

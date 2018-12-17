@@ -20,10 +20,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "decode with post-decode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (define myarray% (class xarray%
-                   (super-new)
-                   (define/override (post-decode val) (map (λ (x) (* 2 x)) val))))
-   (define xa (+xarray #:type uint8 #:length 4 #:subclass myarray%))
+   (define xa (+xarray #:type uint8 #:length 4 #:post-decode (λ (val) (map (λ (x) (* 2 x)) val))))
    (check-equal? (decode xa) '(2 4 6 8))))
 
 (test-case 
@@ -95,10 +92,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "encode with pre-encode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (define myarray% (class xarray%
-                   (super-new)
-                   (define/override (pre-encode val) (map (λ (x) (* 2 x)) val))))
-   (define xa (+xarray #:type uint8 #:length 4 #:subclass myarray%))
+   (define xa (+xarray #:type uint8 #:length 4 #:pre-encode (λ (val) (map (λ (x) (* 2 x)) val))))
    (check-equal? (encode xa '(1 2 3 4) #f) (bytes 2 4 6 8))))
 
 (test-case 
