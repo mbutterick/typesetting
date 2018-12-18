@@ -71,7 +71,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                               (format "dict that contains superset of xstruct keys: ~a"
                                       (dict-keys @fields)) (dict-keys val))) 
       (define parent (mhash x:pointers-key empty
-                            x:alt-start-offset-key (pos port)
+                            x:start-offset-key (pos port)
                             x:parent-key parent-arg
                             x:val-key val
                             x:pointer-size-key 0)) 

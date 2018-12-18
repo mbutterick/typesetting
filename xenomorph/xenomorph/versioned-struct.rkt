@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require "helper.rkt" "struct.rkt"
          racket/dict
          racket/class
@@ -65,7 +65,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (unless (dict? encode-me)
         (raise-argument-error 'xversioned-struct-encode "dict" encode-me))
       (define parent (mhash x:pointers-key null
-                            x:alt-start-offset-key (pos port)
+                            x:start-offset-key (pos port)
                             x:parent-key parent-arg
                             x:val-key encode-me
                             x:pointer-size-key 0))

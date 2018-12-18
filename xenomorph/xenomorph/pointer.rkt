@@ -66,7 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                               [(global) (find-top-parent parent)]
                               [else (error 'unknown-pointer-style)]))
          (define relative (+ (case @pointer-relative-to
-                               [(local parent) (hash-ref new-parent x:alt-start-offset-key)]
+                               [(local parent) (hash-ref new-parent x:start-offset-key)]
                                [(immediate) (+ (pos port) (send @offset-type x:size val-in parent))]
                                [(global) 0])))
          (send @offset-type x:encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
