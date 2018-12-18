@@ -36,7 +36,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define (+ttf-font port
                    [decoded-tables (mhash)]
                    [src (path->string (object-name port))]
-                   [directory (delay (decode Directory port #:parent (mhash '_startOffset 0)))]
+                   [directory (delay (decode Directory port #:parent (mhash x:start-offset-key 0)))]
                    [ft-face (delay (and src (FT_New_Face (force ft-library) src)))]
                    [hb-font (delay (and src (hb_ft_font_create (force ft-face))))]
                    [hb-buf (delay (hb_buffer_create))]
