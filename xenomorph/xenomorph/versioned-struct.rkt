@@ -65,9 +65,9 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (unless (dict? encode-me)
         (raise-argument-error 'xversioned-struct-encode "dict" encode-me))
       (define parent (mhash x:pointers-key null
-                            'startOffset (pos port)
+                            x:alt-start-offset-key (pos port)
                             x:parent-key parent-arg
-                            'val encode-me
+                            x:val-key encode-me
                             x:pointer-size-key 0))
       (dict-set! parent x:pointer-offset-key (+ (pos port) (x:size encode-me parent #f)))
       (unless (or (symbol? @type) (procedure? @type))
@@ -83,12 +83,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (for ([(key type) (in-dict fields)])
            (send type x:encode (dict-ref encode-me key) port parent))
       (for ([ptr (in-list (dict-ref parent x:pointers-key))])
-           (send (dict-ref ptr 'type) x:encode (dict-ref ptr 'val) port (dict-ref ptr x:parent-key))))
+           (send (dict-ref ptr 'type) x:encode (dict-ref ptr x:val-key) port (dict-ref ptr x:parent-key))))
     
     (define/override (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (unless val
         (raise-argument-error 'xversioned-struct-size "value" val))
-      (define parent (mhash x:parent-key parent-arg 'val val x:pointer-size-key 0))
+      (define parent (mhash x:parent-key parent-arg x:val-key val x:pointer-size-key 0))
       (define version-size
         (let ([struct-type @type])
           (if (or (symbol? struct-type) (procedure? struct-type))

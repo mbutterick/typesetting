@@ -71,19 +71,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                               (format "dict that contains superset of xstruct keys: ~a"
                                       (dict-keys @fields)) (dict-keys val))) 
       (define parent (mhash x:pointers-key empty
-                            'startOffset (pos port)
+                            x:alt-start-offset-key (pos port)
                             x:parent-key parent-arg
-                            'val val
+                            x:val-key val
                             x:pointer-size-key 0)) 
       (dict-set! parent x:pointer-offset-key (+ (pos port) (x:size val parent #f))) 
       (for ([(key type) (in-dict @fields)])
         (send type x:encode (dict-ref val key) port parent))
       (for ([ptr (in-list (dict-ref parent x:pointers-key))])
-        (send (dict-ref ptr 'type) x:encode (dict-ref ptr 'val) port (dict-ref ptr x:parent-key))))
+        (send (dict-ref ptr 'type) x:encode (dict-ref ptr x:val-key) port (dict-ref ptr x:parent-key))))
     
     (define/augride (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (define parent (mhasheq x:parent-key parent-arg
-                              'val val
+                              x:val-key val
                               x:pointer-size-key 0))
       (define fields-size (for/sum ([(key type) (in-dict @fields)]
                                     #:when (xenomorphic-type? type))

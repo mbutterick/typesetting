@@ -66,13 +66,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                               [(global) (find-top-parent parent)]
                               [else (error 'unknown-pointer-style)]))
          (define relative (+ (case @pointer-relative-to
-                               [(local parent) (hash-ref new-parent 'startOffset)]
+                               [(local parent) (hash-ref new-parent x:alt-start-offset-key)]
                                [(immediate) (+ (pos port) (send @offset-type x:size val-in parent))]
                                [(global) 0])))
          (send @offset-type x:encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
          (define-values (type val) (resolve-pointer @type val-in))
          (hash-update! new-parent x:pointers-key
-                       (λ (ptrs) (append ptrs (list (mhasheq 'type type 'val val x:parent-key parent)))))
+                       (λ (ptrs) (append ptrs (list (mhasheq 'type type x:val-key val x:parent-key parent)))))
          (hash-set! new-parent x:pointer-offset-key
                     (+ (hash-ref new-parent x:pointer-offset-key) (send type x:size val parent)))]
         [else (send @offset-type x:encode @null-value port)]))

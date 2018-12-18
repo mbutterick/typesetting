@@ -98,7 +98,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "pointer: encode should handle null pointers"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash x:pointer-size-key 0
-                      'startOffset 0
+                      x:alt-start-offset-key 0
                       x:pointer-offset-key 0
                       x:pointers-key null))
    (encode (x:pointer) #f #:parent parent)
@@ -109,13 +109,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "pointer: encode should handle local offsets"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash x:pointer-size-key 0
-                      'startOffset 0
+                      x:alt-start-offset-key 0
                       x:pointer-offset-key 1
                       x:pointers-key null))
    (encode (x:pointer) 10 #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
    (check-equal? (hash-ref parent x:pointers-key) (list (mhasheq 'type uint8
-                                                         'val 10
+                                                         x:val-key 10
                                                          x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
@@ -123,13 +123,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "pointer: encode should handle immediate offsets"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash x:pointer-size-key 0
-                      'startOffset 0
+                      x:alt-start-offset-key 0
                       x:pointer-offset-key 1
                       x:pointers-key null))
    (encode (x:pointer #:relative-to 'immediate) 10 #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
    (check-equal? (hash-ref parent x:pointers-key) (list (mhasheq 'type uint8
-                                                         'val 10
+                                                         x:val-key 10
                                                          x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
@@ -137,13 +137,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "pointer: encode should handle offsets relative to parent"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash x:parent-key (mhash x:pointer-size-key 0
-                                     'startOffset 3
+                                     x:alt-start-offset-key 3
                                      x:pointer-offset-key 5
                                      x:pointers-key null)))
    (encode (x:pointer #:relative-to 'parent) 10 #:parent parent)
    (check-equal? (hash-ref* parent x:parent-key x:pointer-offset-key) 6)
    (check-equal? (hash-ref* parent x:parent-key x:pointers-key) (list (mhasheq 'type uint8
-                                                                            'val 10
+                                                                            x:val-key 10
                                                                             x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
 
@@ -153,14 +153,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (define parent (mhash x:parent-key
                       (mhash x:parent-key
                              (mhash x:parent-key (mhash x:pointer-size-key 0
-                                                   'startOffset 3
+                                                   x:alt-start-offset-key 3
                                                    x:pointer-offset-key 5
                                                    x:pointers-key null)))))
    (encode (x:pointer #:relative-to 'global) 10 #:parent parent)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointer-offset-key) 6)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointers-key)
                  (list (mhasheq 'type uint8
-                                'val 10
+                                x:val-key 10
                                 x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 5))))
 
@@ -168,19 +168,19 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "pointer: encode should support void pointers"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash x:pointer-size-key 0
-                      'startOffset 0
+                      x:alt-start-offset-key 0
                       x:pointer-offset-key 1
                       x:pointers-key null))
    (encode (x:pointer uint8 'void) (x:void-pointer uint8 55) #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
-   (check-equal? (hash-ref parent x:pointers-key) (list (mhasheq 'type uint8 'val 55 x:parent-key parent)))
+   (check-equal? (hash-ref parent x:pointers-key) (list (mhasheq 'type uint8 x:val-key 55 x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
  "pointer: encode should throw if not a void pointer instance"
  (parameterize ([current-output-port (open-output-bytes)])
    (define parent (mhash x:pointer-size-key 0
-                      'startOffset 0
+                      x:alt-start-offset-key 0
                       x:pointer-offset-key 1
                       x:pointers-key null))
    (check-exn exn:fail:contract? (λ () (encode (x:pointer uint8 'void) 44 #:parent parent)))))
