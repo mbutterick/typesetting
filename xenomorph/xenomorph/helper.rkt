@@ -8,8 +8,9 @@
 
 (define x:version-key 'x:version)
 (define x:start-offset-key 'x:start-offset)
+(define x:current-offset-key 'x:current-offset)
 
-(define private-keys (list 'parent x:start-offset-key '_currentOffset '_length))
+(define private-keys (list 'parent x:start-offset-key x:current-offset-key '_length))
 
 (define (dict-ref* d . keys)
   (for/fold ([d d])

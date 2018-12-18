@@ -19,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
       (define new-parent (if (x:int? @len)
                              (mhasheq 'parent parent
                                       x:start-offset-key starting-pos
-                                      '_currentOffset 0
+                                      x:current-offset-key 0
                                       '_length @len)
                              parent))
       (define stream-starting-pos (pos port))

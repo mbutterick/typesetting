@@ -29,7 +29,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       (define new-parent (if (x:int? @len)
                              (mhasheq 'parent parent
                                       x:start-offset-key (pos port)
-                                      '_currentOffset 0
+                                      x:current-offset-key 0
                                       '_length @len)
                              parent))
       (define len (resolve-length @len port parent))
