@@ -39,7 +39,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (if (x:struct? field-object) (get-field fields field-object) field-object))
 
     (define/override (x:decode port parent [length 0])
-      (define res (setup port parent length))
+      (define res (setup-private-fields port parent length))
       (define which-version (cond
                               [(integer? @type) @type]
                               [(or (symbol? @type) (procedure? @type))
@@ -51,7 +51,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
       (define maybe-header-val (dict-ref @versions 'header #f))
       (when maybe-header-val
-        (parse-fields! port res maybe-header-val))
+        (parse-fields port res maybe-header-val))
       
       (define field-object
         (or (dict-ref @versions which-version #f)
@@ -59,29 +59,27 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     
       (if (x:versioned-struct? field-object)
           (send field-object x:decode port parent)
-          (parse-fields! port res field-object)))
+          (parse-fields port res field-object)))
 
-    (define/override (x:encode encode-me port [parent-arg #f])
-      (unless (dict? encode-me)
-        (raise-argument-error 'x:versioned-struct-encode "dict" encode-me))
-      (define parent (mhash x:pointers-key null
-                            x:start-offset-key (pos port)
-                            x:parent-key parent-arg
-                            x:val-key encode-me
-                            x:pointer-size-key 0))
-      (dict-set! parent x:pointer-offset-key (+ (pos port) (x:size encode-me parent #f)))
+    (define/override (x:encode field-data port [parent-arg #f])
+      (unless (dict? field-data)
+        (raise-argument-error 'x:versioned-struct-encode "dict" field-data))
+      (define parent (mhasheq x:pointers-key null
+                              x:start-offset-key (pos port)
+                              x:parent-key parent-arg
+                              x:val-key field-data
+                              x:pointer-size-key 0))
+      (hash-set! parent x:pointer-offset-key (+ (pos port) (x:size field-data parent #f)))
       (unless (or (symbol? @type) (procedure? @type))
-        (send @type x:encode (dict-ref encode-me x:version-key #f) port parent))
-      (define maybe-header-dict (dict-ref @versions 'header #f))
-      (when maybe-header-dict
-        (for ([(key type) (in-dict maybe-header-dict)])
-          (send type x:encode (dict-ref encode-me key) port parent)))
+        (send @type x:encode (dict-ref field-data x:version-key #f) port parent))
+      (for ([(key type) (in-dict (dict-ref @versions 'header null))])
+        (send type x:encode (dict-ref field-data key) port parent))
 
-      (define fields (select-field-set encode-me))
-      (unless (andmap (λ (key) (member key (dict-keys encode-me))) (dict-keys fields))
-        (raise-argument-error 'x:versioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (hash-keys encode-me)))
+      (define fields (select-field-set field-data))
+      (unless (andmap (λ (key) (member key (dict-keys field-data))) (dict-keys fields))
+        (raise-argument-error 'x:versioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (hash-keys field-data)))
       (for ([(key type) (in-dict fields)])
-        (send type x:encode (dict-ref encode-me key) port parent))
+        (send type x:encode (dict-ref field-data key) port parent))
       (for ([ptr (in-list (dict-ref parent x:pointers-key))])
         (send (dict-ref ptr x:pointer-type-key) x:encode (dict-ref ptr x:val-key) port (dict-ref ptr x:parent-key))))
     

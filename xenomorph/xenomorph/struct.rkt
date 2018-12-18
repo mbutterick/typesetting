@@ -13,7 +13,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
-(define (setup port parent len)
+(define (setup-private-fields port parent len)
   (define mheq (make-hasheq))
   (dict-set*! mheq
               x:parent-key parent
@@ -22,10 +22,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
               x:length-key len)
   mheq)
 
-(define (parse-fields! port mheq fields-arg)
+(define (parse-fields port mheq fields-arg)
   (define fields (if (x:struct? fields-arg) (get-field fields fields-arg) fields-arg))
   (unless (assocs? fields)
-    (raise-argument-error 'xstruct-parse-fields "assocs" fields))
+    (raise-argument-error 'x:struct-parse-fields "assocs" fields))
   (for ([(key type) (in-dict fields)])
     (define val (if (procedure? type)
                     (type mheq)
@@ -51,10 +51,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                     (raise-argument-error '+xstruct "dict" @fields)))
 
     (define/augride (x:decode port parent [len 0])
-      (define res (setup port parent len))
-      (parse-fields! port res @fields)
+      (define res (setup-private-fields port parent len))
+      (parse-fields port res @fields)
       (unless (dict? res)
-        (raise-result-error 'xstruct-decode "dict" res))
+        (raise-result-error 'x:struct-decode "dict" res))
       res)
 
     (define/override (decode port parent)
@@ -63,16 +63,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (define/augride (x:encode field-data port [parent-arg #f])
       ;; check keys first, since `size` also relies on keys being valid
       (unless (dict? field-data)
-        (raise-result-error 'xstruct-encode "dict" field-data))
+        (raise-result-error 'x:struct-encode "dict" field-data))
       (unless (andmap (λ (field-key) (memq field-key (dict-keys field-data))) (dict-keys @fields))
-        (raise-argument-error 'xstruct-encode
+        (raise-argument-error 'x:struct-encode
                               (format "dict that contains superset of xstruct keys: ~a"
                                       (dict-keys @fields)) (dict-keys field-data))) 
-      (define parent (mhash x:pointers-key empty
-                            x:start-offset-key (pos port)
-                            x:parent-key parent-arg
-                            x:val-key field-data
-                            x:pointer-size-key 0)) 
+      (define parent (mhasheq x:pointers-key null
+                              x:start-offset-key (pos port)
+                              x:parent-key parent-arg
+                              x:val-key field-data
+                              x:pointer-size-key 0)) 
       (hash-set! parent x:pointer-offset-key (+ (pos port) (x:size field-data parent #f))) 
       (for ([(key type) (in-dict @fields)])
         (send type x:encode (dict-ref field-data key) port parent))
