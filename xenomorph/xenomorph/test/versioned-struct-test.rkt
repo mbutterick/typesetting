@@ -25,9 +25,9 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8
                                                 'gender uint8)))])
    (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
-     (check-equal? (decode vstruct) (mhasheq 'name "roxyb" 'age 21 'version 0)))
+     (check-equal? (decode vstruct) (mhasheq 'name "roxyb" 'age 21 x:version-key 0)))
    (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x01\x0aroxyb 🤘\x15\x00"))])
-     (check-equal? (decode vstruct) (mhasheq 'name "roxyb 🤘" 'age 21 'version 1 'gender 0)))))
+     (check-equal? (decode vstruct) (mhasheq 'name "roxyb 🤘" 'age 21 x:version-key 1 'gender 0)))))
 
 (test-case
  "versioned struct: decode should throw for unknown version"
@@ -54,17 +54,17 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
      (check-equal? (decode vstruct) (mhasheq 'name "roxyb"
                                                  'age 21
                                                  'alive 1
-                                                 'version 0)))
+                                                 x:version-key 0)))
    (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x01\x15\x01\x0aroxyb 🤘\x00"))])
      (check-equal? (decode vstruct) (mhasheq 'name "roxyb 🤘"
                                                  'age 21
-                                                 'version 1
+                                                 x:version-key 1
                                                  'alive 1
                                                  'gender 0)))))
 
 (test-case
  "versioned struct: decode should support parent version key"
- (let ([vstruct (x:versioned-struct 'version
+ (let ([vstruct (x:versioned-struct x:version-key
                                     (dictify
                                      0 (dictify 'name (x:string #:length uint8 #:encoding 'ascii)
                                                 'age uint8)
@@ -72,11 +72,11 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8
                                                 'gender uint8)))])
    (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15")])
-     (check-equal? (decode vstruct #:parent (mhash 'version 0))
-                   (mhasheq 'name "roxyb" 'age 21 'version 0)))
+     (check-equal? (decode vstruct #:parent (mhash x:version-key 0))
+                   (mhasheq 'name "roxyb" 'age 21 x:version-key 0)))
    (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x0aroxyb 🤘\x15\x00"))])
-     (check-equal? (decode vstruct #:parent (mhash 'version 1))
-                   (mhasheq 'name "roxyb 🤘"  'age 21 'version 1 'gender 0)))))
+     (check-equal? (decode vstruct #:parent (mhash x:version-key 1))
+                   (mhasheq 'name "roxyb 🤘"  'age 21 x:version-key 1 'gender 0)))))
 
 (test-case
  "versioned struct: decode should support sub versioned structs"
@@ -90,14 +90,14 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                             1 (dictify 'name (x:string uint8)
                                                                        'isDessert uint8)))))])
    (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
-     (check-equal? (decode vstruct #:parent (mhash 'version 0))
-                   (mhasheq 'name "roxyb" 'age 21 'version 0)))
+     (check-equal? (decode vstruct #:parent (mhash x:version-key 0))
+                   (mhasheq 'name "roxyb" 'age 21 x:version-key 0)))
    (parameterize ([current-input-port (open-input-bytes #"\x01\x00\x05pasta")])
-     (check-equal? (decode vstruct #:parent (mhash 'version 0))
-                   (mhasheq 'name "pasta" 'version 0)))
+     (check-equal? (decode vstruct #:parent (mhash x:version-key 0))
+                   (mhasheq 'name "pasta" x:version-key 0)))
    (parameterize ([current-input-port (open-input-bytes #"\x01\x01\x09ice cream\x01")])
-     (check-equal? (decode vstruct #:parent (mhash 'version 0))
-                   (mhasheq 'name "ice cream" 'isDessert 1 'version 1)))))
+     (check-equal? (decode vstruct #:parent (mhash x:version-key 0))
+                   (mhasheq 'name "ice cream" 'isDessert 1 x:version-key 1)))))
 
 (test-case
  "versioned struct: decode should support process hook"
@@ -111,7 +111,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'gender uint8)))])
    (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15")])
      (check-equal? (decode vstruct)
-                   (mhasheq 'name "roxyb" 'processed "true" 'age 21 'version 0)))))
+                   (mhasheq 'name "roxyb" 'processed "true" 'age 21 x:version-key 0)))))
 
 (test-case
  "versioned struct: size should compute the correct size"
@@ -124,11 +124,11 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'gender uint8)))])
    (check-equal? (size vstruct (mhasheq 'name "roxyb"
                                         'age 21
-                                        'version 0)) 8)
+                                        x:version-key 0)) 8)
    (check-equal? (size vstruct (mhasheq 'name "roxyb 🤘"
                                         'gender 0
                                         'age 21
-                                        'version 1)) 14)))
+                                        x:version-key 1)) 14)))
 
 (test-case
  "versioned struct: size should throw for unknown version"
@@ -139,7 +139,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                      1 (x:struct 'name (x:string #:length uint8 #:encoding 'utf8)
                                                 'age uint8
                                                 'gender uint8)))])
-   (check-exn exn:fail:contract? (λ () (size vstruct (mhasheq 'name "roxyb" 'age 21 'version 5))))))
+   (check-exn exn:fail:contract? (λ () (size vstruct (mhasheq 'name "roxyb" 'age 21 x:version-key 5))))))
 
 (test-case
  "versioned struct: size should support common header block"
@@ -150,8 +150,8 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                     0 (dictify 'name (x:string #:length uint8 #:encoding 'ascii))
                                     1 (x:struct 'name (x:string #:length uint8 #:encoding 'utf8)
                                                'gender uint8)))])
-   (check-equal? (size struct (mhasheq 'name "roxyb" 'age 21 'alive 1 'version 0)) 9)
-   (check-equal? (size struct (mhasheq 'name "roxyb 🤘" 'gender 0 'age 21 'alive 1 'version 1)) 15)))
+   (check-equal? (size struct (mhasheq 'name "roxyb" 'age 21 'alive 1 x:version-key 0)) 9)
+   (check-equal? (size struct (mhasheq 'name "roxyb 🤘" 'gender 0 'age 21 'alive 1 x:version-key 1)) 15)))
 
 (test-case
  "versioned struct: size should compute the correct size with pointers"
@@ -165,7 +165,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                                 #:type (x:string uint8)))))])
    (check-equal? (size vstruct (mhasheq 'name "roxyb"
                                         'age 21
-                                        'version 1
+                                        x:version-key 1
                                         'ptr "hello")) 15)))
 
 (test-case
@@ -189,8 +189,8 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8
                                                 'gender uint8)))]
        [op (open-output-bytes)])
-   (encode vstruct (mhasheq 'name "roxyb" 'age 21 'version 0) op)
-   (encode vstruct (mhasheq 'name "roxyb 🤘" 'age 21 'gender 0 'version 1) op)
+   (encode vstruct (mhasheq 'name "roxyb" 'age 21 x:version-key 0) op)
+   (encode vstruct (mhasheq 'name "roxyb 🤘" 'age 21 'gender 0 x:version-key 1) op)
    (check-equal? (get-output-bytes op) (string->bytes/utf-8 "\x00\x05roxyb\x15\x01\x0aroxyb 🤘\x15\x00"))))
 
 (test-case
@@ -203,7 +203,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8
                                                 'gender uint8)))]
        [op (open-output-bytes)])
-   (check-exn exn:fail:contract? (λ () (encode vstruct op (mhasheq 'name "roxyb" 'age 21 'version 5))))))
+   (check-exn exn:fail:contract? (λ () (encode vstruct op (mhasheq 'name "roxyb" 'age 21 x:version-key 5))))))
 
 (test-case
  "versioned struct: encode should support common header block"
@@ -215,8 +215,8 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                      1 (x:struct 'name (x:string #:length uint8 #:encoding 'utf8)
                                                 'gender uint8)))]
        [op (open-output-bytes)])
-   (encode vstruct (mhasheq 'name "roxyb" 'age 21 'alive 1 'version 0) op)
-   (encode vstruct (mhasheq 'name "roxyb 🤘" 'gender 0 'age 21 'alive 1 'version 1) op)
+   (encode vstruct (mhasheq 'name "roxyb" 'age 21 'alive 1 x:version-key 0) op)
+   (encode vstruct (mhasheq 'name "roxyb 🤘" 'gender 0 'age 21 'alive 1 x:version-key 1) op)
    (check-equal? (get-output-bytes op) (string->bytes/utf-8 "\x00\x15\x01\x05roxyb\x01\x15\x01\x0aroxyb 🤘\x00"))))
 
 (test-case
@@ -230,7 +230,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'ptr (x:pointer #:offset-type uint8
                                                                 #:type (x:string uint8)))))]
        [op (open-output-bytes)])
-   (encode vstruct (mhasheq 'version 1 'name "roxyb" 'age 21 'ptr "hello") op)
+   (encode vstruct (mhasheq x:version-key 1 'name "roxyb" 'age 21 'ptr "hello") op)
 
    (check-equal? (get-output-bytes op) (string->bytes/utf-8 "\x01\x05roxyb\x15\x09\x05hello"))))
 
@@ -244,7 +244,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8
                                                 'gender uint8)))]
        [op (open-output-bytes)])
-   (set-pre-encode! vstruct (λ (val) (dict-set! val 'version (if (dict-ref val 'gender #f) 1 0)) val))
-   (encode vstruct (mhasheq 'name "roxyb" 'age 21 'version 0) op)
+   (set-pre-encode! vstruct (λ (val) (dict-set! val x:version-key (if (dict-ref val 'gender #f) 1 0)) val))
+   (encode vstruct (mhasheq 'name "roxyb" 'age 21 x:version-key 0) op)
    (encode vstruct (mhasheq 'name "roxyb 🤘" 'age 21 'gender 0) op)
    (check-equal? (get-output-bytes op) (string->bytes/utf-8 "\x00\x05roxyb\x15\x01\x0aroxyb 🤘\x15\x00"))))

@@ -6,6 +6,8 @@
          "generic.rkt")
 (provide (all-defined-out))
 
+(define x:version-key 'x:version) 
+
 (define (dict-ref* d . keys)
   (for/fold ([d d])
             ([k (in-list keys)])
@@ -16,7 +18,7 @@
     (file-position p new-pos))
   (file-position p))
 
-(define x:enomorphic<%>
+(define xenomorphic<%>
   (interface* ()
               ([(generic-property gen:xenomorphic)
                 (generic-method-table
@@ -58,7 +60,7 @@
     [else CLASS]))
 
 (define xenobase%
-  (class* object% (x:enomorphic<%>)
+  (class* object% (xenomorphic<%>)
     (super-new)
     
     (define/pubment (x:decode input-port [parent #f])
