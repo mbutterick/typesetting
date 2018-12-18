@@ -52,18 +52,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
     (define/augride (x:decode port parent [len 0])
       (define res (setup-private-fields port parent len))
-      (parse-fields port res @fields)
-      (unless (dict? res)
-        (raise-result-error 'x:struct-decode "dict" res))
-      res)
+      (parse-fields port res @fields))
 
     (define/override (decode port parent)
       (dict->mutable-hash (x:decode port parent)))
 
     (define/augride (x:encode field-data port [parent-arg #f])
-      ;; check keys first, since `size` also relies on keys being valid
       (unless (dict? field-data)
         (raise-result-error 'x:struct-encode "dict" field-data))
+      ;; check keys, because `size` also relies on keys being valid
       (unless (andmap (λ (field-key) (memq field-key (dict-keys field-data))) (dict-keys @fields))
         (raise-argument-error 'x:struct-encode
                               (format "dict that contains superset of xstruct keys: ~a"
