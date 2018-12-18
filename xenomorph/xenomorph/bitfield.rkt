@@ -24,7 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 
     (define/augment (x:encode flag-hash port [parent #f])
       (define bit-int (for/sum ([(flag idx) (in-indexed @flags)]
-                                #:when (and flag (dict-ref flag-hash flag #f)))
+                                #:when (and flag (hash-ref flag-hash flag #f)))
                         (arithmetic-shift 1 idx)))
       (send @type x:encode bit-int port))
     
@@ -44,11 +44,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
   (require rackunit "number.rkt" "generic.rkt")
   (define bfer (x:bitfield uint16be '(bold italic underline #f shadow condensed extended)))
   (define bf (decode bfer #"\0\25"))
-  (check-equal? (length (dict-keys bf)) 6) ; omits #f flag
-  (check-true (dict-ref bf 'bold))
-  (check-true (dict-ref bf 'underline))
-  (check-true (dict-ref bf 'shadow))
-  (check-false (dict-ref bf 'italic))
-  (check-false (dict-ref bf 'condensed))
-  (check-false (dict-ref bf 'extended))
+  (check-equal? (length (hash-keys bf)) 6) ; omits #f flag
+  (check-true (hash-ref bf 'bold))
+  (check-true (hash-ref bf 'underline))
+  (check-true (hash-ref bf 'shadow))
+  (check-false (hash-ref bf 'italic))
+  (check-false (hash-ref bf 'condensed))
+  (check-false (hash-ref bf 'extended))
   (check-equal? (encode bfer bf #f) #"\0\25"))

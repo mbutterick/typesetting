@@ -101,7 +101,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
 
 (test-case
  "versioned struct: decode should support process hook"
- (let ([vstruct (x:versioned-struct #:post-decode (λ (val) (dict-set! val 'processed "true") val)
+ (let ([vstruct (x:versioned-struct #:post-decode (λ (val) (hash-set! val 'processed "true") val)
                                     uint8
                                     (dictify
                                      0 (dictify 'name (x:string #:length uint8 #:encoding 'ascii)
@@ -244,7 +244,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8
                                                 'gender uint8)))]
        [op (open-output-bytes)])
-   (set-pre-encode! vstruct (λ (val) (dict-set! val x:version-key (if (dict-ref val 'gender #f) 1 0)) val))
+   (set-pre-encode! vstruct (λ (val) (hash-set! val x:version-key (if (hash-ref val 'gender #f) 1 0)) val))
    (encode vstruct (mhasheq 'name "roxyb" 'age 21 x:version-key 0) op)
    (encode vstruct (mhasheq 'name "roxyb 🤘" 'age 21 'gender 0) op)
    (check-equal? (get-output-bytes op) (string->bytes/utf-8 "\x00\x05roxyb\x15\x01\x0aroxyb 🤘\x15\x00"))))

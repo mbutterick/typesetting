@@ -39,8 +39,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                            ;; resolved-len is byte length
                            [len (+ (pos port) len)]
                            ;; no resolved-len, but parent has length
-                           [(and parent (not (zero? (dict-ref parent x:length-key))))
-                            (+ (dict-ref parent x:start-offset-key) (dict-ref parent x:length-key))]
+                           [(and parent (not (zero? (hash-ref parent x:length-key))))
+                            (+ (hash-ref parent x:start-offset-key) (hash-ref parent x:length-key))]
                            ;; no resolved-len or parent, so consume whole stream
                            [else +inf.0]))
          (for/list ([i (in-naturals)]
@@ -66,11 +66,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
          (define new-parent (mhash 'pointers null
                                    'startOffset (pos port)
                                    x:parent-key parent))
-         (dict-set! new-parent 'pointerOffset (+ (pos port) (x:size array new-parent)))
+         (hash-set! new-parent 'pointerOffset (+ (pos port) (x:size array new-parent)))
          (send @len x:encode (length array) port) ; encode length at front
          (encode-items new-parent)
-         (for ([ptr (in-list (dict-ref new-parent 'pointers))]) ; encode pointer data at end
-           (send (dict-ref ptr 'type) x:encode (dict-ref ptr 'val) port))]
+         (for ([ptr (in-list (hash-ref new-parent 'pointers))]) ; encode pointer data at end
+           (send (hash-ref ptr 'type) x:encode (hash-ref ptr 'val) port))]
         [else (encode-items parent)]))
 
     (define/augride (x:size [val #f] [parent #f])

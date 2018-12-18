@@ -51,7 +51,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     (define/augment (x:encode val-arg port [parent #f])
       (define val (if (string? val-arg) val-arg (format "~a" val-arg)))
       (define encoding (if (procedure? @encoding)
-                           (or (@encoding (and parent (dict-ref parent val)) 'ascii))
+                           (or (@encoding (and parent (hash-ref parent val)) 'ascii))
                            @encoding))
       (define encoded-str (encode-string val encoding))
       (define encoded-length (bytes-length encoded-str))
@@ -69,7 +69,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                     [else (format "~a" val-arg)]))
       (cond
         [val (define encoding (if (procedure? @encoding)
-                                  (or (@encoding (and parent (dict-ref parent val)) 'ascii))
+                                  (or (@encoding (and parent (hash-ref parent val)) 'ascii))
                                   @encoding))
              (define string-size (bytes-length (encode-string val encoding)))
              (define strlen-size (cond

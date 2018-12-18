@@ -14,7 +14,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 
 (define (find-top-parent parent)
   (cond
-    [(dict-ref parent x:parent-key #f) => find-top-parent]
+    [(hash-ref parent x:parent-key #f) => find-top-parent]
     [else parent]))
 
 (define (resolve-pointer type val)
@@ -39,10 +39,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
         [(and @allow-null? (= offset @null-value)) #f] ; handle null pointers
         [else
          (define relative (+ (case @pointer-relative-to
-                               [(local) (dict-ref parent x:start-offset-key)]
+                               [(local) (hash-ref parent x:start-offset-key)]
                                [(immediate) (- (pos port) (send @offset-type x:size))]
-                               [(parent) (dict-ref (dict-ref parent x:parent-key) x:start-offset-key)]
-                               [(global) (or (dict-ref (find-top-parent parent) x:start-offset-key) 0)]
+                               [(parent) (hash-ref (hash-ref parent x:parent-key) x:start-offset-key)]
+                               [(global) (or (hash-ref (find-top-parent parent) x:start-offset-key) 0)]
                                [else (error 'unknown-pointer-style)])))
          (define ptr (+ offset relative))
          (cond
@@ -62,32 +62,32 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
         [val-in
          (define new-parent (case @pointer-relative-to
                               [(local immediate) parent]
-                              [(parent) (dict-ref parent x:parent-key)]
+                              [(parent) (hash-ref parent x:parent-key)]
                               [(global) (find-top-parent parent)]
                               [else (error 'unknown-pointer-style)]))
          (define relative (+ (case @pointer-relative-to
-                               [(local parent) (dict-ref new-parent 'startOffset)]
+                               [(local parent) (hash-ref new-parent 'startOffset)]
                                [(immediate) (+ (pos port) (send @offset-type x:size val-in parent))]
                                [(global) 0])))
-         (send @offset-type x:encode (- (dict-ref new-parent 'pointerOffset) relative) port)
+         (send @offset-type x:encode (- (hash-ref new-parent 'pointerOffset) relative) port)
          (define-values (type val) (resolve-pointer @type val-in))
-         (dict-update! new-parent 'pointers
+         (hash-update! new-parent 'pointers
                        (λ (ptrs) (append ptrs (list (mhasheq 'type type 'val val x:parent-key parent)))))
-         (dict-set! new-parent 'pointerOffset
-                    (+ (dict-ref new-parent 'pointerOffset) (send type x:size val parent)))]
+         (hash-set! new-parent 'pointerOffset
+                    (+ (hash-ref new-parent 'pointerOffset) (send type x:size val parent)))]
         [else (send @offset-type x:encode @null-value port)]))
 
     (define/augment (x:size [val-in #f] [parent #f])
       (define new-parent (case @pointer-relative-to
                            [(local immediate) parent]
-                           [(parent) (dict-ref parent x:parent-key)]
+                           [(parent) (hash-ref parent x:parent-key)]
                            [(global) (find-top-parent parent)]
                            [else (error 'unknown-pointer-style)]))
       (define-values (type val) (resolve-pointer @type val-in))
       (when (and val new-parent)
-        (dict-set! new-parent 'pointerSize
-                   (and (dict-ref new-parent 'pointerSize #f)
-                        (+ (dict-ref new-parent 'pointerSize) (send type x:size val new-parent)))))
+        (hash-set! new-parent 'pointerSize
+                   (and (hash-ref new-parent 'pointerSize #f)
+                        (+ (hash-ref new-parent 'pointerSize) (send type x:size val new-parent)))))
       (send @offset-type x:size))))
 
 (define (x:pointer [offset-arg #f] [type-arg #f]

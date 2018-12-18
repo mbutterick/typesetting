@@ -52,38 +52,38 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "pointer: decode should support decoding pointers lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
    (define res (decode (x:struct 'ptr (x:pointer #:lazy #t))))
-   (check-true (promise? (dict-ref res 'ptr)))
-   (check-equal? (force (dict-ref res 'ptr)) 53)))
+   (check-true (promise? (hash-ref res 'ptr)))
+   (check-equal? (force (hash-ref res 'ptr)) 53)))
 
 (test-case
  "pointer: size"
  (let ([parent (mhash 'pointerSize 0)])
    (check-equal? (size (x:pointer) 10 #:parent parent) 1)
-   (check-equal? (dict-ref parent 'pointerSize) 1)))
+   (check-equal? (hash-ref parent 'pointerSize) 1)))
 
 (test-case
  "pointer: size should add to immediate pointerSize"
  (let ([parent (mhash 'pointerSize 0)])
    (check-equal? (size (x:pointer #:relative-to 'immediate) 10 #:parent parent) 1)
-   (check-equal? (dict-ref parent 'pointerSize) 1)))
+   (check-equal? (hash-ref parent 'pointerSize) 1)))
 
 (test-case
  "pointer: size should add to parent pointerSize"
  (let ([parent (mhash x:parent-key (mhash 'pointerSize 0))])
    (check-equal? (size (x:pointer #:relative-to 'parent) 10 #:parent parent) 1)
-   (check-equal? (dict-ref* parent x:parent-key 'pointerSize) 1)))
+   (check-equal? (hash-ref* parent x:parent-key 'pointerSize) 1)))
 
 (test-case
  "pointer: size should add to global pointerSize"
  (let ([parent (mhash x:parent-key (mhash x:parent-key (mhash x:parent-key (mhash 'pointerSize 0))))])
    (check-equal? (size (x:pointer #:relative-to 'global) 10 #:parent parent) 1)
-   (check-equal? (dict-ref* parent x:parent-key x:parent-key x:parent-key 'pointerSize) 1)))
+   (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key 'pointerSize) 1)))
 
 (test-case
  "pointer: size should handle void pointers"
  (let ([parent (mhash 'pointerSize 0)])
    (check-equal? (size (x:pointer uint8 'void) (x:void-pointer uint8 50) #:parent parent) 1)
-   (check-equal? (dict-ref parent 'pointerSize) 1)))
+   (check-equal? (hash-ref parent 'pointerSize) 1)))
 
 (test-case
  "pointer: size should throw if no type and not a void pointer"
@@ -102,7 +102,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'pointerOffset 0
                       'pointers null))
    (encode (x:pointer) #f #:parent parent)
-   (check-equal? (dict-ref parent 'pointerSize) 0)
+   (check-equal? (hash-ref parent 'pointerSize) 0)
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
 (test-case
@@ -113,8 +113,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'pointerOffset 1
                       'pointers null))
    (encode (x:pointer) 10 #:parent parent)
-   (check-equal? (dict-ref parent 'pointerOffset) 2)
-   (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
+   (check-equal? (hash-ref parent 'pointerOffset) 2)
+   (check-equal? (hash-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 10
                                                          x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
@@ -127,8 +127,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'pointerOffset 1
                       'pointers null))
    (encode (x:pointer #:relative-to 'immediate) 10 #:parent parent)
-   (check-equal? (dict-ref parent 'pointerOffset) 2)
-   (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
+   (check-equal? (hash-ref parent 'pointerOffset) 2)
+   (check-equal? (hash-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 10
                                                          x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
@@ -141,8 +141,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                      'pointerOffset 5
                                      'pointers null)))
    (encode (x:pointer #:relative-to 'parent) 10 #:parent parent)
-   (check-equal? (dict-ref* parent x:parent-key 'pointerOffset) 6)
-   (check-equal? (dict-ref* parent x:parent-key 'pointers) (list (mhasheq 'type uint8
+   (check-equal? (hash-ref* parent x:parent-key 'pointerOffset) 6)
+   (check-equal? (hash-ref* parent x:parent-key 'pointers) (list (mhasheq 'type uint8
                                                                             'val 10
                                                                             x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
@@ -157,8 +157,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                                    'pointerOffset 5
                                                    'pointers null)))))
    (encode (x:pointer #:relative-to 'global) 10 #:parent parent)
-   (check-equal? (dict-ref* parent x:parent-key x:parent-key x:parent-key 'pointerOffset) 6)
-   (check-equal? (dict-ref* parent x:parent-key x:parent-key x:parent-key 'pointers)
+   (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key 'pointerOffset) 6)
+   (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key 'pointers)
                  (list (mhasheq 'type uint8
                                 'val 10
                                 x:parent-key parent)))
@@ -172,8 +172,8 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'pointerOffset 1
                       'pointers null))
    (encode (x:pointer uint8 'void) (x:void-pointer uint8 55) #:parent parent)
-   (check-equal? (dict-ref parent 'pointerOffset) 2)
-   (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8 'val 55 x:parent-key parent)))
+   (check-equal? (hash-ref parent 'pointerOffset) 2)
+   (check-equal? (hash-ref parent 'pointers) (list (mhasheq 'type uint8 'val 55 x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case

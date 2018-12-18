@@ -24,7 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (test-case
  "struct: decode with process hook"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
-   (define struct (x:struct #:post-decode (λ (o) (dict-set! o 'canDrink (>= (dict-ref o 'age) 21)) o)
+   (define struct (x:struct #:post-decode (λ (o) (hash-set! o 'canDrink (>= (hash-ref o 'age) 21)) o)
                    'name (x:string #:length uint8) 'age uint8))
    (check-equal? (decode struct)
                  (mhasheq 'name "roxyb" 'age 32 'canDrink #t))))
@@ -32,7 +32,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (test-case
  "struct: decode supports function keys"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
-   (define struct (x:struct 'name (x:string #:length uint8) 'age uint8 'canDrink (λ (o) (>= (dict-ref o 'age) 21))))
+   (define struct (x:struct 'name (x:string #:length uint8) 'age uint8 'canDrink (λ (o) (>= (hash-ref o 'age) 21))))
    (check-equal? (decode struct)
                  (mhasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
@@ -66,7 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
  "struct: support pre-encode hook"
  (parameterize ([current-output-port (open-output-bytes)])
    (define struct (x:struct #:pre-encode (λ (val)
-                         (dict-set! val 'nameLength (string-length (dict-ref val 'name))) val)
+                         (hash-set! val 'nameLength (string-length (hash-ref val 'name))) val)
                             'nameLength uint8
                             'name (x:string 'nameLength)
                             'age uint8))

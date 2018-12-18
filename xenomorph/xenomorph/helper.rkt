@@ -14,10 +14,10 @@
 
 (define private-keys (list x:parent-key x:start-offset-key x:current-offset-key x:length-key))
 
-(define (dict-ref* d . keys)
+(define (hash-ref* d . keys)
   (for/fold ([d d])
             ([k (in-list keys)])
-    (dict-ref d k)))
+    (hash-ref d k)))
 
 (define (pos p [new-pos #f])
   (when new-pos
