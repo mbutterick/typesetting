@@ -19,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
               'parent parent
               x:start-offset-key (pos port)
               x:current-offset-key 0
-              '_length len)
+              x:length-key len)
   mheq)
 
 (define (xstruct-parse-fields port sdr fields-arg)

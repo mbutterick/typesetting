@@ -62,12 +62,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "array: decode to the end of parent if no length given"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (decode (x:array #:type uint8) (current-input-port) #:parent (mhash '_length 4 x:start-offset-key 0)) '(1 2 3 4))))
+   (check-equal? (decode (x:array #:type uint8) (current-input-port) #:parent (mhash x:length-key 4 x:start-offset-key 0)) '(1 2 3 4))))
 
 (test-case 
  "array: decode to the end of the stream if parent exists, but its length is 0"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (decode (x:array #:type uint8) (current-input-port) #:parent (mhash '_length 0 x:start-offset-key 0)) '(1 2 3 4 5))))
+   (check-equal? (decode (x:array #:type uint8) (current-input-port) #:parent (mhash x:length-key 0 x:start-offset-key 0)) '(1 2 3 4 5))))
 
 (test-case 
  "array: decode to the end of the stream if no parent and length is given"

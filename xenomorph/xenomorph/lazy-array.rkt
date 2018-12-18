@@ -20,7 +20,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
                              (mhasheq 'parent parent
                                       x:start-offset-key starting-pos
                                       x:current-offset-key 0
-                                      '_length @len)
+                                      x:length-key @len)
                              parent))
       (define stream-starting-pos (pos port))
       (begin0

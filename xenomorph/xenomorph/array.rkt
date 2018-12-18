@@ -30,7 +30,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                              (mhasheq 'parent parent
                                       x:start-offset-key (pos port)
                                       x:current-offset-key 0
-                                      '_length @len)
+                                      x:length-key @len)
                              parent))
       (define len (resolve-length @len port parent))
       (cond
@@ -39,8 +39,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                            ;; resolved-len is byte length
                            [len (+ (pos port) len)]
                            ;; no resolved-len, but parent has length
-                           [(and parent (not (zero? (dict-ref parent '_length))))
-                            (+ (dict-ref parent x:start-offset-key) (dict-ref parent '_length))]
+                           [(and parent (not (zero? (dict-ref parent x:length-key))))
+                            (+ (dict-ref parent x:start-offset-key) (dict-ref parent x:length-key))]
                            ;; no resolved-len or parent, so consume whole stream
                            [else +inf.0]))
          (for/list ([i (in-naturals)]
