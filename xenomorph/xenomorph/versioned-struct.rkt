@@ -64,12 +64,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (define/override (x:encode encode-me port [parent-arg #f])
       (unless (dict? encode-me)
         (raise-argument-error 'xversioned-struct-encode "dict" encode-me))
-      (define parent (mhash 'pointers null
+      (define parent (mhash x:pointers-key null
                             'startOffset (pos port)
                             x:parent-key parent-arg
                             'val encode-me
-                            'pointerSize 0))
-      (dict-set! parent 'pointerOffset (+ (pos port) (x:size encode-me parent #f)))
+                            x:pointer-size-key 0))
+      (dict-set! parent x:pointer-offset-key (+ (pos port) (x:size encode-me parent #f)))
       (unless (or (symbol? @type) (procedure? @type))
         (send @type x:encode (dict-ref encode-me x:version-key #f) port parent))
       (define maybe-header-dict (dict-ref @versions 'header #f))
@@ -82,13 +82,13 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         (raise-argument-error 'xversioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (hash-keys encode-me)))
       (for ([(key type) (in-dict fields)])
            (send type x:encode (dict-ref encode-me key) port parent))
-      (for ([ptr (in-list (dict-ref parent 'pointers))])
+      (for ([ptr (in-list (dict-ref parent x:pointers-key))])
            (send (dict-ref ptr 'type) x:encode (dict-ref ptr 'val) port (dict-ref ptr x:parent-key))))
     
     (define/override (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (unless val
         (raise-argument-error 'xversioned-struct-size "value" val))
-      (define parent (mhash x:parent-key parent-arg 'val val 'pointerSize 0))
+      (define parent (mhash x:parent-key parent-arg 'val val x:pointer-size-key 0))
       (define version-size
         (let ([struct-type @type])
           (if (or (symbol? struct-type) (procedure? struct-type))
@@ -100,7 +100,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define fields-size
         (for/sum ([(key type) (in-dict (extract-fields-dict val))])
                  (send type x:size (and val (dict-ref val key)) parent)))
-      (define pointer-size (if include-pointers (dict-ref parent 'pointerSize) 0))
+      (define pointer-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
       (+ version-size header-size fields-size pointer-size))))
 
 (define (x:versioned-struct? x) (is-a? x x:versioned-struct%))

@@ -70,25 +70,25 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
         (raise-argument-error 'xstruct-encode
                               (format "dict that contains superset of xstruct keys: ~a"
                                       (dict-keys @fields)) (dict-keys val))) 
-      (define parent (mhash 'pointers empty
+      (define parent (mhash x:pointers-key empty
                             'startOffset (pos port)
                             x:parent-key parent-arg
                             'val val
-                            'pointerSize 0)) 
-      (dict-set! parent 'pointerOffset (+ (pos port) (x:size val parent #f))) 
+                            x:pointer-size-key 0)) 
+      (dict-set! parent x:pointer-offset-key (+ (pos port) (x:size val parent #f))) 
       (for ([(key type) (in-dict @fields)])
         (send type x:encode (dict-ref val key) port parent))
-      (for ([ptr (in-list (dict-ref parent 'pointers))])
+      (for ([ptr (in-list (dict-ref parent x:pointers-key))])
         (send (dict-ref ptr 'type) x:encode (dict-ref ptr 'val) port (dict-ref ptr x:parent-key))))
     
     (define/augride (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (define parent (mhasheq x:parent-key parent-arg
                               'val val
-                              'pointerSize 0))
+                              x:pointer-size-key 0))
       (define fields-size (for/sum ([(key type) (in-dict @fields)]
                                     #:when (xenomorphic-type? type))
                             (send type x:size (and val (dict-ref val key)) parent)))
-      (define pointers-size (if include-pointers (dict-ref parent 'pointerSize) 0))
+      (define pointers-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
       (+ fields-size pointers-size))))
 
 (define (x:struct? x) (is-a? x x:struct%))

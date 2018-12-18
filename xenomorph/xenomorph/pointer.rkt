@@ -69,12 +69,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                                [(local parent) (hash-ref new-parent 'startOffset)]
                                [(immediate) (+ (pos port) (send @offset-type x:size val-in parent))]
                                [(global) 0])))
-         (send @offset-type x:encode (- (hash-ref new-parent 'pointerOffset) relative) port)
+         (send @offset-type x:encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
          (define-values (type val) (resolve-pointer @type val-in))
-         (hash-update! new-parent 'pointers
+         (hash-update! new-parent x:pointers-key
                        (λ (ptrs) (append ptrs (list (mhasheq 'type type 'val val x:parent-key parent)))))
-         (hash-set! new-parent 'pointerOffset
-                    (+ (hash-ref new-parent 'pointerOffset) (send type x:size val parent)))]
+         (hash-set! new-parent x:pointer-offset-key
+                    (+ (hash-ref new-parent x:pointer-offset-key) (send type x:size val parent)))]
         [else (send @offset-type x:encode @null-value port)]))
 
     (define/augment (x:size [val-in #f] [parent #f])
@@ -85,9 +85,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                            [else (error 'unknown-pointer-style)]))
       (define-values (type val) (resolve-pointer @type val-in))
       (when (and val new-parent)
-        (hash-set! new-parent 'pointerSize
-                   (and (hash-ref new-parent 'pointerSize #f)
-                        (+ (hash-ref new-parent 'pointerSize) (send type x:size val new-parent)))))
+        (hash-set! new-parent x:pointer-size-key
+                   (and (hash-ref new-parent x:pointer-size-key #f)
+                        (+ (hash-ref new-parent x:pointer-size-key) (send type x:size val new-parent)))))
       (send @offset-type x:size))))
 
 (define (x:pointer [offset-arg #f] [type-arg #f]
