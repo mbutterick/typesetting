@@ -13,7 +13,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 |#
 
-(define (xstruct-setup port parent len)
+(define (setup port parent len)
   (define mheq (make-hasheq))
   (dict-set*! mheq
               x:parent-key parent
@@ -22,19 +22,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
               x:length-key len)
   mheq)
 
-(define (xstruct-parse-fields port sdr fields-arg)
+(define (parse-fields! port mheq fields-arg)
   (define fields (if (x:struct? fields-arg) (get-field fields fields-arg) fields-arg))
   (unless (assocs? fields)
     (raise-argument-error 'xstruct-parse-fields "assocs" fields))
-  (for/fold ([sdr sdr])
-            ([(key type) (in-dict fields)])
+  (for ([(key type) (in-dict fields)])
     (define val (if (procedure? type)
-                    (type sdr)
-                    (send type x:decode port sdr)))
+                    (type mheq)
+                    (send type x:decode port mheq)))
     (unless (void? val)
-      (dict-set! sdr key val))
-    (dict-set! sdr x:current-offset-key (- (pos port) (dict-ref sdr x:start-offset-key)))
-    sdr))
+      (hash-set! mheq key val))
+    (hash-set! mheq x:current-offset-key (- (pos port) (hash-ref mheq x:start-offset-key))))
+  mheq)
 
 (define (dict->mutable-hash x)
   (define h (make-hasheq))
@@ -52,34 +51,33 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                     (raise-argument-error '+xstruct "dict" @fields)))
 
     (define/augride (x:decode port parent [len 0])
-      ;; xstruct-setup and xstruct-parse-fields are separate to cooperate with VersionedStruct
-      (define decoded-hash
-        (xstruct-parse-fields port (xstruct-setup port parent len) @fields))
-      (unless (dict? decoded-hash)
-        (raise-result-error 'xstruct-decode "dict" decoded-hash))
-      decoded-hash)
+      (define res (setup port parent len))
+      (parse-fields! port res @fields)
+      (unless (dict? res)
+        (raise-result-error 'xstruct-decode "dict" res))
+      res)
 
     (define/override (decode port parent)
       (dict->mutable-hash (x:decode port parent)))
 
-    (define/augride (x:encode val port [parent-arg #f])
+    (define/augride (x:encode field-data port [parent-arg #f])
       ;; check keys first, since `size` also relies on keys being valid
-      (unless (dict? val)
-        (raise-result-error 'xstruct-encode "dict" val))
-      (unless (andmap (λ (key) (memq key (dict-keys val))) (dict-keys @fields))
+      (unless (dict? field-data)
+        (raise-result-error 'xstruct-encode "dict" field-data))
+      (unless (andmap (λ (field-key) (memq field-key (dict-keys field-data))) (dict-keys @fields))
         (raise-argument-error 'xstruct-encode
                               (format "dict that contains superset of xstruct keys: ~a"
-                                      (dict-keys @fields)) (dict-keys val))) 
+                                      (dict-keys @fields)) (dict-keys field-data))) 
       (define parent (mhash x:pointers-key empty
                             x:start-offset-key (pos port)
                             x:parent-key parent-arg
-                            x:val-key val
+                            x:val-key field-data
                             x:pointer-size-key 0)) 
-      (dict-set! parent x:pointer-offset-key (+ (pos port) (x:size val parent #f))) 
+      (hash-set! parent x:pointer-offset-key (+ (pos port) (x:size field-data parent #f))) 
       (for ([(key type) (in-dict @fields)])
-        (send type x:encode (dict-ref val key) port parent))
-      (for ([ptr (in-list (dict-ref parent x:pointers-key))])
-        (send (dict-ref ptr 'type) x:encode (dict-ref ptr x:val-key) port (dict-ref ptr x:parent-key))))
+        (send type x:encode (dict-ref field-data key) port parent))
+      (for ([ptr (in-list (hash-ref parent x:pointers-key))])
+        (send (dict-ref ptr x:pointer-type-key) x:encode (dict-ref ptr x:val-key) port (dict-ref ptr x:parent-key))))
     
     (define/augride (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (define parent (mhasheq x:parent-key parent-arg

@@ -9,13 +9,14 @@
 (define x:current-offset-key 'x:current-offset)
 (define x:length-key 'x:length)
 (define x:parent-key 'x:parent)
-(define x:pointer-size-key 'x:pointer-size)
+(define x:pointer-size-key 'x:ptr-size)
 (define x:pointers-key 'x:pointers)
-(define x:pointer-offset-key 'x:pointer-offset)
+(define x:pointer-offset-key 'x:ptr-offset)
+(define x:pointer-type-key 'x:ptr-type)
 (define x:val-key 'x:val)
 
 (define private-keys (list x:parent-key x:start-offset-key x:current-offset-key x:length-key x:pointer-size-key
-                           x:pointers-key x:pointer-offset-key))
+                           x:pointers-key x:pointer-offset-key x:pointer-type-key x:val-key))
 
 (define (hash-ref* d . keys)
   (for/fold ([d d])
