@@ -82,7 +82,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (for ([(key type) (in-dict fields)])
         (send type x:encode (dict-ref encode-me key) port parent))
       (for ([ptr (in-list (dict-ref parent x:pointers-key))])
-        (send (dict-ref ptr 'type) x:encode (dict-ref ptr x:val-key) port (dict-ref ptr x:parent-key))))
+        (send (dict-ref ptr x:pointer-type-key) x:encode (dict-ref ptr x:val-key) port (dict-ref ptr x:parent-key))))
     
     (define/override (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (unless val

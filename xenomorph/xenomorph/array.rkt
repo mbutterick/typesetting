@@ -68,7 +68,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
          (send @len x:encode (length array) port) ; encode length at front
          (encode-items new-parent)
          (for ([ptr (in-list (hash-ref new-parent x:pointers-key))]) ; encode pointer data at end
-           (send (hash-ref ptr 'type) x:encode (hash-ref ptr x:val-key) port))]
+           (send (hash-ref ptr x:pointer-type-key) x:encode (hash-ref ptr x:val-key) port))]
         [else (encode-items parent)]))
 
     (define/augride (x:size [val #f] [parent #f])
