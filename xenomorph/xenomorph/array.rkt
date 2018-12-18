@@ -27,7 +27,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 
     (define/augride (x:decode port parent)
       (define new-parent (if (x:int? @len)
-                             (mhasheq 'parent parent
+                             (mhasheq x:parent-key parent
                                       x:start-offset-key (pos port)
                                       x:current-offset-key 0
                                       x:length-key @len)
@@ -65,7 +65,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
         [(x:int? @len)
          (define new-parent (mhash 'pointers null
                                    'startOffset (pos port)
-                                   'parent parent))
+                                   x:parent-key parent))
          (dict-set! new-parent 'pointerOffset (+ (pos port) (x:size array new-parent)))
          (send @len x:encode (length array) port) ; encode length at front
          (encode-items new-parent)
@@ -79,7 +79,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
       (cond
         [val (define-values (new-parent len-size)
                (if (x:int? @len)
-                   (values (mhasheq 'parent parent) (send @len x:size))
+                   (values (mhasheq x:parent-key parent) (send @len x:size))
                    (values parent 0)))
              (define items-size (for/sum ([item val])
                                   (send @type x:size item new-parent)))

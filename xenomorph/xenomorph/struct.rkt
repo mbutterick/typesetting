@@ -16,7 +16,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 (define (xstruct-setup port parent len)
   (define mheq (make-hasheq))
   (dict-set*! mheq
-              'parent parent
+              x:parent-key parent
               x:start-offset-key (pos port)
               x:current-offset-key 0
               x:length-key len)
@@ -72,17 +72,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                                       (dict-keys @fields)) (dict-keys val))) 
       (define parent (mhash 'pointers empty
                             'startOffset (pos port)
-                            'parent parent-arg
+                            x:parent-key parent-arg
                             'val val
                             'pointerSize 0)) 
       (dict-set! parent 'pointerOffset (+ (pos port) (x:size val parent #f))) 
       (for ([(key type) (in-dict @fields)])
         (send type x:encode (dict-ref val key) port parent))
       (for ([ptr (in-list (dict-ref parent 'pointers))])
-        (send (dict-ref ptr 'type) x:encode (dict-ref ptr 'val) port (dict-ref ptr 'parent))))
+        (send (dict-ref ptr 'type) x:encode (dict-ref ptr 'val) port (dict-ref ptr x:parent-key))))
     
     (define/augride (x:size [val #f] [parent-arg #f] [include-pointers #t])
-      (define parent (mhasheq 'parent parent-arg
+      (define parent (mhasheq x:parent-key parent-arg
                               'val val
                               'pointerSize 0))
       (define fields-size (for/sum ([(key type) (in-dict @fields)]

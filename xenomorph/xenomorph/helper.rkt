@@ -10,8 +10,9 @@
 (define x:start-offset-key 'x:start-offset)
 (define x:current-offset-key 'x:current-offset)
 (define x:length-key 'x:length)
+(define x:parent-key 'x:parent)
 
-(define private-keys (list 'parent x:start-offset-key x:current-offset-key x:length-key))
+(define private-keys (list x:parent-key x:start-offset-key x:current-offset-key x:length-key))
 
 (define (dict-ref* d . keys)
   (for/fold ([d d])

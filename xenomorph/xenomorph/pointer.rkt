@@ -14,7 +14,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 
 (define (find-top-parent parent)
   (cond
-    [(dict-ref parent 'parent #f) => find-top-parent]
+    [(dict-ref parent x:parent-key #f) => find-top-parent]
     [else parent]))
 
 (define (resolve-pointer type val)
@@ -41,7 +41,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
          (define relative (+ (case @pointer-relative-to
                                [(local) (dict-ref parent x:start-offset-key)]
                                [(immediate) (- (pos port) (send @offset-type x:size))]
-                               [(parent) (dict-ref (dict-ref parent 'parent) x:start-offset-key)]
+                               [(parent) (dict-ref (dict-ref parent x:parent-key) x:start-offset-key)]
                                [(global) (or (dict-ref (find-top-parent parent) x:start-offset-key) 0)]
                                [else (error 'unknown-pointer-style)])))
          (define ptr (+ offset relative))
@@ -62,7 +62,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
         [val-in
          (define new-parent (case @pointer-relative-to
                               [(local immediate) parent]
-                              [(parent) (dict-ref parent 'parent)]
+                              [(parent) (dict-ref parent x:parent-key)]
                               [(global) (find-top-parent parent)]
                               [else (error 'unknown-pointer-style)]))
          (define relative (+ (case @pointer-relative-to
@@ -72,7 +72,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
          (send @offset-type x:encode (- (dict-ref new-parent 'pointerOffset) relative) port)
          (define-values (type val) (resolve-pointer @type val-in))
          (dict-update! new-parent 'pointers
-                       (λ (ptrs) (append ptrs (list (mhasheq 'type type 'val val 'parent parent)))))
+                       (λ (ptrs) (append ptrs (list (mhasheq 'type type 'val val x:parent-key parent)))))
          (dict-set! new-parent 'pointerOffset
                     (+ (dict-ref new-parent 'pointerOffset) (send type x:size val parent)))]
         [else (send @offset-type x:encode @null-value port)]))
@@ -80,7 +80,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     (define/augment (x:size [val-in #f] [parent #f])
       (define new-parent (case @pointer-relative-to
                            [(local immediate) parent]
-                           [(parent) (dict-ref parent 'parent)]
+                           [(parent) (dict-ref parent x:parent-key)]
                            [(global) (find-top-parent parent)]
                            [else (error 'unknown-pointer-style)]))
       (define-values (type val) (resolve-pointer @type val-in))

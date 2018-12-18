@@ -34,13 +34,13 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "pointer: decode should support offsets relative to the parent"
  (parameterize ([current-input-port (open-input-bytes (bytes 0 0 1 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (x:pointer #:relative-to 'parent) #:parent (mhash 'parent (mhash x:start-offset-key 2))) 53)))
+   (check-equal? (decode (x:pointer #:relative-to 'parent) #:parent (mhash x:parent-key (mhash x:start-offset-key 2))) 53)))
 
 (test-case
  "pointer: decode should support global offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 4 0 0 0 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (x:pointer #:relative-to 'global) #:parent (mhash 'parent (mhash 'parent (mhash x:start-offset-key 2))))
+   (check-equal? (decode (x:pointer #:relative-to 'global) #:parent (mhash x:parent-key (mhash x:parent-key (mhash x:start-offset-key 2))))
                  53)))
 
 (test-case
@@ -69,15 +69,15 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (test-case
  "pointer: size should add to parent pointerSize"
- (let ([parent (mhash 'parent (mhash 'pointerSize 0))])
+ (let ([parent (mhash x:parent-key (mhash 'pointerSize 0))])
    (check-equal? (size (x:pointer #:relative-to 'parent) 10 #:parent parent) 1)
-   (check-equal? (dict-ref* parent 'parent 'pointerSize) 1)))
+   (check-equal? (dict-ref* parent x:parent-key 'pointerSize) 1)))
 
 (test-case
  "pointer: size should add to global pointerSize"
- (let ([parent (mhash 'parent (mhash 'parent (mhash 'parent (mhash 'pointerSize 0))))])
+ (let ([parent (mhash x:parent-key (mhash x:parent-key (mhash x:parent-key (mhash 'pointerSize 0))))])
    (check-equal? (size (x:pointer #:relative-to 'global) 10 #:parent parent) 1)
-   (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointerSize) 1)))
+   (check-equal? (dict-ref* parent x:parent-key x:parent-key x:parent-key 'pointerSize) 1)))
 
 (test-case
  "pointer: size should handle void pointers"
@@ -116,7 +116,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (dict-ref parent 'pointerOffset) 2)
    (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 10
-                                                         'parent parent)))
+                                                         x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
@@ -130,38 +130,38 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (dict-ref parent 'pointerOffset) 2)
    (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8
                                                          'val 10
-                                                         'parent parent)))
+                                                         x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
 (test-case
  "pointer: encode should handle offsets relative to parent"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define parent (mhash 'parent (mhash 'pointerSize 0
+   (define parent (mhash x:parent-key (mhash 'pointerSize 0
                                      'startOffset 3
                                      'pointerOffset 5
                                      'pointers null)))
    (encode (x:pointer #:relative-to 'parent) 10 #:parent parent)
-   (check-equal? (dict-ref* parent 'parent 'pointerOffset) 6)
-   (check-equal? (dict-ref* parent 'parent 'pointers) (list (mhasheq 'type uint8
+   (check-equal? (dict-ref* parent x:parent-key 'pointerOffset) 6)
+   (check-equal? (dict-ref* parent x:parent-key 'pointers) (list (mhasheq 'type uint8
                                                                             'val 10
-                                                                            'parent parent)))
+                                                                            x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
 
 (test-case
  "pointer: encode should handle global offsets"
  (parameterize ([current-output-port (open-output-bytes)])
-   (define parent (mhash 'parent
-                      (mhash 'parent
-                             (mhash 'parent (mhash 'pointerSize 0
+   (define parent (mhash x:parent-key
+                      (mhash x:parent-key
+                             (mhash x:parent-key (mhash 'pointerSize 0
                                                    'startOffset 3
                                                    'pointerOffset 5
                                                    'pointers null)))))
    (encode (x:pointer #:relative-to 'global) 10 #:parent parent)
-   (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointerOffset) 6)
-   (check-equal? (dict-ref* parent 'parent 'parent 'parent 'pointers)
+   (check-equal? (dict-ref* parent x:parent-key x:parent-key x:parent-key 'pointerOffset) 6)
+   (check-equal? (dict-ref* parent x:parent-key x:parent-key x:parent-key 'pointers)
                  (list (mhasheq 'type uint8
                                 'val 10
-                                'parent parent)))
+                                x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 5))))
 
 (test-case
@@ -173,7 +173,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       'pointers null))
    (encode (x:pointer uint8 'void) (x:void-pointer uint8 55) #:parent parent)
    (check-equal? (dict-ref parent 'pointerOffset) 2)
-   (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8 'val 55 'parent parent)))
+   (check-equal? (dict-ref parent 'pointers) (list (mhasheq 'type uint8 'val 55 x:parent-key parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
