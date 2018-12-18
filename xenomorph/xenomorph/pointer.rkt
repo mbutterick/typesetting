@@ -72,7 +72,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
          (send @offset-type x:encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
          (define-values (type val) (resolve-pointer @type val-in))
          (hash-update! new-parent x:pointers-key
-                       (λ (ptrs) (append ptrs (list (mhasheq x:pointer-type-key type x:val-key val x:parent-key parent)))))
+                       (λ (ptrs) (append ptrs (list (x:ptr type val parent)))))
          (hash-set! new-parent x:pointer-offset-key
                     (+ (hash-ref new-parent x:pointer-offset-key) (send type x:size val parent)))]
         [else (send @offset-type x:encode @null-value port)]))

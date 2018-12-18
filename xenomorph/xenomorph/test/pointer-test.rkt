@@ -114,9 +114,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       x:pointers-key null))
    (encode (x:pointer) 10 #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
-   (check-equal? (hash-ref parent x:pointers-key) (list (mhasheq x:pointer-type-key uint8
-                                                         x:val-key 10
-                                                         x:parent-key parent)))
+   (check-equal? (hash-ref parent x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
@@ -128,9 +126,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       x:pointers-key null))
    (encode (x:pointer #:relative-to 'immediate) 10 #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
-   (check-equal? (hash-ref parent x:pointers-key) (list (mhasheq x:pointer-type-key uint8
-                                                         x:val-key 10
-                                                         x:parent-key parent)))
+   (check-equal? (hash-ref parent x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
 (test-case
@@ -142,9 +138,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                      x:pointers-key null)))
    (encode (x:pointer #:relative-to 'parent) 10 #:parent parent)
    (check-equal? (hash-ref* parent x:parent-key x:pointer-offset-key) 6)
-   (check-equal? (hash-ref* parent x:parent-key x:pointers-key) (list (mhasheq x:pointer-type-key uint8
-                                                                            x:val-key 10
-                                                                            x:parent-key parent)))
+   (check-equal? (hash-ref* parent x:parent-key x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
 
 (test-case
@@ -159,9 +153,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (encode (x:pointer #:relative-to 'global) 10 #:parent parent)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointer-offset-key) 6)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointers-key)
-                 (list (mhasheq x:pointer-type-key uint8
-                                x:val-key 10
-                                x:parent-key parent)))
+                 (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 5))))
 
 (test-case
@@ -173,7 +165,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       x:pointers-key null))
    (encode (x:pointer uint8 'void) (x:void-pointer uint8 55) #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
-   (check-equal? (hash-ref parent x:pointers-key) (list (mhasheq x:pointer-type-key uint8 x:val-key 55 x:parent-key parent)))
+   (check-equal? (hash-ref parent x:pointers-key) (list (x:ptr uint8 55 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
 
 (test-case
