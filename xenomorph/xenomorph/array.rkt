@@ -61,9 +61,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
             (send @type x:encode item port parent))))
       (cond
         [(x:int? @len)
-         (define new-parent (mhash x:pointers-key null
-                                   x:start-offset-key (pos port)
-                                   x:parent-key parent))
+         (define new-parent (mhasheq x:pointers-key null
+                                     x:start-offset-key (pos port)
+                                     x:parent-key parent))
          (hash-set! new-parent x:pointer-offset-key (+ (pos port) (x:size array new-parent)))
          (send @len x:encode (length array) port) ; encode length at front
          (encode-items new-parent)

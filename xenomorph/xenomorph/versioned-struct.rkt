@@ -86,9 +86,9 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (define/override (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (unless val
         (raise-argument-error 'x:versioned-struct-size "value" val))
-      (define parent (mhash x:parent-key parent-arg
-                            x:val-key val
-                            x:pointer-size-key 0))
+      (define parent (mhasheq x:parent-key parent-arg
+                              x:val-key val
+                              x:pointer-size-key 0))
       (define version-size
         (let ([struct-type @type])
           (if (or (symbol? struct-type) (procedure? struct-type))
