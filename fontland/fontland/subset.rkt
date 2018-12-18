@@ -130,7 +130,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (loca-pre-encode (ttf-subset-loca ss))
 
   (define new-head-table (clone-deep (get-head-table (subset-font ss))))
-  (dict-set! new-head-table 'indexToLocFormat (dict-ref (ttf-subset-loca ss) 'version))
+  (dict-set! new-head-table 'indexToLocFormat (dict-ref (ttf-subset-loca ss) x:version-key))
   
   (define new-hhea-table (clone-deep  (get-hhea-table (subset-font ss))))
   (dict-set! new-hhea-table 'numberOfMetrics (length (dict-ref (ttf-subset-hmtx ss) 'metrics)))

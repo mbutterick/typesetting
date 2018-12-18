@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require xenomorph
          sugar/unstable/class
          sugar/unstable/js
@@ -20,17 +20,18 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 |#
 
+
 (define (loca-pre-encode val)
-  (unless (dict-has-key? val 'version)
-    (dict-set! val 'version (if (> (last (· val offsets)) max-32-bit-value)
+  (unless (dict-has-key? val x:version-key)
+    (dict-set! val x:version-key (if (> (last (· val offsets)) max-32-bit-value)
                                 32bit-style
                                 16bit-style))
-    (when (= 16bit-style (· val version))
+    (when (= 16bit-style (dict-ref val x:version-key))
       (dict-update! val 'offsets (λ (offsets) (map (λ (x) (/ x 2)) offsets)))))
   val)
 
 (define (loca-post-decode val)
-  (when (= 16bit-style (· val version))
+  (when (= 16bit-style (dict-ref val x:version-key))
     ;; in a 16bits-style loca table, actual 32bit offset values are divided by 2 (to fit into 16 bits)
     ;; so we re-inflate them.
     (dict-update! val 'offsets (λ (offsets) (map (λ (x) (* 2 x)) offsets))))
@@ -56,9 +57,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 (module+ test
   (require rackunit racket/serialize)
   (check-equal?
-   (encode loca (mhash 'version 0 'offsets '(0 76 156)) #f) #"\0\0\0L\0\234")
+   (encode loca (mhasheq x:version-key 0 'offsets '(0 76 156)) #f) #"\0\0\0L\0\234")
   (check-equal?
-   (encode loca '#hash((version . 1) (offsets . (0 76 156))) #f) #"\0\0\0\0\0\0\0L\0\0\0\234")
+   (encode loca (mhasheq x:version-key 1 'offsets '(0 76 156)) #f) #"\0\0\0\0\0\0\0L\0\0\0\234")
   (define ip (open-input-file charter-path))
   (define dir (deserialize (read (open-input-file charter-directory-path))))
   (define offset (dict-ref (dict-ref (dict-ref dir 'tables) 'loca) 'offset))
