@@ -47,7 +47,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
   (define len (or len-arg len-kwarg))
   (new (generate-subclass x:lazy-array% pre-proc post-proc) [type type]
        [len len]
-       [length-type 'count]))
+       [count-bytes? #false]))
 
 (module+ test
   (require rackunit "number.rkt" "generic.rkt")

@@ -14,14 +14,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 (define x:array%
   (class xenobase%
     (super-new)
-    (init-field [(@type type)] [(@len len)] [(@length-type length-type)])
+    (init-field [(@type type)] [(@len len)] [(@count-bytes? count-bytes?)])
     
     (unless (xenomorphic-type? @type)
-      (raise-argument-error '+xarray "xenomorphic type" @type))
+      (raise-argument-error 'x:array "xenomorphic type" @type))
     (unless (length-resolvable? @len)
-      (raise-argument-error '+xarray "length-resolvable?" @len))
-    (unless (memq @length-type '(bytes count))
-      (raise-argument-error '+xarray "'bytes or 'count" @length-type))
+      (raise-argument-error 'x:array "length-resolvable?" @len))
+    (unless (boolean? @count-bytes?)
+      (raise-argument-error 'x:array "boolean" @count-bytes?))
 
     (define/augride (x:decode port parent)
       (define new-parent (if (x:int? @len)
@@ -32,19 +32,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                              parent))
       (define len (resolve-length @len port parent))
       (cond
-        [(or (not len) (eq? @length-type 'bytes))
+        [(or (not len) @count-bytes?)
          (define end-pos (cond
-                           ;; resolved-len is byte length
+                           ;; len is byte length
                            [len (+ (pos port) len)]
-                           ;; no resolved-len, but parent has length
+                           ;; no len, but parent has length
                            [(and parent (not (zero? (hash-ref parent x:length-key))))
                             (+ (hash-ref parent x:start-offset-key) (hash-ref parent x:length-key))]
-                           ;; no resolved-len or parent, so consume whole stream
+                           ;; no len or parent, so consume whole stream
                            [else +inf.0]))
          (for/list ([i (in-naturals)]
                     #:break (or (eof-object? (peek-byte port)) (= (pos port) end-pos)))
            (send @type x:decode port new-parent))]
-        ;; we have resolved-len, which is treated as count of items
+        ;; we have len, which is treated as count of items
         [else (for/list ([i (in-range len)])
                 (send @type x:decode port new-parent))]))
 
@@ -94,7 +94,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                  #:post-decode [post-proc #f])
   (new (generate-subclass x:array% pre-proc post-proc) [type (or type-arg type-kwarg)]
        [len (or len-arg len-kwarg)]
-       [length-type (if count-bytes? 'bytes length-type-arg)]))
+       [count-bytes? count-bytes?]))
 
 (define (x:array? x) (is-a? x x:array%))
   
