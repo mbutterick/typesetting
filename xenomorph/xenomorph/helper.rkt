@@ -6,7 +6,10 @@
          "generic.rkt")
 (provide (all-defined-out))
 
-(define x:version-key 'x:version) 
+(define x:version-key 'x:version)
+(define x:start-offset-key 'x:start-offset)
+
+(define private-keys (list 'parent x:start-offset-key '_currentOffset '_length))
 
 (define (dict-ref* d . keys)
   (for/fold ([d d])

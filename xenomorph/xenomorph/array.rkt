@@ -28,7 +28,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
     (define/augride (x:decode port parent)
       (define new-parent (if (x:int? @len)
                              (mhasheq 'parent parent
-                                      '_startOffset (pos port)
+                                      x:start-offset-key (pos port)
                                       '_currentOffset 0
                                       '_length @len)
                              parent))
@@ -40,7 +40,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                            [len (+ (pos port) len)]
                            ;; no resolved-len, but parent has length
                            [(and parent (not (zero? (dict-ref parent '_length))))
-                            (+ (dict-ref parent '_startOffset) (dict-ref parent '_length))]
+                            (+ (dict-ref parent x:start-offset-key) (dict-ref parent '_length))]
                            ;; no resolved-len or parent, so consume whole stream
                            [else +inf.0]))
          (for/list ([i (in-naturals)]

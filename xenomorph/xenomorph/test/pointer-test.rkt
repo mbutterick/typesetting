@@ -18,12 +18,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "pointer: decode should handle null pointers"
  (parameterize ([current-input-port (open-input-bytes (bytes 0))])
-   (check-false (decode (x:pointer) #:parent (mhash '_startOffset 50)))))
+   (check-false (decode (x:pointer) #:parent (mhash x:start-offset-key 50)))))
 
 (test-case
  "pointer: decode should use local offsets from start of parent by default"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (check-equal? (decode (x:pointer) #:parent (mhash '_startOffset 0)) 53)))
+   (check-equal? (decode (x:pointer) #:parent (mhash x:start-offset-key 0)) 53)))
 
 (test-case
  "pointer: decode should support immediate offsets"
@@ -34,19 +34,19 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
  "pointer: decode should support offsets relative to the parent"
  (parameterize ([current-input-port (open-input-bytes (bytes 0 0 1 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (x:pointer #:relative-to 'parent) #:parent (mhash 'parent (mhash '_startOffset 2))) 53)))
+   (check-equal? (decode (x:pointer #:relative-to 'parent) #:parent (mhash 'parent (mhash x:start-offset-key 2))) 53)))
 
 (test-case
  "pointer: decode should support global offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 4 0 0 0 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (x:pointer #:relative-to 'global) #:parent (mhash 'parent (mhash 'parent (mhash '_startOffset 2))))
+   (check-equal? (decode (x:pointer #:relative-to 'global) #:parent (mhash 'parent (mhash 'parent (mhash x:start-offset-key 2))))
                  53)))
 
 (test-case
  "pointer: decode should support returning pointer if there is no decode type"
  (parameterize ([current-input-port (open-input-bytes (bytes 4))])
-   (check-equal? (decode (x:pointer uint8 'void) #:parent (mhash '_startOffset 0)) 4)))
+   (check-equal? (decode (x:pointer uint8 'void) #:parent (mhash x:start-offset-key 0)) 4)))
 
 (test-case
  "pointer: decode should support decoding pointers lazily"

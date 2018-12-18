@@ -39,10 +39,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
         [(and @allow-null? (= offset @null-value)) #f] ; handle null pointers
         [else
          (define relative (+ (case @pointer-relative-to
-                               [(local) (dict-ref parent '_startOffset)]
+                               [(local) (dict-ref parent x:start-offset-key)]
                                [(immediate) (- (pos port) (send @offset-type x:size))]
-                               [(parent) (dict-ref (dict-ref parent 'parent) '_startOffset)]
-                               [(global) (or (dict-ref (find-top-parent parent) '_startOffset) 0)]
+                               [(parent) (dict-ref (dict-ref parent 'parent) x:start-offset-key)]
+                               [(global) (or (dict-ref (find-top-parent parent) x:start-offset-key) 0)]
                                [else (error 'unknown-pointer-style)])))
          (define ptr (+ offset relative))
          (cond

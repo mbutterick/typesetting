@@ -18,7 +18,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
       (define len (resolve-length @len port parent))
       (define new-parent (if (x:int? @len)
                              (mhasheq 'parent parent
-                                      '_startOffset starting-pos
+                                      x:start-offset-key starting-pos
                                       '_currentOffset 0
                                       '_length @len)
                              parent))

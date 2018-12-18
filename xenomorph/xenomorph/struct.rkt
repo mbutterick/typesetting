@@ -17,7 +17,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define mheq (make-hasheq))
   (dict-set*! mheq
               'parent parent
-              '_startOffset (pos port)
+              x:start-offset-key (pos port)
               '_currentOffset 0
               '_length len)
   mheq)
@@ -33,10 +33,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                     (send type x:decode port sdr)))
     (unless (void? val)
       (dict-set! sdr key val))
-    (dict-set! sdr '_currentOffset (- (pos port) (dict-ref sdr '_startOffset)))
+    (dict-set! sdr '_currentOffset (- (pos port) (dict-ref sdr x:start-offset-key)))
     sdr))
-
-(define private-keys '(parent _startOffset _currentOffset _length))
 
 (define (dict->mutable-hash x)
   (define h (make-hasheq))
