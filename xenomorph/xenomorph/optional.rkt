@@ -1,5 +1,5 @@
 #lang racket/base
-(require "helper.rkt" racket/class)
+(require "helper.rkt" racket/class racket/match)
 (provide (all-defined-out))
 
 #|
@@ -13,11 +13,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
     (init-field [(@type type)] [(@condition condition)])
 
     (unless (xenomorphic-type? @type)
-      (raise-argument-error '+xoptional"xenomorphic type" @type))
+      (raise-argument-error 'x:optional"xenomorphic type" @type))
     
     (define (resolve-condition parent)
-      (define maybe-proc @condition)
-      (if (procedure? maybe-proc) (maybe-proc parent) maybe-proc))
+      (match @condition
+        [(? procedure? proc) (proc parent)]
+        [val val]))
 
     (define/augment (x:decode port parent)
       (when (resolve-condition parent)
@@ -29,7 +30,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
     
     (define/augment (x:size [val #f] [parent #f])
       (if (resolve-condition parent) (send @type x:size val parent) 0))))
-
 
 (define no-val (gensym))
 (define (x:optional [type-arg #f] [cond-arg no-val]

@@ -21,7 +21,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
   (cond
     [type (values type val)]
     [(xvoid-pointer? val) (values (xvoid-pointer-type val) (xvoid-pointer-value val))]
-    [else (raise-argument-error 'Pointer:size "VoidPointer" val)]))
+    [else (raise-argument-error 'x:pointer "VoidPointer" val)]))
 
 (define x:pointer%
   (class xenobase%
@@ -36,7 +36,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     (define/augment (x:decode port parent)
       (define offset (send @offset-type x:decode port parent))
       (cond
-        [(and @allow-null? (= offset @null-value)) #f] ; handle null pointers
+        [(and @allow-null? (= offset @null-value)) #false] ; handle null pointers
         [else
          (define relative (+ (case @pointer-relative-to
                                [(local) (hash-ref parent x:start-offset-key)]

@@ -2,6 +2,7 @@
 (require racket/dict
          racket/class
          racket/sequence
+         racket/match
          racket/list
          "helper.rkt"
          "number.rkt"
@@ -27,9 +28,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (unless (assocs? fields)
     (raise-argument-error 'x:struct-parse-fields "assocs" fields))
   (for ([(key type) (in-dict fields)])
-    (define val (if (procedure? type)
-                    (type mheq)
-                    (send type x:decode port mheq)))
+    (define val (match type
+                  [(? procedure? proc) (proc mheq)]
+                  [_ (send type x:decode port mheq)]))
     (unless (void? val)
       (hash-set! mheq key val))
     (hash-set! mheq x:current-offset-key (- (pos port) (hash-ref mheq x:start-offset-key))))
@@ -74,7 +75,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
       (for ([(key type) (in-dict @fields)])
         (send type x:encode (dict-ref field-data key) port parent))
       (for ([ptr (in-list (hash-ref parent x:pointers-key))])
-        (send (x:ptr-type ptr) x:encode (x:ptr-val ptr) port (x:ptr-parent ptr))))
+        (match ptr
+          [(x:ptr type val parent) (send type x:encode val port parent)])))
     
     (define/augride (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (define parent (mhasheq x:parent-key parent-arg

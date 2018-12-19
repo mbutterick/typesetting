@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class racket/dict "helper.rkt" "util.rkt" "number.rkt")
+(require racket/class racket/match "helper.rkt" "util.rkt" "number.rkt")
 (provide (all-defined-out))
 
 #|
@@ -40,9 +40,9 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 
     (define/augment (x:decode port parent)
       (define len (or (resolve-length @len port parent) (count-nonzero-chars port)))
-      (define encoding (if (procedure? @encoding)
-                           (or (@encoding parent) 'ascii)
-                           @encoding))
+      (define encoding (match @encoding
+                         [(? procedure? proc) (or (proc parent) 'ascii)]
+                         [enc enc]))
       (define adjustment (if (and (not @len) (bytes-left-in-port? port)) 1 0))
       (begin0
         (decode-string len port encoding)
@@ -50,16 +50,16 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 
     (define/augment (x:encode val-arg port [parent #f])
       (define val (if (string? val-arg) val-arg (format "~a" val-arg)))
-      (define encoding (if (procedure? @encoding)
-                           (or (@encoding (and parent (hash-ref parent val)) 'ascii))
-                           @encoding))
+      (define encoding (match @encoding
+                         [(? procedure?) (@encoding (and parent (hash-ref parent val)) 'ascii)]
+                         [enc enc]))
       (define encoded-str (encode-string val encoding))
       (define encoded-length (bytes-length encoded-str))
       (when (and (exact-nonnegative-integer? @len) (> encoded-length @len))
         (raise-argument-error 'xstring-encode (format "string no longer than ~a" @len) val)) 
       (when (x:int? @len)
         (send @len x:encode encoded-length port parent))
-      (define string-terminator (if (not @len) (bytes 0) (bytes))) ; null terminated when no len
+      (define string-terminator (if @len (bytes) (bytes 0))) ; null terminated when no len
       (bytes-append encoded-str string-terminator)) 
     
     (define/augment (x:size [val-arg #f] [parent #f])

@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class "helper.rkt" racket/list)
+(require racket/class racket/match "helper.rkt" racket/list)
 (provide (all-defined-out))
 
 #|
@@ -13,19 +13,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
     (init-field [(@type type)] [(@values values)])
      
     (unless (xenomorphic-type? @type)
-      (raise-argument-error '+xenum "xenomorphic type" @type))
+      (raise-argument-error 'x:enum "xenomorphic type" @type))
     (unless (list? @values)
-      (raise-argument-error '+xenum "list of values" @values))
+      (raise-argument-error 'x:enum "list of values" @values))
 
     (define/augment (x:decode port parent)
       (define index (send @type x:decode port parent))
       (or (list-ref @values index) index))
 
     (define/augment (x:encode val port [parent #f])
-      (define index (index-of @values val))
-      (unless index
-        (raise-argument-error 'xenum-encode "valid option" val))
-      (send @type x:encode index port parent))
+      (match (index-of @values val)
+        [(? values idx) (send @type x:encode idx port parent)]
+        [_ (raise-argument-error 'x:enum-encode "valid option" val)]))
     
     (define/augment (x:size [val #f] [parent #f])
       (send @type x:size val parent))))

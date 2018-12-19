@@ -1,6 +1,7 @@
 #lang racket/base
 (require "helper.rkt" "struct.rkt"
          racket/dict
+         racket/match
          racket/class
          sugar/unstable/dict)
 (provide (all-defined-out))
@@ -21,14 +22,6 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (unless (and (dict? @versions) (andmap (λ (v) (or (dict? v) (x:struct? v))) (dict-values @versions)))
       (raise-argument-error 'x:versioned-struct "dict of dicts or structish" @versions))
 
-    (define version-getter (cond
-                             [(procedure? @type) @type]
-                             [(symbol? @type) (λ (parent) (dict-ref parent @type))]))
-
-    (define version-setter (cond
-                             [(procedure? @type) @type]
-                             [(symbol? @type) (λ (parent version) (dict-set! parent @type version))]))
-
     (define (select-field-set val)
       (define version-key
         (or (dict-ref val x:version-key #f)
@@ -40,26 +33,28 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
     (define/override (x:decode port parent [length 0])
       (define res (setup-private-fields port parent length))
-      (define which-version (cond
-                              [(integer? @type) @type]
-                              [(or (symbol? @type) (procedure? @type))
-                               (unless parent
-                                 (raise-argument-error 'x:versioned-struct-decode "valid parent" parent))
-                               (version-getter parent)]
-                              [else (send @type x:decode port parent)]))
+      (define which-version (match @type
+                              [(? integer? int) int]
+                              [(? symbol? key) #:when parent (dict-ref parent key)]
+                              [(? procedure? proc) #:when parent (proc parent)]
+                              [(or (? symbol?) (? procedure?))
+                               (raise-argument-error 'x:versioned-struct-decode "valid parent" parent)]
+                              [_ (send @type x:decode port parent)]))
       (dict-set! res x:version-key which-version)
 
-      (define maybe-header-val (dict-ref @versions 'header #f))
-      (when maybe-header-val
-        (parse-fields port res maybe-header-val))
+      (cond
+        [(dict-ref @versions 'header #f)
+         => (λ (header-val) (parse-fields port res header-val))])
       
       (define field-object
-        (or (dict-ref @versions which-version #f)
-            (raise-argument-error 'x:versioned-struct-decode (format "valid field version: ~v" (dict-keys @versions)) which-version)))
-    
-      (if (x:versioned-struct? field-object)
-          (send field-object x:decode port parent)
-          (parse-fields port res field-object)))
+        (cond
+          [(dict-ref @versions which-version #f) => values]
+          [else
+           (raise-argument-error 'x:versioned-struct-decode (format "valid field version: ~v" (dict-keys @versions)) which-version)]))
+      
+      (match field-object
+        [(? x:versioned-struct?) (send field-object x:decode port parent)]
+        [_ (parse-fields port res field-object)]))
 
     (define/override (x:encode field-data port [parent-arg #f])
       (unless (dict? field-data)
@@ -76,12 +71,13 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         (send type x:encode (dict-ref field-data key) port parent))
 
       (define fields (select-field-set field-data))
-      (unless (andmap (λ (key) (member key (dict-keys field-data))) (dict-keys fields))
+      (unless (andmap (λ (key) (member key (hash-keys field-data))) (dict-keys fields))
         (raise-argument-error 'x:versioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (hash-keys field-data)))
       (for ([(key type) (in-dict fields)])
-        (send type x:encode (dict-ref field-data key) port parent))
-      (for ([ptr (in-list (dict-ref parent x:pointers-key))])
-        (send (x:ptr-type ptr) x:encode (x:ptr-val ptr) port (x:ptr-parent ptr))))
+        (send type x:encode (hash-ref field-data key) port parent))
+      (for ([ptr (in-list (hash-ref parent x:pointers-key))])
+        (match ptr
+          [(x:ptr type val parent) (send type x:encode val port parent)])))
     
     (define/override (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (unless val
@@ -90,12 +86,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                               x:val-key val
                               x:pointer-size-key 0))
       (define version-size
-        (let ([struct-type @type])
-          (if (or (symbol? struct-type) (procedure? struct-type))
-              0
-              (send @type x:size (dict-ref val x:version-key) parent))))
+        (match @type
+          [(or (? symbol?) (? procedure?)) 0]
+          [_ (send @type x:size (dict-ref val x:version-key) parent)]))
+      
       (define header-size
-        (for/sum ([(key type) (in-dict (or (dict-ref @versions 'header #f) null))])
+        (for/sum ([(key type) (in-dict (dict-ref @versions 'header null))])
           (send type x:size (and val (dict-ref val key)) parent)))
       (define fields-size
         (for/sum ([(key type) (in-dict (select-field-set val))])
