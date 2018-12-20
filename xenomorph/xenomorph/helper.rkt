@@ -4,7 +4,7 @@
          "generic.rkt")
 (provide (all-defined-out))
 
-(struct x:ptr (type val parent) #:transparent #:mutable)
+(struct x:ptr (type val parent) #:transparent)
 
 (define x:version-key 'x:version)
 (define x:start-offset-key 'x:start-offset)
