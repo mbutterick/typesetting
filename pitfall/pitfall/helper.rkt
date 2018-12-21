@@ -2,9 +2,6 @@
 (require (for-syntax racket/base racket/syntax br/syntax) br/define racket/class sugar/list racket/list (only-in br/list push! pop!) racket/string racket/format racket/contract)
 (provide (all-defined-out) push! pop!)
 
-(define (newBuffer x) (string->bytes/latin-1 (format "~a" x)))
-(define buffer-length bytes-length)
-
 (struct exn:pitfall:test exn (data))
 
 (define (raise-test-exn val)

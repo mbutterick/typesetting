@@ -137,7 +137,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                         'FontFile2) fontFile)
 
   (· descriptor end)
-  #;(report (· descriptor toString) 'descriptor-id)
 
   (define descendantFont (send (· this document) ref
                                (mhash
@@ -154,7 +153,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                                      (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
 
   (· descendantFont end)
-  #;(report (· descendantFont toString) 'descendantFont)
   (hash-set*! (· this dictionary payload)
               'Type "Font"
               'Subtype "Type0"
@@ -204,7 +202,6 @@ HERE
   
   (send cmap end (format unicode-cmap-str (toHex (sub1 (length entries))) (string-join entries " ")))
                                          
-  #;(report (· cmap toString) 'cmap-id)
   cmap)
 
 (define/contract (toHex . codePoints)

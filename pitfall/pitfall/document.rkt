@@ -124,10 +124,10 @@
 (define/contract (write this x)
   ((or/c string? bytes?) . ->m . any/c)
   (define bstr (if (not (bytes? x))
-                   (newBuffer (string-append x "\n"))
+                   (string->bytes/latin-1 (string-append x "\n"))
                    x))
   (push-field! doc-byte-strings this bstr)
-  (current-doc-offset (+ (current-doc-offset) (buffer-length bstr))))
+  (current-doc-offset (+ (current-doc-offset) (bytes-length bstr))))
 
 
 (define/contract (addContent this data)
