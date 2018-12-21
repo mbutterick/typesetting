@@ -1,5 +1,5 @@
 #lang at-exp br/quicklang
-(require "parser.rkt" "tokenizer.rkt" "struct.rkt" gregor racket/bytes)
+(require "parser.rkt" "tokenizer.rkt" "core.rkt" gregor racket/bytes)
 (provide (matching-identifiers-out #rx"pf-" (all-defined-out)))
 
 (module+ test (require rackunit))

@@ -13,7 +13,7 @@
   (class %
     (super-new)
     ;; Lookup table for embedded fonts
-    (field [_fontFamilies #f]
+    (field [@font-families #f]
            [_fontCount #f]
            
            ;; Font state
@@ -31,7 +31,7 @@
 
 (define/contract (initFonts this)
   (->m void?)
-  (set-field! _fontFamilies this (mhash))
+  (set-field! @font-families this (mhash))
   (set-field! _fontCount this 0)
 
   (set-field! _fontSize this 12)
@@ -66,7 +66,7 @@
 
   ;; fast path: check if the font is already in the PDF
   (cond
-    [(hash-ref (· this _fontFamilies) cacheKey #f) =>
+    [(hash-ref (· this @font-families) cacheKey #f) =>
                                                    (λ (val)
                                                      (set-field! _font this val))]
     ;; load the font
@@ -77,7 +77,7 @@
      
      ;; check for existing font familes with the same name already in the PDF
      ;; useful if the font was passed as a buffer
-     (let* ([this-ff (· this _fontFamilies)]
+     (let* ([this-ff (· this @font-families)]
             [this-f (· this _font)]
             [font (hash-ref this-ff (· this-f name) #f)])
        (cond

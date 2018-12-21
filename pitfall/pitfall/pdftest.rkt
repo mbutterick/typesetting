@@ -1,7 +1,7 @@
 #lang racket/base
 (require
   (for-syntax racket/base)
-  "param.rkt"
+  "core.rkt"
   racket/class
   racket/string
   br/define
@@ -35,13 +35,12 @@
 
 (define (make-doc ps [compress? #false] [proc (λ (doc) doc)] #:test [test? #t] #:pdfkit [pdfkit? #t])
   (time
-   (let ()
-     (define f (open-output-file ps #:exists 'replace))
-     (parameterize ([current-output-port f])
+   (with-output-to-file ps
+     (λ ()
        (define doc (make-object PDFDocument (hash 'compress compress?)))
        (proc doc)
        (send doc end))
-     (close-output-port f)))
+     #:exists 'replace))
   (when test?
     (check-pdfs-equal? ps (this->control ps))
     (when pdfkit?

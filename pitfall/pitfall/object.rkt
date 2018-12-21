@@ -1,6 +1,6 @@
 #lang racket/base
 (require
-  "struct.rkt"
+  "core.rkt"
   racket/class
   racket/string
   racket/contract

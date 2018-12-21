@@ -2,7 +2,7 @@
 (require racket/class
          racket/match
          racket/port
-         "param.rkt"
+         "core.rkt"
          "object.rkt"
          "zlib.rkt")
 (provide PDFReference)

@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require
-  "struct.rkt"
+  "core.rkt"
   racket/class
   racket/contract
   sugar/unstable/class

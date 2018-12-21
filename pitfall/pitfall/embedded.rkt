@@ -1,8 +1,7 @@
 #lang debug racket/base
 (require
   (for-syntax racket/base)
-  "param.rkt"
-  "struct.rkt"
+  "core.rkt"
   racket/class
   racket/match
   racket/string
