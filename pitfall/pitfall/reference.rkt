@@ -45,9 +45,9 @@
       (send @doc write (convert @payload))
         
       (when bstr
-        (send @doc write (bytes-append #"stream\n" bstr #"\n\nendstream")))
+        (send @doc write (bytes-append #"stream\n" bstr #"\nendstream")))
       
-      (send @doc write "endobj")
+      (send @doc write "\nendobj")
       (send @doc _refEnd this))
 
     (define/public (to-string)
