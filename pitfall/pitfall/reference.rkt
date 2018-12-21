@@ -53,7 +53,7 @@
     (hash-set! (· this payload) 'Length (apply + (map buffer-length bstrs-to-write))))
 
   (define this-doc (· this document)) 
-  (set-field! offset this (· this-doc _offset))
+  (set-field! offset this (current-doc-offset))
   
   (with-method ([doc_write (this-doc write)])
     (doc_write (format "~a 0 obj" (· this id)))

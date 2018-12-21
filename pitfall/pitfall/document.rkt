@@ -24,15 +24,16 @@
 
 (define mixed% (annotation-mixin (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%)))))))
 
+(define pdf-version 1.3)
+
 (define-subclass mixed% (PDFDocument [options (mhash)])
   (compress-streams? (hash-ref options 'compress #t))
+  (current-doc-offset 0)
   
   (field [byte-strings empty]
-         [pdf-version 1.3]
          [_pageBuffer null]
          [_offsets (mhash)] ; The PDF object store
          [_ended #f]
-         [_offset 0]
          [_root (ref this
                      (mhash 'Type "Catalog"
                             'Pages (ref this
@@ -128,7 +129,7 @@
                    (newBuffer (string-append x "\n"))
                    x))
   (push-field! byte-strings this bstr)
-  (increment-field! _offset this (buffer-length bstr)))
+  (current-doc-offset (+ (current-doc-offset) (buffer-length bstr))))
 
 
 (define/contract (addContent this data)
@@ -179,7 +180,7 @@
   #;(report* (· this _offsets))
 
   ;; generate xref
-  (define xref-offset (· this _offset))
+  (define xref-offset (current-doc-offset))
   (with-method ([this-write (this write)])
     (define sorted-offset-records  (sort (hash->list (· this _offsets)) < #:key car)) ; sort by refid
     (define this-offsets (map cdr sorted-offset-records))
@@ -190,7 +191,7 @@
     (let ([missing-offsets (for/list ([offset (in-list this-offsets)]
                                       [idx (in-list this-idxs)]
                                       #:unless (number? offset))
-                                      idx)])
+                                     idx)])
       (unless (empty? missing-offsets)
         (raise-argument-error 'document:end "numerical offsets" missing-offsets)))
     (for ([offset (in-list this-offsets)]
