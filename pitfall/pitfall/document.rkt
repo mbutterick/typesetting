@@ -5,6 +5,7 @@
   racket/class
   racket/format
   racket/contract
+  racket/generator
   racket/list
   sugar/unstable/class
   sugar/unstable/js
@@ -32,12 +33,15 @@
          [_pageBuffer null]
          [_offsets (mhasheqv)] ; The PDF object store
          [_ended #f]
-         [_root (ref this
-                     (mhash 'Type "Catalog"
-                            'Pages (ref this
-                                        (mhash 'Type "Pages"
-                                               'Count 0
-                                               'Kids empty))))] ; top object
+         [ref-gen (generator ()
+                             (let loop ([refid 1])
+                               (hash-set! _offsets refid 'missing-ref-offset)
+                               (yield refid)
+                               (loop (add1 refid))))]
+         [_root (ref (mhasheq 'Type "Catalog"
+                              'Pages (ref (mhasheq 'Type "Pages"
+                                                   'Count 0
+                                                   'Kids empty))))] ; top object
          [page #f] ; The current page
          [x 0]
          [y 0]
@@ -57,10 +61,12 @@
   (· this initText)
   (· this initImages)
 
+  (define/public (ref [payload (mhash)])
+    (make-object PDFReference this (ref-gen) payload))
+
   (as-methods
    addPage
    flushPages
-   ref
    write
    addContent
    _refEnd
@@ -68,7 +74,7 @@
    end)
 
   (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) ; if no 'info key, nothing will be copied from (hash)
-       (hash-set! info key val))
+    (hash-set! info key val))
 
   ;; Write the header
   (write this (format "%PDF-~a" (current-pdf-version))) ;  PDF version
@@ -110,17 +116,6 @@
   (for-each (λ (p) (· p end)) pb)
   (set-field! _pageBuffer this empty))
 
-
-;; every js function argument is 'undefined' by default
-;; so even a function defined without default values
-;; can be called without arguments
-(define/contract (ref this [payload (mhash)])
-  (() (hash?) . ->*m . (is-a?/c PDFReference))
-  (define next-refid (add1 (length (hash-keys (· this _offsets)))))
-  (hash-set! (· this _offsets) next-refid 'missing-ref-offset)
-  (make-object PDFReference this next-refid payload))
-
-
 (define/contract (write this x)
   ((or/c string? bytes?) . ->m . any/c)
   (define bstr (if (not (bytes? x))
@@ -158,17 +153,17 @@
   #;(report* (· this _offsets))
 
   (flushPages this)
-  (define _info (ref this))
+  (define _info (send this ref))
   (for ([(key val) (in-hash (· this info))])
-       ;; upgrade string literal to String struct
-       (hash-set! (· _info payload) key (if (string? val) (String val) val)))
+    ;; upgrade string literal to String struct
+    (hash-set! (· _info payload) key (if (string? val) (String val) val)))
 
 
   #;(report* (· this _offsets))
   (· _info end)
 
   (for ([font (in-hash-values (· this _fontFamilies))])
-       (· font finalize))
+    (· font finalize))
 
   #;(report* (· this _offsets))
 
@@ -189,12 +184,12 @@
     (let ([missing-offsets (for/list ([offset (in-list this-offsets)]
                                       [idx (in-list this-idxs)]
                                       #:unless (number? offset))
-                                     idx)])
+                             idx)])
       (unless (empty? missing-offsets)
         (raise-argument-error 'document:end "numerical offsets" missing-offsets)))
     (for ([offset (in-list this-offsets)]
           [idx (in-list this-idxs)])
-         (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
+      (this-write @string-append{@(~r offset #:min-width 10 #:pad-string "0") 00000 n }))
     (this-write "trailer") ;; trailer
     (this-write (convert
                  (mhash 'Size (add1 (length this-offsets))

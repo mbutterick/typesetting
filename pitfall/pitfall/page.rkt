@@ -20,7 +20,7 @@
                            (hash-ref page-sizes (string-upcase size)))]
            [width (list-ref dimensions (if (equal? layout "portrait") 0 1))]
            [height (list-ref dimensions (if (equal? layout "portrait") 1 0))]
-           [content (· document ref)]
+           [content (send document ref)]
            ;; Initialize the Font, XObject, and ExtGState dictionaries
            [resources (send document ref (mhash 'ProcSet '("PDF" "Text" "ImageB" "ImageC" "ImageI")))]
            [margins
