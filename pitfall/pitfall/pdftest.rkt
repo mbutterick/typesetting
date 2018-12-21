@@ -27,7 +27,7 @@
 (define-macro (check-copy-equal? THIS)
   (syntax/loc caller-stx (check-true (for/and ([b1 (in-input-port-bytes (open-input-file THIS))]
                                                [b2 (in-input-port-bytes (open-input-file (this->control THIS)))])
-                                              (equal? b1 b2)))))
+                                       (equal? b1 b2)))))
 
 
 (define-syntax-rule (check-pdfkit? this)
@@ -36,10 +36,12 @@
 (define (make-doc ps [compress? #false] [proc (λ (doc) doc)] #:test [test? #t] #:pdfkit [pdfkit? #t])
   (time
    (let ()
-     (define doc (make-object PDFDocument (hash 'compress compress?)))
-     (send doc pipe (open-output-file ps #:exists 'replace))
-     (proc doc)
-     (send doc end)))
+     (define f (open-output-file ps #:exists 'replace))
+     (parameterize ([current-output-port f])
+       (define doc (make-object PDFDocument (hash 'compress compress?)))
+       (proc doc)
+       (send doc end))
+     (close-output-port f)))
   (when test?
     (check-pdfs-equal? ps (this->control ps))
     (when pdfkit?

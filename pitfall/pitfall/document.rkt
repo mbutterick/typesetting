@@ -30,8 +30,7 @@
   (current-auto-first-page (hash-ref options 'autoFirstPage #t))
   (current-doc-offset 0)
   
-  (field [doc-portal (open-output-bytes)]
-         [_pageBuffer null]
+  (field [_pageBuffer null]
          [_offsets (mhasheqv)] ; The PDF object store
          [_ended #f]
          [ref-gen (generator ()
@@ -52,7 +51,7 @@
                 'CreationDate (seconds->date (if (test-mode)
                                                  0
                                                  (current-seconds)) #f))]  ; Initialize the metadata
-         [output-port #f]) ; for `pipe`
+         ) ; for `pipe`
         
 
   ;; Initialize mixins
@@ -70,7 +69,7 @@
     (define bstr (if (not (bytes? x))
                      (string->bytes/latin-1 (string-append x "\n"))
                      x))
-    (write-bytes bstr doc-portal)
+    (write-bytes bstr)
     (current-doc-offset (+ (current-doc-offset) (bytes-length bstr))))
       
   (define/public (addPage [options-arg options])
@@ -107,9 +106,6 @@
 
   (define/public (_refEnd aref)
     (hash-set! _offsets (· aref id) (· aref offset)))
-  
-  (define/public (pipe port)
-    (set! output-port port))
 
   (define/public (end) ; called from source file to finish doc
     (flushPages)
@@ -150,14 +146,7 @@
                    'Info _info)))
     (write "startxref")
     (write (number xref-offset))
-    (write "%%EOF")
-     
-    ;; end the stream
-    ;; in node you (@push null) which signals to the stream
-    ;; to copy to its output port
-    ;; here we'll do it manually
-    (write-bytes (get-output-bytes doc-portal) output-port)
-    (close-output-port output-port))
+    (write "%%EOF"))
 
   ; if no 'info key, nothing will be copied from (hash)
   (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) 
