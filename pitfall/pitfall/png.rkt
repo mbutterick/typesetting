@@ -47,7 +47,7 @@
                                   'Colors (· this image colors)
                                   'BitsPerComponent (· this image bits)
                                   'Columns (· this width))))
-      (hash-set! (· this obj payload) 'DecodeParms params)
+      (send (· this obj) set-key! 'DecodeParms params)
       (send params end))
 
     (cond
@@ -57,9 +57,9 @@
        (send* palette-ref [write (· this image palette)] [end])
 
        ;; build the color space array for the image
-       (hash-set! (· this object payload) 'Colorspace
+       (send (· this object) set-key! 'Colorspace
                   (list "Indexed" "DeviceRGB" (sub1 (bytes-length (· this image palette))) palette-ref))]
-      [else (hash-set! (· this obj payload) 'ColorSpace "DeviceRGB")])
+      [else (send (· this obj) set-key! 'ColorSpace "DeviceRGB")])
 
    
     (cond
@@ -91,7 +91,7 @@
                    'ColorSpace "DeviceGray"
                    'Decode '(0 1))))
     (send* sMask [write (· this alphaChannel)] [end])
-    (hash-set! (· this obj payload) 'SMask sMask))
+    (send (· this obj) set-key! 'SMask sMask))
   
   ;; embed the actual image data
   (send* (· this obj) [write (· this imgData)] [end]))

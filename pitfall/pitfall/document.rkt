@@ -56,7 +56,7 @@
     (define/public (page) (first @pages))
 
     ;; for use by page.rkt rather than invading our fields
-    (define/public (page-parent) (hash-ref (get-field payload @root) 'Pages))
+    (define/public (page-parent) (send @root get-key 'Pages))
 
     (define/public (ref [payload (mhasheq)])
       (define refid (@ref-gen))
@@ -79,9 +79,9 @@
   
       ;; in Kids, store page dictionaries in correct order
       ;; this determines order in document
-      (define pages (get-field payload (hash-ref (get-field payload @root) 'Pages)))
-      (hash-update! pages 'Kids (λ (val) (append val (list (get-field dictionary (page))))))
-      (hash-set! pages 'Count (length (hash-ref pages 'Kids)))
+      (define pages (send @root get-key 'Pages))
+      (send pages update-key! 'Kids (λ (val) (append val (list (get-field dictionary (page))))))
+      (send pages set-key! 'Count (length (send pages get-key 'Kids)))
 
       ;; reset x and y coordinates
       (set! @x (hash-ref (get-field margins (page)) 'left))
@@ -107,13 +107,13 @@
       (define doc-info (ref))
       (for ([(key val) (in-hash @info)])
         ;; upgrade string literal to String struct
-        (hash-set! (get-field payload doc-info) key (if (string? val) (String val) val)))
+        (send doc-info set-key! key (if (string? val) (String val) val)))
       (send doc-info end)
     
       (for ([font (in-hash-values @font-families)])
         (send font finalize))
       (send @root end)
-      (send (hash-ref (get-field payload @root) 'Pages) end)
+      (send (send @root get-key 'Pages) end)
 
       (define xref-offset (current-doc-offset))
       (match-define (list this-idxs this-offsets)

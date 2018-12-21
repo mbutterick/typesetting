@@ -68,7 +68,7 @@
     ;; min and max values from the default, we invert the colors. See
     ;; section 4.8.4 of the spec. 
     (when (equal? (· this colorSpace) "DeviceCMYK")
-      (hash-set! (· this obj payload) 'Decode '(1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0)))
+      (send (· this obj) set-key! 'Decode '(1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0)))
 
     (port-position (· this data) 0)
     (send* (· this obj) [write (· this data)]

@@ -90,7 +90,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define fontFile (· this document ref))
 
   (when isCFF
-    (hash-set! (· fontFile payload) 'Subtype "CIDFontType0C"))
+    (send fontFile set-key! 'Subtype "CIDFontType0C"))
   
   (send* fontFile [write (get-output-bytes (encode-to-port (· this subset)))] [end])
 
@@ -131,7 +131,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                             'XHeight (* (or (font-x-height (· this font)) 0) (· this scale))
                             'StemV 0)))
 
-  (hash-set! (· descriptor payload) (if isCFF
+  (send descriptor set-key! (if isCFF
                                         'FontFile3
                                         'FontFile2) fontFile)
 
@@ -152,13 +152,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                                      (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
 
   (· descendantFont end)
-  (hash-set*! (· this dictionary payload)
-              'Type "Font"
-              'Subtype "Type0"
-              'BaseFont name
-              'Encoding "Identity-H"
-              'DescendantFonts (list descendantFont)
-              'ToUnicode (· this toUnicodeCmap))
+  (send* (· this dictionary)
+              [set-key! 'Type "Font"]
+              [set-key! 'Subtype "Type0"]
+              [set-key! 'BaseFont name]
+              [set-key! 'Encoding "Identity-H"]
+              [set-key! 'DescendantFonts (list descendantFont)]
+              [set-key! 'ToUnicode (· this toUnicodeCmap)])
 
   (· this dictionary end))
 

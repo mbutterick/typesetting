@@ -16,17 +16,23 @@
     (field [(@offset offset) #f]
            [@portal (open-output-bytes)])
 
-    (define/public (write x)
+    (define/public (write x [op @portal])
       (define bstr (match x
                      [(? bytes?) x]
                      [(? input-port?) (port->bytes x)]
                      [_ (string->bytes/latin-1 (format "~a\n" x))]))
-      (write-bytes bstr @portal))
+      (write-bytes bstr op))
 
-    (define/public (end [chunk #f])
-      (when chunk
-        (write chunk))
+    (define/public (get-key key)
+      (hash-ref @payload key))
 
+    (define/public (set-key! key val)
+      (hash-set! @payload key val))
+
+    (define/public (update-key! key updater)
+      (hash-update! @payload key updater))
+
+    (define/public (end)
       (set! @offset (current-doc-offset))
   
       (send @doc write (format "~a 0 obj" @id))
