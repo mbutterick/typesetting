@@ -1,4 +1,4 @@
-#lang at-exp racket/base
+#lang debug at-exp racket/base
 (require
   "helper.rkt"
   "param.rkt"
