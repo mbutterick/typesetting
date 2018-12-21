@@ -6,6 +6,7 @@
   racket/format
   racket/contract
   racket/generator
+  racket/match
   racket/list
   sugar/unstable/class
   sugar/unstable/js
@@ -29,7 +30,7 @@
   (current-auto-first-page (hash-ref options 'autoFirstPage #t))
   (current-doc-offset 0)
   
-  (field [doc-byte-strings (open-output-bytes)]
+  (field [doc-portal (open-output-bytes)]
          [_pageBuffer null]
          [_offsets (mhasheqv)] ; The PDF object store
          [_ended #f]
@@ -69,7 +70,7 @@
     (define bstr (if (not (bytes? x))
                      (string->bytes/latin-1 (string-append x "\n"))
                      x))
-    (write-bytes bstr doc-byte-strings)
+    (write-bytes bstr doc-portal)
     (current-doc-offset (+ (current-doc-offset) (bytes-length bstr))))
       
   (define/public (addPage [options-arg options])
@@ -79,7 +80,7 @@
 
     ;; create a page object
     (set! page (make-object PDFPage this options-arg))
-    (push-field! _pageBuffer this page)
+    (set! _pageBuffer (cons page _pageBuffer))
   
     ;; in Kids, store page dictionaries in correct order
     ;; this determines order in document
@@ -104,8 +105,8 @@
     (send page write data)
     this)
 
-  (define/public (_refEnd ref)
-    (hash-set! _offsets (· ref id) (· ref offset)))
+  (define/public (_refEnd aref)
+    (hash-set! _offsets (· aref id) (· aref offset)))
   
   (define/public (pipe port)
     (set! output-port port))
@@ -125,11 +126,10 @@
     (· _root end)
     (· _root payload Pages end)
 
-    ;; generate xref
     (define xref-offset (current-doc-offset))
-    (define sorted-offset-records  (sort (hash->list _offsets) < #:key car)) ; sort by refid
-    (define this-offsets (map cdr sorted-offset-records))
-    (define this-idxs (map car sorted-offset-records))
+    (match-define (list this-idxs this-offsets)
+      (match (sort (hash->list _offsets) < #:key car) ; sort by refid
+        [(list (cons idxs offsets) ...) (list idxs offsets)]))
     (write "xref")
     (write (format "0 ~a" (add1 (length this-offsets))))
     (write "0000000000 65535 f ")
@@ -156,7 +156,7 @@
     ;; in node you (@push null) which signals to the stream
     ;; to copy to its output port
     ;; here we'll do it manually
-    (write-bytes (get-output-bytes doc-byte-strings) output-port)
+    (write-bytes (get-output-bytes doc-portal) output-port)
     (close-output-port output-port))
 
   ; if no 'info key, nothing will be copied from (hash)
