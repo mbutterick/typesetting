@@ -26,7 +26,7 @@ doc.font('Charter')
    .image('test.jpeg', 190, 400, height: 300)
 
 # Add another page
-doc.addPage()
+doc.add-page()
    .fontSize(25)
    .text 'Here is some vector graphics...', 100, 100
 
@@ -58,7 +58,7 @@ doc.text('And here is some wrapped text...', 100, 300)
    .text(loremIpsum, width: 412, align: 'justify', indent: 30, paragraphGap: 5)
 
 # Add another page, and set the font back   
-doc.addPage()
+doc.add-page()
    .font('Charter', 25)
    .text('Rendering some SVG paths...', 100, 100)
    .translate(220, 300)
@@ -83,7 +83,7 @@ for part in tiger
     doc.restore()
 
 # Add some text with annotations            
-doc.addPage()
+doc.add-page()
    .fillColor("blue")
    .text('Here is a link!', 100, 100, { link: 'http://google.com/', underline: true })
 doc.end()
