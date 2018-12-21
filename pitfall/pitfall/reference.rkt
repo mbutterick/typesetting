@@ -21,8 +21,7 @@
                      [(? bytes?) x]
                      [(? input-port?) (port->bytes x)]
                      [_ (string->bytes/latin-1 (format "~a\n" x))]))
-      (write-bytes bstr @portal)
-      (void))
+      (write-bytes bstr @portal))
 
     (define/public (end [chunk #f])
       (when chunk
@@ -36,7 +35,7 @@
         (let ([bstr (get-output-bytes @portal)])
           (cond
             [(zero? (bytes-length bstr)) #false]
-            [(and (compress-streams?) (not (hash-ref @payload 'Filter #f)))
+            [(and (current-compress-streams?) (not (hash-ref @payload 'Filter #f)))
              (hash-set! @payload 'Filter "FlateDecode")
              (deflate bstr)]
             [else bstr])))

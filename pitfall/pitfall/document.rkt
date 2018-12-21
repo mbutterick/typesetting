@@ -1,6 +1,5 @@
 #lang debug at-exp racket/base
 (require
-  "helper.rkt"
   "param.rkt"
   "struct.rkt"
   racket/class
@@ -25,7 +24,8 @@
 (define mixed% (annotation-mixin (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%)))))))
 
 (define-subclass mixed% (PDFDocument [options (mhash)])
-  (compress-streams? (hash-ref options 'compress #t))
+  (current-compress-streams? (hash-ref options 'compress #t))
+  (current-auto-first-page (hash-ref options 'autoFirstPage #t))
   (current-doc-offset 0)
   
   (field [doc-byte-strings empty]
@@ -75,7 +75,7 @@
   (write this (string-append "%" (list->string (map integer->char (make-list 4 #xFF))))) ; 4 binary chars, as recommended by the spec
 
   ;; Add the first page
-  (when (hash-ref options 'autoFirstPage #t) (addPage this)))
+  (when (current-auto-first-page) (addPage this)))
 
     
 (define/contract (addPage this [options-arg (· this options)])

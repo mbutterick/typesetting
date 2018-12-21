@@ -79,8 +79,7 @@
   (->m number?)
   (- (· this height) (· this margins bottom)))
 
-(define/contract (write this chunk)
-  (any/c . ->m . void?)
+(define (write this chunk)
   (send (· this content) write chunk)) ; resume here
 
 (define/contract (end this)
