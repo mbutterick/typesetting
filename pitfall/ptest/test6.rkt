@@ -4,15 +4,15 @@
 (define (proc doc)
   (send* doc
     [text "Page 1"]
-    [addPage]
+    [add-page]
     [text "Page 2"]
-    [addPage]
+    [add-page]
     [text "Page 3"]
-    [addPage]
+    [add-page]
     [text "Page 4"]
-    [addPage]
+    [add-page]
     [text "Page 5"]
-    [addPage]
+    [add-page]
     [text "Page 6"]))
 
 (define-runtime-path this "test6rkt.pdf")
