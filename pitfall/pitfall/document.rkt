@@ -29,7 +29,7 @@
   (current-auto-first-page (hash-ref options 'autoFirstPage #t))
   (current-doc-offset 0)
   
-  (field [doc-byte-strings empty]
+  (field [doc-byte-strings (open-output-bytes)]
          [_pageBuffer null]
          [_offsets (mhasheqv)] ; The PDF object store
          [_ended #f]
@@ -69,7 +69,7 @@
     (define bstr (if (not (bytes? x))
                      (string->bytes/latin-1 (string-append x "\n"))
                      x))
-    (set! doc-byte-strings (cons bstr  doc-byte-strings))
+    (write-bytes bstr doc-byte-strings)
     (current-doc-offset (+ (current-doc-offset) (bytes-length bstr))))
       
   (define/public (addPage [options-arg options])
@@ -156,10 +156,8 @@
     ;; in node you (@push null) which signals to the stream
     ;; to copy to its output port
     ;; here we'll do it manually
-    (define this-output-port (· this output-port))
-    (copy-port (open-input-bytes
-                (apply bytes-append (reverse (· this doc-byte-strings)))) this-output-port)
-    (close-output-port this-output-port))
+    (write-bytes (get-output-bytes doc-byte-strings) output-port)
+    (close-output-port output-port))
 
   ; if no 'info key, nothing will be copied from (hash)
   (for ([(key val) (in-hash (hash-ref options 'info (hash)))]) 
