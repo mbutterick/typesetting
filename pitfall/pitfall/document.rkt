@@ -28,9 +28,7 @@
                                      (yield refid)
                                      (loop (add1 refid))))]
            [@root (ref 'Type "Catalog"
-                       'Pages (ref 'Type "Pages"
-                                   'Count 0
-                                   'Kids empty))] ; top object
+                       'Pages (ref 'Type "Pages"))] ; top object
            [(@x x) 0]
            [(@y y) 0]
            [@info (mhasheq 'Producer "PITFALL"
@@ -62,7 +60,7 @@
                         [(list (? hash? h)) h]
                         [_ (define h (make-hasheq))
                            (for ([pr (in-hash-pairs (apply hasheq args))])
-                             (hash-set! h (car pr) (cdr pr)))
+                                (hash-set! h (car pr) (cdr pr)))
                            h]))                          
       (define new-ref (make-object PDFReference this refid payload))
       (set! @refs (cons new-ref @refs))
@@ -74,20 +72,10 @@
       (current-doc-offset (file-position (current-output-port))))
       
     (define/public (add-page [options-arg @options])
-      ;; end the current page if needed
-      (unless (hash-ref @options 'bufferPages #f)
-        (flush-pages))
-
       ;; create a page object
       (define page-parent (send @root get-key 'Pages))
       (set! @pages (cons (make-object PDFPage this page-parent options-arg) @pages))
-  
-      ;; in Kids, store page dictionaries in correct order
-      ;; this determines order in document
-      (define pages (send @root get-key 'Pages))
-      (send pages update-key! 'Kids (λ (val) (append val (list (get-field dictionary (page))))))
-      (send pages set-key! 'Count (length (send pages get-key 'Kids)))
-
+      
       ;; reset x and y coordinates
       (set! @x (hash-ref (get-field margins (page)) 'left))
       (set! @y (hash-ref (get-field margins (page)) 'top))
@@ -97,27 +85,31 @@
       (send this transform 1 0 0 -1 0 (get-field height (page)))
       this)
 
-    (define/public (flush-pages)
-      (for-each (λ (p) (send p end)) @pages)
-      (set! @pages empty))
-
     (define/public (addContent data)
       (send (page) write data)
       this)
 
     (define/public (end)
       (write (format "%PDF-~a\n%ÿÿÿÿ" (current-pdf-version)))
-      (flush-pages)
+
+      (for ([p (in-list @pages)])
+           (send p end))
+
       (define doc-info (ref))
       (for ([(key val) (in-hash @info)])
-        (send doc-info set-key! key (if (string? val) (String val) val)))
+           (send doc-info set-key! key (if (string? val) (String val) val)))
       (send doc-info end)
     
       (for ([font (in-hash-values @font-families)])
-        (send font finalize))
-      (send @root end)
-      (send (send @root get-key 'Pages) end)
+           (send font finalize))
 
+      (send* (send @root get-key 'Pages)
+        [set-key! 'Count (length @pages)]
+        [set-key! 'Kids (map (λ (page) (get-field dictionary page)) (reverse @pages))]
+        [end])
+      
+      (send @root end)
+      
       (define xref-offset (current-doc-offset))
       (match-define (list this-idxs this-offsets)
         (match (reverse @refs)
@@ -129,12 +121,12 @@
       (let ([missing-offsets (for/list ([offset (in-list this-offsets)]
                                         [idx (in-list this-idxs)]
                                         #:unless (number? offset))
-                               idx)])
+                                       idx)])
         (unless (empty? missing-offsets)
           (raise-argument-error 'document:end "numerical offsets" missing-offsets)))
       (for ([offset (in-list this-offsets)]
             [idx (in-list this-idxs)])
-        (write (string-append (~r offset #:min-width 10 #:pad-string "0") " 00000 n ")))
+           (write (string-append (~r offset #:min-width 10 #:pad-string "0") " 00000 n ")))
     
       (write "trailer")
       (write (convert (mhasheq 'Size (add1 (length this-offsets))
@@ -145,7 +137,7 @@
       (write "%%EOF"))
 
     (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
-      (hash-set! @info key val))))
+         (hash-set! @info key val))))
 
 (module+ test
   (define d (new PDFDocument)))
