@@ -17,4 +17,4 @@
 (check-equal? (· p dictionary payload MediaBox)  '(0 0 612.0 792.0))
 (check-true (is-a? (· p dictionary payload Contents) PDFReference))
 (check-true (is-a? (· p dictionary payload Resources) PDFReference))
-(check-true (is-a? (· p dictionary payload Parent) PDFReference))
+#;(check-true (is-a? (· p dictionary payload Parent) PDFReference))

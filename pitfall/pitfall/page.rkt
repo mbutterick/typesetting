@@ -11,7 +11,7 @@
 (define PDFPage
   (class object%
     (super-new)
-    (init-field document [options (mhash)])
+    (init-field document [page-parent #false] [options (mhash)])
     (field [size (hash-ref options 'size "letter")]
            [layout (hash-ref options 'layout "portrait")]
            ;; calculate page dimensions
@@ -36,7 +36,7 @@
            [dictionary
             (send document ref
                   (mhash 'Type "Page"
-                         'Parent (send document page-parent)
+                         'Parent page-parent
                          'MediaBox (list 0 0 width height)
                          'Contents content
                          'Resources resources))])

@@ -25,12 +25,12 @@
     (field [@pages null]
            [@refs null]
            [@ref-gen (generator () (let loop ([refid 1])
-                                    (yield refid)
-                                    (loop (add1 refid))))]
-           [@root (ref (mhasheq 'Type "Catalog"
-                                'Pages (ref (mhasheq 'Type "Pages"
-                                                     'Count 0
-                                                     'Kids empty))))] ; top object
+                                     (yield refid)
+                                     (loop (add1 refid))))]
+           [@root (ref 'Type "Catalog"
+                       'Pages (ref 'Type "Pages"
+                                   'Count 0
+                                   'Kids empty))] ; top object
            [(@x x) 0]
            [(@y y) 0]
            [@info (mhasheq 'Producer "PITFALL"
@@ -52,14 +52,18 @@
     (current-compress-streams? (hash-ref @options 'compress #t))
     (current-auto-first-page (hash-ref @options 'autoFirstPage #t))
     (current-doc-offset 0)
+    (when (current-auto-first-page) (add-page))
 
     (define/public (page) (first @pages))
 
-    ;; for use by page.rkt rather than invading our fields
-    (define/public (page-parent) (send @root get-key 'Pages))
-
-    (define/public (ref [payload (mhasheq)])
+    (define/public (ref . args)
       (define refid (@ref-gen))
+      (define payload (match args
+                        [(list (? hash? h)) h]
+                        [_ (define h (make-hasheq))
+                           (for ([pr (in-hash-pairs (apply hasheq args))])
+                             (hash-set! h (car pr) (cdr pr)))
+                           h]))                          
       (define new-ref (make-object PDFReference this refid payload))
       (set! @refs (cons new-ref @refs))
       new-ref)
@@ -69,13 +73,14 @@
       (write-bytes bstr)
       (current-doc-offset (file-position (current-output-port))))
       
-    (define/public (addPage [options-arg @options])
+    (define/public (add-page [options-arg @options])
       ;; end the current page if needed
       (unless (hash-ref @options 'bufferPages #f)
         (flush-pages))
 
       ;; create a page object
-      (set! @pages (cons (make-object PDFPage this options-arg) @pages))
+      (define page-parent (send @root get-key 'Pages))
+      (set! @pages (cons (make-object PDFPage this page-parent options-arg) @pages))
   
       ;; in Kids, store page dictionaries in correct order
       ;; this determines order in document
@@ -100,13 +105,11 @@
       (send (page) write data)
       this)
 
-    (define/public (end) ; called from source file to finish doc
-      (write (format "%PDF-~a" (current-pdf-version)))
-      (write (string-append "%" (list->string (map integer->char (make-list 4 #xFF)))))
+    (define/public (end)
+      (write (format "%PDF-~a\n%ÿÿÿÿ" (current-pdf-version)))
       (flush-pages)
       (define doc-info (ref))
       (for ([(key val) (in-hash @info)])
-        ;; upgrade string literal to String struct
         (send doc-info set-key! key (if (string? val) (String val) val)))
       (send doc-info end)
     
@@ -134,20 +137,15 @@
         (write (string-append (~r offset #:min-width 10 #:pad-string "0") " 00000 n ")))
     
       (write "trailer")
-      (write (convert
-              (mhash 'Size (add1 (length this-offsets))
-                     'Root @root
-                     'Info doc-info)))
+      (write (convert (mhasheq 'Size (add1 (length this-offsets))
+                               'Root @root
+                               'Info doc-info)))
       (write "startxref")
       (write (numberizer xref-offset))
       (write "%%EOF"))
 
-    ; if no 'info key, nothing will be copied from (hash)
-    (for ([(key val) (in-hash (hash-ref @options 'info (hash)))]) 
-      (hash-set! @info key val))
-
-    ;; Add the first page
-    (when (current-auto-first-page) (addPage))))
+    (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
+      (hash-set! @info key val))))
 
 (module+ test
   (define d (new PDFDocument)))
