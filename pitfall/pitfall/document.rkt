@@ -30,7 +30,7 @@
   
   (field [doc-byte-strings empty]
          [_pageBuffer null]
-         [_offsets (mhash)] ; The PDF object store
+         [_offsets (mhasheqv)] ; The PDF object store
          [_ended #f]
          [_root (ref this
                      (mhash 'Type "Catalog"
