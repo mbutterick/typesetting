@@ -23,12 +23,10 @@
     (super-new)
     (init-field [(@options options) (mhasheq)])  
     (field [@pages null]
-           [@offsets (mhasheqv)] ; The PDF object stores
-           [ref-gen (generator ()
-                               (let loop ([refid 1])
-                                 (hash-set! @offsets refid #f)
-                                 (yield refid)
-                                 (loop (add1 refid))))]
+           [@refs null]
+           [ref-gen (generator () (let loop ([refid 1])
+                                    (yield refid)
+                                    (loop (add1 refid))))]
            [(@root _root) (ref (mhasheq 'Type "Catalog"
                                         'Pages (ref (mhasheq 'Type "Pages"
                                                              'Count 0
@@ -59,7 +57,10 @@
     (define/public (page) (first @pages))
 
     (define/public (ref [payload (mhasheq)])
-      (make-object PDFReference this (ref-gen) payload))
+      (define refid (ref-gen))
+      (define new-ref (make-object PDFReference this refid payload))
+      (set! @refs (cons new-ref @refs))
+      new-ref)
 
     (define/public (write x)
       (define bstr (if (bytes? x) x (string->bytes/latin-1 (string-append x "\n"))))
@@ -97,9 +98,6 @@
       (send (page) write data)
       this)
 
-    (define/public (_refEnd aref)
-      (hash-set! @offsets (get-field id aref) (get-field offset aref)))
-
     (define/public (end) ; called from source file to finish doc
       (write (format "%PDF-~a" (current-pdf-version)))
       (write (string-append "%" (list->string (map integer->char (make-list 4 #xFF)))))
@@ -117,8 +115,9 @@
 
       (define xref-offset (current-doc-offset))
       (match-define (list this-idxs this-offsets)
-        (match (sort (hash->list @offsets) < #:key car) ; sort by refid
-          [(list (cons idxs offsets) ...) (list idxs offsets)]))
+        (match (reverse @refs)
+          [(list refs ...) (list (map (λ (ref) (get-field id ref)) refs)
+                                 (map (λ (ref) (get-field offset ref)) refs))]))
       (write "xref")
       (write (format "0 ~a" (add1 (length this-offsets))))
       (write "0000000000 65535 f ")
@@ -148,5 +147,5 @@
     ;; Add the first page
     (when (current-auto-first-page) (addPage))))
 
-  (module+ test
-    (define d (new PDFDocument)))
+(module+ test
+  (define d (new PDFDocument)))

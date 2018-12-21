@@ -47,8 +47,7 @@
       (when bstr
         (send @doc write (bytes-append #"stream\n" bstr #"\nendstream")))
       
-      (send @doc write "\nendobj")
-      (send @doc _refEnd this))
+      (send @doc write "\nendobj"))
 
     (define/public (to-string)
       (format "~a 0 R" @id))))
