@@ -27,8 +27,8 @@
            [@ref-gen (generator () (let loop ([refid 1])
                                      (yield refid)
                                      (loop (add1 refid))))]
-           [@root (ref 'Type "Catalog"
-                       'Pages (ref 'Type "Pages"))] ; top object
+           [@root (ref (mhasheq 'Type "Catalog"
+                                'Pages (ref (mhasheq 'Type "Pages"))))] ; top object
            [(@x x) 0]
            [(@y y) 0]
            [@info (mhasheq 'Producer "PITFALL"
@@ -54,14 +54,8 @@
 
     (define/public (page) (first @pages))
 
-    (define/public (ref . args)
+    (define/public (ref [payload (mhasheq)])
       (define refid (@ref-gen))
-      (define payload (match args
-                        [(list (? hash? h)) h]
-                        [_ (define h (make-hasheq))
-                           (for ([pr (in-hash-pairs (apply hasheq args))])
-                                (hash-set! h (car pr) (cdr pr)))
-                           h]))                          
       (define new-ref (make-object PDFReference this refid payload))
       (set! @refs (cons new-ref @refs))
       new-ref)
