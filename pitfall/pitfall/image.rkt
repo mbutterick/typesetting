@@ -17,7 +17,7 @@
 (define/contract (PDFImage-open src label)
   (any/c any/c . -> . (or/c (is-a?/c PNG) (is-a?/c JPEG)))
   (define data (cond
-                 [(isBuffer? src) src]
+                 [(bytes? src) src]
                  ;;else if src instanceof ArrayBuffer
                  ;;data = new Buffer(new Uint8Array(src))
                  [(regexp-match #rx"^data:.+;base64,(.*)$" src)

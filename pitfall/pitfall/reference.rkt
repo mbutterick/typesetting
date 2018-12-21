@@ -24,18 +24,18 @@
 
 
 (define/contract (write this x)
-  ((or/c string? isBuffer? input-port?) . ->m . void?)
+  ((or/c string? bytes? input-port?) . ->m . void?)
   (push-field! ref-byte-strings this
                (let loop ([x x])
                  (cond
-                   [(isBuffer? x) x]
+                   [(bytes? x) x]
                    [(input-port? x) (loop (port->bytes x))]
                    [else (bytes-append (newBuffer x) #"\n")]))))
 
 (define got-ref-byte-strings? pair?)
 
 (define/contract (end this [chunk #f])
-  (() ((or/c string? isBuffer? input-port?)) . ->*m . void?)
+  (() ((or/c string? bytes? input-port?)) . ->*m . void?)
   (when chunk (send this write chunk))
 
   #;(report* 'end! (· this id))

@@ -122,8 +122,8 @@
 
 
 (define/contract (write this x)
-  ((or/c string? isBuffer?) . ->m . any/c)
-  (define bstr (if (not (isBuffer? x))
+  ((or/c string? bytes?) . ->m . any/c)
+  (define bstr (if (not (bytes? x))
                    (newBuffer (string-append x "\n"))
                    x))
   (push-field! doc-byte-strings this bstr)
