@@ -24,13 +24,11 @@
 
 (define mixed% (annotation-mixin (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%)))))))
 
-(define pdf-version 1.3)
-
 (define-subclass mixed% (PDFDocument [options (mhash)])
   (compress-streams? (hash-ref options 'compress #t))
   (current-doc-offset 0)
   
-  (field [byte-strings empty]
+  (field [doc-byte-strings empty]
          [_pageBuffer null]
          [_offsets (mhash)] ; The PDF object store
          [_ended #f]
@@ -73,7 +71,7 @@
        (hash-set! info key val))
 
   ;; Write the header
-  (write this (format "%PDF-~a" pdf-version)) ;  PDF version
+  (write this (format "%PDF-~a" (current-pdf-version))) ;  PDF version
   (write this (string-append "%" (list->string (map integer->char (make-list 4 #xFF))))) ; 4 binary chars, as recommended by the spec
 
   ;; Add the first page
@@ -128,7 +126,7 @@
   (define bstr (if (not (isBuffer? x))
                    (newBuffer (string-append x "\n"))
                    x))
-  (push-field! byte-strings this bstr)
+  (push-field! doc-byte-strings this bstr)
   (current-doc-offset (+ (current-doc-offset) (buffer-length bstr))))
 
 
@@ -212,7 +210,7 @@
   ;; here we'll do it manually
   (define this-output-port (· this output-port))
   (copy-port (open-input-bytes
-              (apply bytes-append (reverse (· this byte-strings)))) this-output-port)
+              (apply bytes-append (reverse (· this doc-byte-strings)))) this-output-port)
   (close-output-port this-output-port))
 
 

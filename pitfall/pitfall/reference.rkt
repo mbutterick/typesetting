@@ -14,7 +14,7 @@
 (provide PDFReference)
 
 (define-subclass object% (PDFReference document id [payload (mhash)])
-  (field [byte-strings empty]
+  (field [ref-byte-strings empty]
          [offset #f])
 
   (as-methods
@@ -25,14 +25,14 @@
 
 (define/contract (write this x)
   ((or/c string? isBuffer? input-port?) . ->m . void?)
-  (push-field! byte-strings this
+  (push-field! ref-byte-strings this
                (let loop ([x x])
                  (cond
                    [(isBuffer? x) x]
                    [(input-port? x) (loop (port->bytes x))]
                    [else (bytes-append (newBuffer x) #"\n")]))))
 
-(define got-byte-strings? pair?)
+(define got-ref-byte-strings? pair?)
 
 (define/contract (end this [chunk #f])
   (() ((or/c string? isBuffer? input-port?)) . ->*m . void?)
@@ -40,16 +40,16 @@
 
   #;(report* 'end! (· this id))
   (define bstrs-to-write
-    (let ([current-bstrs (reverse (· this byte-strings))])
+    (let ([current-bstrs (reverse (· this ref-byte-strings))])
       (if (and (compress-streams?)
                (not (hash-ref (· this payload) 'Filter #f))
-               (got-byte-strings? current-bstrs))
+               (got-ref-byte-strings? current-bstrs))
           (let ([deflated-chunk (deflate (apply bytes-append current-bstrs))])
             (hash-set! (· this payload) 'Filter "FlateDecode")
             (list deflated-chunk))
           current-bstrs)))
   
-  (when (got-byte-strings? bstrs-to-write)
+  (when (got-ref-byte-strings? bstrs-to-write)
     (hash-set! (· this payload) 'Length (apply + (map buffer-length bstrs-to-write))))
 
   (define this-doc (· this document)) 
@@ -58,7 +58,7 @@
   (with-method ([doc_write (this-doc write)])
     (doc_write (format "~a 0 obj" (· this id)))
     (doc_write (convert (· this payload)))
-    (when (got-byte-strings? bstrs-to-write)
+    (when (got-ref-byte-strings? bstrs-to-write)
       (doc_write "stream")
       (for ([bstr (in-list bstrs-to-write)])
         (doc_write bstr))
