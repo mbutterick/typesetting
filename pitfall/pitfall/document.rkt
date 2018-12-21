@@ -24,21 +24,20 @@
     (init-field [(@options options) (mhasheq)])  
     (field [@pages null]
            [@refs null]
-           [ref-gen (generator () (let loop ([refid 1])
+           [@ref-gen (generator () (let loop ([refid 1])
                                     (yield refid)
                                     (loop (add1 refid))))]
-           [(@root _root) (ref (mhasheq 'Type "Catalog"
-                                        'Pages (ref (mhasheq 'Type "Pages"
-                                                             'Count 0
-                                                             'Kids empty))))] ; top object
+           [@root (ref (mhasheq 'Type "Catalog"
+                                'Pages (ref (mhasheq 'Type "Pages"
+                                                     'Count 0
+                                                     'Kids empty))))] ; top object
            [(@x x) 0]
            [(@y y) 0]
-           [(@info info) (mhasheq
-                          'Producer "PITFALL"
-                          'Creator "PITFALL"
-                          'CreationDate (seconds->date (if (test-mode)
-                                                           0
-                                                           (current-seconds)) #f))])  ; Initialize the metadata
+           [@info (mhasheq 'Producer "PITFALL"
+                           'Creator "PITFALL"
+                           'CreationDate (seconds->date (if (test-mode)
+                                                            0
+                                                            (current-seconds)) #f))])  ; Initialize the metadata
 
     ;; Initialize mixins
     (send this initColor)
@@ -56,8 +55,11 @@
 
     (define/public (page) (first @pages))
 
+    ;; for use by page.rkt rather than invading our fields
+    (define/public (page-parent) (hash-ref (get-field payload @root) 'Pages))
+
     (define/public (ref [payload (mhasheq)])
-      (define refid (ref-gen))
+      (define refid (@ref-gen))
       (define new-ref (make-object PDFReference this refid payload))
       (set! @refs (cons new-ref @refs))
       new-ref)

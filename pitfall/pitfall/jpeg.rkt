@@ -71,7 +71,8 @@
       (hash-set! (· this obj payload) 'Decode '(1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0)))
 
     (port-position (· this data) 0)
-    (send (· this obj) end (· this data))))
+    (send* (· this obj) [write (· this data)]
+      [end])))
 
 (module+ test
   (require rackunit)

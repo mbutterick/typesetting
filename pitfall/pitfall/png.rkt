@@ -54,7 +54,7 @@
       [(hash-has-key? (· this image) 'palette)
        ;; embed the color palette in the PDF as an object stream
        (define palette-ref (· this document ref))
-       (send palette-ref end (· this image palette))
+       (send* palette-ref [write (· this image palette)] [end])
 
        ;; build the color space array for the image
        (hash-set! (· this object payload) 'Colorspace
@@ -90,11 +90,11 @@
                    'Filter "FlateDecode"
                    'ColorSpace "DeviceGray"
                    'Decode '(0 1))))
-    (send sMask end (· this alphaChannel))
+    (send* sMask [write (· this alphaChannel)] [end])
     (hash-set! (· this obj payload) 'SMask sMask))
   
   ;; embed the actual image data
-  (send (· this obj) end (· this imgData)))
+  (send* (· this obj) [write (· this imgData)] [end]))
 
 
 (define (split-alpha-channel this)

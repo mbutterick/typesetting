@@ -36,7 +36,7 @@
            [dictionary
             (send document ref
                   (mhash 'Type "Page"
-                         'Parent (· document _root payload Pages)
+                         'Parent (send document page-parent)
                          'MediaBox (list 0 0 width height)
                          'Contents content
                          'Resources resources))])

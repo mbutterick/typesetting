@@ -92,7 +92,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (when isCFF
     (hash-set! (· fontFile payload) 'Subtype "CIDFontType0C"))
   
-  (send fontFile end (get-output-bytes (encode-to-port (· this subset))))
+  (send* fontFile [write (get-output-bytes (encode-to-port (· this subset)))] [end])
 
   (define familyClass (let ([val (if (has-table? (· this font) 'OS/2)
                                      (· (get-OS/2-table (· this font)) sFamilyClass)
@@ -199,7 +199,8 @@ end
 HERE
     )
   
-  (send cmap end (format unicode-cmap-str (toHex (sub1 (length entries))) (string-join entries " ")))
+  (send* cmap [write (format unicode-cmap-str (toHex (sub1 (length entries))) (string-join entries " "))]
+    [end])
                                          
   cmap)
 
