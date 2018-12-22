@@ -28,7 +28,7 @@
                                      (yield refid)
                                      (loop (add1 refid))))]
            [@root (ref (mhasheq 'Type "Catalog"
-                                'Pages (ref (mhasheq 'Type "Pages"))))] ; top object
+                                'Pages (ref (mhasheq 'Type "Pages"))))]
            [(@x x) 0]
            [(@y y) 0]
            [@info (mhasheq 'Producer "PITFALL"
@@ -37,7 +37,9 @@
                                                             0
                                                             (current-seconds)) #f))])  ; Initialize the metadata
 
-    ;; Initialize mixins
+    
+    
+    ;; initialize mixins
     (send this initColor)
     (send this initVector)
     (inherit-field _ctm)
@@ -49,22 +51,19 @@
     ;; initialize params
     (current-compress-streams? (hash-ref @options 'compress #t))
     (current-auto-first-page (hash-ref @options 'autoFirstPage #t))
-    (current-doc-offset 0)
     (when (current-auto-first-page) (add-page))
+
+    ;; copy options
+    (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
+         (hash-set! @info key val))
 
     (define/public (page) (first @pages))
 
     (define/public (ref [payload (mhasheq)])
-      (define refid (@ref-gen))
-      (define new-ref (make-object PDFReference this refid payload))
+      (define new-ref (make-object PDFReference this (@ref-gen) payload))
       (set! @refs (cons new-ref @refs))
       new-ref)
 
-    (define/public (write x)
-      (define bstr (if (bytes? x) x (string->bytes/latin-1 (string-append x "\n"))))
-      (write-bytes bstr)
-      (current-doc-offset (file-position (current-output-port))))
-      
     (define/public (add-page [options-arg @options])
       ;; create a page object
       (define page-parent (send @root get-key 'Pages))
@@ -84,10 +83,11 @@
       this)
 
     (define/public (end)
-      (write (format "%PDF-~a\n%ÿÿÿÿ" (current-pdf-version)))
+      (write-bytes-out (format "%PDF-~a" (current-pdf-version)))
+      (write-bytes-out "%ÿÿÿÿ")
 
-      (for ([p (in-list @pages)])
-           (send p end))
+      (for ([page (in-list @pages)])
+           (send page end))
 
       (define doc-info (ref))
       (for ([(key val) (in-hash @info)])
@@ -104,34 +104,20 @@
       
       (send @root end)
       
-      (define xref-offset (current-doc-offset))
-      (match-define (list this-idxs this-offsets)
-        (match (reverse @refs)
-          [(list refs ...) (list (map (λ (ref) (get-field id ref)) refs)
-                                 (map (λ (ref) (get-field offset ref)) refs))]))
-      (write "xref")
-      (write (format "0 ~a" (add1 (length this-offsets))))
-      (write "0000000000 65535 f ")
-      (let ([missing-offsets (for/list ([offset (in-list this-offsets)]
-                                        [idx (in-list this-idxs)]
-                                        #:unless (number? offset))
-                                       idx)])
-        (unless (empty? missing-offsets)
-          (raise-argument-error 'document:end "numerical offsets" missing-offsets)))
-      (for ([offset (in-list this-offsets)]
-            [idx (in-list this-idxs)])
-           (write (string-append (~r offset #:min-width 10 #:pad-string "0") " 00000 n ")))
-    
-      (write "trailer")
-      (write (convert (mhasheq 'Size (add1 (length this-offsets))
-                               'Root @root
-                               'Info doc-info)))
-      (write "startxref")
-      (write (numberizer xref-offset))
-      (write "%%EOF"))
-
-    (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
-         (hash-set! @info key val))))
+      (define xref-offset (file-position (current-output-port)))
+      (write-bytes-out "xref")
+      (write-bytes-out (format "0 ~a" (add1 (length @refs))))
+      (write-bytes-out "0000000000 65535 f ")
+      (for ([ref (in-list (reverse @refs))])
+           (write-bytes-out
+            (string-append (~r (get-field offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
+      (write-bytes-out "trailer")
+      (write-bytes-out (convert (mhasheq 'Size (add1 (length @refs))
+                                         'Root @root
+                                         'Info doc-info)))
+      (write-bytes-out "startxref")
+      (write-bytes-out (numberizer xref-offset))
+      (write-bytes-out "%%EOF"))))
 
 (module+ test
   (define d (new PDFDocument)))

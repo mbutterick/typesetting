@@ -14,14 +14,10 @@
                 [(@id id)]
                 [(@payload payload) (make-hasheq)])
     (field [(@offset offset) #f]
-           [@portal (open-output-bytes)])
+           [@port (open-output-bytes)])
 
-    (define/public (write x [op @portal])
-      (define bstr (match x
-                     [(? bytes?) x]
-                     [(? input-port?) (port->bytes x)]
-                     [_ (string->bytes/latin-1 (format "~a\n" x))]))
-      (write-bytes bstr op))
+    (define/public (write x)
+      (write-bytes (to-bytes x) @port))
 
     (define/public (get-key key)
       (hash-ref @payload key))
@@ -33,12 +29,12 @@
       (hash-update! @payload key updater))
 
     (define/public (end)
-      (set! @offset (current-doc-offset))
+      (set! @offset (file-position (current-output-port)))
   
-      (send @doc write (format "~a 0 obj" @id))
+      (write-bytes-out (format "~a 0 obj" @id))
         
       (define bstr
-        (let ([bstr (get-output-bytes @portal)])
+        (let ([bstr (get-output-bytes @port)])
           (cond
             [(zero? (bytes-length bstr)) #false]
             [(and (current-compress-streams?) (not (hash-ref @payload 'Filter #f)))
@@ -48,12 +44,12 @@
         
       (when bstr
         (hash-set! @payload 'Length (bytes-length bstr)))
-      (send @doc write (convert @payload))
+      (write-bytes-out (convert @payload))
         
       (when bstr
-        (send @doc write (bytes-append #"stream\n" bstr #"\nendstream")))
+        (write-bytes-out (bytes-append #"stream\n" bstr #"\nendstream")))
       
-      (send @doc write "\nendobj"))
+      (write-bytes-out "\nendobj"))
 
     (define/public (to-string)
       (format "~a 0 R" @id))))

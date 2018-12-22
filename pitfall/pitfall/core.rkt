@@ -1,4 +1,5 @@
 #lang racket/base
+(require racket/match racket/port)
 (provide (all-defined-out))
 
 ;; structs
@@ -15,7 +16,6 @@
 
 (define current-pdf-version (make-parameter 1.3))
 (define current-auto-first-page (make-parameter #t))
-(define current-doc-offset (make-parameter 'doc-offset-not-initialized))
 
 ;; helpers
 
@@ -26,3 +26,12 @@
     (number->string (if (integer? x)
                         (inexact->exact x)
                         x))))
+
+(define (to-bytes x)
+  (match x
+    [(? bytes?) x]
+    [(? input-port?) (port->bytes x)]
+    [_ (string->bytes/latin-1 (string-append x "\n"))]))
+
+(define (write-bytes-out x)
+  (void (write-bytes (to-bytes x))))
