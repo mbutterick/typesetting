@@ -1,50 +1,45 @@
 #lang racket/base
 (require
-  "helper.rkt"
   "core.rkt"
   racket/class
   racket/match
-  racket/string
-  racket/contract
-  sugar/unstable/class
-  sugar/unstable/js
-  sugar/unstable/dict)
+  racket/string)
 
 (provide color-mixin)
 
 (define (normalize-color color)
   ;; parses color string into list of values
-  (let loop ([color color])
-    (cond
-      #;[(is-a? color PDFGradient) color]  ; todo
-      ;; 3-digit hex becomes 6-digit hex
-      [(and (string? color) (regexp-match #px"^#(?i:[0-9A-F]){3}$" color))
-       (loop (list->string (cdr (apply append
-                                       (for/list ([c (in-string color)])
-                                         (list c c))))))] ; change #abc to ##aabbcc then drop the first char
-      ;; 6-digit hexish string becomes list of hex numbers and maybe #f vals
-      [(and (string? color) (= 7 (string-length color)) (string-prefix? color "#"))
-       (loop (for/list ([str (in-list (regexp-match* #rx".." (string-trim color "#")))])
-               (string->number str 16)))] ; match two at a time and convert to hex
-      ;; named color
-      [(and (string? color) (hash-ref namedColors color #f)) => loop]
-      ;; array of numbers
-      [(and (list? color) (andmap number? color))
-       (for/list ([i (in-list color)])
-         (define x (/ i (case (length color)
-                          [(3) 255.0] ; RGB
-                          [(4) 100.0] ; CMYK
-                          [else 1.0])))
-         (if (integer? x) (inexact->exact x) x))]
-      [else #f])))
+  (match color
+    #;[(is-a? color PDFGradient) color]  ; todo
+    [(? string?)
+     (cond
+       [(regexp-match #px"^#(?i:[0-9A-F]){3}$" color) ; change #rgb to #rrggbb
+        (normalize-color
+         (match-let ([(list hsh r g b) (string->list color)])
+           (list->string (list hsh r r g g b b))))] 
+       ;; 6-digit hexish string becomes list of hex numbers and maybe #f vals
+       [(and (= 7 (string-length color)) (string-prefix? color "#"))
+        (normalize-color
+         ; match two at a time and convert to hex
+         (match-let ([(list hsh r r2 g g2 b b2) (string->list color)])
+           (map (λ (str) (string->number str 16)) (list (string r r2) (string g g2) (string b b2)))))]
+       [(hash-ref named-colors color #f) => normalize-color]
+       [else #false])]
+    [(list (? number?) ...) (for/list ([c (in-list color)])
+                              (define x (/ c (case (length color)
+                                               [(3) 255.0] ; RGB
+                                               [(4) 100.0] ; CMYK
+                                               [else 1.0])))
+                              (if (integer? x) (inexact->exact x) x))]
+    [_ #false]))
 
-(define (color-mixin [% mixin-tester%])
+(define (color-mixin [% object%])
   (class %
     (super-new)
-    (field [_opacityRegistry (mhash)]
-           [_opacityCount 0]
-           [_gradCount 0]
-           [_fill-color #f])
+    (field [@opacity-registry (make-hash)]
+           [@opacity-count 0]
+           [@grad-count 0]
+           [@current-fill-color #false])
 
     (define/public (set-color color-in stroke)
       (define color (normalize-color color-in))
@@ -54,17 +49,18 @@
         #;[(is-a? color PDFGradient)
            (set-color-space "Pattern" stroke)
            (send color apply op)
-           #t] ; todo
+           #true] ; todo
         [else
-         (define color-space (case (length color)
-                               [(4) "DeviceCMYK"]
-                               [(3) "DeviceRGB"]
-                               [else (raise-argument-error 'set-color "color of length 3 or 4" color)]))
+         (define color-space
+           (case (length color)
+             [(3) "DeviceRGB"]
+             [(4) "DeviceCMYK"]
+             [else (raise-argument-error 'set-color "color of length 3 or 4" color)]))
          (set-color-space color-space stroke)
        
          ;; 181126 don't round, to be consistent with pdfkit behavior
-         (send this addContent (format "~a ~a" (string-join (map (λ (num) (number num #:round #false)) color) " ") op))
-         #t]))
+         (send this addContent (format "~a ~a" (string-join (map (λ (num) (numberizer num #:round #false)) color) " ") op))
+         #true]))
     
     (define/public (set-color-space space stroke)
       (define op (if stroke "CS" "cs"))
@@ -74,10 +70,9 @@
       (unless (normalize-color color)
         (raise-argument-error 'fill-color "valid color string" color))
       (when (set-color color #f) (fill-opacity opacity))
-
       ;; save this for text wrapper, which needs to reset
       ;; the fill color on new pages
-      (set! _fill-color (list color opacity))
+      (set! @current-fill-color (list color opacity))
       this)
 
     (define/public (stroke-color color [opacity 1])
@@ -99,23 +94,24 @@
       (define stroke-opacity (and stroke-arg (bounded 0 stroke-arg 1)))
       (when (or fill-opacity stroke-opacity)
         (define key (format "~a_~a"
-                            (if fill-opacity (number fill-opacity) "")
-                            (if stroke-opacity (number stroke-opacity) "")))
-        
+                            (if fill-opacity (numberizer fill-opacity) "")
+                            (if stroke-opacity (numberizer stroke-opacity) "")))
         (match-define (list dictionary name)
-          (hash-ref! (get-field _opacityRegistry this) key
+          (hash-ref! (get-field @opacity-registry this) key
                      (λ ()
-                       (define dictionary (mhash 'Type "ExtGState"))
-                       (when fill-opacity (hash-set! dictionary 'ca fill-opacity))
-                       (when stroke-opacity (hash-set! dictionary 'CA stroke-opacity))
+                       (define dictionary (make-hasheq '((Type . "ExtGState"))))
+                       (when fill-opacity
+                         (hash-set! dictionary 'ca fill-opacity))
+                       (when stroke-opacity
+                         (hash-set! dictionary 'CA stroke-opacity))
                        (define ref-dict (send this ref dictionary))
-                       (· ref-dict end)
-                       (list ref-dict (format "Gs~a" (increment-field! _opacityCount this))))))
-
-        (hash-set! (· this page ext_gstates) name dictionary)        
+                       (send ref-dict end)
+                       (set! @opacity-count (add1 @opacity-count))
+                       (list ref-dict (format "Gs~a" @opacity-count)))))
+        (hash-set! (send (send this page) ext_gstates) name dictionary)        
         (send this addContent (format "/~a gs" name))))))
 
-(define namedColors
+(define named-colors
   (hash "aliceblue" '(240 248 255)
         "antiquewhite" '(250 235 215)
         "aqua" '(0 255 255)

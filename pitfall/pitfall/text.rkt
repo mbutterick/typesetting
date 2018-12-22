@@ -157,7 +157,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (when (or (· options underline) (· options strike))
     (send this save)
     (unless (· options stroke)
-      (define fill-colorArgs (· this _fill-color))
+      (define fill-colorArgs (· this @current-fill-color))
       (send this stroke-color . fill-colorArgs))
     (define line-width (if (< (· this _fontSize) 10)
                           0.5

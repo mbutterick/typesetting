@@ -19,7 +19,7 @@
 (provide PDFDocument)
 
 (define PDFDocument
-  (class (annotation-mixin (image-mixin (text-mixin (fonts-mixin (color-mixin (vector-mixin object%))))))
+  (class (annotation-mixin (image-mixin (text-mixin (fonts-mixin (vector-mixin (color-mixin object%))))))
     (super-new)
     (init-field [(@options options) (mhasheq)])  
     (field [@pages null]
