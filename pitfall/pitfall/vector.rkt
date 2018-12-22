@@ -21,8 +21,8 @@
      save
      restore
      closePath
-     lineCap
-     lineJoin
+     line-cap
+     line-join
      line-width
      dash
      move-to
@@ -72,7 +72,7 @@
   (->m object?)
   (send this addContent "h"))
 
-(define/contract (lineCap this [c #f])
+(define/contract (line-cap this [c #f])
   ((or/c 'butt 'round 'square #f) . ->m . object?)
   (define cap-styles (hasheq 'butt 0 'round 1 'square 2))
   (send this addContent
@@ -81,7 +81,7 @@
                            ""))))
 
 
-(define/contract (lineJoin this [j #f])
+(define/contract (line-join this [j #f])
   ((or/c 'miter 'round 'bevel #f) . ->m . object?)
   (define cap-styles (hasheq 'miter 0 'round 1 'bevel 2))
   (send this addContent
