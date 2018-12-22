@@ -159,17 +159,17 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (unless (· options stroke)
       (define fill-colorArgs (· this _fill-color))
       (send this stroke-color . fill-colorArgs))
-    (define lineWidth (if (< (· this _fontSize) 10)
+    (define line-width (if (< (· this _fontSize) 10)
                           0.5
                           (floor (/ (· this _fontSize) 10))))
-    (send this lineWidth lineWidth)
+    (send this line-width line-width)
     (define d (if (· options underline) 1 2))
     (define lineY (+ y-in (/ (· this currentLineHeight) d)))
     (when (· options underline)
-      (increment! lineY (- lineWidth)))
+      (increment! lineY (- line-width)))
 
-    (send this moveTo x lineY)
-    (send this lineTo (+ x (force renderedWidth)) lineY)
+    (send this move-to x lineY)
+    (send this line-to (+ x (force renderedWidth)) lineY)
     (send this stroke)
     (send this restore))
 

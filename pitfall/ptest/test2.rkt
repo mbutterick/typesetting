@@ -5,11 +5,11 @@
 
   ;; curved path as bezier
   (send* doc
-    [moveTo 0 20]
-    [lineTo 100 160]
-    [quadraticCurveTo 130 200 150 120]
-    [bezierCurveTo 190 -40 200 200 300 150]  
-    [lineTo 400 90]                         
+    [move-to 0 20]
+    [line-to 100 160]
+    [quadratic-curve-to 130 200 150 120]
+    [bezier-curve-to 190 -40 200 200 300 150]  
+    [line-to 400 90]                         
     [stroke])
 
   (send* doc [translate 0 200])
@@ -33,29 +33,29 @@
     [save]
     [translate 400 0]
     [circle 100 50 50]
-    [lineWidth 3]
+    [line-width 3]
     [fill-opacity 0.8]
-    [fillAndStroke "red" "#900"]
+    [fill-and-stroke "red" "#900"]
     [restore])
 
   (send* doc [translate 0 200])
 
   ;; these examples are easier to see with a large line width
-  (send* doc [lineWidth 25])
+  (send* doc [line-width 25])
 
   ;; line cap settings
   (send* doc [lineCap 'butt]
-    [moveTo 50 20]
-    [lineTo 100 20]
+    [move-to 50 20]
+    [line-to 100 20]
     [stroke]
     [lineCap 'round]
-    [moveTo 150 20]
-    [lineTo 200 20]
+    [move-to 150 20]
+    [line-to 200 20]
     [stroke])
 
   ;; square line cap shown with a circle instead of a line so you can see it
   (send* doc [lineCap 'square]
-    [moveTo 250 20]
+    [move-to 250 20]
     [circle 275 30 15]
     [stroke])
 

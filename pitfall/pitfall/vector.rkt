@@ -23,12 +23,12 @@
      closePath
      lineCap
      lineJoin
-     lineWidth
+     line-width
      dash
-     moveTo
-     lineTo
-     bezierCurveTo
-     quadraticCurveTo
+     move-to
+     line-to
+     bezier-curve-to
+     quadratic-curve-to
      rect
      ellipse
      circle
@@ -37,7 +37,7 @@
      _windingRule
      fill
      stroke
-     fillAndStroke
+     fill-and-stroke
      clip
      shear
      transform
@@ -90,7 +90,7 @@
                            ""))))
 
 
-(define/contract (lineWidth this w)
+(define/contract (line-width this w)
   (number? . ->m . object?)
   (send this addContent (format "~a w" (number w))))
 
@@ -112,22 +112,22 @@
     [else this]))
 
 
-(define/contract (moveTo this x y)
+(define/contract (move-to this x y)
   (number? number? . ->m . object?)
   (send this addContent (format "~a ~a m" x y)))
 
 
-(define/contract (lineTo this x y)
+(define/contract (line-to this x y)
   (number? number? . ->m . object?)
   (send this addContent (format "~a ~a l" x y)))
 
 
-(define/contract (bezierCurveTo this cp1x cp1y cp2x cp2y x y)
+(define/contract (bezier-curve-to this cp1x cp1y cp2x cp2y x y)
   (number? number? number? number? number? number? . ->m . object?)
   (send this addContent (format "~a c" (string-join (map number (list cp1x cp1y cp2x cp2y x y)) " "))))
 
 
-(define/contract (quadraticCurveTo this cpx cpy x y)
+(define/contract (quadratic-curve-to this cpx cpy x y)
   (number? number? number? number . ->m . object?)
   (send this addContent (format "~a v" (string-join (map number (list cpx cpy x y)) " "))))
   
@@ -149,11 +149,11 @@
   (define ye (+ y (* r2 2))) ; y-end
   (define xm (+ x r1)) ; x-middle
   (define ym (+ y r2)) ; y-middle
-  (moveTo this x ym)
-  (bezierCurveTo this x (- ym oy) (- xm ox) y xm y)
-  (bezierCurveTo this (+ xm ox) y xe (- ym oy) xe ym)
-  (bezierCurveTo this xe (+ ym oy) (+ xm ox) ye xm ye)
-  (bezierCurveTo this (- xm ox) ye x (+ ym oy) x ym)
+  (move-to this x ym)
+  (bezier-curve-to this x (- ym oy) (- xm ox) y xm y)
+  (bezier-curve-to this (+ xm ox) y xe (- ym oy) xe ym)
+  (bezier-curve-to this xe (+ ym oy) (+ xm ox) ye xm ye)
+  (bezier-curve-to this (- xm ox) ye x (+ ym oy) x ym)
   (closePath this))
 
 
@@ -166,9 +166,9 @@
   (() () #:rest (listof (list/c number? number?)) . ->*m . object?)
   (cond
     [(pair? points)
-     (apply moveTo this (car points))
+     (apply move-to this (car points))
      (for ([pt (in-list (cdr points))])
-          (apply lineTo this pt))
+          (apply line-to this pt))
      (closePath this)]
     [else this]))
 
@@ -196,7 +196,7 @@
   (send this addContent "S"))
 
 
-(define/contract (fillAndStroke this [fill #f] [stroke fill] #:rule [rule #f])
+(define/contract (fill-and-stroke this [fill #f] [stroke fill] #:rule [rule #f])
   (() ((or/c color-string? #f) (or/c color-string? #f) #:rule (or/c string? #f)) . ->*m . object?)
   (when fill (send* this [fill-color fill] [stroke-color stroke]))
   (send this addContent (format "B~a" (_windingRule rule))))

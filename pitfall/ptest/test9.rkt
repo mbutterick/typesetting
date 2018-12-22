@@ -3,11 +3,11 @@
 
 (define (proc doc)
   (send* doc
-    [moveTo 0 20]
-    [lineTo 100 160]
-    [quadraticCurveTo 130 200 150 120]
-    [bezierCurveTo 190 -40 200 200 300 150]  
-    [lineTo 400 90]                         
+    [move-to 0 20]
+    [line-to 100 160]
+    [quadratic-curve-to 130 200 150 120]
+    [bezier-curve-to 190 -40 200 200 300 150]  
+    [line-to 400 90]                         
     [stroke])
 
   (send* doc [translate 0 200])

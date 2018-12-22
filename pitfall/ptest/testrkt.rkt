@@ -32,9 +32,9 @@ doc.add-page()
 
 # Draw a triangle and a circle
 doc.save()
-   .moveTo(100, 150)
-   .lineTo(100, 250)
-   .lineTo(200, 250)
+   .move-to(100, 150)
+   .line-to(100, 250)
+   .line-to(200, 250)
    .fill("#FF3300")
    
 doc.circle(280, 200, 50)
@@ -69,10 +69,10 @@ for part in tiger
     doc.path(part.path) # render an SVG path
     
     if part['stroke-width']
-        doc.lineWidth part['stroke-width']
+        doc.line-width part['stroke-width']
     
     if part.fill isnt 'none' and part.stroke isnt 'none'
-        doc.fillAndStroke(part.fill, part.stroke)
+        doc.fill-and-stroke(part.fill, part.stroke)
     else
         unless part.fill is 'none'
             doc.fill(part.fill)

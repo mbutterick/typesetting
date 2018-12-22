@@ -49,10 +49,10 @@
       (match-define (list a0 a1 a2 a3 a4 a5)
         (append cmd-args (make-list (- 6 (length cmd-args)) #f)))
       (case cmd-name
-        [(M) (send doc moveTo . cmd-args)
+        [(M) (send doc move-to . cmd-args)
              (values a0 a1 #f #f a0 a1)]
         [(m) (loop 'M (list (+ cx a0) (+ cy a1)))]
-        [(C) (send doc bezierCurveTo . cmd-args)
+        [(C) (send doc bezier-curve-to . cmd-args)
              (values a4 a5 a2 a3 sx sy)]
         [(c) (loop 'C (list (+ cx a0) (+ cy a1)
                             (+ cx a2) (+ cy a3)
@@ -64,14 +64,14 @@
                (values a2 a3 a0 a1 sx sy))]
         [(s) (loop 'S (list (+ cx a0) (+ cy a1)
                             (+ cx a2) (+ cy a3)))]
-        [(L) (send doc lineTo . cmd-args)
+        [(L) (send doc line-to . cmd-args)
              (values a0 a1 #f #f sx sy)]
         [(l) (loop 'L (list (+ cx a0) (+ cy a1)))]
         [(H) (loop 'L (list a0 cy))]
         [(h) (loop 'L (list (+ cx a0) cy))]
         [(V) (loop 'L (list cx a0))]
         [(v) (loop 'L (list cx (+ cy a0)))]
-        [(Q) (send doc quadraticCurveTo . cmd-args)
+        [(Q) (send doc quadratic-curve-to . cmd-args)
              (values a2 a3 a0 a1 sx sy)]
         [(q) (loop 'Q (list (+ cx a0) (+ cy a1)
                             (+ cx a2) (+ cy a3)))]
@@ -79,7 +79,7 @@
                (if (not px)
                    (list cx py)
                    (list (- cx (- px cx) (- cy (- py cy))))))
-             (send doc quadraticCurveTo . cmd-args)]
+             (send doc quadratic-curve-to . cmd-args)]
         ;; todo other path ops
         [(z) (send doc closePath . cmd-args)
              (values sx sy px py sx sy)]

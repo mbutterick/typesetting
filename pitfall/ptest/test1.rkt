@@ -5,9 +5,9 @@
   ;; Draw a triangle and a circle
   (send* doc
     [save]
-    [moveTo 100 150]
-    [lineTo 100 250]
-    [lineTo 200 250]
+    [move-to 100 150]
+    [line-to 100 250]
+    [line-to 200 250]
     [fill "#FF3300"])
 
   (send* doc
