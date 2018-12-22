@@ -37,8 +37,7 @@
                            'CreationDate (seconds->date (if (test-mode) 0 (current-seconds)) #f))])
 
     ;; initialize mixins
-    (send this initVector)
-    (inherit-field @ctm)
+    (inherit-field @ctm) ; from vector
     (send this initFonts)
     (inherit-field @font-families)
     (send this initText)
