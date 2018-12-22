@@ -7,12 +7,12 @@
 
 (define (proc doc)
   ;; Register a font name for use later
-  (send doc registerFont "the-font" (path->string ttf-path))
+  (send doc register-font "the-font" (path->string ttf-path))
 
   ;; Set the font, draw some text
   (send* doc
     [font "the-font"]
-    [fontSize 50]
+    [font-size 50]
     [text "The fifth rifle" 100 100 (hash 'width #f)]))
 
 

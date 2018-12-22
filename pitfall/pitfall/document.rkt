@@ -37,9 +37,8 @@
                            'CreationDate (seconds->date (if (test-mode) 0 (current-seconds)) #f))])
 
     ;; initialize mixins
-    (inherit-field @ctm) ; from vector
-    (send this initFonts)
-    (inherit-field @font-families)
+    (inherit-field @ctm) ; from vector mixin
+    (inherit-field @font-families) (inherit font) ; from font mixin
     (send this initText)
     (send this initImages)
 
@@ -47,10 +46,11 @@
     (current-compress-streams? (hash-ref @options 'compress #t))
     (current-auto-first-page (hash-ref @options 'autoFirstPage #t))
     (when (current-auto-first-page) (add-page))
+    (when (current-auto-helvetica) (font "Helvetica"))
 
     ;; copy options
     (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
-         (hash-set! @info key val))
+      (hash-set! @info key val))
 
     (define/public (page) (first @pages))
 
@@ -82,15 +82,15 @@
       (write-bytes-out "%ÿÿÿÿ")
 
       (for ([page (in-list @pages)])
-           (send page end))
+        (send page end))
 
       (define doc-info (ref))
       (for ([(key val) (in-hash @info)])
-           (send doc-info set-key! key (if (string? val) (String val) val)))
+        (send doc-info set-key! key (if (string? val) (String val) val)))
       (send doc-info end)
     
       (for ([font (in-hash-values @font-families)])
-           (send font finalize))
+        (send font finalize))
 
       (send* (send @root get-key 'Pages)
         [set-key! 'Count (length @pages)]
@@ -104,8 +104,8 @@
       (write-bytes-out (format "0 ~a" (add1 (length @refs))))
       (write-bytes-out "0000000000 65535 f ")
       (for ([ref (in-list (reverse @refs))])
-           (write-bytes-out
-            (string-append (~r (get-field offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
+        (write-bytes-out
+         (string-append (~r (get-field offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
       (write-bytes-out "trailer")
       (write-bytes-out (convert (mhasheq 'Size (add1 (length @refs))
                                          'Root @root

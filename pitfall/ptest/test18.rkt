@@ -7,12 +7,12 @@
 
 (define (proc doc)
   ;; Register a font name for use later
-  (send doc registerFont "the-font" (path->string ttf-path))
+  (send doc register-font "the-font" (path->string ttf-path))
 
   ;; Set the font, draw some text
   (send* doc
     [font "the-font"]
-    [fontSize 25]
+    [font-size 25]
     [text "In Xanadu did Kubla Khan" 100 100 (hash 'width #f)]
     [text "A stately pleasure dome decree:" 100 140 (hash 'width #f)]
     [text "Where Alph, the sacred river, ran" 100 180 (hash 'width #f)]

@@ -52,7 +52,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
 (define/contract (moveDown this [lines 1] #:factor [factor 1])
   (() (number? #:factor number?) . ->*m . object?)
-  (increment-field! y this (* factor (send this currentLineHeight #t) (+ lines (· this _line-gap))))
+  (increment-field! y this (* factor (send this current-line-height #t) (+ lines (· this _line-gap))))
   this)
 
 
@@ -89,7 +89,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 (define/contract (widthOfString this str [options (mhash)])
   ((string?) (hash?) . ->*m . number?)
   #;(report str 'measuring-width-of)
-  (+ (send (· this _font) widthOfString str (· this _fontSize) (hash-ref options 'features #f))
+  (+ (send (· this current-font) widthOfString str (· this current-font-size) (hash-ref options 'features #f))
      (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
 
 
@@ -128,7 +128,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; 181120 unsuppress the size tracking for now because it breaks test 04
   (if (not wrapper)
       (increment-field! x this (send this widthOfString text))
-      (increment-field! y (+ (send this currentLineHeight #t) line-gap)))
+      (increment-field! y (+ (send this current-line-height #t) line-gap)))
   (void))
 
 
@@ -150,7 +150,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
   ;; create link annotations if the link option is given
   (when (· options link)
-    (send this link x y-in (force renderedWidth) (· this currentLineHeight) (· options link)))
+    (send this link x y-in (force renderedWidth) (· this current-line-height) (· options link)))
 
   
   ;; create underline or strikethrough line
@@ -159,12 +159,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (unless (· options stroke)
       (define fill-colorArgs (· this @current-fill-color))
       (send this stroke-color . fill-colorArgs))
-    (define line-width (if (< (· this _fontSize) 10)
+    (define line-width (if (< (· this current-font-size) 10)
                           0.5
-                          (floor (/ (· this _fontSize) 10))))
+                          (floor (/ (· this current-font-size) 10))))
     (send this line-width line-width)
     (define d (if (· options underline) 1 2))
-    (define lineY (+ y-in (/ (· this currentLineHeight) d)))
+    (define lineY (+ y-in (/ (· this current-line-height) d)))
     (when (· options underline)
       (increment! lineY (- line-width)))
 
@@ -176,10 +176,10 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; flip coordinate system
   (send this save)
   (send this transform 1 0 0 -1 0 (· this page height))
-  (define y (- (· this page height) y-in (* (/ (· this _font ascender) 1000) (· this _fontSize))))
+  (define y (- (· this page height) y-in (* (/ (· this current-font ascender) 1000) (· this current-font-size))))
 
   ;; add current font to page if necessary
-  (hash-ref! (· this page fonts) (· this _font id) (λ () (· this _font ref)))
+  (hash-ref! (· this page fonts) (· this current-font id) (λ () (· this current-font ref)))
   
   ;; begin the text object
   (send this addContent "BT")
@@ -188,7 +188,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (send this addContent (format "1 0 0 1 ~a ~a Tm" (number x) (number y)))
 
   ;; font and font size
-  (send this addContent (format "/~a ~a Tf" (· this _font id) (number (· this _fontSize))))
+  (send this addContent (format "/~a ~a Tf" (· this current-font id) (number (· this current-font-size))))
 
   ;; rendering mode
   (let ([mode (cond
@@ -211,9 +211,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (match-define (list encoded-char-strs positions)
     (if (not (zero? wordSpacing))
         (error 'unimplemented-brach) ; todo
-        (send (· this _font) encode text (hash-ref options 'features #f))))
+        (send (· this current-font) encode text (hash-ref options 'features #f))))
   
-  (define scale (/ (· this _fontSize) 1000.0))
+  (define scale (/ (· this current-font-size) 1000.0))
   (define commands empty)
   (define last 0)
   

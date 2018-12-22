@@ -14,20 +14,20 @@ doc.info['Title'] = 'Test Document'
 doc.info['Author'] = 'Devon Govett'
 
 # Register a font name for use later
-doc.registerFont('Charter', 'charter.ttf')
+doc.register-font('Charter', 'charter.ttf')
 
 # Set the font, draw some text, and embed an image
 doc.font('Charter')
-   .fontSize(25)
+   .font-size(25)
    .text('Some text with an embedded font!', 100, 100)
-   .fontSize(18)
+   .font-size(18)
    .text('PNG and JPEG images:')
    .image('test.png', 100, 160, width: 412)
    .image('test.jpeg', 190, 400, height: 300)
 
 # Add another page
 doc.add-page()
-   .fontSize(25)
+   .font-size(25)
    .text 'Here is some vector graphics...', 100, 100
 
 # Draw a triangle and a circle

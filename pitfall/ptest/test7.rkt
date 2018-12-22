@@ -6,7 +6,7 @@
 (define (proc doc)
   (send* doc
   [font "Times-Italic"]
-  [fontSize 25]
+  [font-size 25]
   [text "Here comes a JPEG!" 100 100 (hash 'lineBreak #f)]
   [image test-jpeg 100 160 (hash 'width 412)]))
 

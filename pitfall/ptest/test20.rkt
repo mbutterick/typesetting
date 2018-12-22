@@ -8,12 +8,12 @@
 
 (define (proc doc)
   ;; Register a font name for use later
-  (send doc registerFont "the-font" (path->string otf-path))
+  (send doc register-font "the-font" (path->string otf-path))
 
   ;; Set the font, draw some text
   (send* doc
     [font "the-font"]
-    [fontSize 40]
+    [font-size 40]
     [text "Embedded OTF" 100 100 (hash 'width #f)]))
 
 ;; test against non-subsetted font version

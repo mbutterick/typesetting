@@ -19,8 +19,12 @@
 
 (define current-pdf-version (make-parameter 1.3))
 (define current-auto-first-page (make-parameter #t))
+(define current-auto-helvetica (make-parameter #t))
 
 (define current-default-margins (make-parameter (margin 72 72 72 72)))
+
+(define current-font (make-parameter #f))
+(define current-font-size (make-parameter 12))
 
 ;; helpers
 

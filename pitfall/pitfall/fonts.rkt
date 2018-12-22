@@ -12,97 +12,57 @@
 (define (fonts-mixin [% mixin-tester%])
   (class %
     (super-new)
-    ;; Lookup table for embedded fonts
-    (field [@font-families #f]
-           [_fontCount #f]
-           
-           ;; Font state
-           [_fontSize #f]
-           [_font #f]
-           [_registeredFonts #f])
+    (field [@font-families (mhash)]
+           [@font-count 0]
+           [(@current-font-size current-font-size) 12] ; font state used by text.rkt
+           [(@current-font current-font) #f] ; font state used by text.rkt
+           [@registered-fonts (mhash)])
+    
+    (define/public (font src [size-or-family #f] [maybe-size #f])
+      (match-define (list family size) (match size-or-family
+                                         [(? number?)(list #f size-or-family)]
+                                         [_ (list size-or-family maybe-size)]))
+      ;; check registered fonts if src is a string
+      (define cache-key (match src
+                          [(? string?) #:when (hash-has-key? @registered-fonts src)
+                                       (define ck src)
+                                       (set! src (· (hash-ref @registered-fonts ck) src))
+                                       (set! family (· (hash-ref @registered-fonts ck) family))
+                                       ck]
+                          [_ (match (or family src)
+                               [(? string? str) str]
+                               [_ #false])]))
 
-    (as-methods
-     initFonts
-     font
-     fontSize
-     currentLineHeight
-     registerFont)))
+      (when size (font-size size))
+      (cond       ;; fast path: check if the font is already in the PDF
+        [(hash-ref @font-families cache-key #f)
+         => (λ (val) (set! @current-font val))]
+        [else ;; load the font
+         (set! @font-count (add1 @font-count))
+         (define id (format "F~a" @font-count))
+         (set! @current-font (PDFFont-open this src family id))
+         ;; check for existing font familes with the same name already in the PDF
+         ;; useful if the font was passed as a buffer
+         (match (hash-ref @font-families (· @current-font name) #f)
+           [(? values font) (set! @current-font font)]
+           [_ ;; save the font for reuse later
+            (when cache-key (hash-set! @font-families cache-key @current-font))
+            (hash-set! @font-families (· @current-font name) @current-font)])])
+      this)
 
+    (define/public (font-size size)
+      (set! @current-font-size size)
+      this)
 
-(define/contract (initFonts this)
-  (->m void?)
-  (set-field! @font-families this (mhash))
-  (set-field! _fontCount this 0)
-
-  (set-field! _fontSize this 12)
-  (set-field! _font this #f)
-
-  (set-field! _registeredFonts this (mhash))
-
-  ;; set the default font
-  (send this font "Helvetica")
-  (void))
-
-
-(define/contract (font this src [size-or-family #f] [maybe-size #f])
-  ((any/c) ((or/c string? number? #f) (or/c number? #f)) . ->*m . object?)
-  
-  (match-define (list family size) (if (number? size-or-family)
-                                       (list #f size-or-family)
-                                       (list size-or-family maybe-size)))
-  ;; check registered fonts if src is a string
-  (define cacheKey (let ([this-rfs (· this _registeredFonts)])
-                     (cond
-                       [(and (string? src) (hash-has-key? this-rfs src))
-                        (define ck src)
-                        (set! src (· (hash-ref this-rfs ck) src))
-                        (set! family (· (hash-ref this-rfs ck) family))
-                        ck]
-                       [else (let ([ck (or family src)])
-                               (and (string? ck) ck))])))
-
-  (when size (fontSize this size))
-  
-
-  ;; fast path: check if the font is already in the PDF
-  (cond
-    [(hash-ref (· this @font-families) cacheKey #f) =>
-                                                   (λ (val)
-                                                     (set-field! _font this val))]
-    ;; load the font
-    [else
-     #;(println (format "Load font: ~a" src))
-     (define id (format "F~a" (increment-field! _fontCount this)))
-     (set-field! _font this (PDFFont-open this src family id))
-     
-     ;; check for existing font familes with the same name already in the PDF
-     ;; useful if the font was passed as a buffer
-     (let* ([this-ff (· this @font-families)]
-            [this-f (· this _font)]
-            [font (hash-ref this-ff (· this-f name) #f)])
-       (cond
-         [font (set-field! _font this font)]
-         ;; save the font for reuse later
-         [else
-          (when cacheKey (hash-set! this-ff cacheKey this-f))
-          (hash-set! this-ff (· this-f name) this-f)]))])
-  this)
-
-(define/contract (fontSize this size)
-  (number? . ->m . object?)
-  (set-field! _fontSize this size)
-  this)
-
-(define/contract (currentLineHeight this [includeGap #f])
-  (() (boolean?) . ->*m . number?)
-  (send (· this _font) lineHeight (· this _fontSize) includeGap))
+    (define/public (current-line-height [includeGap #f])
+      (send @current-font lineHeight @current-font-size includeGap))
 
 
-(define/contract (registerFont this name src [family #f])
-  ((string? path-string?) ((or/c string? #f)) . ->*m . object?)
-  (hash-set! (· this _registeredFonts) name
-             (mhash 'src src 'family family))
-  this)
+    (define/public (register-font name src [family #f])
+      (hash-set! @registered-fonts name
+                 (mhash 'src src 'family family))
+      this)))
+
 
 (module+ test
   (define fo (new (fonts-mixin))))
