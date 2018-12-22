@@ -22,11 +22,14 @@
     (define/public (get-key key)
       (hash-ref @payload key))
 
+    (define/public (get-key! key val)
+      (hash-ref! @payload key val))
+
     (define/public (set-key! key val)
       (hash-set! @payload key val))
 
-    (define/public (update-key! key updater)
-      (hash-update! @payload key updater))
+    (define/public (update-key! key updater [failure-result (λ () (error 'update-no-key))])
+      (hash-update! @payload key updater failure-result))
 
     (define/public (end)
       (set! @offset (file-position (current-output-port)))

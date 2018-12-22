@@ -8,90 +8,66 @@
 
 (provide PDFPage)
 
+(struct margin (top left bottom right) #:transparent #:mutable)
+
 (define PDFPage
   (class object%
     (super-new)
-    (init-field document [page-parent #false] [options (mhash)])
-    (field [size (hash-ref options 'size "letter")]
-           [layout (hash-ref options 'layout "portrait")]
-           ;; calculate page dimensions
-           [dimensions (if (list? size)
-                           size
-                           (hash-ref page-sizes (string-upcase size)))]
-           [width (list-ref dimensions (if (equal? layout "portrait") 0 1))]
-           [height (list-ref dimensions (if (equal? layout "portrait") 1 0))]
-           [content (send document ref)]
-           ;; Initialize the Font, XObject, and ExtGState dictionaries
-           [resources (send document ref (mhash 'ProcSet '("PDF" "Text" "ImageB" "ImageC" "ImageI")))]
-           [margins
-            (let ([margin-value (hash-ref options 'margin #f)])
+    (init-field @doc [@page-parent #false] [@options (mhash)])
+    (field [(@size size) (hash-ref @options 'size "letter")]
+           [(@layout layout) (hash-ref @options 'layout "portrait")]
+           [@dimensions (if (list? @size)
+                           @size
+                           (hash-ref page-sizes (string-upcase @size)))]
+           [(@width width) (list-ref @dimensions (if (equal? @layout "portrait") 0 1))]
+           [(@height height) (list-ref @dimensions (if (equal? @layout "portrait") 1 0))]
+           [@content (send @doc ref)]
+           [(@resources resources) (send @doc ref (mhash 'ProcSet '("PDF" "Text" "ImageB" "ImageC" "ImageI")))]
+           [(@margins margins)
+            (let ([margin-value (hash-ref @options 'margin #f)])
               (if (number? margin-value)
-                  (mhasheq 'top margin-value
-                           'left margin-value
-                           'bottom margin-value
-                           'right margin-value)
+                  (margin margin-value margin-value margin-value margin-value)
                   ;; default to 1 inch margins
-                  (hash-ref options 'margins default-margins)))]
+                  (hash-ref @options 'margins default-margins)))]
            ;; The page dictionary
-           [dictionary
-            (send document ref
+           [(@dictionary dictionary)
+            (send @doc ref
                   (mhash 'Type "Page"
-                         'Parent page-parent
-                         'MediaBox (list 0 0 width height)
-                         'Contents content
-                         'Resources resources))])
+                         'Parent @page-parent
+                         'MediaBox (list 0 0 @width @height)
+                         'Contents @content
+                         'Resources @resources))])
 
-    (as-methods
-     fonts
-     xobjects
-     ext_gstates
-     patterns
-     annotations
-     maxY
-     write
-     end)))
+    ;; Lazily create these dictionaries
+    (define/public (fonts)
+      (send @resources get-key! 'Font (make-hasheq)))
 
-;; Lazily create these dictionaries
-(define/contract (fonts this)
-  (->m hash?)
-  (hash-ref! (· this resources payload) 'Font (make-hash)))
+    (define/public (xobjects)
+      (send @resources get-key! 'XObject (make-hasheq)))
 
-(define/contract (xobjects this)
-  (->m hash?)
-  (hash-ref! (· this resources payload) 'XObject (make-hash)))
+    (define/public (ext_gstates)
+      (send @resources get-key! 'ExtGState (make-hasheq)))
 
-(define/contract (ext_gstates this)
-  (->m hash?)
-  (hash-ref! (· this resources payload) 'ExtGState (make-hash)))
+    (define/public (patterns)
+      (send @resources get-key! 'Pattern (make-hasheq)))
 
-(define/contract (patterns this)
-  (->m hash?)
-  (hash-ref! (· this resources payload) 'Pattern (make-hash)))
+    (define/public (annotations [annot #f])
+      (if annot
+          (send @dictionary update-key! 'Annots (λ (val) (cons annot val)) null)
+          (send @dictionary get-key! 'Annots null)))
 
-(define/contract (annotations this [annot #f])
-  (() (any/c) . ->*m . void?)
-  (if (not annot)
-      (hash-ref! (· this dictionary payload) 'Annots null)
-      (hash-update! (· this dictionary payload) 'Annots (λ (val) (cons annot val)) null)))
+    (define/public (maxY)
+      (- @height (margin-bottom @margins)))
 
+    (define/public (write chunk)
+      (send @content write chunk)) 
 
-(define/contract (maxY this)
-  (->m number?)
-  (- (· this height) (· this margins bottom)))
+    (define/public (end)
+      (send @dictionary end)
+      (send @resources end)
+      (send @content end))))
 
-(define (write this chunk)
-  (send (· this content) write chunk)) ; resume here
-
-(define/contract (end this)
-  (->m void?)
-  (send (· this dictionary) end)
-  (send (· this resources) end)
-  (send (· this content) end))
-
-(define default-margins (hasheq 'top 72
-                                'left 72
-                                'bottom 72
-                                'right 72))
+(define default-margins (margin 72 72 72 72))
 
 (define page-sizes
   (hash "4A0" '(4767.87 6740.79)
