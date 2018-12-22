@@ -28,7 +28,7 @@
   (unless (equal? (· options Subtype) "Link")
     (hash-ref! options 'C
                (λ ()
-                 (send this _normalizeColor (or (· options color) '(0 0 0))))))
+                 (send this normalize-color (or (· options color) '(0 0 0))))))
   (hash-remove! options 'color)
 
   (when (string? (· options Dest)) (hash-update! options 'Dest String))

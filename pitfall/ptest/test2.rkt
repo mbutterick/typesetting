@@ -34,7 +34,7 @@
     [translate 400 0]
     [circle 100 50 50]
     [lineWidth 3]
-    [fillOpacity 0.8]
+    [fill-opacity 0.8]
     [fillAndStroke "red" "#900"]
     [restore])
 

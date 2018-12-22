@@ -12,7 +12,7 @@
 
 (provide color-mixin)
 
-(define (_normalizeColor color)
+(define (normalize-color color)
   ;; parses color string into list of values
   (let loop ([color color])
     (cond
@@ -44,57 +44,57 @@
     (field [_opacityRegistry (mhash)]
            [_opacityCount 0]
            [_gradCount 0]
-           [_fillColor #f])
+           [_fill-color #f])
 
-    (define/public (_setColor color-in stroke)
-      (define color (_normalizeColor color-in))
+    (define/public (set-color color-in stroke)
+      (define color (normalize-color color-in))
       (define op (if stroke "SCN" "scn"))
       (cond
         [(not color)]
         #;[(is-a? color PDFGradient)
-           (_setColorSpace "Pattern" stroke)
+           (set-color-space "Pattern" stroke)
            (send color apply op)
            #t] ; todo
         [else
          (define color-space (case (length color)
                                [(4) "DeviceCMYK"]
                                [(3) "DeviceRGB"]
-                               [else (raise-argument-error '_setColor "color of length 3 or 4" color)]))
-         (_setColorSpace color-space stroke)
+                               [else (raise-argument-error 'set-color "color of length 3 or 4" color)]))
+         (set-color-space color-space stroke)
        
          ;; 181126 don't round, to be consistent with pdfkit behavior
          (send this addContent (format "~a ~a" (string-join (map (λ (num) (number num #:round #false)) color) " ") op))
          #t]))
     
-    (define/public (_setColorSpace space stroke)
+    (define/public (set-color-space space stroke)
       (define op (if stroke "CS" "cs"))
       (send this addContent (format "/~a ~a" space op)))
 
-    (define/public (fillColor color [opacity 1])
-      (unless (_normalizeColor color)
-        (raise-argument-error 'fillColor "valid color string" color))
-      (when (_setColor color #f) (fillOpacity opacity))
+    (define/public (fill-color color [opacity 1])
+      (unless (normalize-color color)
+        (raise-argument-error 'fill-color "valid color string" color))
+      (when (set-color color #f) (fill-opacity opacity))
 
       ;; save this for text wrapper, which needs to reset
       ;; the fill color on new pages
-      (set! _fillColor (list color opacity))
+      (set! _fill-color (list color opacity))
       this)
 
-    (define/public (strokeColor color [opacity 1])
-      (unless (_normalizeColor color)
-        (raise-argument-error 'strokeColor "valid color string" color))
-      (when (_setColor color #t) (strokeOpacity opacity))
+    (define/public (stroke-color color [opacity 1])
+      (unless (normalize-color color)
+        (raise-argument-error 'stroke-color "valid color string" color))
+      (when (set-color color #t) (stroke-opacity opacity))
       this)
 
-    (define/public (fillOpacity opacity)
-      (_doOpacity opacity #f)
+    (define/public (fill-opacity opacity)
+      (do-opacity opacity #f)
       this)
 
-    (define/public (strokeOpacity opacity)
-      (_doOpacity #f opacity)
+    (define/public (stroke-opacity opacity)
+      (do-opacity #f opacity)
       this)
     
-    (define/public (_doOpacity [fill-arg #f] [stroke-arg #f])
+    (define/public (do-opacity [fill-arg #f] [stroke-arg #f])
       (define fill-opacity (and fill-arg (bounded 0 fill-arg 1)))
       (define stroke-opacity (and stroke-arg (bounded 0 stroke-arg 1)))
       (when (or fill-opacity stroke-opacity)
@@ -264,14 +264,12 @@
         "yellow" '(255 255 0)
         "yellowgreen" '(154 205 50)))
 
-
-
 (module+ test
   (require rackunit)
   (define c (new (color-mixin)))
-  (check-equal? (_normalizeColor "#6699Cc") '(0.4 0.6 0.8))
-  (check-false (_normalizeColor "#88aaCCC"))
-  (check-equal? (_normalizeColor "#69C") '(0.4 0.6 0.8))
-  (check-equal? (_normalizeColor "#69c") '(0.4 0.6 0.8))
-  (check-false (_normalizeColor "#8aCC"))
-  (check-equal? (_normalizeColor "aqua") '(0 1 1)))
+  (check-equal? (normalize-color "#6699Cc") '(0.4 0.6 0.8))
+  (check-false (normalize-color "#88aaCCC"))
+  (check-equal? (normalize-color "#69C") '(0.4 0.6 0.8))
+  (check-equal? (normalize-color "#69c") '(0.4 0.6 0.8))
+  (check-false (normalize-color "#8aCC"))
+  (check-equal? (normalize-color "aqua") '(0 1 1)))

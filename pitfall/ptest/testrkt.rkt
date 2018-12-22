@@ -84,7 +84,7 @@ for part in tiger
 
 # Add some text with annotations            
 doc.add-page()
-   .fillColor("blue")
+   .fill-color("blue")
    .text('Here is a link!', 100, 100, { link: 'http://google.com/', underline: true })
 doc.end()
 |#

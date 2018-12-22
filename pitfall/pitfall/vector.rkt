@@ -186,19 +186,19 @@
 
 (define/contract (fill this [color #f] #:rule [rule #f])
   (() ((or/c color-string? #f) #:rule (or/c string? #f)) . ->*m . object?)
-  (when color (send this fillColor color)) ;; fillColor method is from color mixin
+  (when color (send this fill-color color)) ;; fill-color method is from color mixin
   (send this addContent (format "f~a" (_windingRule rule))))
 
 
 (define/contract (stroke this [color #f])
   (() ((or/c color-string? #f)) . ->*m . object?)
-  (when color (send this strokeColor color))
+  (when color (send this stroke-color color))
   (send this addContent "S"))
 
 
 (define/contract (fillAndStroke this [fill #f] [stroke fill] #:rule [rule #f])
   (() ((or/c color-string? #f) (or/c color-string? #f) #:rule (or/c string? #f)) . ->*m . object?)
-  (when fill (send* this [fillColor fill] [strokeColor stroke]))
+  (when fill (send* this [fill-color fill] [stroke-color stroke]))
   (send this addContent (format "B~a" (_windingRule rule))))
 
 
