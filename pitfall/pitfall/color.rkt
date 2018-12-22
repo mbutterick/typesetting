@@ -1,6 +1,7 @@
 #lang racket/base
 (require
   "helper.rkt"
+  "core.rkt"
   racket/class
   racket/match
   racket/string
@@ -11,35 +12,7 @@
 
 (provide color-mixin)
 
-(define (color-mixin [% mixin-tester%])
-  (class %
-    (super-new)
-    (field [_opacityRegistry #f]
-           [_opacityCount #f]
-           [_gradCount #f]
-           [_fillColor #f])
-
-    (as-methods
-     initColor
-     _normalizeColor
-     _setColor
-     _setColorSpace
-     fillColor
-     strokeColor
-     fillOpacity
-     strokeOpacity
-     _doOpacity)))
-
-    
-(define/contract (initColor this)
-  (->m void?)
-  (set-field! _opacityRegistry this (mhash))
-  (set-field! _opacityCount this 0)
-  (set-field! _gradCount this 0))
-
-
-(define/contract (_normalizeColor color)
-  ((or/c string? (listof number?)) . -> . (or/c (listof number?) #f))
+(define (_normalizeColor color)
   ;; parses color string into list of values
   (let loop ([color color])
     (cond
@@ -48,122 +21,104 @@
       [(and (string? color) (regexp-match #px"^#(?i:[0-9A-F]){3}$" color))
        (loop (list->string (cdr (apply append
                                        (for/list ([c (in-string color)])
-                                                 (list c c))))))] ; change #abc to ##aabbcc then drop the first char
+                                         (list c c))))))] ; change #abc to ##aabbcc then drop the first char
       ;; 6-digit hexish string becomes list of hex numbers and maybe #f vals
       [(and (string? color) (= 7 (string-length color)) (string-prefix? color "#"))
        (loop (for/list ([str (in-list (regexp-match* #rx".." (string-trim color "#")))])
-                       (string->number str 16)))] ; match two at a time and convert to hex
+               (string->number str 16)))] ; match two at a time and convert to hex
       ;; named color
       [(and (string? color) (hash-ref namedColors color #f)) => loop]
       ;; array of numbers
       [(and (list? color) (andmap number? color))
        (for/list ([i (in-list color)])
-                 (define x (/ i (case (length color)
-                                  [(3) 255.0] ; RGB
-                                  [(4) 100.0] ; CMYK
-                                  [else 1.0])))
-                 (if (integer? x) (inexact->exact x) x))]
+         (define x (/ i (case (length color)
+                          [(3) 255.0] ; RGB
+                          [(4) 100.0] ; CMYK
+                          [else 1.0])))
+         (if (integer? x) (inexact->exact x) x))]
       [else #f])))
 
+(define (color-mixin [% mixin-tester%])
+  (class %
+    (super-new)
+    (field [_opacityRegistry #f]
+           [_opacityCount #f]
+           [_gradCount #f]
+           [_fillColor #f])
 
-(define/contract (_setColor this color stroke)
-  (color-string? (or/c boolean? number?) . ->m . boolean?)
-  (let ([color (_normalizeColor color)]
-        [op (if stroke "SCN" "scn")])
-    (cond
-      [(not color)]
-      #;[(is-a? color PDFGradient)
-         (_setColorSpace this "Pattern" stroke)
-         (send color apply op)
-         #t] ; todo
-      [else
-       (define color-space (case (length color)
-                             [(4) "DeviceCMYK"]
-                             [(3) "DeviceRGB"]
-                             [else (raise-argument-error '_setColor "color of length 3 or 4" color)]))
-       (_setColorSpace this color-space stroke)
+    (define/public (initColor)
+      (set! _opacityRegistry (mhash))
+      (set! _opacityCount 0)
+      (set! _gradCount 0))
+
+    (define/public (_setColor color stroke)
+      (let ([color (_normalizeColor color)]
+            [op (if stroke "SCN" "scn")])
+        (cond
+          [(not color)]
+          #;[(is-a? color PDFGradient)
+             (_setColorSpace "Pattern" stroke)
+             (send color apply op)
+             #t] ; todo
+          [else
+           (define color-space (case (length color)
+                                 [(4) "DeviceCMYK"]
+                                 [(3) "DeviceRGB"]
+                                 [else (raise-argument-error '_setColor "color of length 3 or 4" color)]))
+           (_setColorSpace color-space stroke)
        
-       ;; 181126 don't round, to be consistent with pdfkit behavior
-       (send this addContent (format "~a ~a" (string-join (map (λ (num) (number num #:round #false)) color) " ") op))
-       #t])))
-
+           ;; 181126 don't round, to be consistent with pdfkit behavior
+           (send this addContent (format "~a ~a" (string-join (map (λ (num) (number num #:round #false)) color) " ") op))
+           #t])))
     
-(define (_setColorSpace this space stroke)
-  ((or/c "DeviceCMYK" "DeviceRGB") (or/c number? #f) . ->m . object?)
-  (define op (if stroke "CS" "cs"))
-  (send this addContent (format "/~a ~a" space op)))
+    (define/public (_setColorSpace space stroke)
+      (define op (if stroke "CS" "cs"))
+      (send this addContent (format "/~a ~a" space op)))
 
+    (define/public (fillColor color [opacity 1])
+      (unless (_normalizeColor color)
+        (raise-argument-error 'fillColor "valid color string" color))
+      (when (_setColor color #f) (fillOpacity opacity))
 
-(define/contract (fillColor this color [opacity 1])
-  ((color-string?) ((or/c number? #f)) . ->*m . object?)
-  (unless (_normalizeColor color)
-    (raise-argument-error 'fillColor "valid color string" color))
-  (when (_setColor this color #f) (fillOpacity this opacity))
+      ;; save this for text wrapper, which needs to reset
+      ;; the fill color on new pages
+      (set! _fillColor (list color opacity))
+      this)
 
-  ;; save this for text wrapper, which needs to reset
-  ;; the fill color on new pages
-  (set-field! _fillColor this (list color opacity))
-  this)
+    (define/public (strokeColor color [opacity 1])
+      (unless (_normalizeColor color)
+        (raise-argument-error 'strokeColor "valid color string" color))
+      (when (_setColor color #t) (strokeOpacity opacity))
+      this)
 
+    (define/public (fillOpacity opacity)
+      (_doOpacity opacity #f)
+      this)
 
-(define/contract (strokeColor this color [opacity 1])
-  ((color-string?) ((or/c number? #f)) . ->*m . object?)
-  (unless (_normalizeColor color)
-    (raise-argument-error 'strokeColor "valid color string" color))
-  (when (_setColor this color #t) (strokeOpacity this opacity))
-  this)
-
-
-(define/contract (fillOpacity this opacity)
-  ((or/c number? #f) . ->m . object?)
-  (_doOpacity this opacity #f)
-  this)
-
-
-(define/contract (strokeOpacity this opacity)
-  ((or/c number? #f) . ->m . object?)
-  (_doOpacity this #f opacity)
-  this)
-
-(define (bounded low x high)
-  (if (high . < . low)
-      (bounded high x low)
-      (max low (min high x))))
-
-(module+ test
-  (require rackunit)
-  (check-equal? (bounded 0 2 1) 1)
-  (check-equal? (bounded 1 2 0) 1)
-  (check-equal? (bounded 0 -2 1) 0)
-  (check-equal? (bounded 1 -2 0) 0)
-  (check-equal? (bounded 0 .5 1) 0.5)
-  (check-equal? (bounded 0 0 1) 0)
-  (check-equal? (bounded 0 1 1) 1))
-
-
-
-(define/contract (_doOpacity this [fill-arg #f] [stroke-arg #f])
-  (() ((or/c number? #f) (or/c number? #f)) . ->*m . object?)
-  (define fill-opacity (and fill-arg (bounded 0 fill-arg 1)))
-  (define stroke-opacity (and stroke-arg (bounded 0 stroke-arg 1)))
-  (when (or fill-opacity stroke-opacity)
-    (define key (format "~a_~a"
-                        (if fill-opacity (number fill-opacity) "")
-                        (if stroke-opacity (number stroke-opacity) "")))
+    (define/public (strokeOpacity opacity)
+      (_doOpacity #f opacity)
+      this)
+    
+    (define/public (_doOpacity [fill-arg #f] [stroke-arg #f])
+      (define fill-opacity (and fill-arg (bounded 0 fill-arg 1)))
+      (define stroke-opacity (and stroke-arg (bounded 0 stroke-arg 1)))
+      (when (or fill-opacity stroke-opacity)
+        (define key (format "~a_~a"
+                            (if fill-opacity (number fill-opacity) "")
+                            (if stroke-opacity (number stroke-opacity) "")))
         
-    (match-define (list dictionary name)
-      (hash-ref! (get-field _opacityRegistry this) key
-                 (λ ()
-                   (define dictionary (mhash 'Type "ExtGState"))
-                   (when fill-opacity (hash-set! dictionary 'ca fill-opacity))
-                   (when stroke-opacity (hash-set! dictionary 'CA stroke-opacity))
-                   (define ref-dict (send this ref dictionary))
-                   (· ref-dict end)
-                   (list ref-dict (format "Gs~a" (increment-field! _opacityCount this))))))
+        (match-define (list dictionary name)
+          (hash-ref! (get-field _opacityRegistry this) key
+                     (λ ()
+                       (define dictionary (mhash 'Type "ExtGState"))
+                       (when fill-opacity (hash-set! dictionary 'ca fill-opacity))
+                       (when stroke-opacity (hash-set! dictionary 'CA stroke-opacity))
+                       (define ref-dict (send this ref dictionary))
+                       (· ref-dict end)
+                       (list ref-dict (format "Gs~a" (increment-field! _opacityCount this))))))
 
-    (hash-set! (· this page ext_gstates) name dictionary)        
-    (send this addContent (format "/~a gs" name))))
-
+        (hash-set! (· this page ext_gstates) name dictionary)        
+        (send this addContent (format "/~a gs" name))))))
 
 (define namedColors
   (hash "aliceblue" '(240 248 255)

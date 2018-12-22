@@ -40,3 +40,20 @@
 
 (define (write-bytes-out x)
   (void (write-bytes (to-bytes x))))
+
+(define (bounded low x high)
+  (if (high . < . low)
+      (bounded high x low)
+      (max low (min high x))))
+
+(module+ test
+  (require rackunit)
+  (check-equal? (bounded 0 2 1) 1)
+  (check-equal? (bounded 1 2 0) 1)
+  (check-equal? (bounded 0 -2 1) 0)
+  (check-equal? (bounded 1 -2 0) 0)
+  (check-equal? (bounded 0 .5 1) 0.5)
+  (check-equal? (bounded 0 0 1) 0)
+  (check-equal? (bounded 0 1 1) 1))
+
+
