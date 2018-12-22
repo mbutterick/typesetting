@@ -7,11 +7,11 @@
          "zlib.rkt")
 (provide PDFReference)
 
+
 (define PDFReference
   (class object%
     (super-new)
-    (init-field [(@doc document)]
-                [(@id id)]
+    (init-field [(@id id)]
                 [(@payload payload) (make-hasheq)])
     (field [(@offset offset) #f]
            [@port (open-output-bytes)])

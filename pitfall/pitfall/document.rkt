@@ -31,14 +31,11 @@
                                 'Pages (ref (mhasheq 'Type "Pages"))))]
            [(@x x) 0]
            [(@y y) 0]
+           ;; initialize the metadata
            [@info (mhasheq 'Producer "PITFALL"
                            'Creator "PITFALL"
-                           'CreationDate (seconds->date (if (test-mode)
-                                                            0
-                                                            (current-seconds)) #f))])  ; Initialize the metadata
+                           'CreationDate (seconds->date (if (test-mode) 0 (current-seconds)) #f))])
 
-    
-    
     ;; initialize mixins
     (send this initColor)
     (send this initVector)
@@ -60,7 +57,7 @@
     (define/public (page) (first @pages))
 
     (define/public (ref [payload (mhasheq)])
-      (define new-ref (make-object PDFReference this (@ref-gen) payload))
+      (define new-ref (make-object PDFReference (@ref-gen) payload))
       (set! @refs (cons new-ref @refs))
       new-ref)
 
