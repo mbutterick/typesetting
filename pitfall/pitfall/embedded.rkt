@@ -35,7 +35,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
          [scale (/ 1000 (font-units-per-em font))]
          [ascender (* (font-ascent font) scale)]
          [descender (* (font-descent font) scale)]
-         [lineGap (* (font-linegap font) scale)]
+         [line-gap (* (font-linegap font) scale)]
          [bbox (font-bbox font)])
 
   (as-methods
@@ -218,7 +218,7 @@ HERE
   (check-equal? (send ef widthOfString "f" 1000) 321.0)
   (check-equal? (· ef ascender) 980)
   (check-equal? (· ef descender) -238)
-  (check-equal? (· ef lineGap) 0)
+  (check-equal? (· ef line-gap) 0)
   (check-equal? (bbox->list (· ef bbox)) '(-161 -236 1193 963))
   (define H-gid 41)
   (check-equal? (· ef widths) (mhash 0 278))

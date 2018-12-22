@@ -19,7 +19,7 @@
          [ascender (· font ascender)]
          [descender (· font descender)]
          [bbox (· font bbox)]
-         [lineGap (· font lineGap)])
+         [line-gap (· font line-gap)])
   (as-methods
    embed
    encode

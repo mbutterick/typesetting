@@ -44,29 +44,29 @@
   (send* doc [line-width 25])
 
   ;; line cap settings
-  (send* doc [lineCap 'butt]
+  (send* doc [line-cap 'butt]
     [move-to 50 20]
     [line-to 100 20]
     [stroke]
-    [lineCap 'round]
+    [line-cap 'round]
     [move-to 150 20]
     [line-to 200 20]
     [stroke])
 
   ;; square line cap shown with a circle instead of a line so you can see it
-  (send* doc [lineCap 'square]
+  (send* doc [line-cap 'square]
     [move-to 250 20]
     [circle 275 30 15]
     [stroke])
 
   ;; line join settings
-  (send* doc [lineJoin 'miter]
+  (send* doc [line-join 'miter]
     [rect 50 100 50 50]
     [stroke]
-    [lineJoin 'round]
+    [line-join 'round]
     [rect 150 100 50 50]
     [stroke]
-    [lineJoin 'bevel]
+    [line-join 'bevel]
     [rect 250 100 50 50]
     [stroke]))
 

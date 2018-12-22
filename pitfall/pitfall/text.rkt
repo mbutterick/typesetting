@@ -22,13 +22,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 (define (text-mixin [% mixin-tester%])
   (class %
     (super-new)
-    (field [_lineGap #f]
+    (field [_line-gap #f]
            [_textOptions #f])
 
     (as-methods
      initText
      _initOptions
-     lineGap
+     line-gap
      moveDown
      moveUp
      _text
@@ -40,19 +40,19 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (->m void?)
   (set-field! x this 0)
   (set-field! y this 0)
-  (lineGap this 0)
+  (line-gap this 0)
   (void))
 
 
-(define/contract (lineGap this _lineGap)
+(define/contract (line-gap this _line-gap)
   (number? . ->m . object?)
-  (set-field! _lineGap this _lineGap)
+  (set-field! _line-gap this _line-gap)
   this)
 
 
 (define/contract (moveDown this [lines 1] #:factor [factor 1])
   (() (number? #:factor number?) . ->*m . object?)
-  (increment-field! y this (* factor (send this currentLineHeight #t) (+ lines (· this _lineGap))))
+  (increment-field! y this (* factor (send this currentLineHeight #t) (+ lines (· this _line-gap))))
   this)
 
 
@@ -123,12 +123,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 (define/contract (_line this text [options (mhash)] [wrapper #f])
   ((string?) (hash? (or/c procedure? #f)) . ->*m . void?)
   (send this _fragment text (· this x) (· this y) options)
-  (define lineGap (or (· options lineGap) (· this _lineGap) 0))
+  (define line-gap (or (· options line-gap) (· this _line-gap) 0))
   ;; 180325 suppress the size tracking: we'll do our own line measurement
   ;; 181120 unsuppress the size tracking for now because it breaks test 04
   (if (not wrapper)
       (increment-field! x this (send this widthOfString text))
-      (increment-field! y (+ (send this currentLineHeight #t) lineGap)))
+      (increment-field! y (+ (send this currentLineHeight #t) line-gap)))
   (void))
 
 
