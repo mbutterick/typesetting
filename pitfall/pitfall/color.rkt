@@ -41,35 +41,30 @@
 (define (color-mixin [% mixin-tester%])
   (class %
     (super-new)
-    (field [_opacityRegistry #f]
-           [_opacityCount #f]
-           [_gradCount #f]
+    (field [_opacityRegistry (mhash)]
+           [_opacityCount 0]
+           [_gradCount 0]
            [_fillColor #f])
 
-    (define/public (initColor)
-      (set! _opacityRegistry (mhash))
-      (set! _opacityCount 0)
-      (set! _gradCount 0))
-
-    (define/public (_setColor color stroke)
-      (let ([color (_normalizeColor color)]
-            [op (if stroke "SCN" "scn")])
-        (cond
-          [(not color)]
-          #;[(is-a? color PDFGradient)
-             (_setColorSpace "Pattern" stroke)
-             (send color apply op)
-             #t] ; todo
-          [else
-           (define color-space (case (length color)
-                                 [(4) "DeviceCMYK"]
-                                 [(3) "DeviceRGB"]
-                                 [else (raise-argument-error '_setColor "color of length 3 or 4" color)]))
-           (_setColorSpace color-space stroke)
+    (define/public (_setColor color-in stroke)
+      (define color (_normalizeColor color-in))
+      (define op (if stroke "SCN" "scn"))
+      (cond
+        [(not color)]
+        #;[(is-a? color PDFGradient)
+           (_setColorSpace "Pattern" stroke)
+           (send color apply op)
+           #t] ; todo
+        [else
+         (define color-space (case (length color)
+                               [(4) "DeviceCMYK"]
+                               [(3) "DeviceRGB"]
+                               [else (raise-argument-error '_setColor "color of length 3 or 4" color)]))
+         (_setColorSpace color-space stroke)
        
-           ;; 181126 don't round, to be consistent with pdfkit behavior
-           (send this addContent (format "~a ~a" (string-join (map (λ (num) (number num #:round #false)) color) " ") op))
-           #t])))
+         ;; 181126 don't round, to be consistent with pdfkit behavior
+         (send this addContent (format "~a ~a" (string-join (map (λ (num) (number num #:round #false)) color) " ") op))
+         #t]))
     
     (define/public (_setColorSpace space stroke)
       (define op (if stroke "CS" "cs"))

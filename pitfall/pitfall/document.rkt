@@ -37,7 +37,6 @@
                            'CreationDate (seconds->date (if (test-mode) 0 (current-seconds)) #f))])
 
     ;; initialize mixins
-    (send this initColor)
     (send this initVector)
     (inherit-field _ctm)
     (send this initFonts)
