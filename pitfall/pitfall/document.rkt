@@ -38,7 +38,7 @@
 
     ;; initialize mixins
     (send this initVector)
-    (inherit-field _ctm)
+    (inherit-field @ctm)
     (send this initFonts)
     (inherit-field @font-families)
     (send this initText)
@@ -70,7 +70,7 @@
       (set! @y (margin-right (get-field margins (page))))
       ;; flip PDF coordinate system so that the origin is in
       ;; the top left rather than the bottom left
-      (set! _ctm default-ctm-value)
+      (set! @ctm default-ctm-value)
       (send this transform 1 0 0 -1 0 (get-field height (page)))
       this)
 

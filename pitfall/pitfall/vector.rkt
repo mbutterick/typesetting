@@ -11,11 +11,13 @@
   "path.rkt")
 (provide vector-mixin default-ctm-value)
 
+(define default-ctm-value '(1 0 0 1 0 0))
+
 (define (vector-mixin [% mixin-tester%])
   (class %
     (super-new)
-    (field [_ctm default-ctm-value]
-           [_ctmStack null])
+    (field [@ctm default-ctm-value]
+           [@ctm-stack null])
     (as-methods
      initVector
      save
@@ -45,25 +47,24 @@
      scale)))
 
 
-(define default-ctm-value '(1 0 0 1 0 0))
 
 
 (define/contract (initVector this)
   (->m void?)
-  (set-field! _ctm this default-ctm-value)
-  (set-field! _ctmStack this null))
+  (set-field! @ctm this default-ctm-value)
+  (set-field! @ctm-stack this null))
 
 
 (define/contract (save this)
   (->m object?)
-  (push-field! _ctmStack this (· this _ctm))
+  (push-field! @ctm-stack this (· this @ctm))
   (send this addContent "q"))
 
 
 (define/contract (restore this)
   (->m object?)
-  (set-field! _ctm this (if (pair? (· this _ctmStack))
-                            (pop-field! _ctmStack this)
+  (set-field! @ctm this (if (pair? (· this @ctm-stack))
+                            (pop-field! @ctm-stack this)
                             default-ctm-value))
   (send this addContent "Q"))
 
@@ -228,7 +229,7 @@
 (define/contract (transform this scaleX shearY shearX scaleY mdx mdy)
   (number? number? number? number? number? number? . ->m . object?)
   (define new-ctm (list scaleX shearY shearX scaleY mdx mdy))
-  (set-field! _ctm this (combine-transforms (· this _ctm) new-ctm))
+  (set-field! @ctm this (combine-transforms (· this @ctm) new-ctm))
   (send this addContent (make-transform-string new-ctm)))
 
 
