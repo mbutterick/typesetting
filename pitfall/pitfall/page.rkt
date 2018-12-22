@@ -4,11 +4,10 @@
   racket/contract
   sugar/unstable/class
   sugar/unstable/js
-  sugar/unstable/dict)
+  sugar/unstable/dict
+  "core.rkt")
 
-(provide PDFPage)
-
-(struct margin (top left bottom right) #:transparent #:mutable)
+(provide (all-defined-out))
 
 (define PDFPage
   (class object%

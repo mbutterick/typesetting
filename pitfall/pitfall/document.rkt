@@ -67,8 +67,8 @@
       (set! @pages (cons (make-object PDFPage this page-parent options-arg) @pages))
       
       ;; reset x and y coordinates
-      (set! @x (hash-ref (get-field margins (page)) 'left))
-      (set! @y (hash-ref (get-field margins (page)) 'top))
+      (set! @x (margin-left (get-field margins (page))))
+      (set! @y (margin-right (get-field margins (page))))
       ;; flip PDF coordinate system so that the origin is in
       ;; the top left rather than the bottom left
       (set! _ctm default-ctm-value)

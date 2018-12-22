@@ -9,6 +9,9 @@
 ;; for JPEG and PNG
 (struct image (label width height obj) #:transparent #:mutable)
 
+;; for page
+(struct margin (top left bottom right) #:transparent #:mutable)
+
 ;; params
 
 (define test-mode (make-parameter #f))

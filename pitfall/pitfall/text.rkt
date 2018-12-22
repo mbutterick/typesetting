@@ -10,7 +10,8 @@
   sugar/unstable/dict
   sugar/list
   racket/promise
-  fontland/glyph-position)
+  fontland/glyph-position
+  "core.rkt")
 (provide text-mixin)
 
 #|
@@ -111,7 +112,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     ;; wrap to margins if no x or y position passed
     (unless (not (hash-ref options 'lineBreak #t))
       (define margins (· this page margins))
-      (hash-ref! options 'width (λ () (- (· this page width) (· this x) (· margins right)))))
+      (hash-ref! options 'width (λ () (- (· this page width) (· this x) (margin-right margins)))))
 
     (hash-ref! options 'columns 0)
     (hash-ref! options 'columnGap 18) ; 1/4 inch in PS points
