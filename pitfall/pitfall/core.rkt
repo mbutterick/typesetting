@@ -20,6 +20,8 @@
 (define current-pdf-version (make-parameter 1.3))
 (define current-auto-first-page (make-parameter #t))
 
+(define current-default-margins (make-parameter (margin 72 72 72 72)))
+
 ;; helpers
 
 (define (numberizer x #:round [round? #true])

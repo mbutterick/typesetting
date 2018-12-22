@@ -1,13 +1,10 @@
 #lang debug racket/base
 (require
   racket/class
-  racket/contract
-  sugar/unstable/class
-  sugar/unstable/js
   sugar/unstable/dict
   "core.rkt")
 
-(provide (all-defined-out))
+(provide PDFPage)
 
 (define PDFPage
   (class object%
@@ -26,8 +23,7 @@
             (let ([margin-value (hash-ref @options 'margin #f)])
               (if (number? margin-value)
                   (margin margin-value margin-value margin-value margin-value)
-                  ;; default to 1 inch margins
-                  (hash-ref @options 'margins default-margins)))]
+                  (hash-ref @options 'margins (current-default-margins))))]
            ;; The page dictionary
            [(@dictionary dictionary)
             (send @doc ref
@@ -66,7 +62,6 @@
       (send @resources end)
       (send @content end))))
 
-(define default-margins (margin 72 72 72 72))
 
 (define page-sizes
   (hash "4A0" '(4767.87 6740.79)
