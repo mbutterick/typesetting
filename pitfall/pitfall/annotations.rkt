@@ -1,6 +1,7 @@
 #lang racket/base
 (require
   "core.rkt"
+    "reference.rkt"
   racket/class
   racket/match
   racket/contract
@@ -36,7 +37,7 @@
   (for ([(k v) (in-hash options)])
     (hash-set! options (string->symbol (string-titlecase (symbol->string k))) v))
 
-  (define annots-ref (send this make-ref options))
+  (define annots-ref (make-ref options))
   (send (· this page) annotations annots-ref)
   (· annots-ref end)
   this)
@@ -46,7 +47,7 @@
   ((number? number? number? number? string?) (hash?) . ->*m . object?)
   (hash-set*! options
               'Subtype "Link"
-              'A (send this make-ref (mhash 'S "URI"
+              'A (make-ref (mhash 'S "URI"
                                        'URI (String url))))
   (send (· options A) end)
   (send this annotate x y w h options))

@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class)
+(require racket/class "reference.rkt")
 (provide PDFFont)
 
 (define PDFFont
@@ -17,7 +17,7 @@
     
     (define/public (ref)
       (unless @dictionary
-        (set! @dictionary (send @document make-ref)))
+        (set! @dictionary (make-ref)))
       @dictionary)
 
     (define/public (finalize)

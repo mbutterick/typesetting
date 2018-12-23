@@ -3,7 +3,6 @@
   "core.rkt"
   racket/class
   racket/format
-  racket/generator
   racket/match
   racket/dict
   racket/list
@@ -21,13 +20,13 @@
 
 (define PDFDocument
   (class (annotation-mixin (image-mixin (text-mixin (fonts-mixin (vector-mixin (color-mixin object%))))))
+        (set-current-id! 1)
+    (current-ref-listeners (cons (λ (ref) (send this log-ref ref)) (current-ref-listeners)))
+
     (super-new)
     (init-field [(@options options) (mhasheq)])  
     (field [@pages null]
            [@refs null]
-           [@ref-gen (generator () (let loop ([refid 1])
-                                     (yield refid)
-                                     (loop (add1 refid))))]
            [@root (make-ref (mhasheq 'Type "Catalog"
                                 'Pages (make-ref (mhasheq 'Type "Pages"))))]
            [(@x x) 0]
@@ -53,12 +52,10 @@
     (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
       (hash-set! @info key val))
 
-    (define/public (page) (first @pages))
+    (define/public (log-ref ref)
+      (set! @refs (cons ref @refs)))
 
-    (define/public (make-ref [payload (mhasheq)])
-      (define new-ref (make-object PDFReference (@ref-gen) payload))
-      (set! @refs (cons new-ref @refs))
-      new-ref)
+    (define/public (page) (first @pages))
 
     (define/public (add-page [options-arg @options])
       ;; create a page object

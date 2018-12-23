@@ -48,7 +48,7 @@
 
   (unless (· this obj)
     (set-field! obj this
-                (send doc-in make-ref
+                (make-ref
                       (mhash
                        'Type "XObject"
                        'Subtype "Image"

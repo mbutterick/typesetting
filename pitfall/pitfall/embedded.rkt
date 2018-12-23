@@ -2,6 +2,7 @@
 (require
   (for-syntax racket/base)
   "core.rkt"
+  "reference.rkt"
   racket/class
   racket/match
   racket/string
@@ -88,7 +89,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
     (define/override (embed)
       ;; no CFF support
       (define isCFF #false) #;(is-a? subset CFFSubset)
-      (define font-file (send @document make-ref))
+      (define font-file (make-ref))
 
       (when isCFF
         (dict-set! font-file 'Subtype "CIDFontType0C"))
@@ -115,7 +116,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                   (integer->char (random 65 (+ 65 26))))))
       (define name (string-append tag "+" (font-postscript-name font)))
       (define bbox (font-bbox font))
-      (define descriptor (send @document make-ref
+      (define descriptor (make-ref
                                (mhash
                                 'Type "FontDescriptor"
                                 'FontName name
@@ -132,7 +133,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (dict-set! descriptor (if isCFF 'FontFile3 'FontFile2) font-file)
       (send descriptor end)
 
-      (define descendant-font (send @document make-ref
+      (define descendant-font (make-ref
                                    (mhash
                                     'Type "Font"
                                     'Subtype (string-append "CIDFontType" (if isCFF "0" "2"))
@@ -159,7 +160,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
 
     (define/public (toUnicodeCmap)
-      (define cmap (send @document make-ref))
+      (define cmap (make-ref))
       (define entries
         (for/list ([idx (in-range (length (hash-keys unicode)))])
           (define codepoints (hash-ref unicode idx))

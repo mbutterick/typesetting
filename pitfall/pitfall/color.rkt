@@ -1,6 +1,7 @@
 #lang racket/base
 (require
   "core.rkt"
+  "reference.rkt"
   racket/class
   racket/match
   racket/string)
@@ -104,7 +105,7 @@
                          (hash-set! dictionary 'ca fill-opacity))
                        (when stroke-opacity
                          (hash-set! dictionary 'CA stroke-opacity))
-                       (define ref-dict (send this make-ref dictionary))
+                       (define ref-dict (make-ref dictionary))
                        (send ref-dict end)
                        (set! @opacity-count (add1 @opacity-count))
                        (list ref-dict (format "Gs~a" @opacity-count)))))

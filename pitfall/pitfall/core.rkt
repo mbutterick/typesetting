@@ -26,6 +26,8 @@
 (define current-font (make-parameter #f))
 (define current-font-size (make-parameter 12))
 
+(define current-ref-listeners (make-parameter null))
+
 ;; helpers
 
 (define (numberizer x #:round [round? #true])

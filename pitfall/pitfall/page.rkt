@@ -2,6 +2,7 @@
 (require
   racket/class
   racket/dict
+  "reference.rkt"
   sugar/unstable/dict
   "core.rkt")
 
@@ -18,8 +19,8 @@
                            (hash-ref page-sizes (string-upcase @size)))]
            [(@width width) (list-ref @dimensions (if (equal? @layout "portrait") 0 1))]
            [(@height height) (list-ref @dimensions (if (equal? @layout "portrait") 1 0))]
-           [@content (send @doc make-ref)]
-           [(@resources resources) (send @doc make-ref (mhash 'ProcSet '("PDF" "Text" "ImageB" "ImageC" "ImageI")))]
+           [@content (make-ref)]
+           [(@resources resources) (make-ref (mhash 'ProcSet '("PDF" "Text" "ImageB" "ImageC" "ImageI")))]
            [(@margins margins)
             (let ([margin-value (hash-ref @options 'margin #f)])
               (if (number? margin-value)
@@ -27,7 +28,7 @@
                   (hash-ref @options 'margins (current-default-margins))))]
            ;; The page dictionary
            [(@dictionary dictionary)
-            (send @doc make-ref
+            (make-ref
                   (mhash 'Type "Page"
                          'Parent @page-parent
                          'MediaBox (list 0 0 @width @height)

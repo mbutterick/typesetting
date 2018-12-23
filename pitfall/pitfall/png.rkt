@@ -1,6 +1,7 @@
 #lang debug racket/base
 (require
   racket/class
+    "reference.rkt"
   racket/contract
   racket/dict
   racket/draw
@@ -34,7 +35,7 @@
   
   (unless (· this obj)
     (set-field! obj this
-                (send (· this document) make-ref
+                (make-ref
                       (mhash 'Type "XObject"
                              'Subtype "Image"
                              'BitsPerComponent (· this image bits)
@@ -43,7 +44,7 @@
                              'Filter "FlateDecode")))
 
     (unless (· this image hasAlphaChannel)
-      (define params (send (· this document) make-ref
+      (define params (make-ref
                            (mhash 'Predictor 15
                                   'Colors (· this image colors)
                                   'BitsPerComponent (· this image bits)
@@ -82,7 +83,7 @@
 
   (when (· this alphaChannel)
     (define sMask
-      (send (· this document) make-ref
+      (make-ref
             (mhash 'Type "XObject"
                    'Subtype "Image"
                    'Height (· this height)
