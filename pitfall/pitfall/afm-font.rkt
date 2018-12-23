@@ -29,7 +29,7 @@
                    (or (string->number attr) 0))])
     (field [ascender (string->number (or (hash-ref attributes 'Ascender #f) "0"))])
     (field [descender (string->number (or (hash-ref attributes 'Descender #f) "0"))])
-    (field [lineGap (- (- (list-ref bbox 3) (list-ref bbox 1)) (- ascender descender))])
+    (field [line-gap (- (- (list-ref bbox 3) (list-ref bbox 1)) (- ascender descender))])
                    
     (as-methods
      parse

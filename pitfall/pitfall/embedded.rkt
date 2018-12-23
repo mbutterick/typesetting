@@ -50,13 +50,18 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
            [name (font-postscript-name font)]
            [scale (/ 1000 (font-units-per-em font))])
 
-    (inherit-field ascender descender bbox line-gap dictionary document)
+    (inherit-field [@ascender ascender]
+                   [@descender descender]
+                   [@bbox bbox]
+                   [@line-gap line-gap]
+                   [@dictionary dictionary]
+                   [@document document])
 
-    (set! ascender (* (font-ascent font) scale))
-    (set! descender (* (font-descent font) scale))
-    (set! line-gap (* (font-linegap font) scale))
-    (set! bbox (font-bbox font))
-    (set! document document-in)
+    (set! @ascender (* (font-ascent font) scale))
+    (set! @descender (* (font-descent font) scale))
+    (set! @line-gap (* (font-linegap font) scale))
+    (set! @bbox (font-bbox font))
+    (set! @document document-in)
 
     (define/override (widthOfString string size [features #f])
       ; #f disables features ; null enables default features ; list adds features
@@ -92,7 +97,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
     (define/override (embed)
       ;; no CFF support
       (define isCFF #false) #;(is-a? (· this subset) CFFSubset)
-      (define fontFile (send document ref))
+      (define fontFile (send @document ref))
 
       (when isCFF
         (send fontFile set-key! 'Subtype "CIDFontType0C"))
@@ -122,7 +127,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (define name (string-append tag "+" (font-postscript-name font)))
 
       (define bbox (font-bbox font))
-      (define descriptor (send document ref
+      (define descriptor (send @document ref
                                (mhash
                                 'Type "FontDescriptor"
                                 'FontName name
@@ -130,8 +135,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                 'FontBBox (map (λ (x) (* scale x))
                                                (bbox->list bbox))
                                 'ItalicAngle (font-italic-angle font)
-                                'Ascent ascender
-                                'Descent descender
+                                'Ascent @ascender
+                                'Descent @descender
                                 'CapHeight (* (or (font-cap-height font) (· this sfont ascent)) scale)
                                 'XHeight (* (or (font-x-height font) 0) scale)
                                 'StemV 0)))
@@ -142,7 +147,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
       (· descriptor end)
 
-      (define descendantFont (send document ref
+      (define descendantFont (send @document ref
                                    (mhash
                                     'Type "Font"
                                     'Subtype (string-append "CIDFontType" (if isCFF "0" "2"))
@@ -165,7 +170,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
         [set-key! 'DescendantFonts (list descendantFont)]
         [set-key! 'ToUnicode (· this toUnicodeCmap)])
 
-      (send dictionary end))
+      (send @dictionary end))
 
 
     (define/public (toUnicodeCmap)

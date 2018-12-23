@@ -19,16 +19,21 @@
                    ((hash-ref standard-fonts name
                               (λ () (raise-argument-error 'PDFFont "valid font name" name)))))])
 
-    (inherit-field ascender descender bbox line-gap dictionary document)
+    (inherit-field [@ascender ascender]
+                   [@descender descender]
+                   [@bbox bbox]
+                   [@line-gap line-gap]
+                   [@dictionary dictionary]
+                   [@document document])
 
-    (set! ascender (· font ascender))
-    (set! descender (· font descender))
-    (set! bbox (· font bbox))
-    (set! line-gap (· font line-gap))
-    (set! document document-in)
+    (set! @ascender (get-field ascender font))
+    (set! @descender (get-field descender font))
+    (set! @bbox (get-field bbox font))
+    (set! @line-gap (get-field line-gap font))
+    (set! @document document-in)
 
     (define/override (embed)
-      (set-field! payload dictionary
+      (set-field! payload @dictionary
                   (mhash 'Type "Font"
                          'BaseFont name
                          'Subtype "Type1"
