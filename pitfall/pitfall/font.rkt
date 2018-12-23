@@ -1,41 +1,35 @@
 #lang racket/base
-(require
-  racket/class
-  racket/contract
-  sugar/unstable/class
-  sugar/unstable/js
-  "reference.rkt")
+(require racket/class)
 (provide PDFFont)
 
 (define PDFFont
   (class object%
     (super-new)
-    (field [dictionary #f]
-           [embedded #f])
+    (field [(@dictionary dictionary) #f]
+           [@embedded #f]
+           [(@document document) #f]
+           [(@line-gap line-gap) #f]
+           [(@bbox bbox) #f]
+           [(@ascender ascender) #f]
+           [(@descender descender) #f])
 
-    (as-methods
-     ref
-     finalize
-     lineHeight)))
+    (abstract embed encode widthOfString)
+    
+    (define/public (ref)
+      (unless @dictionary
+        (set! @dictionary (send @document ref)))
+      @dictionary)
+
+    (define/public (finalize)
+      (unless (or @embedded (not @dictionary))
+        (embed)
+        (set! @embedded #t)))
+
+    (define/public (lineHeight size [includeGap #f])
+      (define gap (if includeGap @line-gap 0))
+      (* (/ (+ @ascender gap (- @descender)) 1000.0) size))))
 
 
-(define/contract (ref this)
-  (->m (is-a?/c PDFReference))
-  (unless (· this dictionary)
-    (set-field! dictionary this (send (· this document) ref)))
-  (· this dictionary))
 
-
-(define/contract (finalize this)
-  (->m void?)
-  (unless (or (· this embedded) (not (· this dictionary)))
-    (send this embed)
-    (set-field! embedded this #t)))
-
-
-(define/contract (lineHeight this size [includeGap #f])
-  ((number?)(boolean?) . ->*m . number?)
-  (define gap (if includeGap (· this lineGap) 0))
-  (* (/ (+ (· this ascender) gap (- (· this descender))) 1000.0) size))
 
 

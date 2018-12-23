@@ -3,8 +3,6 @@
   (for-syntax racket/base)
   racket/class
   racket/file
-  racket/contract
-  sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
   "afm-font.rkt"
@@ -13,51 +11,46 @@
   racket/runtime-path)
 (provide isStandardFont standard-fonts StandardFont)
 
-(define-subclass PDFFont (StandardFont document name id)
-  (field [font (make-object AFMFont ((hash-ref standard-fonts name
-                                               (λ () (raise-argument-error 'PDFFont "valid font name" name)))))]
-         [ascender (· font ascender)]
-         [descender (· font descender)]
-         [bbox (· font bbox)]
-         [line-gap (· font line-gap)])
-  (as-methods
-   embed
-   encode
-   widthOfString))
+(define StandardFont
+  (class PDFFont
+    (super-new)
+    (init-field document-in name id)
+    (field [font (make-object AFMFont
+                   ((hash-ref standard-fonts name
+                              (λ () (raise-argument-error 'PDFFont "valid font name" name)))))])
 
+    (inherit-field ascender descender bbox line-gap dictionary document)
 
-(define/contract (embed this)
-  (->m void?)
-  (set-field! payload (· this dictionary)
-              (mhash 'Type "Font"
-                     'BaseFont (· this name)
-                     'Subtype "Type1"
-                     'Encoding "WinAnsiEncoding"))
-  (· this dictionary end))
+    (set! ascender (· font ascender))
+    (set! descender (· font descender))
+    (set! bbox (· font bbox))
+    (set! line-gap (· font line-gap))
+    (set! document document-in)
 
+    (define/override (embed)
+      (set-field! payload dictionary
+                  (mhash 'Type "Font"
+                         'BaseFont name
+                         'Subtype "Type1"
+                         'Encoding "WinAnsiEncoding"))
+      (· this dictionary end))
 
-(define (encode this text [options #f])
-  #;((string?) ((or/c hash? #f)) . ->*m . (list/c (listof string?) (listof glyph-position?)))
-  (define this-font (· this font))
-  (define encoded (send this-font encodeText text))
-  (define glyphs (send this-font glyphsForString text))
-  (define advances (send this-font advancesForGlyphs glyphs))
-  (define positions
-    (for/list ([glyph (in-list glyphs)]
-               [advance (in-list advances)])
-      (+glyph-position advance 0 0 0 (send this-font widthOfGlyph glyph)))) 
-  (list encoded positions))
+    (define/override (encode text [options #f])
+      (define encoded (send font encodeText text))
+      (define glyphs (send font glyphsForString text))
+      (define advances (send font advancesForGlyphs glyphs))
+      (define positions
+        (for/list ([glyph (in-list glyphs)]
+                   [advance (in-list advances)])
+          (+glyph-position advance 0 0 0 (send font widthOfGlyph glyph)))) 
+      (list encoded positions))
 
-
-(define/contract (widthOfString this str size [options #f])
-  ((string? number?) ((or/c hash? #f)) . ->*m . number?)
-  (define this-font (· this font))
-  (define glyphs (send this-font glyphsForString str))
-  (define advances (send this-font advancesForGlyphs glyphs))
-  (define width (apply + advances))
-  (define scale (/ size 1000.0))
-  (* width scale))
-
+    (define/override (widthOfString str size [options #f])
+      (define glyphs (send font glyphsForString str))
+      (define advances (send font advancesForGlyphs glyphs))
+      (define width (apply + advances))
+      (define scale (/ size 1000.0))
+      (* width scale))))
 
 (module+ test
   (define stdfont (make-object StandardFont #f "Helvetica" #f)))
