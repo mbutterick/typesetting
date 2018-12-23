@@ -2,14 +2,23 @@
 (require racket/class
          racket/match
          racket/port
+         racket/dict
+         racket/private/generic-methods
          "core.rkt"
          "object.rkt"
          "zlib.rkt")
 (provide PDFReference)
 
+(define dictable<%>
+  (interface* ()
+              ([(generic-property gen:dict)
+                (generic-method-table gen:dict
+                                      (define (dict-ref refobj key [thunk #f]) (send refobj get-key key))
+                                      (define (dict-set! refobj key val) (send refobj set-key! key))
+                                      (define (dict-update! refobj key updater [failure-result #f]) (send refobj update-key! key updater)))])))
 
 (define PDFReference
-  (class object%
+  (class* object% (dictable<%>)
     (super-new)
     (init-field [(@id id)]
                 [(@payload payload) (make-hasheq)])
