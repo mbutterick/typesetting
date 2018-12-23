@@ -3,6 +3,7 @@
   "core.rkt"
   racket/class
   racket/contract
+  racket/dict
   sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
