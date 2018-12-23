@@ -7,7 +7,6 @@
   racket/string
   racket/format
   racket/list
-  sugar/unstable/js
   sugar/unstable/dict
   "font.rkt"
   fontland)
@@ -22,11 +21,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
 (define-syntax-rule (sum-flags [COND VAL] ...)
   (for/sum ([c (in-list (list COND ...))]
-              [v (in-list (list VAL ...))]
-              #:when c)
-      v))
+            [v (in-list (list VAL ...))]
+            #:when c)
+    v))
 
-(define (toHex . codePoints)
+(define (to-hex . codePoints)
   (string-append*
    (for/list ([code (in-list codePoints)])
      (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
@@ -74,7 +73,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                    ([(g i) (in-indexed glyphs)]
                     [posn (in-list positions)])
           (define gid (subset-add-glyph! subset (glyph-id g)))
-          (define subset-idx (toHex gid))
+          (define subset-idx (to-hex gid))
           (set-glyph-position-advance-width! posn (glyph-advance-width g))
 
           (hash-ref! widths gid (λ () (glyph-position-advance-width posn)))
@@ -87,28 +86,26 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
     (define/override (embed)
       ;; no CFF support
-      (define isCFF #false) #;(is-a? (· this subset) CFFSubset)
-      (define fontFile (send @document ref))
+      (define isCFF #false) #;(is-a? subset CFFSubset)
+      (define font-file (send @document ref))
 
       (when isCFF
-        (send fontFile set-key! 'Subtype "CIDFontType0C"))
+        (send font-file set-key! 'Subtype "CIDFontType0C"))
   
-      (send* fontFile [write (get-output-bytes (encode-to-port subset))] [end])
+      (send* font-file [write (get-output-bytes (encode-to-port subset))] [end])
 
-      (define familyClass (let ([val (if (has-table? font 'OS/2)
-                                         (hash-ref (get-OS/2-table font) 'sFamilyClass)
-                                         0)])
-                            (floor (/ val 256)))) ; equivalent to >> 8
-
+      (define family-class (if (has-table? font 'OS/2)
+                               (floor (/ (hash-ref (get-OS/2-table font) 'sFamilyClass) 256)) ; >> 8
+                               0))
       ;; font descriptor flags
       (match-define (list FIXED_PITCH SERIF SYMBOLIC SCRIPT _UNUSED NONSYMBOLIC ITALIC)
         (map (λ (x) (expt 2 x)) (range 7)))
 
       (define flags (sum-flags
                      [(not (zero? (hash-ref (get-post-table font) 'isFixedPitch))) FIXED_PITCH]
-                     [(<= 1 familyClass 7) SERIF]
+                     [(<= 1 family-class 7) SERIF]
                      [#t SYMBOLIC] ; assume the font uses non-latin characters
-                     [(= familyClass 10) SCRIPT]
+                     [(= family-class 10) SCRIPT]
                      [(hash-ref (hash-ref (get-head-table font) 'macStyle) 'italic) ITALIC]))
 
       ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
@@ -116,7 +113,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (define tag (list->string (for/list ([i (in-range 6)])
                                   (integer->char (random 65 (+ 65 26))))))
       (define name (string-append tag "+" (font-postscript-name font)))
-
       (define bbox (font-bbox font))
       (define descriptor (send @document ref
                                (mhash
@@ -128,17 +124,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                 'ItalicAngle (font-italic-angle font)
                                 'Ascent @ascender
                                 'Descent @descender
-                                'CapHeight (* (or (font-cap-height font) (· this sfont ascent)) scale)
+                                'CapHeight (* (or (font-cap-height font) (font-ascent font)) scale)
                                 'XHeight (* (or (font-x-height font) 0) scale)
                                 'StemV 0)))
 
-      (send descriptor set-key! (if isCFF
-                                    'FontFile3
-                                    'FontFile2) fontFile)
-
+      (send descriptor set-key! (if isCFF 'FontFile3 'FontFile2) font-file)
       (send descriptor end)
 
-      (define descendantFont (send @document ref
+      (define descendant-font (send @document ref
                                    (mhash
                                     'Type "Font"
                                     'Subtype (string-append "CIDFontType" (if isCFF "0" "2"))
@@ -151,14 +144,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                     'FontDescriptor descriptor
                                     'W (list 0 (for/list ([idx (in-range (length (hash-keys widths)))])
                                                  (hash-ref widths idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
-
-      (send descendantFont end)
+      (send descendant-font end)
+      
       (send* @dictionary
         [set-key! 'Type "Font"]
         [set-key! 'Subtype "Type0"]
         [set-key! 'BaseFont name]
         [set-key! 'Encoding "Identity-H"]
-        [set-key! 'DescendantFonts (list descendantFont)]
+        [set-key! 'DescendantFonts (list descendant-font)]
         [set-key! 'ToUnicode (toUnicodeCmap)])
 
       (send @dictionary end))
@@ -168,11 +161,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (define cmap (send @document ref))
       (define entries
         (for/list ([idx (in-range (length (hash-keys unicode)))])
-          (define codePoints (hash-ref unicode idx))
+          (define codepoints (hash-ref unicode idx))
           (define encoded ; encode codePoints to utf16
             ;; todo: full utf16 support. for now just utf8
-            (for/list ([value (in-list codePoints)])
-              (toHex value)))
+            (for/list ([value (in-list codepoints)])
+              (to-hex value)))
           (format "<~a>" (string-join encoded " "))))
 
       (define unicode-cmap-str #<<HERE
@@ -200,7 +193,7 @@ HERE
         )
   
       (send* cmap
-        [write (format unicode-cmap-str (toHex (sub1 (length entries))) (string-join entries " "))]
+        [write (format unicode-cmap-str (to-hex (sub1 (length entries))) (string-join entries " "))]
         [end])                                 
       cmap)))
 

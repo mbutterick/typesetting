@@ -3,7 +3,6 @@
   (for-syntax racket/base)
   racket/class
   racket/file
-  sugar/unstable/js
   sugar/unstable/dict
   "afm-font.rkt"
   "font.rkt"
