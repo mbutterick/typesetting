@@ -104,7 +104,7 @@
                          (hash-set! dictionary 'ca fill-opacity))
                        (when stroke-opacity
                          (hash-set! dictionary 'CA stroke-opacity))
-                       (define ref-dict (send this ref dictionary))
+                       (define ref-dict (send this make-ref dictionary))
                        (send ref-dict end)
                        (set! @opacity-count (add1 @opacity-count))
                        (list ref-dict (format "Gs~a" @opacity-count)))))

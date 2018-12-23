@@ -17,7 +17,7 @@
     
     (define/public (ref)
       (unless @dictionary
-        (set! @dictionary (send @document ref)))
+        (set! @dictionary (send @document make-ref)))
       @dictionary)
 
     (define/public (finalize)

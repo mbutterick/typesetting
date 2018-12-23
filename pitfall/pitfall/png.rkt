@@ -34,7 +34,7 @@
   
   (unless (· this obj)
     (set-field! obj this
-                (send (· this document) ref
+                (send (· this document) make-ref
                       (mhash 'Type "XObject"
                              'Subtype "Image"
                              'BitsPerComponent (· this image bits)
@@ -43,7 +43,7 @@
                              'Filter "FlateDecode")))
 
     (unless (· this image hasAlphaChannel)
-      (define params (send (· this document) ref
+      (define params (send (· this document) make-ref
                            (mhash 'Predictor 15
                                   'Colors (· this image colors)
                                   'BitsPerComponent (· this image bits)
@@ -82,7 +82,7 @@
 
   (when (· this alphaChannel)
     (define sMask
-      (send (· this document) ref
+      (send (· this document) make-ref
             (mhash 'Type "XObject"
                    'Subtype "Image"
                    'Height (· this height)

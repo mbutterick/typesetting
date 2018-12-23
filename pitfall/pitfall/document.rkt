@@ -28,8 +28,8 @@
            [@ref-gen (generator () (let loop ([refid 1])
                                      (yield refid)
                                      (loop (add1 refid))))]
-           [@root (ref (mhasheq 'Type "Catalog"
-                                'Pages (ref (mhasheq 'Type "Pages"))))]
+           [@root (make-ref (mhasheq 'Type "Catalog"
+                                'Pages (make-ref (mhasheq 'Type "Pages"))))]
            [(@x x) 0]
            [(@y y) 0]
            ;; initialize the metadata
@@ -55,7 +55,7 @@
 
     (define/public (page) (first @pages))
 
-    (define/public (ref [payload (mhasheq)])
+    (define/public (make-ref [payload (mhasheq)])
       (define new-ref (make-object PDFReference (@ref-gen) payload))
       (set! @refs (cons new-ref @refs))
       new-ref)
@@ -85,7 +85,7 @@
       (for ([page (in-list @pages)])
         (send page end))
 
-      (define doc-info (ref))
+      (define doc-info (make-ref))
       (for ([(key val) (in-hash @info)])
         (dict-set! doc-info key (if (string? val) (String val) val)))
       (send doc-info end)
