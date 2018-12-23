@@ -29,8 +29,10 @@
   (set! current-id val))
 
 (define (make-ref [payload (make-hasheq)])
+  (define new-ref (make-object PDFReference current-id payload))
+  (for-each (λ (listener-proc) (listener-proc new-ref)) ref-listeners)
   (begin0
-    (make-object PDFReference current-id payload)
+    new-ref
     (set! current-id (add1 current-id))))
 
 (define PDFReference
@@ -40,8 +42,6 @@
                 [(@payload payload) (make-hasheq)])
     (field [(@offset offset) #f]
            [@port (open-output-bytes)])
-
-    (for-each (λ (listener-proc) (listener-proc this)) ref-listeners)
 
     (define/public (write x)
       (write-bytes (to-bytes x) @port))
