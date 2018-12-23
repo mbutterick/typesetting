@@ -48,7 +48,7 @@
           (+glyph-position advance 0 0 0 (send font widthOfGlyph glyph)))) 
       (list encoded positions))
 
-    (define/override (widthOfString str size [options #f])
+    (define/override (string-width str size [options #f])
       (define glyphs (send font glyphsForString str))
       (define advances (send font advancesForGlyphs glyphs))
       (define width (apply + advances))

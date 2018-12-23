@@ -13,7 +13,7 @@
     (field [(@dictionary dictionary) #f]
            [@embedded #f])
 
-    (abstract embed encode widthOfString)
+    (abstract embed encode string-width)
     
     (define/public (ref)
       (unless @dictionary
@@ -25,8 +25,8 @@
         (embed)
         (set! @embedded #t)))
 
-    (define/public (lineHeight size [includeGap #f])
-      (define gap (if includeGap @line-gap 0))
+    (define/public (line-height size [include-gap #f])
+      (define gap (if include-gap @line-gap 0))
       (* (/ (+ @ascender gap (- @descender)) 1000.0) size))))
 
 

@@ -54,7 +54,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                    [@dictionary dictionary]
                    [@document document])
 
-    (define/override (widthOfString string size [features #f])
+    (define/override (string-width string size [features #f])
       ; #f disables features ; null enables default features ; list adds features
       (hash-ref! width-cache
                  (list string size (and features (sort features symbol<?)))
@@ -202,7 +202,7 @@ HERE
   (require rackunit fontland sugar/unstable/js)
   (define f (open-font "../ptest/assets/charter.ttf"))
   (define ef (make-object EmbeddedFont #f f #f))
-  (check-equal? (send ef widthOfString "f" 1000) 321.0)
+  (check-equal? (send ef string-width "f" 1000) 321.0)
   (check-equal? (· ef ascender) 980)
   (check-equal? (· ef descender) -238)
   (check-equal? (· ef line-gap) 0)

@@ -53,7 +53,7 @@
       this)
 
     (define/public (current-line-height [include-gap #f])
-      (send @current-font lineHeight @current-font-size include-gap))
+      (send @current-font line-height @current-font-size include-gap))
 
     (define/public (register-font name src [family #f])
       (hash-set! @registered-fonts name (make-hash (list (cons 'src src)

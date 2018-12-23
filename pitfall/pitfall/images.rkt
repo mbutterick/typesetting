@@ -16,13 +16,13 @@
            [_imageCount #f])
 
     (as-methods
-     initImages
+     init-images
      image
      openImage
      )))
 
     
-(define/contract (initImages this)
+(define/contract (init-images this)
   (->m void?)
   (set-field! _imageRegistry this (mhash))
   (set-field! _imageCount this 0))

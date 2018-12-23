@@ -54,7 +54,7 @@ Mauris at ante tellus. Vestibulum a metus lectus. Praesent tempor purus a lacus 
 # Draw some text wrapped to 412 points wide
 doc.text('And here is some wrapped text...', 100, 300)
    .font('Charter', 13)
-   .moveDown() # move down 1 line
+   .move-down() # move down 1 line
    .text(loremIpsum, width: 412, align: 'justify', indent: 30, paragraphGap: 5)
 
 # Add another page, and set the font back   

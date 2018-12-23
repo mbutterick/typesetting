@@ -26,17 +26,17 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
            [_textOptions #f])
 
     (as-methods
-     initText
-     _initOptions
+     init-text
+     init-options
      line-gap
-     moveDown
-     moveUp
+     move-down
+     move-up
      _text
      _fragment
      text
-     widthOfString)))
+     string-width)))
 
-(define/contract (initText this)
+(define/contract (init-text this)
   (->m void?)
   (set-field! x this 0)
   (set-field! y this 0)
@@ -50,21 +50,21 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   this)
 
 
-(define/contract (moveDown this [lines 1] #:factor [factor 1])
+(define/contract (move-down this [lines 1] #:factor [factor 1])
   (() (number? #:factor number?) . ->*m . object?)
   (increment-field! y this (* factor (send this current-line-height #t) (+ lines (· this _line-gap))))
   this)
 
 
-(define/contract (moveUp this [lines 1])
+(define/contract (move-up this [lines 1])
   (() (number?) . ->*m . object?)
-  (moveDown this #:factor -1))
+  (move-down this #:factor -1))
 
 
 (define/contract (_text this text x y options lineCallback)
   (string? (or/c number? #f) (or/c number? #f) hash? procedure? . ->m . object?)
   
-  (let* ([options (send this _initOptions options x y)]
+  (let* ([options (send this init-options options x y)]
          [text (format "~a" text)] ;; Convert text to a string
          ;; if the wordSpacing option is specified, remove multiple consecutive spaces
          [text (if (hash-ref options 'wordSpacing #f)
@@ -86,14 +86,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (send this _text text-string x y options (λ args (apply _line this args))))
 
 
-(define/contract (widthOfString this str [options (mhash)])
+(define/contract (string-width this str [options (mhash)])
   ((string?) (hash?) . ->*m . number?)
   #;(report str 'measuring-width-of)
-  (+ (send (· this current-font) widthOfString str (· this current-font-size) (hash-ref options 'features #f))
+  (+ (send (· this current-font) string-width str (· this current-font-size) (hash-ref options 'features #f))
      (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
 
 
-(define/contract (_initOptions this [options (mhash)] [x #f] [y #f])
+(define/contract (init-options this [options (mhash)] [x #f] [y #f])
   (() (hash? (or/c number? #f) (or/c number? #f)) . ->*m . hash?)
 
   ;; clone options object
@@ -127,7 +127,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; 180325 suppress the size tracking: we'll do our own line measurement
   ;; 181120 unsuppress the size tracking for now because it breaks test 04
   (if (not wrapper)
-      (increment-field! x this (send this widthOfString text))
+      (increment-field! x this (send this string-width text))
       (increment-field! y (+ (send this current-line-height #t) line-gap)))
   (void))
 
@@ -144,7 +144,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (define renderedWidth
     ;; wrap this in delay so it's only calculated if needed
     (delay
-      (+ (or (· options textWidth) (widthOfString this text options))
+      (+ (or (· options textWidth) (string-width this text options))
          (* wordSpacing (sub1 (or (· options wordCount) 0)))
          (* characterSpacing (sub1 (string-length text))))))
 
