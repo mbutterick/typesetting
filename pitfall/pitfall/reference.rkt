@@ -41,7 +41,7 @@
     (field [(@offset offset) #f]
            [@port (open-output-bytes)])
 
-    (for-each (λ (proc) (proc this)) ref-listeners)
+    (for-each (λ (listener-proc) (listener-proc this)) ref-listeners)
 
     (define/public (write x)
       (write-bytes (to-bytes x) @port))

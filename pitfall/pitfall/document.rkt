@@ -21,7 +21,7 @@
 (define PDFDocument
   (class (annotation-mixin (image-mixin (text-mixin (fonts-mixin (vector-mixin (color-mixin object%))))))
     (set-current-ref-id! 1)
-    (register-ref-listener (λ (ref) (send this log-ref ref)))
+    (register-ref-listener (λ (ref) (send this store-ref ref)))
 
     (super-new)
     (init-field [(@options options) (mhasheq)])  
@@ -52,7 +52,7 @@
     (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
       (hash-set! @info key val))
 
-    (define/public (log-ref ref)
+    (define/public (store-ref ref)
       (set! @refs (cons ref @refs)))
 
     (define/public (page) (first @pages))

@@ -179,7 +179,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (define y (- (· this page height) y-in (* (/ (· this current-font ascender) 1000) (· this current-font-size))))
 
   ;; add current font to page if necessary
-  (hash-ref! (· this page fonts) (· this current-font id) (λ () (· this current-font ref)))
+  (hash-ref! (· this page fonts) (· this current-font id) (λ () (· this current-font make-font-ref)))
   
   ;; begin the text object
   (send this addContent "BT")

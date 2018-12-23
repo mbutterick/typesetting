@@ -14,7 +14,7 @@
 
     (abstract embed encode string-width)
     
-    (define/public (ref)
+    (define/public (make-font-ref)
       (unless @dictionary
         (set! @dictionary (make-ref)))
       @dictionary)
