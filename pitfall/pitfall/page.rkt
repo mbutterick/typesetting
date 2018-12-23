@@ -11,7 +11,7 @@
 (define PDFPage
   (class object%
     (super-new)
-    (init-field @doc [@page-parent #false] [@options (mhash)])
+    (init-field [@page-parent #false] [@options (mhash)])
     (field [(@size size) (hash-ref @options 'size "letter")]
            [(@layout layout) (hash-ref @options 'layout "portrait")]
            [@dimensions (if (list? @size)

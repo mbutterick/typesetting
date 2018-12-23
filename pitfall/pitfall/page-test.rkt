@@ -6,7 +6,7 @@
          "reference.rkt"
          "core.rkt"
          sugar/unstable/js)
-(define p (make-object PDFPage (make-object PDFDocument)))
+(define p (make-object PDFPage))
 (check-equal? (· p size) "letter")
 (check-equal? (· p layout) "portrait")
 (check-equal? (· p margins) (margin 72 72 72 72))

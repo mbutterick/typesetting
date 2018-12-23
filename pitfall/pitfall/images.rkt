@@ -38,7 +38,7 @@
                   [(and (object? src) (· src width) (· src height)) src]
                   [else (send this openImage src)]))
 
-  (unless (· image obj) (send image embed this))
+  (unless (· image obj) (send image embed))
   
   (hash-ref! (· this page xobjects) (· image label) (· image obj))
   

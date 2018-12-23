@@ -5,8 +5,7 @@
 (define PDFFont
   (class object%
     (super-new)
-    (init-field [(@document document) #f]
-                [(@ascender ascender) #f]
+    (init-field [(@ascender ascender) #f]
                 [(@descender descender) #f]
                 [(@line-gap line-gap) #f]
                 [(@bbox bbox) #f])

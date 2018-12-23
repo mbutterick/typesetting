@@ -12,13 +12,11 @@
 
 (define StandardFont
   (class PDFFont
-    (init document)
     (init-field name id)
     (field [font (make-object AFMFont
                    ((hash-ref standard-fonts name
                               (λ () (raise-argument-error 'PDFFont "valid font name" name)))))])
-    (super-new [document document]
-               [ascender (get-field ascender font)]
+    (super-new [ascender (get-field ascender font)]
                [descender (get-field descender font)]
                [bbox (get-field bbox font)]
                [line-gap (get-field line-gap font)])
@@ -27,8 +25,7 @@
                    [@descender descender]
                    [@line-gap line-gap]
                    [@bbox bbox]
-                   [@dictionary dictionary]
-                   [@document document])
+                   [@dictionary dictionary])
 
     (define/override (embed)
       (set-field! payload @dictionary
@@ -56,7 +53,7 @@
       (* width scale))))
 
 (module+ test
-  (define stdfont (make-object StandardFont #f "Helvetica" #f)))
+  (define stdfont (make-object StandardFont "Helvetica" #f)))
 
 (define (isStandardFont name) (hash-ref standard-fonts name #f))
 

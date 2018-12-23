@@ -34,7 +34,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
 (define EmbeddedFont
   (class PDFFont
-    (init document)
     (init-field font id)
     (field [subset (create-subset font)]
            ;; we make `unicode` and `width` fields integer-keyed hashes not lists
@@ -44,16 +43,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
            ;; always include the width of the missing glyph (gid = 0)
            [name (font-postscript-name font)]
            [scale (/ 1000 (font-units-per-em font))])
-    (super-new [document document]
-               [ascender (* (font-ascent font) scale)]
+    (super-new [ascender (* (font-ascent font) scale)]
                [descender (* (font-descent font) scale)]
                [bbox (font-bbox font)]
                [line-gap (* (font-linegap font) scale)])
 
     (inherit-field [@ascender ascender]
                    [@descender descender]
-                   [@dictionary dictionary]
-                   [@document document])
+                   [@dictionary dictionary])
 
     (define/override (string-width string size [features #f])
       ; #f disables features ; null enables default features ; list adds features

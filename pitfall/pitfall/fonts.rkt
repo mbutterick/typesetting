@@ -39,7 +39,7 @@
         [_ ; if not, load the font
          (set! @font-count (add1 @font-count))
          (define id (format "F~a" @font-count))
-         (set! @current-font (PDFFont-open this src family id))
+         (set! @current-font (PDFFont-open src family id))
          ;; check for existing font families with the same name already in the PDF
          (match (hash-ref @font-families (get-field name @current-font) #f)
            [(? values font) (set! @current-font font)]

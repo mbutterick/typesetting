@@ -7,7 +7,7 @@
          "core.rkt"
          "object.rkt"
          "zlib.rkt")
-(provide PDFReference set-current-id! make-ref)
+(provide (all-defined-out))
 
 (define dictable<%>
   (interface* ()
@@ -20,8 +20,12 @@
                                       (define (dict-set! refobj key val) (send refobj set-key! key val))
                                       (define (dict-update! refobj key updater [failure-result (λ () (error 'update-no-key))]) (send refobj update-key! key updater failure-result)))])))
 
+(define ref-listeners null)
+(define (register-ref-listener proc)
+  (set! ref-listeners (cons proc ref-listeners)))
+
 (define current-id 0)
-(define (set-current-id! val)
+(define (set-current-ref-id! val)
   (set! current-id val))
 
 (define (make-ref [payload (make-hasheq)])
@@ -37,7 +41,7 @@
     (field [(@offset offset) #f]
            [@port (open-output-bytes)])
 
-    (for-each (λ (proc) (proc this)) (current-ref-listeners))
+    (for-each (λ (proc) (proc this)) ref-listeners)
 
     (define/public (write x)
       (write-bytes (to-bytes x) @port))

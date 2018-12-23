@@ -20,8 +20,8 @@
 
 (define PDFDocument
   (class (annotation-mixin (image-mixin (text-mixin (fonts-mixin (vector-mixin (color-mixin object%))))))
-        (set-current-id! 1)
-    (current-ref-listeners (cons (λ (ref) (send this log-ref ref)) (current-ref-listeners)))
+    (set-current-ref-id! 1)
+    (register-ref-listener (λ (ref) (send this log-ref ref)))
 
     (super-new)
     (init-field [(@options options) (mhasheq)])  
@@ -60,7 +60,7 @@
     (define/public (add-page [options-arg @options])
       ;; create a page object
       (define page-parent (dict-ref @root 'Pages))
-      (set! @pages (cons (make-object PDFPage this page-parent options-arg) @pages))
+      (set! @pages (cons (make-object PDFPage page-parent options-arg) @pages))
       
       ;; reset x and y coordinates
       (set! @x (margin-left (get-field margins (page))))

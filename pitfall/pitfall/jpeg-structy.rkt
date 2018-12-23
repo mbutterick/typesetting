@@ -43,7 +43,7 @@
     (define obj #f)
     (JPEG label width height obj data bits channels colorSpace)))
 
-(define (embed this doc-in)
+(define (embed this)
   #;(object? . ->m . void?)
 
   (unless (· this obj)

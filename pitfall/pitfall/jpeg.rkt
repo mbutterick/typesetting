@@ -51,8 +51,8 @@
                    [(port? bytes-or-port) bytes-or-port]
                    [else (current-input-port)])) signed big-endian))
 
-(define/contract (embed this doc-in)
-  (object? . ->m . void?)
+(define/contract (embed this)
+  (->m void?)
 
   (unless (· this obj)
     (set-field! obj this

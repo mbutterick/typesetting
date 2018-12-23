@@ -20,7 +20,6 @@
          [width (· image width)]
          [height (· image height)]
          [imgData (· image imgData)]
-         [document #f]
          [alphaChannel #f]
          [obj #f])
 
@@ -28,10 +27,9 @@
    embed
    split-alpha-channel))
 
-(define/contract (embed this doc-in)
-  (object? . ->m . void?)
+(define/contract (embed this)
+  (->m void?)
   
-  (set-field! document this doc-in)
   
   (unless (· this obj)
     (set-field! obj this
