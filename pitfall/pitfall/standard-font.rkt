@@ -13,24 +13,23 @@
 
 (define StandardFont
   (class PDFFont
-    (super-new)
-    (init-field document-in name id)
+    (init document)
+    (init-field name id)
     (field [font (make-object AFMFont
                    ((hash-ref standard-fonts name
                               (λ () (raise-argument-error 'PDFFont "valid font name" name)))))])
-
+    (super-new [document document]
+               [ascender (get-field ascender font)]
+               [descender (get-field descender font)]
+               [bbox (get-field bbox font)]
+               [line-gap (get-field line-gap font)])
+    
     (inherit-field [@ascender ascender]
                    [@descender descender]
-                   [@bbox bbox]
                    [@line-gap line-gap]
+                   [@bbox bbox]
                    [@dictionary dictionary]
                    [@document document])
-
-    (set! @ascender (get-field ascender font))
-    (set! @descender (get-field descender font))
-    (set! @bbox (get-field bbox font))
-    (set! @line-gap (get-field line-gap font))
-    (set! @document document-in)
 
     (define/override (embed)
       (set-field! payload @dictionary
@@ -38,7 +37,7 @@
                          'BaseFont name
                          'Subtype "Type1"
                          'Encoding "WinAnsiEncoding"))
-      (· this dictionary end))
+      (send @dictionary end))
 
     (define/override (encode text [options #f])
       (define encoded (send font encodeText text))

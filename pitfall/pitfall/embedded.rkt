@@ -6,16 +6,11 @@
   racket/match
   racket/string
   racket/format
-  racket/contract
   racket/list
-  br/define
-  sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
-  sugar/unstable/contract
   "font.rkt"
-  fontland
-  "reference.rkt")
+  fontland)
 (provide EmbeddedFont)
 
 #|
@@ -25,8 +20,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
 (define width-cache (make-hash))
 
-(define-macro (sum-flags [COND VAL] ...)
-  #'(for/sum ([c (in-list (list COND ...))]
+(define-syntax-rule (sum-flags [COND VAL] ...)
+  (for/sum ([c (in-list (list COND ...))]
               [v (in-list (list VAL ...))]
               #:when c)
       v))
@@ -38,30 +33,26 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
 (define EmbeddedFont
   (class PDFFont
-    (super-new)
-    (init-field document-in font id)
+    (init document)
+    (init-field font id)
     (field [subset (create-subset font)]
            ;; we make `unicode` and `width` fields integer-keyed hashes not lists
            ;; because they offer better random access and growability 
            [unicode (mhash 0 '(0))] ; always include the missing glyph (gid = 0)
            [widths (mhash 0 (glyph-advance-width (get-glyph font 0)))]
            ;; always include the width of the missing glyph (gid = 0)
-         
            [name (font-postscript-name font)]
            [scale (/ 1000 (font-units-per-em font))])
+    (super-new [document document]
+               [ascender (* (font-ascent font) scale)]
+               [descender (* (font-descent font) scale)]
+               [bbox (font-bbox font)]
+               [line-gap (* (font-linegap font) scale)])
 
     (inherit-field [@ascender ascender]
                    [@descender descender]
-                   [@bbox bbox]
-                   [@line-gap line-gap]
                    [@dictionary dictionary]
                    [@document document])
-
-    (set! @ascender (* (font-ascent font) scale))
-    (set! @descender (* (font-descent font) scale))
-    (set! @line-gap (* (font-linegap font) scale))
-    (set! @bbox (font-bbox font))
-    (set! @document document-in)
 
     (define/override (widthOfString string size [features #f])
       ; #f disables features ; null enables default features ; list adds features
@@ -105,7 +96,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (send* fontFile [write (get-output-bytes (encode-to-port subset))] [end])
 
       (define familyClass (let ([val (if (has-table? font 'OS/2)
-                                         (· (get-OS/2-table font) sFamilyClass)
+                                         (hash-ref (get-OS/2-table font) 'sFamilyClass)
                                          0)])
                             (floor (/ val 256)))) ; equivalent to >> 8
 
@@ -114,11 +105,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
         (map (λ (x) (expt 2 x)) (range 7)))
 
       (define flags (sum-flags
-                     [(not (zero? (· (get-post-table (· this font)) isFixedPitch))) FIXED_PITCH]
+                     [(not (zero? (hash-ref (get-post-table font) 'isFixedPitch))) FIXED_PITCH]
                      [(<= 1 familyClass 7) SERIF]
                      [#t SYMBOLIC] ; assume the font uses non-latin characters
                      [(= familyClass 10) SCRIPT]
-                     [(· (get-head-table (· this font)) macStyle italic) ITALIC]))
+                     [(hash-ref (hash-ref (get-head-table font) 'macStyle) 'italic) ITALIC]))
 
       ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
       (when (test-mode) (random-seed 0))
@@ -145,7 +136,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                     'FontFile3
                                     'FontFile2) fontFile)
 
-      (· descriptor end)
+      (send descriptor end)
 
       (define descendantFont (send @document ref
                                    (mhash
@@ -158,26 +149,26 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                      'Ordering (String "Identity")
                                      'Supplement 0)
                                     'FontDescriptor descriptor
-                                    'W (list 0 (for/list ([idx (in-range (length (hash-keys (· this widths))))])
-                                                 (hash-ref (· this widths) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
+                                    'W (list 0 (for/list ([idx (in-range (length (hash-keys widths)))])
+                                                 (hash-ref widths idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
 
-      (· descendantFont end)
-      (send* (· this dictionary)
+      (send descendantFont end)
+      (send* @dictionary
         [set-key! 'Type "Font"]
         [set-key! 'Subtype "Type0"]
         [set-key! 'BaseFont name]
         [set-key! 'Encoding "Identity-H"]
         [set-key! 'DescendantFonts (list descendantFont)]
-        [set-key! 'ToUnicode (· this toUnicodeCmap)])
+        [set-key! 'ToUnicode (toUnicodeCmap)])
 
       (send @dictionary end))
 
 
     (define/public (toUnicodeCmap)
-      (define cmap (· this document ref))
+      (define cmap (send @document ref))
       (define entries
-        (for/list ([idx (in-range (length (hash-keys (· this unicode))))])
-          (define codePoints (hash-ref (· this unicode) idx))
+        (for/list ([idx (in-range (length (hash-keys unicode)))])
+          (define codePoints (hash-ref unicode idx))
           (define encoded ; encode codePoints to utf16
             ;; todo: full utf16 support. for now just utf8
             (for/list ([value (in-list codePoints)])
@@ -214,7 +205,7 @@ HERE
       cmap)))
 
 (module+ test
-  (require rackunit fontland)
+  (require rackunit fontland sugar/unstable/js)
   (define f (open-font "../ptest/assets/charter.ttf"))
   (define ef (make-object EmbeddedFont #f f #f))
   (check-equal? (send ef widthOfString "f" 1000) 321.0)

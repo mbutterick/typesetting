@@ -5,13 +5,13 @@
 (define PDFFont
   (class object%
     (super-new)
+    (init-field [(@document document) #f]
+                [(@ascender ascender) #f]
+                [(@descender descender) #f]
+                [(@line-gap line-gap) #f]
+                [(@bbox bbox) #f])
     (field [(@dictionary dictionary) #f]
-           [@embedded #f]
-           [(@document document) #f]
-           [(@line-gap line-gap) #f]
-           [(@bbox bbox) #f]
-           [(@ascender ascender) #f]
-           [(@descender descender) #f])
+           [@embedded #f])
 
     (abstract embed encode widthOfString)
     
