@@ -13,9 +13,12 @@
   (interface* ()
               ([(generic-property gen:dict)
                 (generic-method-table gen:dict
-                                      (define (dict-ref refobj key [thunk #f]) (send refobj get-key key))
-                                      (define (dict-set! refobj key val) (send refobj set-key! key))
-                                      (define (dict-update! refobj key updater [failure-result #f]) (send refobj update-key! key updater)))])))
+                                      (define (dict-ref refobj key [thunk (λ () (error 'dict-ref-key-not-found))])
+                                        (send refobj get-key key))
+                                      (define (dict-ref! refobj key thunk)
+                                        (send refobj get-key! key thunk))
+                                      (define (dict-set! refobj key val) (send refobj set-key! key val))
+                                      (define (dict-update! refobj key updater [failure-result (λ () (error 'update-no-key))]) (send refobj update-key! key updater failure-result)))])))
 
 (define PDFReference
   (class* object% (dictable<%>)

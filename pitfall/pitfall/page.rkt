@@ -1,6 +1,7 @@
 #lang debug racket/base
 (require
   racket/class
+  racket/dict
   sugar/unstable/dict
   "core.rkt")
 
@@ -35,21 +36,21 @@
 
     ;; Lazily create these dictionaries
     (define/public (fonts)
-      (send @resources get-key! 'Font (make-hasheq)))
+      (dict-ref! @resources 'Font (make-hasheq)))
 
     (define/public (xobjects)
-      (send @resources get-key! 'XObject (make-hasheq)))
+      (dict-ref! @resources 'XObject (make-hasheq)))
 
     (define/public (ext_gstates)
-      (send @resources get-key! 'ExtGState (make-hasheq)))
+      (dict-ref! @resources 'ExtGState (make-hasheq)))
 
     (define/public (patterns)
-      (send @resources get-key! 'Pattern (make-hasheq)))
+      (dict-ref! @resources 'Pattern (make-hasheq)))
 
     (define/public (annotations [annot #f])
       (if annot
-          (send @dictionary update-key! 'Annots (λ (val) (cons annot val)) null)
-          (send @dictionary get-key! 'Annots null)))
+          (dict-update! @dictionary 'Annots (λ (val) (cons annot val)) null)
+          (dict-ref! @dictionary 'Annots null)))
 
     (define/public (maxY)
       (- @height (margin-bottom @margins)))

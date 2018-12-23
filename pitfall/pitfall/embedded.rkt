@@ -7,6 +7,7 @@
   racket/string
   racket/format
   racket/list
+  racket/dict
   sugar/unstable/dict
   "font.rkt"
   fontland)
@@ -90,7 +91,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (define font-file (send @document ref))
 
       (when isCFF
-        (send font-file set-key! 'Subtype "CIDFontType0C"))
+        (dict-set! font-file 'Subtype "CIDFontType0C"))
   
       (send* font-file [write (get-output-bytes (encode-to-port subset))] [end])
 
@@ -128,7 +129,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                 'XHeight (* (or (font-x-height font) 0) scale)
                                 'StemV 0)))
 
-      (send descriptor set-key! (if isCFF 'FontFile3 'FontFile2) font-file)
+      (dict-set! descriptor (if isCFF 'FontFile3 'FontFile2) font-file)
       (send descriptor end)
 
       (define descendant-font (send @document ref

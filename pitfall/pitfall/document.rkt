@@ -5,6 +5,7 @@
   racket/format
   racket/generator
   racket/match
+  racket/dict
   racket/list
   sugar/unstable/dict
   "reference.rkt"
@@ -61,7 +62,7 @@
 
     (define/public (add-page [options-arg @options])
       ;; create a page object
-      (define page-parent (send @root get-key 'Pages))
+      (define page-parent (dict-ref @root 'Pages))
       (set! @pages (cons (make-object PDFPage this page-parent options-arg) @pages))
       
       ;; reset x and y coordinates
@@ -86,13 +87,13 @@
 
       (define doc-info (ref))
       (for ([(key val) (in-hash @info)])
-        (send doc-info set-key! key (if (string? val) (String val) val)))
+        (dict-set! doc-info key (if (string? val) (String val) val)))
       (send doc-info end)
     
       (for ([font (in-hash-values @font-families)])
         (send font finalize))
 
-      (send* (send @root get-key 'Pages)
+      (send* (dict-ref @root 'Pages)
         [set-key! 'Count (length @pages)]
         [set-key! 'Kids (map (λ (page) (get-field dictionary page)) (reverse @pages))]
         [end])

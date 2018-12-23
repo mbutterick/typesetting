@@ -2,6 +2,7 @@
 (require
   racket/class
   racket/contract
+  racket/dict
   racket/draw
   sugar/unstable/class
   sugar/unstable/js
@@ -47,7 +48,7 @@
                                   'Colors (· this image colors)
                                   'BitsPerComponent (· this image bits)
                                   'Columns (· this width))))
-      (send (· this obj) set-key! 'DecodeParms params)
+      (dict-set! (· this obj) 'DecodeParms params)
       (send params end))
 
     (cond
@@ -57,9 +58,9 @@
        (send* palette-ref [write (· this image palette)] [end])
 
        ;; build the color space array for the image
-       (send (· this object) set-key! 'Colorspace
+       (dict-set! (· this object) 'Colorspace
                   (list "Indexed" "DeviceRGB" (sub1 (bytes-length (· this image palette))) palette-ref))]
-      [else (send (· this obj) set-key! 'ColorSpace "DeviceRGB")])
+      [else (dict-set! (· this obj) 'ColorSpace "DeviceRGB")])
 
    
     (cond
@@ -91,7 +92,7 @@
                    'ColorSpace "DeviceGray"
                    'Decode '(0 1))))
     (send* sMask [write (· this alphaChannel)] [end])
-    (send (· this obj) set-key! 'SMask sMask))
+    (dict-set! (· this obj) 'SMask sMask))
   
   ;; embed the actual image data
   (send* (· this obj) [write (· this imgData)] [end]))
