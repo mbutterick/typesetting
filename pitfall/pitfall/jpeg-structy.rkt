@@ -1,6 +1,7 @@
 #lang debug racket/base
 (require
   "core.rkt"
+  "reference.rkt"
   racket/class
   racket/contract
   racket/dict
