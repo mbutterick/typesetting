@@ -29,8 +29,6 @@
            [@refs null]
            [@root (make-ref (mhasheq 'Type "Catalog"
                                 'Pages (make-ref (mhasheq 'Type "Pages"))))]
-           [(@x x) 0]
-           [(@y y) 0]
            ;; initialize the metadata
            [@info (mhasheq 'Producer "PITFALL"
                            'Creator "PITFALL"
@@ -39,7 +37,7 @@
     ;; initialize mixins
     (inherit-field @ctm) ; from vector mixin
     (inherit-field @font-families) (inherit font) ; from font mixin
-    (send this init-text)
+    (inherit-field [@x x] [@y y])
     (send this init-images)
 
     ;; initialize params

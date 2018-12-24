@@ -22,81 +22,34 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 (define (text-mixin [% mixin-tester%])
   (class %
     (super-new)
-    (field [_line-gap #f]
-           [_textOptions #f])
-    
-    (define/public (init-text)
-      (set-field! x this 0)
-      (set-field! y this 0)
-      (line-gap 0)
-      (void))
+    (field [@line-gap 0]
+           [@text-options #f]
+           [(@x x) 0]
+           [(@y y) 0])
 
-    (define/public (line-gap  _line-gap)
-      (set-field! _line-gap this _line-gap)
-      this)
-
-    (define/public (move-down  [lines 1] #:factor [factor 1])
-      (increment-field! y this (* factor (send this current-line-height #t) (+ lines (· this _line-gap))))
+    (define/public (move-down [lines 1] #:factor [factor 1])
+      (set! @y (+ @y (* factor (send this current-line-height #t) (+ lines @line-gap))))
       this)
 
     (define/public (move-up  [lines 1])
       (move-down this #:factor -1))
 
-    (define/public (_text  text x y options lineCallback)
-  
-      (let* ([options (send this init-options options x y)]
-             [text (format "~a" text)] ;; Convert text to a string
-             ;; if the wordSpacing option is specified, remove multiple consecutive spaces
-             [text (if (hash-ref options 'wordSpacing #f)
-                       (string-replace text #px"\\s{2,}" " ")
-                       text)])
-
-        ;; word wrapping
-        (cond
-          #;[(· options width)
-             (error 'unimplemented-branch-of-_text)] ; todo
-          [else ; render paragraphs as single lines
-           (for ([line (in-list (string-split text "\n"))])
-             (lineCallback line options))]))
-  
+    (define/public (_text text x y options line-callback)
+      (when x (set! @x x))
+      (when y (set! @y y))
+      (line-callback (format "~a" text) options)
       this)
 
     (define/public (text text-string [x #f] [y #f] [options (mhash)])
       (send this _text text-string x y options (λ args (send this _line . args))))
 
     (define/public (string-width str [options (mhash)])
-      #;(report str 'measuring-width-of)
       (+ (send (· this current-font) string-width str (· this current-font-size) (hash-ref options 'features #f))
          (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
 
-    (define/public (init-options  [options (mhash)] [x #f] [y #f])
-
-      ;; clone options object
-      (let ([options (hash-copy options)])
-
-        ;; extend options with previous values for continued text
-        (when (· this _textOptions)
-          (for ([(key val) (in-hash (· this _textOptions))]
-                #:unless (equal? (key "continued")))
-            (hash-ref! options key val)))
-
-        ;; Update the current position
-        (when x (set-field! x this x))
-        (when y (set-field! y this y))
-
-        ;; wrap to margins if no x or y position passed
-        (unless (not (hash-ref options 'lineBreak #t))
-          (define margins (· this page margins))
-          (hash-ref! options 'width (λ () (- (· this page width) (· this x) (margin-right margins)))))
-
-        (hash-ref! options 'columns 0)
-        (hash-ref! options 'columnGap 18) ; 1/4 inch in PS points
-
-        options))
-
     (define/public (_line text [options (mhash)] [wrapper #f])
       (send this _fragment text (· this x) (· this y) options)
-      (define line-gap (or (· options line-gap) (· this _line-gap) 0))
+      (define line-gap (or (· options line-gap) @line-gap 0))
       ;; 180325 suppress the size tracking: we'll do our own line measurement
       ;; 181120 unsuppress the size tracking for now because it breaks test 04
       (if (not wrapper)
