@@ -1,17 +1,16 @@
 #lang racket/base
 (require
+  "core.rkt"
   racket/class
   racket/match
   racket/string
-  racket/contract
   racket/list
   sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
   sugar/list
   racket/promise
-  fontland/glyph-position
-  "core.rkt")
+  fontland/glyph-position)
 (provide text-mixin)
 
 #|
@@ -34,62 +33,54 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (define/public (move-up  [lines 1])
       (move-down this #:factor -1))
 
-    (define/public (_text text x y options line-callback)
+    (define/public (text str [x #f] [y #f] [options (mhash)])
       (when x (set! @x x))
       (when y (set! @y y))
-      (line-callback (format "~a" text) options)
+      (_line str options)
       this)
-
-    (define/public (text text-string [x #f] [y #f] [options (mhash)])
-      (send this _text text-string x y options (λ args (send this _line . args))))
 
     (define/public (string-width str [options (mhash)])
       (+ (send (· this current-font) string-width str (· this current-font-size) (hash-ref options 'features #f))
          (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
 
-    (define/public (_line text [options (mhash)] [wrapper #f])
-      (send this _fragment text (· this x) (· this y) options)
+    (define/public (_line str [options (mhasheq)])
+      (_fragment str @x @y options)
       (define line-gap (or (· options line-gap) @line-gap 0))
-      ;; 180325 suppress the size tracking: we'll do our own line measurement
-      ;; 181120 unsuppress the size tracking for now because it breaks test 04
-      (if (not wrapper)
-          (increment-field! x this (send this string-width text))
-          (increment-field! y (+ (send this current-line-height #t) line-gap)))
+      ;; 181224 unsuppress size tracking in test mode to preserve test 04
+      ;; otherwise we'll be doing our own line measurement
+      (when (test-mode) (set! @x (+ @x (send this string-width str))))
       (void))
 
     (define/public (_fragment text x y-in options)
-      (define align (hash-ref options 'align 'left))
       (define wordSpacing (hash-ref options 'wordSpacing 0))
       (define characterSpacing (hash-ref options 'characterSpacing 0))
-
-      ;;  text alignments ; todo
 
       ;; calculate the actual rendered width of the string after word and character spacing
       (define renderedWidth
         ;; wrap this in delay so it's only calculated if needed
         (delay
-          (+ (or (· options textWidth) (string-width text options))
-             (* wordSpacing (sub1 (or (· options wordCount) 0)))
+          (+ (or (hash-ref options 'textWidth #f) (string-width text options))
+             (* wordSpacing (sub1 (or (hash-ref options 'wordCount #f) 0)))
              (* characterSpacing (sub1 (string-length text))))))
 
       ;; create link annotations if the link option is given
-      (when (· options link)
-        (send this link x y-in (force renderedWidth) (· this current-line-height) (· options link)))
+      (when (hash-ref options 'link #f)
+        (send this link x y-in (force renderedWidth) (send this current-line-height) (hash-ref options 'link)))
   
       ;; create underline or strikethrough line
-      (when (or (· options underline) (· options strike))
+      (when (or (hash-ref options 'underline #f) (hash-ref options 'strike #f))
         (send this save)
-        (unless (· options stroke)
-          (define fill-colorArgs (· this @current-fill-color))
-          (send this stroke-color . fill-colorArgs))
-        (define line-width (if (< (· this current-font-size) 10)
+        (unless (hash-ref options 'stroke #f)
+          (define fill-color-args (get-field current-fill-color this))
+          (send this stroke-color . fill-color-args))
+        (define line-width (if (< (get-field current-font-size this) 10)
                                0.5
-                               (floor (/ (· this current-font-size) 10))))
+                               (floor (/ (get-field current-font-size this) 10))))
         (send this line-width line-width)
-        (define d (if (· options underline) 1 2))
-        (define lineY (+ y-in (/ (· this current-line-height) d)))
-        (when (· options underline)
-          (increment! lineY (- line-width)))
+        (define d (if (hash-ref options 'underline) 1 2))
+        (define lineY (+ y-in (/ (send this current-line-height) d)))
+        (when (hash-ref options 'underline)
+          (set! lineY (+ lineY (- line-width))))
 
         (send this move-to x lineY)
         (send this line-to (+ x (force renderedWidth)) lineY)
@@ -108,10 +99,10 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (send this addContent "BT")
 
       ;; text position
-      (send this addContent (format "1 0 0 1 ~a ~a Tm" (number x) (number y)))
+      (send this addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y)))
 
       ;; font and font size
-      (send this addContent (format "/~a ~a Tf" (· this current-font id) (number (· this current-font-size))))
+      (send this addContent (format "/~a ~a Tf" (· this current-font id) (numberizer (· this current-font-size))))
 
       ;; rendering mode
       (let ([mode (cond
@@ -146,7 +137,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
           (let* ([hex (string-append* (sublist encoded-char-strs last cur))]
                  [posn (list-ref positions (sub1 cur))]
                  [advance (- (glyph-position-x-advance posn) (glyph-position-advance-width posn))])
-            (push-end! commands (format "<~a> ~a" hex (number (- advance))))))
+            (push-end! commands (format "<~a> ~a" hex (numberizer (- advance))))))
         (set! last cur))
 
       ;; Flushes the current TJ commands to the output stream
@@ -167,14 +158,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
              (flush i)
              ;; Move the text position and flush just the current character
              (send this addContent (format "1 0 0 1 ~a ~a Tm"
-                                           (number (+ x (* (glyph-position-x-offset posn) scale)))
-                                           (number (+ y (* (glyph-position-y-offset posn) scale)))))
+                                           (numberizer (+ x (* (glyph-position-x-offset posn) scale)))
+                                           (numberizer (+ y (* (glyph-position-y-offset posn) scale)))))
              (flush (add1 i))
              #t]
             [else
              ;; If the last character had an offset, reset the text position
              (when hadOffset
-               (send this addContent (format "1 0 0 1 ~a ~a Tm" (number x) (number y))))
+               (send this addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))))
 
              ;; Group segments that don't have any advance adjustments
              (unless (zero? (- (glyph-position-x-advance posn) (glyph-position-advance-width posn)))

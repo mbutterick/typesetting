@@ -40,7 +40,7 @@
     (field [@opacity-registry (make-hash)]
            [@opacity-count 0]
            [@grad-count 0]
-           [@current-fill-color #false])
+           [(@current-fill-color current-fill-color) #false])
 
     (define/public (set-color color-in stroke)
       (define color (normalize-color color-in))
