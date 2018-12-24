@@ -88,7 +88,7 @@
       (send doc-info end)
     
       (for ([font (in-hash-values @font-families)])
-        (send font finalize))
+        (send font end))
 
       (send* (dict-ref @root 'Pages)
         [set-key! 'Count (length @pages)]

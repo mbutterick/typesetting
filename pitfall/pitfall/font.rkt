@@ -19,7 +19,7 @@
         (set! @dictionary (make-ref)))
       @dictionary)
 
-    (define/public (finalize)
+    (define/public (end)
       (unless (or @embedded (not @dictionary))
         (embed)
         (set! @embedded #t)))
