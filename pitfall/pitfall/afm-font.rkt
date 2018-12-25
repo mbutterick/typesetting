@@ -1,9 +1,10 @@
-#lang racket/base
+#lang debug racket/base
 (require
   racket/class
   racket/match
   racket/string
   racket/list
+  with-cache
   sugar/unstable/dict)
 
 (provide AFMFont AFMFont-open)
@@ -11,47 +12,61 @@
 (define (AFMFont-open filename)
   (make-object AFMFont (open-input-file filename)))
 
+(define (make-kern-table-key left right)
+  (cons left right))
+
+(define (parse-afm input-file)
+  (parameterize ([*current-cache-keys* (list (λ () (file-or-directory-modify-seconds (path->string (object-name input-file)))))])
+    (with-cache (path-replace-extension (object-name input-file) #".rktd")
+      (λ ()
+        (define @attributes (make-hasheq))
+        (define @glyph-widths (make-hash))
+        (define @kern-pairs (make-hash))
+        (for/fold ([last-section #f]
+                   #:result (list (hash->list @attributes)
+                                  (hash->list @glyph-widths)
+                                  (hash->list @kern-pairs)))
+                  ([line (in-lines input-file)])
+          (define current-section (cond
+                                    [(regexp-match #px"(?<=^Start)\\w+" line) => car]
+                                    [(regexp-match #px"(?<=^End)\\w+" line) #f]
+                                    [else last-section]))
+          (case current-section
+            [("FontMetrics")
+             ;; line looks like this:
+             ;; FontName Helvetica
+             ;; `key space value`. Possibly multiple lines with same key.
+             (match-define (list _ key value) (regexp-match #px"^(\\w+)\\s+(.*)" line))
+             (hash-update! @attributes (string->symbol key)
+                           (λ (v) (if (eq? v 'init-val)
+                                      value
+                                      (append (if (pair? v) v (list v)) (list value))))
+                           'init-val)]
+            [("CharMetrics")
+             ;; line looks like this:
+             ;; C 33 ; WX 278 ; N exclam ; B 90 0 187 718 ;
+             ;; need to retrieve N and WX fields
+             (when (regexp-match #px"^CH?\\s" line)
+               (define assocs (for/list ([field (in-list (string-split line #px"\\s*;\\s*"))])
+                                (string-split field " ")))
+               (define name (second (assoc "N" assocs)))
+               (define width (string->number (second (assoc "WX" assocs))))
+               (hash-set! @glyph-widths name width))]
+            [("KernPairs")
+             (when (string-prefix? line "KPX")
+               (match-define (list _ left right val) (string-split line))
+               (hash-set! @kern-pairs (make-kern-table-key left right) (string->number val)))])
+          current-section)))))
+
 (define AFMFont
   (class object%
     (super-new)
-    (init-field contents)
-    (field [@attributes (mhasheq)]
-           [@glyph-widths (mhash)]
-           [boundingBoxes (mhash)]
-           [@kern-pairs (mhash)])
+    (init-field input-file)
 
-    (for/fold ([last-section #f])
-              ([line (in-lines contents)])
-      (define current-section (cond
-                                [(regexp-match #px"(?<=^Start)\\w+" line) => car]
-                                [(regexp-match #px"(?<=^End)\\w+" line) #f]
-                                [else last-section]))
-      (case current-section
-        [("FontMetrics")
-         ;; line looks like this:
-         ;; FontName Helvetica
-         ;; `key space value`. Possibly multiple lines with same key.
-         (match-define (list _ key value) (regexp-match #px"^(\\w+)\\s+(.*)" line))
-         (hash-update! @attributes (string->symbol key)
-                       (λ (v) (if (eq? v 'init-val)
-                                  value
-                                  (append (if (pair? v) v (list v)) (list value))))
-                       'init-val)]
-        [("CharMetrics")
-         ;; line looks like this:
-         ;; C 33 ; WX 278 ; N exclam ; B 90 0 187 718 ;
-         ;; need to retrieve N and WX fields
-         (when (regexp-match #px"^CH?\\s" line)
-           (define assocs (for/list ([field (in-list (string-split line #px"\\s*;\\s*"))])
-                            (string-split field " ")))
-           (define name (second (assoc "N" assocs)))
-           (define width (string->number (second (assoc "WX" assocs))))
-           (hash-set! @glyph-widths name width))]
-        [("KernPairs")
-         (when (string-prefix? line "KPX")
-           (match-define (list _ left right val) (string-split line))
-           (hash-set! @kern-pairs (make-kern-table-key left right) (string->number val)))])
-      current-section)
+    (match-define (list atts gws kps) (parse-afm input-file))
+    (field [@attributes (make-hasheq atts)]
+           [@glyph-widths (make-hash gws)]
+           [@kern-pairs (make-hash kps)])
     
     (field [charWidths (for/list ([i (in-range 256)])
                          (hash-ref @glyph-widths (vector-ref characters i) #f))])
@@ -60,9 +75,6 @@
     (field [(@ascender ascender) (string->number (or (hash-ref @attributes 'Ascender #f) "0"))])
     (field [(@descender descender) (string->number (or (hash-ref @attributes 'Descender #f) "0"))])
     (field [line-gap (- (list-ref @bbox 3) (list-ref @bbox 1) @ascender @descender)])
-
-    (define/public (make-kern-table-key left right)
-      (cons left right))
 
     (define/public (encode-text str)
       (for/list ([c (in-string str)])
