@@ -18,16 +18,26 @@
 (provide PDFDocument)
 
 (define PDFDocument
-  (class (annotation-mixin (image-mixin (text-mixin (fonts-mixin (vector-mixin (color-mixin object%))))))
+  (class (annotation-mixin
+          (image-mixin
+           (text-mixin
+            (fonts-mixin
+             (vector-mixin
+              (color-mixin (class object%
+                             (super-new)
+                             (field [@pages null])
+                             (define/public (page) (first @pages))                  
+                             (define/public (addContent data)
+                               (send (first @pages) write data)
+                               this))))))))
     (set-current-ref-id! 1)
     (register-ref-listener (λ (ref) (send this store-ref ref)))
 
     (super-new)
-    (init-field [(@options options) (mhasheq)])  
-    (field [@pages null]
-           [@refs null]
+    (init-field [(@options options) (mhasheq)])
+    (field [@refs null]
            [@root (make-ref (mhasheq 'Type "Catalog"
-                                'Pages (make-ref (mhasheq 'Type "Pages"))))]
+                                     'Pages (make-ref (mhasheq 'Type "Pages"))))]
            ;; initialize the metadata
            [@info (mhasheq 'Producer "PITFALL"
                            'Creator "PITFALL"
@@ -36,7 +46,8 @@
     ;; initialize mixins
     (inherit-field @ctm) ; from vector mixin
     (inherit-field @font-families) (inherit font) ; from font mixin
-    (inherit-field [@x x] [@y y])
+    (inherit-field [@x x] [@y y]) ; from text
+    (inherit-field @pages) (inherit page) ; from base
 
     ;; initialize params
     (current-compress-streams? (hash-ref @options 'compress #t))
@@ -51,8 +62,6 @@
     (define/public (store-ref ref)
       (set! @refs (cons ref @refs)))
 
-    (define/public (page) (first @pages))
-
     (define/public (add-page [options-arg @options])
       ;; create a page object
       (define page-parent (dict-ref @root 'Pages))
@@ -65,10 +74,6 @@
       ;; the top left rather than the bottom left
       (set! @ctm default-ctm-value)
       (send this transform 1 0 0 -1 0 (get-field height (page)))
-      this)
-
-    (define/public (addContent data)
-      (send (page) write data)
       this)
 
     (define/public (end)

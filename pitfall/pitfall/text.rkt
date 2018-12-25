@@ -27,8 +27,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
     (inherit-field [@current-font current-font]
                    [@current-font-size current-font-size]
-                   [@current-fill-color current-fill-color])
+                   [@current-fill-color current-fill-color]
+                   @pages)
     (inherit [@current-line-height current-line-height])
+    (inherit save line-width move-to line-to stroke stroke-color transform restore) ; from vector
+    (inherit addContent) ; from base
 
     (define/public (move-down [lines 1] #:factor [factor 1])
       (set! @y (+ @y (* factor (@current-line-height #t) (+ lines @line-gap))))
@@ -73,46 +76,47 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   
       ;; create underline or strikethrough line
       (when (or (hash-ref options 'underline #f) (hash-ref options 'strike #f))
-        (send this save)
+        (save)
         (unless (hash-ref options 'stroke #f)
           (define fill-color-args @current-fill-color)
           (send this stroke-color . fill-color-args))
-        (define line-width (if (< @current-font-size 10)
+        (define width (if (< @current-font-size 10)
                                0.5
                                (floor (/ @current-font-size 10))))
-        (send this line-width line-width)
+        (line-width width)
         (define d (if (hash-ref options 'underline) 1 2))
         (define line-y (+ y-in (/ (@current-line-height) d)))
         (when (hash-ref options 'underline)
-          (set! line-y (+ line-y (- line-width))))
+          (set! line-y (+ line-y (- width))))
 
-        (send this move-to x line-y)
-        (send this line-to (+ x (force rendered-width)) line-y)
-        (send this stroke)
-        (send this restore))
+        (move-to x line-y)
+        (line-to (+ x (force rendered-width)) line-y)
+        (stroke)
+        (restore))
 
       ;; flip coordinate system
-      (send this save)
-      (send this transform 1 0 0 -1 0 (get-field height (send this page)))
-      (define y (- (get-field height (send this page))
+      (save)
+      (define page-height (get-field height (first @pages)))
+      (transform 1 0 0 -1 0 page-height)
+      (define y (- page-height
                    y-in
                    (* (/ (get-field ascender @current-font) 1000)
                       @current-font-size)))
 
       ;; add current font to page if necessary
       (define current-font-id (get-field id @current-font))
-      (hash-ref! (send (send this page) fonts) current-font-id 
+      (hash-ref! (send (first @pages) fonts) current-font-id 
                  (λ () (send @current-font make-font-ref)))
   
-      (send this addContent "BT") ; begin the text object
-      (send this addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
-      (send this addContent (format "/~a ~a Tf" (get-field id @current-font)
+      (addContent "BT") ; begin the text object
+      (addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
+      (addContent (format "/~a ~a Tf" current-font-id
                                     (numberizer @current-font-size))) ; font and font size
       (let ([mode (+ (if (hash-ref options 'fill #f) 1 0) (if (hash-ref options 'stroke #f) 1 0))])
         (when (and mode (not (zero? mode)))
-          (send this addContent (format "~a Tr" mode))))
+          (addContent (format "~a Tr" mode))))
       (when (not (zero? character-spacing))
-        (send this addContent (format "~a Tc" character-spacing)))
+        (addContent (format "~a Tc" character-spacing)))
 
       ;; Add the actual text
       ;; 180321: the first call to this operation is very slow from Quad
@@ -137,7 +141,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (define (flush idx)
         (add-segment idx)
         (when (positive? (length commands))
-          (send this addContent (format "[~a] TJ" (string-join (reverse commands) " ")))
+          (addContent (format "[~a] TJ" (string-join (reverse commands) " ")))
           (set! commands empty)))
   
       (for/fold ([had-offset #f] [x x])
@@ -148,7 +152,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
             ;; so we can move the text position.
             [(or (not (zero? (glyph-position-x-offset posn))) (not (zero? (glyph-position-y-offset posn))))
              (flush idx)
-             (send this addContent ; Move the text position and flush just the current character
+             (addContent ; Move the text position and flush just the current character
                    (format "1 0 0 1 ~a ~a Tm"
                            (numberizer (+ x (* (glyph-position-x-offset posn) scale)))
                            (numberizer (+ y (* (glyph-position-y-offset posn) scale)))))
@@ -157,7 +161,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
             [else
              ;; If the last character had an offset, reset the text position
              (when had-offset
-               (send this addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))))
+               (addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))))
              ;; Group segments that don't have any advance adjustments
              (unless (zero? (- (glyph-position-x-advance posn) (glyph-position-advance-width posn)))
                (add-segment (add1 idx)))
@@ -165,5 +169,5 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
         (values having-offset (+ x (* (glyph-position-x-advance posn) scale))))
   
       (flush (vector-length positions))
-      (send this addContent "ET") ; end the text object
-      (send this restore)))) ; restore flipped coordinate system
+      (addContent "ET") ; end the text object
+      (restore)))) ; restore flipped coordinate system
