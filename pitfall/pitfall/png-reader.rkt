@@ -12,8 +12,7 @@
 Grab key chunks from PNG. Doesn't require heavy lifting from libpng.
 |#
 
-(define/contract (read-png ip-or-bytes)
-  ((or/c input-port? bytes?) . -> . hash?)
+(define (read-png ip-or-bytes)
   (define png (make-hasheq))
   (parameterize ([current-input-port (if (input-port? ip-or-bytes)
                                          ip-or-bytes
