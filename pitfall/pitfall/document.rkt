@@ -38,7 +38,6 @@
     (inherit-field @ctm) ; from vector mixin
     (inherit-field @font-families) (inherit font) ; from font mixin
     (inherit-field [@x x] [@y y])
-    (send this init-images)
 
     ;; initialize params
     (current-compress-streams? (hash-ref @options 'compress #t))
