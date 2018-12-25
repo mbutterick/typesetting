@@ -1,120 +1,116 @@
 #lang debug racket/base
 (require
   racket/class
-    "reference.rkt"
-  racket/contract
+  "reference.rkt"
   racket/dict
   racket/draw
-  sugar/unstable/class
-  sugar/unstable/js
-  sugar/unstable/dict
-  sugar/unstable/port)
+  sugar/unstable/dict)
+
+#|
+https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
+|#
 
 (require "png-reader.rkt" "zlib.rkt")
 (provide PNG)
 
-(define-subclass object% (PNG data [label #f])
+(define PNG
+  (class object%
+    (super-new)
+    (init-field [(@data data)] [label #f])
   
-  (field [image (read-png data)] ; `image` is a hash
-         [pixelBitlength (· image pixelBitlength)]
-         [width (· image width)]
-         [height (· image height)]
-         [imgData (· image imgData)]
-         [alphaChannel #f]
-         [obj #f])
+    (field [(@image image) (read-png @data)] ; `image` is a hash
+           [pixel-bit-length (hash-ref @image 'pixelBitlength)]
+           [(@width width) (hash-ref @image 'width)]
+           [(@height height) (hash-ref @image 'height)]
+           [(@img-data img-data) (hash-ref @image 'imgData)]
+           [(@alpha-channel alpha-channel) #f]
+           [(@obj obj) #f])
 
-  (as-methods
-   embed
-   split-alpha-channel))
+    (define/public (embed)
+      (unless @obj
+        (set! @obj
+              (make-ref
+               (mhash 'Type "XObject"
+                      'Subtype "Image"
+                      'BitsPerComponent (hash-ref @image 'bits)
+                      'Width @width
+                      'Height @height
+                      'Filter "FlateDecode")))
 
-(define/contract (embed this)
-  (->m void?)
-  
-  
-  (unless (· this obj)
-    (set-field! obj this
-                (make-ref
-                      (mhash 'Type "XObject"
-                             'Subtype "Image"
-                             'BitsPerComponent (· this image bits)
-                             'Width (· this width)
-                             'Height (· this height)
-                             'Filter "FlateDecode")))
+        (unless (hash-ref @image 'hasAlphaChannel #f)
+          (define params (make-ref
+                          (mhash 'Predictor 15
+                                 'Colors (hash-ref @image 'colors)
+                                 'BitsPerComponent (hash-ref @image 'bits)
+                                 'Columns @width)))
+          (dict-set! @obj 'DecodeParms params)
+          (send params end))
 
-    (unless (· this image hasAlphaChannel)
-      (define params (make-ref
-                           (mhash 'Predictor 15
-                                  'Colors (· this image colors)
-                                  'BitsPerComponent (· this image bits)
-                                  'Columns (· this width))))
-      (dict-set! (· this obj) 'DecodeParms params)
-      (send params end))
-
-    (cond
-      [(hash-has-key? (· this image) 'palette)
-       ;; embed the color palette in the PDF as an object stream
-       (define palette-ref (· this document ref))
-       (send* palette-ref [write (· this image palette)] [end])
-
-       ;; build the color space array for the image
-       (dict-set! (· this object) 'Colorspace
-                  (list "Indexed" "DeviceRGB" (sub1 (bytes-length (· this image palette))) palette-ref))]
-      [else (dict-set! (· this obj) 'ColorSpace "DeviceRGB")])
+        (cond
+          [(hash-has-key? @image 'palette)
+           ;; embed the color palette in the PDF as an object stream
+           (define palette-ref (make-ref))
+           (send* palette-ref [write (hash-ref @image 'palette)] [end])
+           ;; build the color space array for the image
+           (dict-set! @obj 'Colorspace
+                      (list "Indexed" "DeviceRGB" (sub1 (/ (bytes-length (hash-ref @image 'palette)) 3)) palette-ref))]
+          [else (dict-set! @obj 'ColorSpace "DeviceRGB")])
 
    
-    (cond
-      [(hash-ref (· this image) 'transparency #f)
-       (cond
-         [(hash-ref (hash-ref (· this image) 'transparency) 'grayscale #f)
-          (error 'transparency-grayscale-not-implemented)]
-         [(hash-ref (hash-ref (· this image) 'transparency) 'rgb #f)
-          (error 'transparency-rgb-not-implemented)]
-         [(hash-ref (hash-ref (· this image) 'transparency) 'indexed #f)
-          (error 'transparency-indexed-not-implemented)])]
-      [(hash-ref (· this image) 'hasAlphaChannel #f)
-       ;; For PNG color types 4 and 6, the transparency data is stored as a alpha
-       ;; channel mixed in with the main image data. Separate this data out into an
-       ;; SMask object and store it separately in the PDF.]
-       (define-values (img-bytes alpha-bytes) (send this split-alpha-channel))
-       (set-field! imgData this (deflate img-bytes))
-       (set-field! alphaChannel this (deflate alpha-bytes))]))
+        (cond
+          [(hash-ref @image 'transparency #f)
+           (cond
+             [(hash-ref (hash-ref @image 'transparency) 'grayscale #f)
+              (error 'transparency-grayscale-not-implemented)]
+             [(hash-ref (hash-ref @image 'transparency) 'rgb #f)
+              (error 'transparency-rgb-not-implemented)]
+             [(hash-ref (hash-ref @image 'transparency) 'indexed #f)
+              (error 'transparency-indexed-not-implemented)])]
+          [(hash-ref @image 'hasAlphaChannel #f)
+           ;; For PNG color types 4 and 6, the transparency data is stored as a alpha
+           ;; channel mixed in with the main image data. Separate this data out into an
+           ;; SMask object and store it separately in the PDF.]
+           (define-values (img-bytes alpha-bytes) (split-alpha-channel))
+           (set! @img-data (deflate img-bytes))
+           (set! @alpha-channel (deflate alpha-bytes))]))
 
-  (when (· this alphaChannel)
-    (define sMask
-      (make-ref
-            (mhash 'Type "XObject"
-                   'Subtype "Image"
-                   'Height (· this height)
-                   'Width (· this width)
-                   'BitsPerComponent 8
-                   'Filter "FlateDecode"
-                   'ColorSpace "DeviceGray"
-                   'Decode '(0 1))))
-    (send* sMask [write (· this alphaChannel)] [end])
-    (dict-set! (· this obj) 'SMask sMask))
+      (when @alpha-channel
+        (define sMask-ref
+          (make-ref
+           (mhash 'Type "XObject"
+                  'Subtype "Image"
+                  'Height @height
+                  'Width @width
+                  'BitsPerComponent 8
+                  'Filter "FlateDecode"
+                  'ColorSpace "DeviceGray"
+                  'Decode '(0 1))))
+        (send* sMask-ref [write @alpha-channel] [end])
+        (dict-set! @obj 'SMask sMask-ref))
   
-  ;; embed the actual image data
-  (send* (· this obj) [write (· this imgData)] [end]))
+      ;; embed the actual image data
+      (send* @obj [write @img-data] [end]))
 
 
-(define (split-alpha-channel this)
-  (define ip (· this data))
-  (port-position ip 0)
-  (define bmap (read-bitmap ip 'png/alpha))
-  (define pixels (make-bytes (* 4 (· this width) (· this height))))
-  (send bmap get-argb-pixels 0 0 (· this width) (· this height) pixels)
-  (parameterize ([current-input-port (open-input-bytes pixels)])
-    (define argb-len (/ (bytes-length pixels) 4))
-    (define img-bytes (make-bytes (* argb-len 3)))
-    (define alpha-bytes (make-bytes argb-len))
-    (for ([argb-bytes (in-port (λ (p) (read-bytes 4 p)))]
-          [i (in-range argb-len)])
-      (bytes-copy! alpha-bytes i argb-bytes 0 1)
-      (bytes-copy! img-bytes (* i 3) argb-bytes 1 4))
-    (values img-bytes alpha-bytes)))
+    (define/public (split-alpha-channel)
+      (define ip @data)
+      (file-position ip 0)
+      (define bmap (read-bitmap ip 'png/alpha))
+      (define pixels (make-bytes (* 4 @width @height)))
+      (send bmap get-argb-pixels 0 0 @width @height pixels)
+      (parameterize ([current-input-port (open-input-bytes pixels)])
+        (define argb-len (/ (bytes-length pixels) 4))
+        (define img-bytes (make-bytes (* argb-len 3)))
+        (define alpha-bytes (make-bytes argb-len))
+        (for ([argb-bytes (in-port (λ (p) (read-bytes 4 p)))]
+              [i (in-range argb-len)])
+          (bytes-copy! alpha-bytes i argb-bytes 0 1)
+          (bytes-copy! img-bytes (* i 3) argb-bytes 1 4))
+        (values img-bytes alpha-bytes)))))
+
 
 ;; test files
 ;; http://www.libpng.org/pub/png/png-sitemap.html#images
 (module+ test
   (define pic (make-object PNG (open-input-file "../ptest/assets/death-alpha.png")))
-  (define-values (img alpha) (split-alpha-channel pic)))
+  (define-values (img alpha) (send pic split-alpha-channel)))

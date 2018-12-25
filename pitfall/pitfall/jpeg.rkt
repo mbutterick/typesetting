@@ -6,6 +6,10 @@
   racket/dict
   sugar/unstable/dict)
 
+#|
+https://github.com/mbutterick/pdfkit/blob/master/lib/image/jpeg.coffee
+|#
+
 (provide JPEG)
 
 (define MARKERS '(#xffc0 #xffc1 #xffc2 #xffc3
