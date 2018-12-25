@@ -1,67 +1,56 @@
 #lang racket/base
 (require
   "core.rkt"
-    "reference.rkt"
+  "reference.rkt"
   racket/class
   racket/match
-  racket/contract
-  sugar/unstable/class
-  sugar/unstable/js
   sugar/unstable/dict)
 
 (provide annotation-mixin)
 
-(define (annotation-mixin [% mixin-tester%])
+(define (annotation-mixin [% object%])
   (class %
     (super-new)
+    (inherit-field @ctm)
 
-    (as-methods
-     annotate
-     link
-     _convertRect)))
+    (define/public (annotate x y w h options)
+      (hash-set*! options
+                  'Type "Annot"
+                  'Rect (convert-rect x y w h)
+                  'Border '(0 0 0))
+      (unless (equal? (hash-ref options 'Subtype #f) "Link")
+        (hash-ref! options 'C
+                   (λ ()
+                     (send this normalize-color (or (hash-ref options 'color #f) '(0 0 0))))))
+      (hash-remove! options 'color)
 
-(define/contract (annotate this x y w h options)
-  (number? number? number? number? hash? . ->m . object?)
-  (hash-set*! options
-              'Type "Annot"
-              'Rect (send this _convertRect x y w h)
-              'Border '(0 0 0))
-  (unless (equal? (· options Subtype) "Link")
-    (hash-ref! options 'C
-               (λ ()
-                 (send this normalize-color (or (· options color) '(0 0 0))))))
-  (hash-remove! options 'color)
+      (when (string? (hash-ref options 'Dest #f)) (hash-update! options 'Dest String))
 
-  (when (string? (· options Dest)) (hash-update! options 'Dest String))
+      (for ([(k v) (in-hash options)])
+        (hash-set! options (string->symbol (string-titlecase (symbol->string k))) v))
 
-  (for ([(k v) (in-hash options)])
-    (hash-set! options (string->symbol (string-titlecase (symbol->string k))) v))
+      (define annots-ref (make-ref options))
+      (send (send this page) annotations annots-ref)
+      (send annots-ref end)
+      this)
 
-  (define annots-ref (make-ref options))
-  (send (· this page) annotations annots-ref)
-  (· annots-ref end)
-  this)
+    (define/public (link x y w h url [options (mhasheq)])
+      (hash-set*! options
+                  'Subtype "Link"
+                  'A (make-ref (mhash 'S "URI"
+                                      'URI (String url))))
+      (send (hash-ref options 'A) end)
+      (annotate x y w h options))
 
+    (define/public (convert-rect x1 y1 w h)
+      ;; flip y1 and y2
+      (let ([y2 y1]
+            [y1 (+ y1 h)]
+            [x2 (+ x1 w)])
+        (match-define (list m0 m1 m2 m3 m4 m5) @ctm)
+        (let* ([x1 (+ (* x1 m0) (* y1 m2) m4)]
+               [y1 (+ (* x1 m1) (* y1 m3) m5)]
+               [x2 (+ (* x2 m0) (* y2 m2) m4)]
+               [y2 (+ (* x2 m1) (* y2 m3) m5)])
+          (list x1 y1 x2 y2))))))
 
-(define/contract (link this x y w h url [options (mhash)])
-  ((number? number? number? number? string?) (hash?) . ->*m . object?)
-  (hash-set*! options
-              'Subtype "Link"
-              'A (make-ref (mhash 'S "URI"
-                                       'URI (String url))))
-  (send (· options A) end)
-  (send this annotate x y w h options))
-
-
-(define/contract (_convertRect this x1 y1 w h)
-  (number? number? number? number? . ->m . (list/c number? number? number? number?))
-  ;; flip y1 and y2
-  (let ([y2 y1]
-        [y1 (+ y1 h)]
-        [x2 (+ x1 w)])
-    (match-define (list m0 m1 m2 m3 m4 m5) (· this @ctm))
-    (let* ([x1 (+ (* x1 m0) (* y1 m2) m4)]
-           [y1 (+ (* x1 m1) (* y1 m3) m5)]
-           [x2 (+ (* x2 m0) (* y2 m2) m4)]
-           [y2 (+ (* x2 m1) (* y2 m3) m5)])
-      (list x1 y1 x2 y2))))
