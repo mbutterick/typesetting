@@ -102,10 +102,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (send this addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
       (send this addContent (format "/~a ~a Tf" (get-field id (get-field current-font this))
                                     (numberizer (get-field current-font-size this)))) ; font and font size
-      (let ([mode (cond
-                    [(and (hash-ref options 'fill #f) (hash-ref options 'stroke #f)) 2]
-                    [(hash-ref options 'stroke #f) 1]
-                    [else 0])])
+      (let ([mode (+ (if (hash-ref options 'fill #f) 1 0) (if (hash-ref options 'stroke #f) 1 0))])
         (when (and mode (not (zero? mode)))
           (send this addContent (format "~a Tr" mode))))
       (when (not (zero? character-spacing))
@@ -118,7 +115,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       ;; 180321: the first call to this operation is very slow from Quad
       ;; 181126: because `encode` calls `layout`
       (match-define (list encoded-char-strs positions)
-        (send (get-field current-font this) encode text (hash-ref options 'features #f)))
+        (map list->vector (send (get-field current-font this) encode text (hash-ref options 'features #f))))
   
       (define scale (/ (get-field current-font-size this) 1000.0))
       (define commands empty)
@@ -127,8 +124,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (define last-segment 0)
       (define (add-segment cur)
         (when (< last-segment cur)
-          (define hex (string-append* (sublist encoded-char-strs last-segment cur)))
-          (define posn (list-ref positions (sub1 cur)))
+          (define hex (string-append* (for/list ([str (in-vector encoded-char-strs last-segment cur)]) str)))
+          (define posn (vector-ref positions (sub1 cur)))
           (define advance (- (glyph-position-x-advance posn) (glyph-position-advance-width posn)))
           (set! commands (cons (format "<~a> ~a" hex (numberizer (- advance))) commands)))
         (set! last-segment cur))
@@ -164,6 +161,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
              #false]))
         (values having-offset (+ x (* (glyph-position-x-advance posn) scale))))
   
-      (flush (length positions))
+      (flush (vector-length positions))
       (send this addContent "ET") ; end the text object
       (send this restore)))) ; restore flipped coordinate system
