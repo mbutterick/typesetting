@@ -60,12 +60,12 @@
          (set-color-space color-space stroke)
        
          ;; 181126 don't round, to be consistent with pdfkit behavior
-         (send this addContent (format "~a ~a" (string-join (map (λ (num) (numberizer num #:round #false)) color) " ") op))
+         (send this add-content (format "~a ~a" (string-join (map (λ (num) (numberizer num #:round #false)) color) " ") op))
          #true]))
     
     (define/public (set-color-space space stroke)
       (define op (if stroke "CS" "cs"))
-      (send this addContent (format "/~a ~a" space op)))
+      (send this add-content (format "/~a ~a" space op)))
 
     (define/public (fill-color color [opacity 1])
       (unless (normalize-color color)
@@ -110,7 +110,7 @@
                        (set! @opacity-count (add1 @opacity-count))
                        (list ref-dict (format "Gs~a" @opacity-count)))))
         (hash-set! (send (send this page) ext_gstates) name dictionary)        
-        (send this addContent (format "/~a gs" name))))))
+        (send this add-content (format "/~a gs" name))))))
 
 (define named-colors
   (hash "aliceblue" '(240 248 255)

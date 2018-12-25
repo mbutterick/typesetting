@@ -27,7 +27,7 @@
                              (super-new)
                              (field [@pages null])
                              (define/public (page) (first @pages))                  
-                             (define/public (addContent data)
+                             (define/public (add-content data)
                                (send (first @pages) write data)
                                this))))))))
     (set-current-ref-id! 1)

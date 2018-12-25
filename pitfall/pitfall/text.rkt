@@ -31,7 +31,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
                    @pages)
     (inherit [@current-line-height current-line-height])
     (inherit save line-width move-to line-to stroke stroke-color transform restore) ; from vector
-    (inherit addContent) ; from base
+    (inherit add-content) ; from base
 
     (define/public (move-down [lines 1] #:factor [factor 1])
       (set! @y (+ @y (* factor (@current-line-height #t) (+ lines @line-gap))))
@@ -108,15 +108,15 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (hash-ref! (send (first @pages) fonts) current-font-id 
                  (λ () (send @current-font make-font-ref)))
   
-      (addContent "BT") ; begin the text object
-      (addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
-      (addContent (format "/~a ~a Tf" current-font-id
+      (add-content "BT") ; begin the text object
+      (add-content (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
+      (add-content (format "/~a ~a Tf" current-font-id
                                     (numberizer @current-font-size))) ; font and font size
       (let ([mode (+ (if (hash-ref options 'fill #f) 1 0) (if (hash-ref options 'stroke #f) 1 0))])
         (when (and mode (not (zero? mode)))
-          (addContent (format "~a Tr" mode))))
+          (add-content (format "~a Tr" mode))))
       (when (not (zero? character-spacing))
-        (addContent (format "~a Tc" character-spacing)))
+        (add-content (format "~a Tc" character-spacing)))
 
       ;; Add the actual text
       ;; 180321: the first call to this operation is very slow from Quad
@@ -141,7 +141,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (define (flush idx)
         (add-segment idx)
         (when (positive? (length commands))
-          (addContent (format "[~a] TJ" (string-join (reverse commands) " ")))
+          (add-content (format "[~a] TJ" (string-join (reverse commands) " ")))
           (set! commands empty)))
   
       (for/fold ([had-offset #f] [x x])
@@ -152,7 +152,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
             ;; so we can move the text position.
             [(or (not (zero? (glyph-position-x-offset posn))) (not (zero? (glyph-position-y-offset posn))))
              (flush idx)
-             (addContent ; Move the text position and flush just the current character
+             (add-content ; Move the text position and flush just the current character
                    (format "1 0 0 1 ~a ~a Tm"
                            (numberizer (+ x (* (glyph-position-x-offset posn) scale)))
                            (numberizer (+ y (* (glyph-position-y-offset posn) scale)))))
@@ -161,7 +161,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
             [else
              ;; If the last character had an offset, reset the text position
              (when had-offset
-               (addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))))
+               (add-content (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))))
              ;; Group segments that don't have any advance adjustments
              (unless (zero? (- (glyph-position-x-advance posn) (glyph-position-advance-width posn)))
                (add-segment (add1 idx)))
@@ -169,5 +169,5 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
         (values having-offset (+ x (* (glyph-position-x-advance posn) scale))))
   
       (flush (vector-length positions))
-      (addContent "ET") ; end the text object
+      (add-content "ET") ; end the text object
       (restore)))) ; restore flipped coordinate system

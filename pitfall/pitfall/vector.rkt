@@ -18,12 +18,12 @@
     (super-new)
     (field [@ctm default-ctm-value]
            [@ctm-stack null])
-    (inherit addContent) ; from base
+    (inherit add-content) ; from base
     (inherit stroke-color fill-color) ; from color
 
     (define/public (save)
       (set! @ctm-stack (cons @ctm @ctm-stack))
-      (addContent "q"))
+      (add-content "q"))
 
     (define/public (restore)
       (set! @ctm (if (pair? @ctm-stack)
@@ -31,55 +31,55 @@
                        (car @ctm-stack)
                        (set! @ctm-stack (cdr @ctm-stack)))
                      default-ctm-value))
-      (addContent "Q"))
+      (add-content "Q"))
 
     (define/public (close-path)
-      (addContent "h"))
+      (add-content "h"))
 
     (define/public (line-cap [c #f])
       (define cap-styles (hasheq 'butt 0 'round 1 'square 2))
-      (addContent
+      (add-content
             (format "~a J" (if (symbol? c)
                                (hash-ref cap-styles c)
                                ""))))
 
     (define/public (line-join [j #f])
       (define cap-styles (hasheq 'miter 0 'round 1 'bevel 2))
-      (addContent
+      (add-content
             (format "~a j" (if (symbol? j)
                                (hash-ref cap-styles j)
                                ""))))
 
     (define/public (line-width w)
-      (addContent (format "~a w" (number w))))
+      (add-content (format "~a w" (number w))))
 
     (define/public (dash length [options (mhash)])
       (cond
         [(list? length)
-         (addContent
+         (add-content
                (format "[~a] ~a d"
                        (string-join (map number length) " ")
                        (hash-ref options 'phase 0)))]
         [length
          (define space (hash-ref options 'space length))
          (define phase (hash-ref options 'phase 0))
-         (addContent (format "[~a ~a] ~a d" (number length) (number space) (number phase)))] 
+         (add-content (format "[~a ~a] ~a d" (number length) (number space) (number phase)))] 
         [else this]))
 
     (define/public (move-to x y)
-      (addContent (format "~a ~a m" x y)))
+      (add-content (format "~a ~a m" x y)))
 
     (define/public (line-to x y)
-      (addContent (format "~a ~a l" x y)))
+      (add-content (format "~a ~a l" x y)))
 
     (define/public (bezier-curve-to cp1x cp1y cp2x cp2y x y)
-      (addContent (format "~a c" (string-join (map number (list cp1x cp1y cp2x cp2y x y)) " "))))
+      (add-content (format "~a c" (string-join (map number (list cp1x cp1y cp2x cp2y x y)) " "))))
 
     (define/public (quadratic-curve-to cpx cpy x y)
-      (addContent (format "~a v" (string-join (map number (list cpx cpy x y)) " "))))
+      (add-content (format "~a v" (string-join (map number (list cpx cpy x y)) " "))))
   
     (define/public (rect x y w h)
-      (addContent (format "~a re" (string-join (map number (list x y w h)) " "))))
+      (add-content (format "~a re" (string-join (map number (list x y w h)) " "))))
 
     (define/public (ellipse x y r1 [r2 r1])
       ;; based on http://stackoverflow.com/questions/2172798/how-to-draw-an-oval-in-html5-canvas/2173084#2173084
@@ -123,27 +123,27 @@
 
     (define/public (fill [color #f] #:rule [rule #f])
       (when color (fill-color color)) ;; fill-color method is from color mixin
-      (addContent (format "f~a" (_windingRule rule))))
+      (add-content (format "f~a" (_windingRule rule))))
 
     (define/public (stroke [color #f])
       (when color (stroke-color color))
-      (addContent "S"))
+      (add-content "S"))
 
     (define/public (fill-and-stroke [fill #f] [stroke fill] #:rule [rule #f])
       (when fill (fill-color fill) (stroke-color stroke))
-      (addContent (format "B~a" (_windingRule rule))))
+      (add-content (format "B~a" (_windingRule rule))))
 
     (define tm/c (list/c number? number? number? number? number? number?))
     (define/public (make-transform-string ctm)
       (format "~a cm" (string-join (map number ctm) " ")))
 
     (define/public (clip [rule #f])
-      (addContent (string-append "W" (_windingRule rule) " n")))
+      (add-content (string-append "W" (_windingRule rule) " n")))
 
     (define/public (transform scaleX shearY shearX scaleY mdx mdy)
       (define new-ctm (list scaleX shearY shearX scaleY mdx mdy))
       (set! @ctm (combine-transforms (· this @ctm) new-ctm))
-      (addContent (make-transform-string new-ctm)))
+      (add-content (make-transform-string new-ctm)))
 
     (define/public (shear x y)
       (transform 1 y x 1 0 0))

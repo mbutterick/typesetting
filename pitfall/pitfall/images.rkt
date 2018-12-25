@@ -88,7 +88,7 @@
       (when (= @y y) (set! y (+ y h)))
       (send this save)
       (send this transform w 0 0 (- h) x (+ y h))
-      (send this addContent (format "/~a Do" (get-field label image)))
+      (send this add-content (format "/~a Do" (get-field label image)))
       (send this restore)
       this)
 
