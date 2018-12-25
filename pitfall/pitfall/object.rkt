@@ -1,20 +1,11 @@
-#lang racket/base
+#lang debug racket/base
 (require
   "core.rkt"
   racket/class
   racket/string
-  racket/contract
   racket/list
-  sugar/unstable/js
   (only-in srfi/19 date->string))
-(provide PDFObject convert)
-
-(define PDFObject
-  (class object%
-    (super-new)))
-
-;; moved `number` to helper module
-
+(provide convert)
 
 (define escaped-chars '(#\newline #\return #\tab #\backspace #\page #\( #\) #\\))
 (define escaped-char-strings '("\\n" "\\r" "\\t" "\\b" "\\f" "\\(" "\\)" "\\\\"))
@@ -26,31 +17,20 @@
                              [v (in-list escaped-char-strings)])
                     (values (string k) v)))
 
-
-(define/contract (string-slice str length)
-  (string? integer? . -> . string?)
-  (substring str (if (negative? length)
-                     (+ (string-length str) length)
-                     length)))
-
-
-(define/contract (pad str length)
-  (string? integer? . -> . string?)
-  (define newstr (string-append (string-join (make-list (add1 length) "") "0") str))
-  (string-slice newstr (- length)))
-
+(module+ test
+  (check-equal? (regexp-replace* escapableRe "foo\nba\nr" "x") "fooxbaxr")
+  (check-equal? (regexp-replace* escapableRe "foo\fba\tr" "x") "fooxbaxr")  
+  (check-equal? (regexp-replace* escapableRe "foo\nba\tr" (λ (c) (hash-ref escapable c))) "foo\\nba\\tr"))
 
 ;; Convert little endian UTF-16 to big endian
 ;; endianness of `bytes-open-converter` is relative to platform, so little endian on all x86
 ;; can detect with `system-big-endian?`
-(define/contract (utf8->utf16 bytes)
-  (bytes? . -> . bytes?)
+(define (utf8->utf16 bytes)
   (define-values (bs bslen bsresult)
     (bytes-convert (bytes-open-converter "platform-UTF-8" "platform-UTF-16") bytes))
   bs)
 
-(define/contract (swapBytes buff)
-  (bytes? . -> . bytes?)
+(define (swap-bytes buff)
   (define bufflen (bytes-length buff))
   (when (odd? bufflen)
     (raise-argument-error 'swapBytes "even number of bytes" bufflen))
@@ -60,8 +40,10 @@
     (bytes-set! newbuff (add1 bidx) (bytes-ref buff bidx))
     newbuff))
 
-(define/contract (convert object)
-  (any/c . -> . string?)
+(module+ test
+    (check-equal? (swap-bytes #"foobar") #"ofbora"))
+
+(define (convert object)
   (let loop ([x object])
     (cond
       ;; String literals are converted to the PDF name type
@@ -77,7 +59,7 @@
                                      (char>? c (integer->char 127))))
        ;; If so, encode it as big endian UTF-16
        (format "(~a)" (if contains-non-ascii?
-                          (bytes->string/latin-1 (swapBytes  (utf8->utf16 (string->bytes/utf-8 (string-append "\ufeff" string)))))
+                          (bytes->string/latin-1 (swap-bytes  (utf8->utf16 (string->bytes/utf-8 (string-append "\ufeff" string)))))
                           string))]
       ;; Buffers (= byte strings) are converted to PDF hex strings
       [(bytes? x) (format "<~a>" (string-append*
@@ -91,35 +73,21 @@
                                         (format "~a ~a" (loop k) (loop v)))
                                       (list ">>"))
                               (string #\newline))]
-      [(number? x) (format "~a" (number x))]
+      [(number? x) (format "~a" (numberizer x))]
       [else (format "~a" x)])))
-    
 
 (module+ test
-  (require rackunit )
-  (define o (new PDFObject))
-  (check-equal? (pad "foobar" -1) "oobar")
-  (check-equal? (pad "foobar" 0) "foobar")
-  (check-equal? (pad "foobar" 3) "bar")
-  (check-equal? (pad "foobar" 6) "foobar")
-  (check-equal? (pad "foobar" 10) "0000foobar")
-
-  (check-equal? (regexp-replace* escapableRe "foo\nba\nr" "x") "fooxbaxr")
-  (check-equal? (regexp-replace* escapableRe "foo\fba\tr" "x") "fooxbaxr")
-  
-  (check-equal? (regexp-replace* escapableRe "foo\nba\tr" (λ (c) (hash-ref escapable c))) "foo\\nba\\tr")
-
-  (check-equal? (swapBytes #"foobar") #"ofbora")
-
+  (require rackunit)
   (check-equal? (convert "foobar") "/foobar")
   (check-equal? (convert (String "foobar")) "(foobar)")
   (check-equal? (convert (String "öéÿ")) "(þÿ\u0000ö\u0000é\u0000ÿ)")
   (check-equal? (convert (String "fôobár")) "(þÿ\u0000f\u0000ô\u0000o\u0000b\u0000á\u0000r)")
   (check-equal? (convert #"foobar") "<666f6f626172>")
-  #;(check-equal? (convert (make-object PDFReference "foobar" 42)) "42 0 R")
   (check-equal? (convert (seconds->date (quotient 1494483337320 1000) #f)) "(D:20170511061537Z)")
   (check-equal? (convert (list "foobar" (String "öéÿ") #"foobar")) "[/foobar (þÿ\u0000ö\u0000é\u0000ÿ) <666f6f626172>]")
-  #;(check-equal? (convert (hash "foo" 42 "bar" "fly")) "<<\n/foo 42\n/bar /fly\n>>")
+  (check-true (let ([res (convert (hash "foo" 42 "bar" "fly"))])
+                (or (equal? res "<<\n/foo 42\n/bar /fly\n>>")
+                    (equal? res "<<\n/bar /fly\n/foo 42\n>>"))))
   (check-equal? (convert 1234.56789) "1234.56789"))
 
 
