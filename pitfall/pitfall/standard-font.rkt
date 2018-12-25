@@ -36,18 +36,18 @@
       (send @dictionary end))
 
     (define/override (encode text [options #f])
-      (define encoded (send font encodeText text))
-      (define glyphs (send font glyphsForString text))
-      (define advances (send font advancesForGlyphs glyphs))
+      (define encoded (send font encode-text text))
+      (define glyphs (send font glyphs-for-string text))
+      (define advances (send font advances-for-glyphs glyphs))
       (define positions
         (for/list ([glyph (in-list glyphs)]
                    [advance (in-list advances)])
-          (+glyph-position advance 0 0 0 (send font widthOfGlyph glyph)))) 
+          (+glyph-position advance 0 0 0 (send font glyph-width glyph)))) 
       (list encoded positions))
 
     (define/override (string-width str size [options #f])
-      (define glyphs (send font glyphsForString str))
-      (define advances (send font advancesForGlyphs glyphs))
+      (define glyphs (send font glyphs-for-string str))
+      (define advances (send font advances-for-glyphs glyphs))
       (define width (apply + advances))
       (define scale (/ size 1000.0))
       (* width scale))))
@@ -62,7 +62,7 @@
     [(_ HASH-ID FONT-ID ...)
      (with-syntax ([(PATH-STR ...) (map (λ (stx) (format "data/~a.afm" (syntax->datum stx))) (syntax->list #'(FONT-ID ...)))])
        #'(begin (define-runtime-path FONT-ID PATH-STR) ...
-                (define HASH-ID (make-hash (list (cons (symbol->string 'FONT-ID) (procedure-rename (λ () (file->string FONT-ID)) 'FONT-ID)) ...)))))]))
+                (define HASH-ID (make-hash (list (cons (symbol->string 'FONT-ID) (procedure-rename (λ () (open-input-file FONT-ID)) 'FONT-ID)) ...)))))]))
 
 (define-afm-table standard-fonts
   Courier-Bold
