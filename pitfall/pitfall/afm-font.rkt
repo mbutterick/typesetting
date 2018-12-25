@@ -4,8 +4,7 @@
   racket/match
   racket/string
   racket/list
-  with-cache
-  sugar/unstable/dict)
+  with-cache)
 
 (provide AFMFont AFMFont-open)
 
