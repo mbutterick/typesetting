@@ -25,8 +25,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
            [(@x x) 0]
            [(@y y) 0])
 
+    (inherit-field [@current-font current-font]
+                   [@current-font-size current-font-size]
+                   [@current-fill-color current-fill-color])
+    (inherit [@current-line-height current-line-height])
+
     (define/public (move-down [lines 1] #:factor [factor 1])
-      (set! @y (+ @y (* factor (send this current-line-height #t) (+ lines @line-gap))))
+      (set! @y (+ @y (* factor (@current-line-height #t) (+ lines @line-gap))))
       this)
 
     (define/public (move-up  [lines 1])
@@ -39,7 +44,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       this)
 
     (define/public (string-width str [options (mhash)])
-      (+ (send (get-field current-font this) string-width str (get-field current-font-size this) (hash-ref options 'features #f))
+      (+ (send @current-font string-width str @current-font-size (hash-ref options 'features #f))
          (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
 
     (define/public (line str [options (mhasheq)])
@@ -64,20 +69,20 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
       ;; create link annotations if the link option is given
       (when (hash-ref options 'link #f)
-        (send this link x y-in (force rendered-width) (send this current-line-height) (hash-ref options 'link)))
+        (send this link x y-in (force rendered-width) (@current-line-height) (hash-ref options 'link)))
   
       ;; create underline or strikethrough line
       (when (or (hash-ref options 'underline #f) (hash-ref options 'strike #f))
         (send this save)
         (unless (hash-ref options 'stroke #f)
-          (define fill-color-args (get-field current-fill-color this))
+          (define fill-color-args @current-fill-color)
           (send this stroke-color . fill-color-args))
-        (define line-width (if (< (get-field current-font-size this) 10)
+        (define line-width (if (< @current-font-size 10)
                                0.5
-                               (floor (/ (get-field current-font-size this) 10))))
+                               (floor (/ @current-font-size 10))))
         (send this line-width line-width)
         (define d (if (hash-ref options 'underline) 1 2))
-        (define line-y (+ y-in (/ (send this current-line-height) d)))
+        (define line-y (+ y-in (/ (@current-line-height) d)))
         (when (hash-ref options 'underline)
           (set! line-y (+ line-y (- line-width))))
 
@@ -91,17 +96,18 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (send this transform 1 0 0 -1 0 (get-field height (send this page)))
       (define y (- (get-field height (send this page))
                    y-in
-                   (* (/ (get-field ascender (get-field current-font this)) 1000)
-                      (get-field current-font-size this))))
+                   (* (/ (get-field ascender @current-font) 1000)
+                      @current-font-size)))
 
       ;; add current font to page if necessary
-      (hash-ref! (send (send this page) fonts) (get-field id (get-field current-font this))
-                 (λ () (send (get-field current-font this) make-font-ref)))
+      (define current-font-id (get-field id @current-font))
+      (hash-ref! (send (send this page) fonts) current-font-id 
+                 (λ () (send @current-font make-font-ref)))
   
       (send this addContent "BT") ; begin the text object
       (send this addContent (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
-      (send this addContent (format "/~a ~a Tf" (get-field id (get-field current-font this))
-                                    (numberizer (get-field current-font-size this)))) ; font and font size
+      (send this addContent (format "/~a ~a Tf" (get-field id @current-font)
+                                    (numberizer @current-font-size))) ; font and font size
       (let ([mode (+ (if (hash-ref options 'fill #f) 1 0) (if (hash-ref options 'stroke #f) 1 0))])
         (when (and mode (not (zero? mode)))
           (send this addContent (format "~a Tr" mode))))
@@ -109,15 +115,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
         (send this addContent (format "~a Tc" character-spacing)))
 
       ;; Add the actual text
-      ;; If we have a word spacing value, we need to encode each word separately
-      ;; since the normal Tw operator only works on character code 32, which isn't
-      ;; used for embedded fonts.
       ;; 180321: the first call to this operation is very slow from Quad
       ;; 181126: because `encode` calls `layout`
       (match-define (list encoded-char-strs positions)
-        (map list->vector (send (get-field current-font this) encode text (hash-ref options 'features #f))))
+        (map list->vector (send @current-font encode text (hash-ref options 'features #f))))
   
-      (define scale (/ (get-field current-font-size this) 1000.0))
+      (define scale (/ @current-font-size 1000.0))
       (define commands empty)
   
       ;; Adds a segment of text to the TJ command buffer

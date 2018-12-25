@@ -3,7 +3,6 @@
   "core.rkt"
   racket/class
   racket/format
-  racket/match
   racket/dict
   racket/list
   sugar/unstable/dict
