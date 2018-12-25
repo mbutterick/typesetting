@@ -59,15 +59,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (void))
 
     (define/public (fragment text x y-in options)
-      (define word-spacing (hash-ref options 'wordSpacing 0))
       (define character-spacing (hash-ref options 'characterSpacing 0))
 
       ;; calculate the actual rendered width of the string after word and character spacing
       (define rendered-width
         ;; wrap this in delay so it's only calculated if needed
         (delay
-          (+ (or (hash-ref options 'textWidth #f) (string-width text options))
-             (* word-spacing (sub1 (or (hash-ref options 'wordCount #f) 0)))
+          (+ (string-width text options)
              (* character-spacing (sub1 (string-length text))))))
 
       ;; create link annotations if the link option is given
@@ -80,15 +78,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
         (unless (hash-ref options 'stroke #f)
           (define fill-color-args @current-fill-color)
           (send this stroke-color . fill-color-args))
-        (define width (if (< @current-font-size 10)
-                               0.5
-                               (floor (/ @current-font-size 10))))
-        (line-width width)
+        (define new-line-width (if (< @current-font-size 10) 0.5 (floor (/ @current-font-size 10))))
+        (line-width new-line-width)
         (define d (if (hash-ref options 'underline) 1 2))
         (define line-y (+ y-in (/ (@current-line-height) d)))
         (when (hash-ref options 'underline)
-          (set! line-y (+ line-y (- width))))
-
+          (set! line-y (+ line-y (- new-line-width))))
         (move-to x line-y)
         (line-to (+ x (force rendered-width)) line-y)
         (stroke)
@@ -105,13 +100,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
       ;; add current font to page if necessary
       (define current-font-id (get-field id @current-font))
-      (hash-ref! (send (first @pages) fonts) current-font-id 
-                 (λ () (send @current-font make-font-ref)))
+      (hash-ref! (send (first @pages) fonts) current-font-id  (λ () (send @current-font make-font-ref)))
   
       (add-content "BT") ; begin the text object
       (add-content (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
       (add-content (format "/~a ~a Tf" current-font-id
-                                    (numberizer @current-font-size))) ; font and font size
+                           (numberizer @current-font-size))) ; font and font size
       (let ([mode (+ (if (hash-ref options 'fill #f) 1 0) (if (hash-ref options 'stroke #f) 1 0))])
         (when (and mode (not (zero? mode)))
           (add-content (format "~a Tr" mode))))
@@ -153,9 +147,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
             [(or (not (zero? (glyph-position-x-offset posn))) (not (zero? (glyph-position-y-offset posn))))
              (flush idx)
              (add-content ; Move the text position and flush just the current character
-                   (format "1 0 0 1 ~a ~a Tm"
-                           (numberizer (+ x (* (glyph-position-x-offset posn) scale)))
-                           (numberizer (+ y (* (glyph-position-y-offset posn) scale)))))
+              (format "1 0 0 1 ~a ~a Tm"
+                      (numberizer (+ x (* (glyph-position-x-offset posn) scale)))
+                      (numberizer (+ y (* (glyph-position-y-offset posn) scale)))))
              (flush (add1 idx))
              #true]
             [else
@@ -167,7 +161,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
                (add-segment (add1 idx)))
              #false]))
         (values having-offset (+ x (* (glyph-position-x-advance posn) scale))))
-  
+      
       (flush (vector-length positions))
       (add-content "ET") ; end the text object
       (restore)))) ; restore flipped coordinate system
