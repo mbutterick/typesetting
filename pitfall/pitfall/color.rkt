@@ -6,8 +6,77 @@
   racket/class
   racket/match
   racket/string)
+(provide (all-defined-out))
 
-(provide color-mixin)
+(define (do-opacity doc [fill-arg #f] [stroke-arg #f])
+  (define fill-opacity (and fill-arg (bounded 0 fill-arg 1)))
+  (define stroke-opacity (and stroke-arg (bounded 0 stroke-arg 1)))
+  (when (or fill-opacity stroke-opacity)
+    (define key (format "~a_~a"
+                        (if fill-opacity (numberizer fill-opacity) "")
+                        (if stroke-opacity (numberizer stroke-opacity) "")))
+    (match-define (list dictionary name)
+      (hash-ref! ($doc-opacity-registry doc) key
+                 (λ ()
+                   (define dictionary (make-hasheq '((Type . ExtGState))))
+                   (when fill-opacity
+                     (hash-set! dictionary 'ca fill-opacity))
+                   (when stroke-opacity
+                     (hash-set! dictionary 'CA stroke-opacity))
+                   (define ref-dict (make-ref dictionary))
+                   (ref-end ref-dict)
+                   (set-$doc-opacity-count! doc (add1 ($doc-opacity-count doc)))
+                   (list ref-dict (string->symbol (format "Gs~a" ($doc-opacity-count doc)))))))
+    (hash-set! (page-ext_gstates (page doc)) name dictionary)        
+    (add-content doc (format "/~a gs" name))))
+
+(define (fill-color doc color [opacity 1])
+  (unless (normalize-color color)
+    (raise-argument-error 'fill-color "valid color string" color))
+  (when (set-color doc color #f) (fill-opacity doc opacity))
+  ;; save this for text wrapper, which needs to reset
+  ;; the fill color on new pages
+  (set-$doc-current-fill-color! doc (list color opacity))
+  doc)
+
+(define (fill-opacity doc opacity)
+  (do-opacity doc opacity #f)
+  doc)
+
+(define (set-color doc color-in stroke)
+  (define color (normalize-color color-in))
+  (define op (if stroke "SCN" "scn"))
+  (cond
+    [(not color)]
+    #;[(is-a? color PDFGradient)
+       (set-color-space "Pattern" stroke)
+       (send color apply op)
+       #true] ; todo
+    [else
+     (define color-space
+       (case (length color)
+         [(3) 'DeviceRGB]
+         [(4) 'DeviceCMYK]
+         [else (raise-argument-error 'set-color "color of length 3 or 4" color)]))
+     (set-color-space doc color-space stroke)
+       
+     ;; 181126 don't round, to be consistent with pdfkit behavior
+     (add-content doc (format "~a ~a" (string-join (map (λ (num) (numberizer num #:round #false)) color) " ") op))
+     #true]))
+
+(define (set-color-space doc space stroke)
+  (define op (if stroke "CS" "cs"))
+  (add-content doc (format "/~a ~a" space op)))
+
+(define (stroke-color doc color [opacity 1])
+  (unless (normalize-color color)
+    (raise-argument-error 'stroke-color "valid color string" color))
+  (when (set-color doc color #t) (stroke-opacity doc opacity))
+  doc)
+
+(define (stroke-opacity doc opacity)
+  (do-opacity doc #f opacity)
+  doc)
 
 (define (normalize-color color)
   ;; parses color string into list of values
@@ -35,83 +104,25 @@
                               (if (integer? x) (inexact->exact x) x))]
     [_ #false]))
 
-(define (color-mixin [% object%])
-  (class %
-    (super-new)
-    (field [@opacity-registry (make-hash)]
-           [@opacity-count 0]
-           [@grad-count 0]
-           [(@current-fill-color current-fill-color) #false])
+#;(define (color-mixin [% object%])
+    (class %
+      (super-new)
+      (field [@opacity-registry (make-hash)]
+             [@opacity-count 0]
+             [@grad-count 0]
+             [(@current-fill-color current-fill-color) #false])
 
-    (define/public (set-color color-in stroke)
-      (define color (normalize-color color-in))
-      (define op (if stroke "SCN" "scn"))
-      (cond
-        [(not color)]
-        #;[(is-a? color PDFGradient)
-           (set-color-space "Pattern" stroke)
-           (send color apply op)
-           #true] ; todo
-        [else
-         (define color-space
-           (case (length color)
-             [(3) 'DeviceRGB]
-             [(4) 'DeviceCMYK]
-             [else (raise-argument-error 'set-color "color of length 3 or 4" color)]))
-         (set-color-space color-space stroke)
-       
-         ;; 181126 don't round, to be consistent with pdfkit behavior
-         (send this add-content (format "~a ~a" (string-join (map (λ (num) (numberizer num #:round #false)) color) " ") op))
-         #true]))
     
-    (define/public (set-color-space space stroke)
-      (define op (if stroke "CS" "cs"))
-      (send this add-content (format "/~a ~a" space op)))
-
-    (define/public (fill-color color [opacity 1])
-      (unless (normalize-color color)
-        (raise-argument-error 'fill-color "valid color string" color))
-      (when (set-color color #f) (fill-opacity opacity))
-      ;; save this for text wrapper, which needs to reset
-      ;; the fill color on new pages
-      (set! @current-fill-color (list color opacity))
-      this)
-
-    (define/public (stroke-color color [opacity 1])
-      (unless (normalize-color color)
-        (raise-argument-error 'stroke-color "valid color string" color))
-      (when (set-color color #t) (stroke-opacity opacity))
-      this)
-
-    (define/public (fill-opacity opacity)
-      (do-opacity opacity #f)
-      this)
-
-    (define/public (stroke-opacity opacity)
-      (do-opacity #f opacity)
-      this)
     
-    (define/public (do-opacity [fill-arg #f] [stroke-arg #f])
-      (define fill-opacity (and fill-arg (bounded 0 fill-arg 1)))
-      (define stroke-opacity (and stroke-arg (bounded 0 stroke-arg 1)))
-      (when (or fill-opacity stroke-opacity)
-        (define key (format "~a_~a"
-                            (if fill-opacity (numberizer fill-opacity) "")
-                            (if stroke-opacity (numberizer stroke-opacity) "")))
-        (match-define (list dictionary name)
-          (hash-ref! (get-field @opacity-registry this) key
-                     (λ ()
-                       (define dictionary (make-hasheq '((Type . ExtGState))))
-                       (when fill-opacity
-                         (hash-set! dictionary 'ca fill-opacity))
-                       (when stroke-opacity
-                         (hash-set! dictionary 'CA stroke-opacity))
-                       (define ref-dict (make-ref dictionary))
-                       (ref-end ref-dict)
-                       (set! @opacity-count (add1 @opacity-count))
-                       (list ref-dict (string->symbol (format "Gs~a" @opacity-count))))))
-        (hash-set! (page-ext_gstates (send this page)) name dictionary)        
-        (send this add-content (format "/~a gs" name))))))
+      
+
+      
+
+      
+
+      
+    
+      ))
 
 (define named-colors
   (hash "aliceblue" '(240 248 255)
@@ -264,7 +275,6 @@
 
 (module+ test
   (require rackunit)
-  (define c (new (color-mixin)))
   (check-equal? (normalize-color "#6699Cc") '(0.4 0.6 0.8))
   (check-false (normalize-color "#88aaCCC"))
   (check-equal? (normalize-color "#69C") '(0.4 0.6 0.8))

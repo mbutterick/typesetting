@@ -4,11 +4,10 @@
 (define-runtime-path death "assets/death.png")
 
 (define (proc doc)
-  (send* doc
-  [font "Times-Italic"]
-  [font-size 25]
-  [text "Some fantastic text!" 100 100 (hash 'lineBreak #f)]
-  [image death 100 160 (hash 'width 412)]))
+  [font doc "Times-Italic"]
+  [font-size doc 25]
+  [text doc "Some fantastic text!" 100 100 (hash 'lineBreak #f)]
+  [image doc death 100 160 (hash 'width 412)])
 
 (define-runtime-path this "test5rkt.pdf")
 (make-doc this #f proc)

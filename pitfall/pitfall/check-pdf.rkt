@@ -118,14 +118,6 @@
        (cons idx (parse-pdf-bytes (peek-bytes (- end start) start)))))
    < #:key car))
 
-(define (shorten-val v)
-  (cond
-    [(dict? v) (for/list ([(key val) (in-dict v)])
-                 (cons key (shorten-val val)))]
-    [(and (bytes? v) (> (bytes-length v) 100))
-     (subbytes v 0 100)]
-    [else v]))
-
 (define (dict-compare arg1 arg2)
   (define d1 (if (dict? arg1) arg1 (pdf->dict arg1)))
   (define d2 (if (dict? arg2) arg2 (pdf->dict arg2)))
@@ -136,9 +128,7 @@
          (unless (equal? k1 k2)
            (error (format "keys unequal in ~a and ~a: ~a ≠ ~a" arg1 arg2 k1 k2)))
          (unless (equal? v1 v2)
-           (define val1 (shorten-val v1))
-           (define val2 (shorten-val v2))
-           (error (format "values unequal in ~a and ~a: ~a ≠ ~a" arg1 arg2 val1 val2)))
+           (error (format "values unequal in ~a and ~a: ~e ≠ ~e" arg1 arg2 v1 v2)))
          (when (dict? v1)
            (dict-compare v1 v2))
          #true)))

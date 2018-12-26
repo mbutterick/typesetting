@@ -5,9 +5,10 @@
   sugar/unstable/dict
   "core.rkt"
   "page.rkt"
+  "vector.rkt"
   "png.rkt"
   "jpeg.rkt")
-(provide image-mixin)
+(provide (all-defined-out))
 
 (define (open-pdf-image src label)
   (define data (cond
@@ -21,25 +22,17 @@
       [else (raise-argument-error 'open-pdf-image "valid image format" src)]))
   (img-constructor data label))
 
-(define (image-mixin [% object%])
-  (class %
-    (super-new)
-    (field [@image-registry (mhash)]
-           [@image-count 0])
-    (inherit-field [@x x] [@y y])
-    (inherit page)
-
-    (define/public (image src [x-in #f] [y-in #f] [options (mhasheq)])
-      (define x (or x-in (hash-ref options 'x #f) @x))
-      (define y (or y-in (hash-ref options 'y #f) @y))
+    (define (image doc src [x-in #f] [y-in #f] [options (mhasheq)])
+      (define x (or x-in (hash-ref options 'x #f) ($doc-x doc)))
+      (define y (or y-in (hash-ref options 'y #f) ($doc-y doc)))
 
       (define image (cond
-                      [(and (string? src) (hash-ref @image-registry src #f))]
+                      [(and (string? src) (hash-ref ($doc-image-registry doc) src #f))]
                       [(and ($img? src) ($img-width src) ($img-height src)) src]
-                      [else (send this open-image src)]))
+                      [else (open-image doc src)]))
       (unless ($img-ref image) (($img-embed-proc image) image))
   
-      (hash-ref! (page-xobjects (page)) ($img-label image) ($img-ref image))
+      (hash-ref! (page-xobjects (page doc)) ($img-label image) ($img-ref image))
 
       (define image-width ($img-width image))
       (define image-height ($img-height image))
@@ -101,20 +94,20 @@
           [("bottom") (set! y (+ y bh - h))]))
 
       ;; Set the current y position to below the image if it is in the document flow
-      (when (= @y y) (set! y (+ y h)))
-      (send this save)
-      (send this transform w 0 0 (- h) x (+ y h))
-      (send this add-content (format "/~a Do" ($img-label image)))
-      (send this restore)
-      this)
+      (when (= ($doc-y doc) y) (set! y (+ y h)))
+      (save doc)
+      (transform doc w 0 0 (- h) x (+ y h))
+      (add-content doc (format "/~a Do" ($img-label image)))
+      (restore doc)
+      doc)
 
-    (define/public (open-image src)
+    (define (open-image doc src)
       (cond
-        [(and (string? src) (hash-ref @image-registry src #f))]
+        [(and (string? src) (hash-ref ($doc-image-registry doc) src #f))]
         [else
-         (set! @image-count (add1 @image-count))
-         (define image-id (string->symbol (format "I~a" @image-count)))
+         (set-$doc-image-count! doc (add1 ($doc-image-count doc)))
+         (define image-id (string->symbol (format "I~a" ($doc-image-count doc))))
          (define new-image (open-pdf-image src image-id))
-         (when (string? src) (hash-set! @image-registry src new-image))
-         new-image]))))
+         (when (string? src) (hash-set! ($doc-image-registry doc) src new-image))
+         new-image]))
 

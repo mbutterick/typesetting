@@ -2,7 +2,7 @@
 (require pitfall/pdftest)
 
 (define (proc doc)
-  (send doc text "Hello world"))
+  (text doc "Hello world"))
 
 (define-runtime-path this "test3rkt.pdf")
 (make-doc this #f proc)

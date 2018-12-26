@@ -7,6 +7,11 @@
 
 (provide (all-defined-out))
 
+(define (page doc) (car ($doc-pages doc)))
+
+(define (add-content doc data)
+  (page-write (page doc) data))
+
 (struct $page (page-parent options size layout dimensions width height content resources margins dictionary)
   #:transparent #:mutable)
 

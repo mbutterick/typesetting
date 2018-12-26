@@ -20,16 +20,6 @@
 (define (store-ref doc ref)
   (set-$doc-refs! doc (cons ref ($doc-refs doc))))
 
-(define (page doc) (first ($doc-pages doc)))
-
-(define (add-content doc data)
-  (page-write (page doc) data))
-
-(define (transform doc scaleX shearY shearX scaleY mdx mdy)
-  (define new-ctm (list scaleX shearY shearX scaleY mdx mdy))
-  (set-$doc-ctm! doc (combine-transforms ($doc-ctm doc) new-ctm))
-  (add-content doc (make-transform-string new-ctm)))
-
 (define (make-$doc [options (make-hasheq)])
 
   ;; initial values
@@ -88,7 +78,7 @@
   (current-compress-streams? (hash-ref options 'compress #t))
   (current-auto-first-page (hash-ref options 'autoFirstPage #t))
   (when (current-auto-first-page) (add-page new-doc))
-  #;(when (current-auto-helvetica) (font "Helvetica"))
+  (when (current-auto-helvetica) (font new-doc "Helvetica"))
   
   new-doc)
 

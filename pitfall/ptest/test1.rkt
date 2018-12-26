@@ -3,16 +3,14 @@
 
 (define (proc doc)
   ;; Draw a triangle and a circle
-  (send* doc
-    [save]
-    [move-to 100 150]
-    [line-to 100 250]
-    [line-to 200 250]
-    [fill "#FF3300"])
+  [save doc]
+  [move-to doc 100 150]
+  [line-to doc 100 250]
+  [line-to doc 200 250]
+  [fill doc "#FF3300"]
 
-  (send* doc
-    [circle 280 200 50]
-    [fill "#6600FF"]))
+  [circle doc 280 200 50]
+  [fill doc "#6600FF"])
 
 (define-runtime-path this "test1rkt.pdf")
 (make-doc this #f proc)
