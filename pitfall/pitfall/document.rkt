@@ -60,10 +60,6 @@
     (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
       (hash-set! @info key val))
 
-    ;; write the header now, before any other subroutine starts up
-    (write-bytes-out (format "%PDF-~a" (current-pdf-version)))
-    (write-bytes-out "%ÿÿÿÿ")
-
     (define/public (store-ref ref)
       (set! @refs (cons ref @refs)))
 
@@ -81,7 +77,11 @@
       (transform 1 0 0 -1 0 (get-field height (page)))
       this)
 
-    (define/public (end)
+    (define/public (start-doc)
+      (write-bytes-out (format "%PDF-~a" (current-pdf-version)))
+      (write-bytes-out "%ÿÿÿÿ"))
+
+    (define/public (end-doc)
       (for ([page (in-list @pages)])
         (send page end))
 
