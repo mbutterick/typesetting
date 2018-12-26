@@ -16,6 +16,5 @@
 
 (check-equal? (· p dictionary Type) 'Page)
 (check-equal? (· p dictionary MediaBox)  '(0 0 612.0 792.0))
-(check-true (is-a? (· p dictionary Contents) PDFReference))
-(check-true (is-a? (· p dictionary Resources) PDFReference))
-#;(check-true (is-a? (· p dictionary Parent) PDFReference))
+(check-true ($ref? (· p dictionary Contents)))
+(check-true ($ref? (· p dictionary Resources)))

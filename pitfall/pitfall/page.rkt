@@ -57,12 +57,12 @@
       (- @height (margin-bottom @margins)))
 
     (define/public (write chunk)
-      (send @content write chunk)) 
+      (ref-write @content chunk)) 
 
     (define/public (end)
-      (send @dictionary end)
-      (send @resources end)
-      (send @content end))))
+      (ref-end @dictionary)
+      (ref-end @resources)
+      (ref-end @content))))
 
 
 (define page-sizes

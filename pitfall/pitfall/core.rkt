@@ -1,8 +1,19 @@
 #lang racket/base
-(require racket/match racket/port)
+(require racket/match racket/port racket/dict)
 (provide (all-defined-out))
 
 ;; structs
+
+(struct $ref (id payload offset port) #:transparent #:mutable
+  #:methods gen:dict
+  [(define (dict-ref $ key [thunk (λ () (error 'dict-ref-key-not-found))])
+     (hash-ref ($ref-payload $) key))
+   (define (dict-ref! $ key thunk)
+     (hash-ref! ($ref-payload $) key thunk))
+   (define (dict-set! $ key val) (hash-set! ($ref-payload $) key val))
+   (define (dict-update! $ key updater [failure-result (λ () (error 'update-no-key))])
+     (hash-update! ($ref-payload $) key updater failure-result))])
+
 ;; for JPEG and PNG
 (struct image (label width height obj) #:transparent #:mutable)
 

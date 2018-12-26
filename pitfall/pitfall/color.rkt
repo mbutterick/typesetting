@@ -106,7 +106,7 @@
                        (when stroke-opacity
                          (hash-set! dictionary 'CA stroke-opacity))
                        (define ref-dict (make-ref dictionary))
-                       (send ref-dict end)
+                       (ref-end ref-dict)
                        (set! @opacity-count (add1 @opacity-count))
                        (list ref-dict (string->symbol (format "Gs~a" @opacity-count))))))
         (hash-set! (send (send this page) ext_gstates) name dictionary)        

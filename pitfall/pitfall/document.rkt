@@ -88,17 +88,17 @@
       (define doc-info (make-ref))
       (for ([(key val) (in-hash @info)])
         (dict-set! doc-info key val))
-      (send doc-info end)
+      (ref-end doc-info)
     
       (for ([font (in-hash-values @font-families)])
         (send font end))
 
-      (send* (dict-ref @root 'Pages)
-        [set-key! 'Count (length @pages)]
-        [set-key! 'Kids (map (λ (page) (get-field dictionary page)) (reverse @pages))]
-        [end])
+      (define pages-ref (dict-ref @root 'Pages))
+      (dict-set! pages-ref 'Count (length @pages))
+      (dict-set! pages-ref 'Kids (map (λ (page) (get-field dictionary page)) (reverse @pages)))
+      (ref-end pages-ref)
       
-      (send @root end)
+      (ref-end @root)
       
       (define xref-offset (file-position (current-output-port)))
       (write-bytes-out "xref")
@@ -106,7 +106,7 @@
       (write-bytes-out "0000000000 65535 f ")
       (for ([ref (in-list (reverse @refs))])
         (write-bytes-out
-         (string-append (~r (get-field offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
+         (string-append (~r ($ref-offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
       (write-bytes-out "trailer")
       (write-bytes-out (convert (mhasheq 'Size (add1 (length @refs))
                                          'Root @root

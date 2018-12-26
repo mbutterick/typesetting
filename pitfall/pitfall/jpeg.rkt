@@ -60,8 +60,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/jpeg.coffee
         (when (eq? @colorSpace 'DeviceCMYK)
           (dict-set! @obj 'Decode '(1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0)))
         (file-position @data 0)
-        (send* @obj [write @data]
-          [end])))))
+        (ref-write @obj @data)
+        (ref-end @obj)))))
 
 (define (read-16bit-integer ip-or-bytes)
   (define signed #f) (define big-endian #t)

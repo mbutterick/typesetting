@@ -44,13 +44,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
                                  'BitsPerComponent (hash-ref @image 'bits)
                                  'Columns @width)))
           (dict-set! @obj 'DecodeParms params)
-          (send params end))
+          (ref-end params))
 
         (cond
           [(hash-has-key? @image 'palette)
            ;; embed the color palette in the PDF as an object stream
            (define palette-ref (make-ref))
-           (send* palette-ref [write (hash-ref @image 'palette)] [end])
+           (ref-write palette-ref (hash-ref @image 'palette))
+           (ref-end palette-ref)
            ;; build the color space array for the image
            (dict-set! @obj 'Colorspace
                       (list 'Indexed 'DeviceRGB (sub1 (/ (bytes-length (hash-ref @image 'palette)) 3)) palette-ref))]
@@ -85,11 +86,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
                   'Filter 'FlateDecode
                   'ColorSpace 'DeviceGray
                   'Decode '(0 1))))
-        (send* sMask-ref [write @alpha-channel] [end])
+        (ref-write sMask-ref @alpha-channel)
+        (ref-end sMask-ref)
         (dict-set! @obj 'SMask sMask-ref))
   
       ;; embed the actual image data
-      (send* @obj [write @img-data] [end]))
+      (ref-write @obj @img-data)
+      (ref-end @obj))
 
 
     (define/public (split-alpha-channel)

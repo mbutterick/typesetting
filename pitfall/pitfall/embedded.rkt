@@ -90,8 +90,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
       (when isCFF
         (dict-set! font-file 'Subtype 'CIDFontType0C))
-  
-      (send* font-file [write (get-output-bytes (encode-to-port subset))] [end])
+
+      (ref-write font-file (get-output-bytes (encode-to-port subset)))
+      (ref-end font-file)
 
       (define family-class (if (has-table? font 'OS/2)
                                (floor (/ (hash-ref (get-OS/2-table font) 'sFamilyClass) 256)) ; >> 8
@@ -114,46 +115,45 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (define name (string->symbol (string-append tag "+" (font-postscript-name font))))
       (define bbox (font-bbox font))
       (define descriptor (make-ref
-                               (mhash
-                                'Type 'FontDescriptor
-                                'FontName name
-                                'Flags flags
-                                'FontBBox (map (λ (x) (* scale x))
-                                               (bbox->list bbox))
-                                'ItalicAngle (font-italic-angle font)
-                                'Ascent @ascender
-                                'Descent @descender
-                                'CapHeight (* (or (font-cap-height font) (font-ascent font)) scale)
-                                'XHeight (* (or (font-x-height font) 0) scale)
-                                'StemV 0)))
+                          (mhash
+                           'Type 'FontDescriptor
+                           'FontName name
+                           'Flags flags
+                           'FontBBox (map (λ (x) (* scale x))
+                                          (bbox->list bbox))
+                           'ItalicAngle (font-italic-angle font)
+                           'Ascent @ascender
+                           'Descent @descender
+                           'CapHeight (* (or (font-cap-height font) (font-ascent font)) scale)
+                           'XHeight (* (or (font-x-height font) 0) scale)
+                           'StemV 0)))
 
       (dict-set! descriptor (if isCFF 'FontFile3 'FontFile2) font-file)
-      (send descriptor end)
+      (ref-end descriptor)
 
       (define descendant-font (make-ref
-                                   (mhash
-                                    'Type 'Font
-                                    'Subtype (string->symbol (string-append "CIDFontType" (if isCFF "0" "2")))
-                                    'BaseFont name
-                                    'CIDSystemInfo
-                                    (mhash
-                                     'Registry "Adobe"
-                                     'Ordering "Identity"
-                                     'Supplement 0)
-                                    'FontDescriptor descriptor
-                                    'W (list 0 (for/list ([idx (in-range (length (hash-keys widths)))])
-                                                 (hash-ref widths idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
-      (send descendant-font end)
+                               (mhash
+                                'Type 'Font
+                                'Subtype (string->symbol (string-append "CIDFontType" (if isCFF "0" "2")))
+                                'BaseFont name
+                                'CIDSystemInfo
+                                (mhash
+                                 'Registry "Adobe"
+                                 'Ordering "Identity"
+                                 'Supplement 0)
+                                'FontDescriptor descriptor
+                                'W (list 0 (for/list ([idx (in-range (length (hash-keys widths)))])
+                                             (hash-ref widths idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
+      (ref-end descendant-font)
       
-      (send* @dictionary
-        [set-key! 'Type 'Font]
-        [set-key! 'Subtype 'Type0]
-        [set-key! 'BaseFont name]
-        [set-key! 'Encoding 'Identity-H]
-        [set-key! 'DescendantFonts (list descendant-font)]
-        [set-key! 'ToUnicode (toUnicodeCmap)])
+      [dict-set! @dictionary 'Type 'Font]
+      [dict-set! @dictionary 'Subtype 'Type0]
+      [dict-set! @dictionary 'BaseFont name]
+      [dict-set! @dictionary 'Encoding 'Identity-H]
+      [dict-set! @dictionary 'DescendantFonts (list descendant-font)]
+      [dict-set! @dictionary 'ToUnicode (toUnicodeCmap)]
 
-      (send @dictionary end))
+      (ref-end @dictionary))
 
 
     (define/public (toUnicodeCmap)
@@ -191,9 +191,8 @@ end
 HERE
         )
   
-      (send* cmap
-        [write (format unicode-cmap-str (to-hex (sub1 (length entries))) (string-join entries " "))]
-        [end])                                 
+      (ref-write cmap (format unicode-cmap-str (to-hex (sub1 (length entries))) (string-join entries " ")))
+      (ref-end cmap)
       cmap)))
 
 (module+ test

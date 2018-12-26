@@ -63,6 +63,7 @@
       [(bytes? x) (format "<~a>" (string-append*
                                   (for/list ([b (in-bytes x)])
                                     (number->string b 16))))]
+      [($ref? x) (format "~a 0 R" ($ref-id x))]
       [(object? x) (send x to-string)]
       [(date? x) (format "(D:~aZ)" (date->string x "~Y~m~d~H~M~S"))]
       [(list? x) (format "[~a]" (string-join (map loop x) " "))]

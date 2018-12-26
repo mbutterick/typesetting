@@ -6,6 +6,8 @@
   sugar/unstable/dict
   "afm-font.rkt"
   "font.rkt"
+  "core.rkt"
+  "reference.rkt"
   fontland
   racket/runtime-path)
 (provide isStandardFont standard-fonts StandardFont)
@@ -28,12 +30,12 @@
                    [@dictionary dictionary])
 
     (define/override (embed)
-      (set-field! payload @dictionary
+      (set-$ref-payload! @dictionary
                   (mhash 'Type 'Font
                          'BaseFont (string->symbol name)
                          'Subtype 'Type1
                          'Encoding 'WinAnsiEncoding))
-      (send @dictionary end))
+      (ref-end @dictionary))
 
     (define/override (encode text [options #f])
       (define encoded (send font encode-text text))

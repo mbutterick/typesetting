@@ -29,7 +29,7 @@
 
       (define annots-ref (make-ref options))
       (send (send this page) annotations annots-ref)
-      (send annots-ref end)
+      (ref-end annots-ref)
       this)
 
     (define/public (link x y w h url [options (mhasheq)])
@@ -37,7 +37,7 @@
                   'Subtype 'Link
                   'A (make-ref (mhash 'S 'URI
                                       'URI url)))
-      (send (hash-ref options 'A) end)
+      (ref-end (hash-ref options 'A))
       (annotate x y w h options))
 
     (define/public (convert-rect x1 y1 w h)
