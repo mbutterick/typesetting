@@ -28,10 +28,9 @@
                              (field [@pages null])
                              (define/public (page) (first @pages))                  
                              (define/public (add-content data)
-                               (page-write (first @pages) data)
-                               this))))))))
+                               (page-write (first @pages) data)))))))))
     (set-current-ref-id! 1)
-    (register-ref-listener (λ (ref) (send this store-ref ref)))
+    (register-ref-listener (λ (ref) (store-ref ref)))
 
     (super-new)
     (init-field [(@options options) (mhasheq)])
@@ -41,7 +40,7 @@
            ;; initialize the metadata
            [@info (mhasheq 'Producer "PITFALL"
                            'Creator "PITFALL"
-                           'CreationDate (seconds->date (if (test-mode) 0 (current-seconds)) #f))])
+                           'CreationDate (current-seconds))])
 
     ;; initialize mixins
     (inherit-field @ctm) ; from vector mixin
