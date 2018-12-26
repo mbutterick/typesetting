@@ -3,7 +3,6 @@
   "core.rkt"
   "reference.rkt"
   "page.rkt"
-  racket/class
   racket/match
   racket/string)
 (provide (all-defined-out))

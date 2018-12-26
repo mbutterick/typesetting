@@ -4,7 +4,6 @@
   "reference.rkt"
   "page.rkt"
   "color.rkt"
-  racket/class
   racket/match
   sugar/unstable/dict)
 

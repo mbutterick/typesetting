@@ -1,6 +1,5 @@
 #lang racket/base
 (require
-  racket/class
   racket/match
   sugar/unstable/dict
   "core.rkt"

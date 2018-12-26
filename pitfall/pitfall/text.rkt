@@ -10,9 +10,7 @@
   racket/match
   racket/string
   racket/list
-  sugar/unstable/class
   sugar/unstable/dict
-  sugar/list
   racket/promise
   fontland/glyph-position)
 (provide (all-defined-out))

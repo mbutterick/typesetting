@@ -4,17 +4,12 @@
   racket/class
   racket/format
   racket/dict
-  racket/list
   sugar/unstable/dict
   "reference.rkt"
   "object.rkt"
   "page.rkt"
   "vector.rkt"
-  "color.rkt"
-  "fonts.rkt"
-  "text.rkt"
-  "images.rkt"
-  "annotations.rkt")
+  "fonts.rkt")
 (provide (all-defined-out))
 
 (define (store-ref doc ref)
