@@ -1,20 +1,21 @@
 #lang racket/base
 (require racket/class
          rackunit
+         racket/dict
          "document.rkt"
          "page.rkt"
          "reference.rkt"
          "core.rkt"
          sugar/unstable/js)
-(define p (make-object PDFPage))
-(check-equal? (· p size) "letter")
-(check-equal? (· p layout) "portrait")
-(check-equal? (· p margins) (margin 72 72 72 72))
-(check-equal? (· p height) 792.0)
-(check-equal? (· p width) 612.0)
-(check-equal? (· p resources ProcSet) '(PDF Text ImageB ImageC ImageI))
+(define p (make-page))
+(check-equal? ($page-size p) "letter")
+(check-equal? ($page-layout p) "portrait")
+(check-equal? ($page-margins p) (margin 72 72 72 72))
+(check-equal? ($page-height p) 792.0)
+(check-equal? ($page-width p) 612.0)
+(check-equal? (dict-ref ($page-resources p) 'ProcSet) '(PDF Text ImageB ImageC ImageI))
 
-(check-equal? (· p dictionary Type) 'Page)
-(check-equal? (· p dictionary MediaBox)  '(0 0 612.0 792.0))
-(check-true ($ref? (· p dictionary Contents)))
-(check-true ($ref? (· p dictionary Resources)))
+(check-equal? (dict-ref ($page-dictionary p) 'Type) 'Page)
+(check-equal? (dict-ref ($page-dictionary p) 'MediaBox)  '(0 0 612.0 792.0))
+(check-true ($ref? (dict-ref ($page-dictionary p) 'Contents)))
+(check-true ($ref? (dict-ref ($page-dictionary p) 'Resources)))

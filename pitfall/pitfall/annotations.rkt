@@ -2,6 +2,7 @@
 (require
   "core.rkt"
   "reference.rkt"
+  "page.rkt"
   racket/class
   racket/match
   sugar/unstable/dict)
@@ -12,6 +13,7 @@
   (class %
     (super-new)
     (inherit-field @ctm)
+    (inherit page)
 
     (define/public (annotate x y w h options)
       (hash-set*! options
@@ -28,7 +30,7 @@
         (hash-set! options (string->symbol (string-titlecase (symbol->string k))) v))
 
       (define annots-ref (make-ref options))
-      (send (send this page) annotations annots-ref)
+      (page-annotations (page) annots-ref)
       (ref-end annots-ref)
       this)
 

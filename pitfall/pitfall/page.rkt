@@ -1,68 +1,67 @@
 #lang debug racket/base
 (require
-  racket/class
   racket/dict
   "reference.rkt"
   sugar/unstable/dict
   "core.rkt")
 
-(provide PDFPage)
+(provide (all-defined-out))
 
-(define PDFPage
-  (class object%
-    (super-new)
-    (init-field [@page-parent #false] [@options (mhash)])
-    (field [(@size size) (hash-ref @options 'size "letter")]
-           [(@layout layout) (hash-ref @options 'layout "portrait")]
-           [@dimensions (if (list? @size)
-                           @size
-                           (hash-ref page-sizes (string-upcase @size)))]
-           [(@width width) (list-ref @dimensions (if (equal? @layout "portrait") 0 1))]
-           [(@height height) (list-ref @dimensions (if (equal? @layout "portrait") 1 0))]
-           [@content (make-ref)]
-           [(@resources resources) (make-ref (mhash 'ProcSet '(PDF Text ImageB ImageC ImageI)))]
-           [(@margins margins)
-            (let ([margin-value (hash-ref @options 'margin #f)])
+(struct $page (page-parent options size layout dimensions width height content resources margins dictionary)
+  #:transparent #:mutable)
+
+(define (make-page [page-parent #false] [options (mhash)])
+  [define size (hash-ref options 'size "letter")]
+           [define layout (hash-ref options 'layout "portrait")]
+           [define dimensions (if (list? size)
+                           size
+                           (hash-ref page-sizes (string-upcase size)))]
+           [define width (list-ref dimensions (if (equal? layout "portrait") 0 1))]
+           [define height (list-ref dimensions (if (equal? layout "portrait") 1 0))]
+           [define content (make-ref)]
+           [define resources (make-ref (mhash 'ProcSet '(PDF Text ImageB ImageC ImageI)))]
+           [define margins
+            (let ([margin-value (hash-ref options 'margin #f)])
               (if (number? margin-value)
                   (margin margin-value margin-value margin-value margin-value)
-                  (hash-ref @options 'margins (current-default-margins))))]
+                  (hash-ref options 'margins (current-default-margins))))]
            ;; The page dictionary
-           [(@dictionary dictionary)
+           [define dictionary
             (make-ref
                   (mhash 'Type 'Page
-                         'Parent @page-parent
-                         'MediaBox (list 0 0 @width @height)
-                         'Contents @content
-                         'Resources @resources))])
+                         'Parent page-parent
+                         'MediaBox (list 0 0 width height)
+                         'Contents content
+                         'Resources resources))]
+  ($page page-parent options size layout dimensions width height content resources margins dictionary))
 
-    ;; Lazily create these dictionaries
-    (define/public (fonts)
-      (dict-ref! @resources 'Font (make-hasheq)))
+    (define (page-fonts p)
+      (dict-ref! ($page-resources p) 'Font (make-hasheq)))
 
-    (define/public (xobjects)
-      (dict-ref! @resources 'XObject (make-hasheq)))
+    (define (page-xobjects p)
+      (dict-ref! ($page-resources p) 'XObject (make-hasheq)))
 
-    (define/public (ext_gstates)
-      (dict-ref! @resources 'ExtGState (make-hasheq)))
+    (define (page-ext_gstates p)
+      (dict-ref! ($page-resources p) 'ExtGState (make-hasheq)))
 
-    (define/public (patterns)
-      (dict-ref! @resources 'Pattern (make-hasheq)))
+    (define (page-patterns p)
+      (dict-ref! ($page-resources p) 'Pattern (make-hasheq)))
 
-    (define/public (annotations [annot #f])
+    (define (page-annotations p [annot #f])
       (if annot
-          (dict-update! @dictionary 'Annots (λ (val) (cons annot val)) null)
-          (dict-ref! @dictionary 'Annots null)))
+          (dict-update! ($page-dictionary p) 'Annots (λ (val) (cons annot val)) null)
+          (dict-ref! ($page-dictionary p) 'Annots null)))
 
-    (define/public (maxY)
-      (- @height (margin-bottom @margins)))
+    (define (page-maxY p)
+      (- ($page-height p) (margin-bottom ($page-margins p))))
 
-    (define/public (write chunk)
-      (ref-write @content chunk)) 
+    (define (page-write p chunk)
+      (ref-write ($page-content p) chunk)) 
 
-    (define/public (end)
-      (ref-end @dictionary)
-      (ref-end @resources)
-      (ref-end @content))))
+    (define (page-end p)
+      (ref-end ($page-dictionary p))
+      (ref-end ($page-resources p))
+      (ref-end ($page-content p)))
 
 
 (define page-sizes

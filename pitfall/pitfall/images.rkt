@@ -3,7 +3,8 @@
   racket/class
   racket/match
   sugar/unstable/dict
-  "image.rkt")
+  "image.rkt"
+  "page.rkt")
 (provide image-mixin)
 
 (define (image-mixin [% object%])
@@ -12,6 +13,7 @@
     (field [@image-registry (mhash)]
            [@image-count 0])
     (inherit-field [@x x] [@y y])
+    (inherit page)
 
     (define/public (image src [x-in #f] [y-in #f] [options (mhasheq)])
       (define x (or x-in (hash-ref options 'x #f) @x))
@@ -23,7 +25,7 @@
                       [else (send this open-image src)]))
       (unless (get-field obj image) (send image embed))
   
-      (hash-ref! (send (send this page) xobjects) (get-field label image) (get-field obj image))
+      (hash-ref! (page-xobjects (page)) (get-field label image) (get-field obj image))
 
       (define image-width (get-field width image))
       (define image-height (get-field height image))

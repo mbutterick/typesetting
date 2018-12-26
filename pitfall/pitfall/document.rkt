@@ -28,7 +28,7 @@
                              (field [@pages null])
                              (define/public (page) (first @pages))                  
                              (define/public (add-content data)
-                               (send (first @pages) write data)
+                               (page-write (first @pages) data)
                                this))))))))
     (set-current-ref-id! 1)
     (register-ref-listener (λ (ref) (send this store-ref ref)))
@@ -66,15 +66,15 @@
     (define/public (add-page [options-arg @options])
       ;; create a page object
       (define page-parent (dict-ref @root 'Pages))
-      (set! @pages (cons (make-object PDFPage page-parent options-arg) @pages))
+      (set! @pages (cons (make-page page-parent options-arg) @pages))
       
       ;; reset x and y coordinates
-      (set! @x (margin-left (get-field margins (page))))
-      (set! @y (margin-right (get-field margins (page))))
+      (set! @x (margin-left ($page-margins (page))))
+      (set! @y (margin-right ($page-margins (page))))
       ;; flip PDF coordinate system so that the origin is in
       ;; the top left rather than the bottom left
       (set! @ctm default-ctm-value)
-      (transform 1 0 0 -1 0 (get-field height (page)))
+      (transform 1 0 0 -1 0 ($page-height (page)))
       this)
 
     (define/public (start-doc)
@@ -82,8 +82,7 @@
       (write-bytes-out "%ÿÿÿÿ"))
 
     (define/public (end-doc)
-      (for ([page (in-list @pages)])
-        (send page end))
+      (for-each page-end @pages)
 
       (define doc-info (make-ref))
       (for ([(key val) (in-hash @info)])
@@ -95,7 +94,7 @@
 
       (define pages-ref (dict-ref @root 'Pages))
       (dict-set! pages-ref 'Count (length @pages))
-      (dict-set! pages-ref 'Kids (map (λ (page) (get-field dictionary page)) (reverse @pages)))
+      (dict-set! pages-ref 'Kids (map $page-dictionary (reverse @pages)))
       (ref-end pages-ref)
       
       (ref-end @root)

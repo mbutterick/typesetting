@@ -1,6 +1,7 @@
 #lang racket/base
 (require
   "core.rkt"
+  "page.rkt"
   racket/class
   racket/match
   racket/string
@@ -91,7 +92,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
       ;; flip coordinate system
       (save)
-      (define page-height (get-field height (first @pages)))
+      (define page-height ($page-height (first @pages)))
       (transform 1 0 0 -1 0 page-height)
       (define y (- page-height
                    y-in
@@ -100,7 +101,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
       ;; add current font to page if necessary
       (define current-font-id (get-field id @current-font))
-      (hash-ref! (send (first @pages) fonts) current-font-id  (λ () (send @current-font make-font-ref)))
+      (hash-ref! (page-fonts (first @pages)) current-font-id  (λ () (send @current-font make-font-ref)))
   
       (add-content "BT") ; begin the text object
       (add-content (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position

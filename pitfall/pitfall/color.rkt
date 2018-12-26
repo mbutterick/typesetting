@@ -2,6 +2,7 @@
 (require
   "core.rkt"
   "reference.rkt"
+  "page.rkt"
   racket/class
   racket/match
   racket/string)
@@ -109,7 +110,7 @@
                        (ref-end ref-dict)
                        (set! @opacity-count (add1 @opacity-count))
                        (list ref-dict (string->symbol (format "Gs~a" @opacity-count))))))
-        (hash-set! (send (send this page) ext_gstates) name dictionary)        
+        (hash-set! (page-ext_gstates (send this page)) name dictionary)        
         (send this add-content (format "/~a gs" name))))))
 
 (define named-colors
