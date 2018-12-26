@@ -12,7 +12,7 @@
 (test-mode #t)
 
 (require rackunit pitfall/document pitfall/vector pitfall/color pitfall/text pitfall/fonts pitfall/images racket/runtime-path racket/class)
-(provide (all-from-out  rackunit racket/runtime-path pitfall/document pitfall/vector pitfall/text pitfall/fonts  pitfall/images pitfall/color  racket/class))
+(provide (all-from-out  rackunit racket/runtime-path pitfall/document pitfall/vector pitfall/text pitfall/color pitfall/fonts  pitfall/images  racket/class))
 
 (define (this->control this) (path-add-extension this #"" #" copy."))
 

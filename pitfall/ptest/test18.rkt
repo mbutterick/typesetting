@@ -7,17 +7,16 @@
 
 (define (proc doc)
   ;; Register a font name for use later
-  (send doc register-font "the-font" (path->string ttf-path))
+  (register-font doc "the-font" (path->string ttf-path))
 
   ;; Set the font, draw some text
-  (send* doc
-    [font "the-font"]
-    [font-size 25]
-    [text "In Xanadu did Kubla Khan" 100 100 (hash 'width #f)]
-    [text "A stately pleasure dome decree:" 100 140 (hash 'width #f)]
-    [text "Where Alph, the sacred river, ran" 100 180 (hash 'width #f)]
-    [text "Through caverns measureless to man" 100 220 (hash 'width #f)]
-    [text "Down to a sunless sea." 100 260 (hash 'width #f)]))
+  [font doc "the-font"]
+  [font-size doc 25]
+  [text doc "In Xanadu did Kubla Khan" 100 100 (hash 'width #f)]
+  [text doc "A stately pleasure dome decree:" 100 140 (hash 'width #f)]
+  [text doc "Where Alph, the sacred river, ran" 100 180 (hash 'width #f)]
+  [text doc "Through caverns measureless to man" 100 220 (hash 'width #f)]
+  [text doc "Down to a sunless sea." 100 260 (hash 'width #f)])
 
 
 (define-runtime-path this "test18rkt.pdf")

@@ -4,11 +4,10 @@
 (define-runtime-path pic "assets/test.png")
 
 (define (proc doc)
-  (send* doc
-  [font "Helvetica-Bold"]
-  [font-size 25]
-  [text "Another fantastic pic" 100 100 (hash 'lineBreak #f)]
-  [image pic 100 160 (hash 'width 412)]))
+  [font doc "Helvetica-Bold"]
+  [font-size doc 25]
+  [text doc "Another fantastic pic" 100 100 (hash 'lineBreak #f)]
+  [image doc pic 100 160 (hash 'width 412)])
 
 ; node's zlib.deflate makes smaller files, for some reason
 ; so don't compare file sizes in this case

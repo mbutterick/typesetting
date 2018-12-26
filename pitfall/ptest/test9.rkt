@@ -2,19 +2,17 @@
 (require pitfall/pdftest)
 
 (define (proc doc)
-  (send* doc
-    [move-to 0 20]
-    [line-to 100 160]
-    [quadratic-curve-to 130 200 150 120]
-    [bezier-curve-to 190 -40 200 200 300 150]  
-    [line-to 400 90]                         
-    [stroke])
+  [move-to doc 0 20]
+  [line-to doc 100 160]
+  [quadratic-curve-to doc 130 200 150 120]
+  [bezier-curve-to doc 190 -40 200 200 300 150]  
+  [line-to doc 400 90]                         
+  [stroke doc]
 
-  (send* doc [translate 0 200])
+  [translate doc 0 200]
 
-  (send* doc
-    [path "M 0,20 L 100,160 Q 130,200 150,120 C 190,-40 200,200 300,150 L 400,90"]                        
-    [stroke]))
+  [path doc "M 0,20 L 100,160 Q 130,200 150,120 C 190,-40 200,200 300,150 L 400,90"]                        
+  [stroke doc])
 
 (define-runtime-path this "test9rkt.pdf")
 (make-doc this #false proc)

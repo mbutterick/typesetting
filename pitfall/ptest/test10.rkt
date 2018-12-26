@@ -4,22 +4,22 @@
 (define-runtime-path tiger "assets/tiger.json")
 
 (define (proc doc)
-  (send doc translate 220 300)
+  (translate doc 220 300)
   (for* ([datum (in-list (read (open-input-string (string-replace (file->string tiger) #rx"[,:]" " "))))]
          [part (in-value (apply hash datum))])
-    (send doc path (hash-ref part 'path))
+    (path doc (hash-ref part 'path))
 
     (when (hash-has-key? part "stroke-width")
-      (send doc line-width (string->number (hash-ref part "stroke-width"))))
+      (line-width doc (string->number (hash-ref part "stroke-width"))))
 
     (if (and (not (string=? (hash-ref part 'fill "none") "none"))
              (not (string=? (hash-ref part 'stroke "none") "none")))
-        (send doc fill-and-stroke (hash-ref part 'fill) (hash-ref part 'stroke))
+        (fill-and-stroke doc (hash-ref part 'fill) (hash-ref part 'stroke))
         (begin
           (unless (string=? (hash-ref part 'fill "none") "none")
-            (send doc fill (hash-ref part 'fill)))
+            (fill doc (hash-ref part 'fill)))
           (unless (string=? (hash-ref part 'stroke "none") "none")
-            (send doc fill (hash-ref part 'stroke)))))))
+            (fill doc (hash-ref part 'stroke)))))))
 
 (define-runtime-path this "test10rkt.pdf")
 (make-doc this #f proc)

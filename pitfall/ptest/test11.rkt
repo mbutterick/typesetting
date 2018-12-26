@@ -2,14 +2,13 @@
 (require pitfall/pdftest)
 
 (define (proc doc)
-  (send* doc
-    [fill-color "blue"]
-    [font "Helvetica" 30]
-    [translate 50 50]
-    [text "Here is a link!" 100 100 (hash
-                                     'link "http://google.com/"
-                                     'underline #t
-                                     'width #f)]))
+  [fill-color doc "blue"]
+  [font doc "Helvetica" 30]
+  [translate doc 50 50]
+  [text doc "Here is a link!" 100 100 (hash
+                                       'link "http://google.com/"
+                                       'underline #t
+                                       'width #f)])
 
 (define-runtime-path this "test11rkt.pdf")
 (make-doc this #f proc)

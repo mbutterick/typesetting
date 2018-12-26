@@ -10,7 +10,9 @@
   sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
-  "path.rkt")
+  brag/support
+  sugar/list
+  racket/list)
 (provide (all-defined-out))
 
 (define default-ctm-value '(1 0 0 1 0 0))
@@ -33,6 +35,9 @@
 
 (define (circle doc x y radius)
   (ellipse doc x y radius))
+
+(define (clip doc [rule #f])
+  (add-content doc (string-append "W" (winding-rule rule) " n")))
 
 (define (close-path doc)
   (add-content doc "h"))
@@ -100,6 +105,10 @@
 (define (move-to doc x y)
   (add-content doc (format "~a ~a m" x y)))
 
+(define (path doc path-data)
+  (parse-svg-path doc path-data)
+  doc)
+
 (define (polygon doc . points)
   (match points
     [(cons (list x y) other-points)
@@ -116,6 +125,17 @@
 
 (define (rect doc x y w h)
   (add-content doc (format "~a re" (string-join (map numberizer (list x y w h)) " "))))
+
+(define scale
+  (match-lambda*
+    [(list (? $doc? doc) (? number? x-factor)) (scale doc x-factor (mhash))]
+    [(list (? $doc? doc) (? number? xFactor) (? hash? options)) (scale doc xFactor xFactor options)]
+    [(list (? $doc? doc) (? number? xFactor) (? number? yFactor)) (scale doc xFactor yFactor (mhash))]
+    [(list (? $doc? doc) (? number? xFactor) (? number? yFactor) (? hash? options))
+     (match-define (list x y)
+       (match-let ([(list xo yo) (hash-ref options 'origin '(0 0))])
+         (list (* xo (- 1 xFactor)) (* yo (- 1 yFactor)))))
+     (transform doc xFactor 0 0 yFactor x y)]))
 
 (define (shear doc x y)
   (transform doc 1 y x 1 0 0))
@@ -134,109 +154,6 @@
 
 (define (winding-rule rule)
   (if (and (string? rule) (regexp-match #rx"^even-?odd$" rule)) "*" ""))
-
-
-#;(define (vector-mixin [% mixin-tester%])
-    (class %
-      (super-new)
-      (field [@ctm default-ctm-value]
-             [@ctm-stack null])
-      (inherit add-content) ; from base
-      (inherit stroke-color fill-color) ; from color
-
-      (define/public (save)
-        (set! @ctm-stack (cons @ctm @ctm-stack))
-        (add-content "q"))
-
-      (define/public (restore)
-        (set! @ctm (if (pair? @ctm-stack)
-                       (begin0
-                         (car @ctm-stack)
-                         (set! @ctm-stack (cdr @ctm-stack)))
-                       default-ctm-value))
-        (add-content "Q"))
-
-      (define/public (close-path)
-        (add-content "h"))
-
-      
-
-      
-
-      (define/public (move-to x y)
-        (add-content (format "~a ~a m" x y)))
-
-      (define/public (line-to x y)
-        (add-content (format "~a ~a l" x y)))
-
-      (define/public (bezier-curve-to cp1x cp1y cp2x cp2y x y)
-        (add-content (format "~a c" (string-join (map numberizer (list cp1x cp1y cp2x cp2y x y)) " "))))
-
-      (define/public (quadratic-curve-to cpx cpy x y)
-        (add-content (format "~a v" (string-join (map numberizer (list cpx cpy x y)) " "))))
-  
-      
-
-      (define/public (ellipse x y r1 [r2 r1])
-        ;; based on http://stackoverflow.com/questions/2172798/how-to-draw-an-oval-in-html5-canvas/2173084#2173084
-        ;; This constant is used to approximate a symmetrical arc using a cubic Bezier curve.
-        (define kappa (* 4 (/ (- (sqrt 2) 1) 3.0)))
-        (-= x r1)
-        (-= y r2)
-        (define ox (* r1 kappa)) ; control point offset horizontal
-        (define oy (* r2 kappa)) ; control point offset vertical
-        (define xe (+ x (* r1 2))) ; x-end
-        (define ye (+ y (* r2 2))) ; y-end
-        (define xm (+ x r1)) ; x-middle
-        (define ym (+ y r2)) ; y-middle
-        (move-to x ym)
-        (bezier-curve-to x (- ym oy) (- xm ox) y xm y)
-        (bezier-curve-to (+ xm ox) y xe (- ym oy) xe ym)
-        (bezier-curve-to xe (+ ym oy) (+ xm ox) ye xm ye)
-        (bezier-curve-to (- xm ox) ye x (+ ym oy) x ym)
-        (close-path))
-
-      (define/public (circle x y radius)
-        (ellipse x y radius))
-
-      
-
-      (define/public (path path-data)
-        (parse-svg-path this path-data)
-        this)
-
-      (define/public (_windingRule rule)
-        (if (and (string? rule) (regexp-match #rx"^even-?odd$" rule)) "*" ""))
-
-      (define/public (fill [color #f] #:rule [rule #f])
-        (when color (fill-color color)) ;; fill-color method is from color mixin
-        (add-content (format "f~a" (_windingRule rule))))
-
-      (define/public (stroke [color #f])
-        (when color (stroke-color color))
-        (add-content "S"))
-
-      
-
-      (define tm/c (list/c number? number? number? number? number? number?))
-      (define/public (make-transform-string ctm)
-        (format "~a cm" (string-join (map numberizer ctm) " ")))
-
-      (define/public (clip [rule #f])
-        (add-content (string-append "W" (_windingRule rule) " n")))
-
-      
-
-      (define/public scale
-        (match-lambda*
-          [(list (? object? this) (? number? x-factor)) (scale x-factor (mhash))]
-          [(list (? object? this) (? number? xFactor) (? hash? options)) (scale xFactor xFactor options)]
-          [(list (? object? this) (? number? xFactor) (? number? yFactor)) (scale this xFactor yFactor (mhash))]
-          [(list (? object? this) (? number? xFactor) (? number? yFactor) (? hash? options))
-           (match-define (list x y)
-             (match-let ([(list xo yo) (hash-ref options 'origin '(0 0))])
-               (list (* xo (- 1 xFactor)) (* yo (- 1 yFactor)))))
-           (transform xFactor 0 0 yFactor x y)]))))
 
 (define (combine-transforms m new-ctm)
   (match-define (list m0 m1 m2 m3 m4 m5) m)
@@ -265,3 +182,81 @@
                 '(1 0 0 -1 50 742.0))
   (check-equal? (combine-transforms '(1 0 0 -1 50 742.0) '(1 0 0 -1 0 792))
                 '(1 0 0 1 50 -50.0)))
+
+(define (parse-svg-path doc path)
+  (define commands (parse path))
+  (apply-commands commands doc))
+
+(define (parse path)
+  (define lex-1
+    (lexer
+     [(eof) eof]
+     [alphabetic (string->symbol lexeme)]
+     [(:: (:? "-") (:* numeric) (:? ".") (:+ numeric)) (string->number lexeme)]
+     [(:or whitespace ",") (lex-1 input-port)]))
+  (slicef-at (for/list ([tok (in-port lex-1 (open-input-string path))])
+               tok) symbol?))
+
+(module+ test
+  (require rackunit)
+  (check-equal?
+   (parse "M 0,20 L 100,160 Q 130,200 150,120 C 190,-40 200,200 300,150 L 400,90")
+   '((M 0 20)
+     (L 100 160)
+     (Q 130 200 150 120)
+     (C 190 -40 200 200 300 150)
+     (L 400 90)))
+
+  (check-equal?
+   (parse "M-122.304 84.285C-122.304 84.285 -122.203 86.179 -123.027 86.16C-123.851 86.141 -140.305 38.066 -160.833 40.309C-160.833 40.309 -143.05 32.956 -122.304 84.285z")
+   '((M -122.304 84.285)
+     (C -122.304 84.285 -122.203 86.179 -123.027 86.16)
+     (C -123.851 86.141 -140.305 38.066 -160.833 40.309)
+     (C -160.833 40.309 -143.05 32.956 -122.304 84.285)
+     (z)))
+
+  (check-equal? (parse "L100-160") '((L 100 -160))))
+
+(define (apply-commands commands doc)
+  (for/fold ([cx 0][cy 0][px 0][py 0][sx 0][sy 0])
+            ([cmd (in-list commands)])
+    (match-define (cons cmd-name cmd-args) cmd)
+    (let loop ([cmd-name cmd-name][cmd-args cmd-args])
+      (match-define (list a0 a1 a2 a3 a4 a5)
+        (append cmd-args (make-list (- 6 (length cmd-args)) #f)))
+      (case cmd-name
+        [(M) (apply move-to doc cmd-args)
+             (values a0 a1 #f #f a0 a1)]
+        [(m) (loop 'M (list (+ cx a0) (+ cy a1)))]
+        [(C) (apply bezier-curve-to doc cmd-args)
+             (values a4 a5 a2 a3 sx sy)]
+        [(c) (loop 'C (list (+ cx a0) (+ cy a1)
+                            (+ cx a2) (+ cy a3)
+                            (+ cx a4) (+ cy a5)))]
+        [(S) (match-let ([(list px py) (if (not px)
+                                           (list cx cy)
+                                           (list px py))])
+               (apply bezier-curve-to doc (- cx (- px cx)) (- cy (- py cy)) a0 a1 a2 a3)
+               (values a2 a3 a0 a1 sx sy))]
+        [(s) (loop 'S (list (+ cx a0) (+ cy a1)
+                            (+ cx a2) (+ cy a3)))]
+        [(L) (apply line-to doc cmd-args)
+             (values a0 a1 #f #f sx sy)]
+        [(l) (loop 'L (list (+ cx a0) (+ cy a1)))]
+        [(H) (loop 'L (list a0 cy))]
+        [(h) (loop 'L (list (+ cx a0) cy))]
+        [(V) (loop 'L (list cx a0))]
+        [(v) (loop 'L (list cx (+ cy a0)))]
+        [(Q) (apply quadratic-curve-to doc cmd-args)
+             (values a2 a3 a0 a1 sx sy)]
+        [(q) (loop 'Q (list (+ cx a0) (+ cy a1)
+                            (+ cx a2) (+ cy a3)))]
+        [(T) (match-define (list px py)
+               (if (not px)
+                   (list cx py)
+                   (list (- cx (- px cx) (- cy (- py cy))))))
+             (apply quadratic-curve-to doc cmd-args)]
+        ;; todo other path ops
+        [(z) (apply close-path doc cmd-args)
+             (values sx sy px py sx sy)]
+        [else (raise-argument-error 'apply-commands "valid command name" cmd-name)]))))

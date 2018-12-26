@@ -7,13 +7,12 @@
 
 (define (proc doc)
   ;; Register a font name for use later
-  (send doc register-font "the-font" (path->string ttf-path))
+  (register-font doc "the-font" (path->string ttf-path))
 
   ;; Set the font, draw some text
-  (send* doc
-    [font "the-font"]
-    [font-size 50]
-    [text "The fifth rifle" 100 100 (hash 'width #f)]))
+  [font doc "the-font"]
+  [font-size doc 50]
+  [text doc "The fifth rifle" 100 100 (hash 'width #f)])
 
 
 (define-runtime-path this "test17rkt.pdf")

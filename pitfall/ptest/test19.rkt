@@ -8,14 +8,13 @@
 
 (define (proc doc)
   ;; Register a font name for use later
-  (send doc register-font "the-font" (path->string ttf-path))
+  (register-font doc "the-font" (path->string ttf-path))
 
   ;; Set the font, draw some text
-  (send* doc
-    [font "the-font"]
-    [font-size 100]
-    [text "A&B" 100 100 (hash 'width #f)]
-    [text "X&Y" 100 200 (hash 'width #f 'features '(ss03))]))
+  [font doc "the-font"]
+  [font-size doc 100]
+  [text doc "A&B" 100 100 (hash 'width #f)]
+  [text doc "X&Y" 100 200 (hash 'width #f 'features '(ss03))])
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test19rkt.pdf")

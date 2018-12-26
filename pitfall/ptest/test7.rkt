@@ -4,11 +4,10 @@
 (define-runtime-path test-jpeg "assets/test.jpeg")
 
 (define (proc doc)
-  (send* doc
-  [font "Times-Italic"]
-  [font-size 25]
-  [text "Here comes a JPEG!" 100 100 (hash 'lineBreak #f)]
-  [image test-jpeg 100 160 (hash 'width 412)]))
+  [font doc "Times-Italic"]
+  [font-size doc 25]
+  [text doc "Here comes a JPEG!" 100 100 (hash 'lineBreak #f)]
+  [image doc test-jpeg 100 160 (hash 'width 412)])
 
 (define-runtime-path this "test7rkt.pdf")
 (make-doc this #f proc)
