@@ -123,7 +123,7 @@
     [(dict? v) (for/list ([(key val) (in-dict v)])
                  (cons key (shorten-val val)))]
     [(and (bytes? v) (> (bytes-length v) 100))
-      (subbytes v 0 100)]
+     (subbytes v 0 100)]
     [else v]))
 
 (define (dict-compare arg1 arg2)
@@ -142,6 +142,10 @@
          (when (dict? v1)
            (dict-compare v1 v2))
          #true)))
+
+(define-simple-check (check-headers-equal? ps1 ps2)
+  (equal? (peek-bytes 14 0 (open-input-file ps1))
+          (peek-bytes 14 0 (open-input-file ps2))))
 
 (define-simple-check (check-pdfs-equal? ps1 ps2)
   (dict-compare ps1 ps2))

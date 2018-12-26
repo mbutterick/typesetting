@@ -30,12 +30,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
       (unless @obj
         (set! @obj
               (make-ref
-               (mhash 'Type "XObject"
-                      'Subtype "Image"
+               (mhash 'Type 'XObject
+                      'Subtype 'Image
                       'BitsPerComponent (hash-ref @image 'bits)
                       'Width @width
                       'Height @height
-                      'Filter "FlateDecode")))
+                      'Filter 'FlateDecode)))
 
         (unless (hash-ref @image 'hasAlphaChannel #f)
           (define params (make-ref
@@ -53,8 +53,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
            (send* palette-ref [write (hash-ref @image 'palette)] [end])
            ;; build the color space array for the image
            (dict-set! @obj 'Colorspace
-                      (list "Indexed" "DeviceRGB" (sub1 (/ (bytes-length (hash-ref @image 'palette)) 3)) palette-ref))]
-          [else (dict-set! @obj 'ColorSpace "DeviceRGB")])
+                      (list 'Indexed 'DeviceRGB (sub1 (/ (bytes-length (hash-ref @image 'palette)) 3)) palette-ref))]
+          [else (dict-set! @obj 'ColorSpace 'DeviceRGB)])
 
    
         (cond
@@ -77,13 +77,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
       (when @alpha-channel
         (define sMask-ref
           (make-ref
-           (mhash 'Type "XObject"
-                  'Subtype "Image"
+           (mhash 'Type 'XObject
+                  'Subtype 'Image
                   'Height @height
                   'Width @width
                   'BitsPerComponent 8
-                  'Filter "FlateDecode"
-                  'ColorSpace "DeviceGray"
+                  'Filter 'FlateDecode
+                  'ColorSpace 'DeviceGray
                   'Decode '(0 1))))
         (send* sMask-ref [write @alpha-channel] [end])
         (dict-set! @obj 'SMask sMask-ref))

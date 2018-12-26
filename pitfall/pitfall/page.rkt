@@ -20,7 +20,7 @@
            [(@width width) (list-ref @dimensions (if (equal? @layout "portrait") 0 1))]
            [(@height height) (list-ref @dimensions (if (equal? @layout "portrait") 1 0))]
            [@content (make-ref)]
-           [(@resources resources) (make-ref (mhash 'ProcSet '("PDF" "Text" "ImageB" "ImageC" "ImageI")))]
+           [(@resources resources) (make-ref (mhash 'ProcSet '(PDF Text ImageB ImageC ImageI)))]
            [(@margins margins)
             (let ([margin-value (hash-ref @options 'margin #f)])
               (if (number? margin-value)
@@ -29,7 +29,7 @@
            ;; The page dictionary
            [(@dictionary dictionary)
             (make-ref
-                  (mhash 'Type "Page"
+                  (mhash 'Type 'Page
                          'Parent @page-parent
                          'MediaBox (list 0 0 @width @height)
                          'Contents @content

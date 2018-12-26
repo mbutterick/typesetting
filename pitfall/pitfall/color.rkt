@@ -54,8 +54,8 @@
         [else
          (define color-space
            (case (length color)
-             [(3) "DeviceRGB"]
-             [(4) "DeviceCMYK"]
+             [(3) 'DeviceRGB]
+             [(4) 'DeviceCMYK]
              [else (raise-argument-error 'set-color "color of length 3 or 4" color)]))
          (set-color-space color-space stroke)
        
@@ -100,7 +100,7 @@
         (match-define (list dictionary name)
           (hash-ref! (get-field @opacity-registry this) key
                      (λ ()
-                       (define dictionary (make-hasheq '((Type . "ExtGState"))))
+                       (define dictionary (make-hasheq '((Type . ExtGState))))
                        (when fill-opacity
                          (hash-set! dictionary 'ca fill-opacity))
                        (when stroke-opacity
@@ -108,7 +108,7 @@
                        (define ref-dict (make-ref dictionary))
                        (send ref-dict end)
                        (set! @opacity-count (add1 @opacity-count))
-                       (list ref-dict (format "Gs~a" @opacity-count)))))
+                       (list ref-dict (string->symbol (format "Gs~a" @opacity-count))))))
         (hash-set! (send (send this page) ext_gstates) name dictionary)        
         (send this add-content (format "/~a gs" name))))))
 

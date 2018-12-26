@@ -29,10 +29,10 @@
 
     (define/override (embed)
       (set-field! payload @dictionary
-                  (mhash 'Type "Font"
-                         'BaseFont name
-                         'Subtype "Type1"
-                         'Encoding "WinAnsiEncoding"))
+                  (mhash 'Type 'Font
+                         'BaseFont (string->symbol name)
+                         'Subtype 'Type1
+                         'Encoding 'WinAnsiEncoding))
       (send @dictionary end))
 
     (define/override (encode text [options #f])

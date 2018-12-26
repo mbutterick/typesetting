@@ -36,8 +36,8 @@
     (super-new)
     (init-field [(@options options) (mhasheq)])
     (field [@refs null]
-           [@root (make-ref (mhasheq 'Type "Catalog"
-                                     'Pages (make-ref (mhasheq 'Type "Pages"))))]
+           [@root (make-ref (mhasheq 'Type 'Catalog
+                                     'Pages (make-ref (mhasheq 'Type 'Pages))))]
            ;; initialize the metadata
            [@info (mhasheq 'Producer "PITFALL"
                            'Creator "PITFALL"
@@ -85,7 +85,7 @@
 
       (define doc-info (make-ref))
       (for ([(key val) (in-hash @info)])
-        (dict-set! doc-info key (if (string? val) (String val) val)))
+        (dict-set! doc-info key val))
       (send doc-info end)
     
       (for ([font (in-hash-values @font-families)])

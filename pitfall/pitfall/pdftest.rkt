@@ -42,6 +42,8 @@
        (send doc end))
      #:exists 'replace))
   (when test?
+    #;(check-headers-equal? ps (this->control ps))
     (check-pdfs-equal? ps (this->control ps))
     (when pdfkit?
+      #;(check-headers-equal? ps (this->pdfkit-control ps))
       (check-pdfs-equal? ps (this->pdfkit-control ps)))))

@@ -89,7 +89,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (define font-file (make-ref))
 
       (when isCFF
-        (dict-set! font-file 'Subtype "CIDFontType0C"))
+        (dict-set! font-file 'Subtype 'CIDFontType0C))
   
       (send* font-file [write (get-output-bytes (encode-to-port subset))] [end])
 
@@ -111,11 +111,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (when (test-mode) (random-seed 0))
       (define tag (list->string (for/list ([i (in-range 6)])
                                   (integer->char (random 65 (+ 65 26))))))
-      (define name (string-append tag "+" (font-postscript-name font)))
+      (define name (string->symbol (string-append tag "+" (font-postscript-name font))))
       (define bbox (font-bbox font))
       (define descriptor (make-ref
                                (mhash
-                                'Type "FontDescriptor"
+                                'Type 'FontDescriptor
                                 'FontName name
                                 'Flags flags
                                 'FontBBox (map (λ (x) (* scale x))
@@ -132,13 +132,13 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
       (define descendant-font (make-ref
                                    (mhash
-                                    'Type "Font"
-                                    'Subtype (string-append "CIDFontType" (if isCFF "0" "2"))
+                                    'Type 'Font
+                                    'Subtype (string->symbol (string-append "CIDFontType" (if isCFF "0" "2")))
                                     'BaseFont name
                                     'CIDSystemInfo
                                     (mhash
-                                     'Registry (String "Adobe")
-                                     'Ordering (String "Identity")
+                                     'Registry "Adobe"
+                                     'Ordering "Identity"
                                      'Supplement 0)
                                     'FontDescriptor descriptor
                                     'W (list 0 (for/list ([idx (in-range (length (hash-keys widths)))])
@@ -146,10 +146,10 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (send descendant-font end)
       
       (send* @dictionary
-        [set-key! 'Type "Font"]
-        [set-key! 'Subtype "Type0"]
+        [set-key! 'Type 'Font]
+        [set-key! 'Subtype 'Type0]
         [set-key! 'BaseFont name]
-        [set-key! 'Encoding "Identity-H"]
+        [set-key! 'Encoding 'Identity-H]
         [set-key! 'DescendantFonts (list descendant-font)]
         [set-key! 'ToUnicode (toUnicodeCmap)])
 

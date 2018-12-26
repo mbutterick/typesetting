@@ -46,14 +46,12 @@
 (define (convert object)
   (let loop ([x object])
     (cond
-      ;; String literals are converted to the PDF name type
-      [(string? x) (string-append "/" x)]
-      ;; symbols are used for convenience - convert to string
-      [(symbol? x) (loop (symbol->string x))]
-      ;; String objects (structs) are converted to PDF strings (UTF-16)
-      [(String? x)
+      ;; symbols are converted to the PDF dictionary key type
+      [(symbol? x) (string-append "/" (symbol->string x))]
+      ;; String objects (structs) and string literals are converted to PDF strings (UTF-16)
+      [(string? x)
        ;; Escape characters as required by the spec
-       (define string (regexp-replace* escapableRe (String-string x) (λ (c) (hash-ref escapable c))))
+       (define string (regexp-replace* escapableRe x (λ (c) (hash-ref escapable c))))
        ;; Detect if this is a unicode string (= contains non-ascii chars)
        (define contains-non-ascii? (for/or ([c (in-string string)])
                                      (char>? c (integer->char 127))))
@@ -78,14 +76,14 @@
 
 (module+ test
   (require rackunit)
-  (check-equal? (convert "foobar") "/foobar")
-  (check-equal? (convert (String "foobar")) "(foobar)")
-  (check-equal? (convert (String "öéÿ")) "(þÿ\u0000ö\u0000é\u0000ÿ)")
-  (check-equal? (convert (String "fôobár")) "(þÿ\u0000f\u0000ô\u0000o\u0000b\u0000á\u0000r)")
+  (check-equal? (convert 'foobar) "/foobar")
+  (check-equal? (convert "foobar") "(foobar)")
+  (check-equal? (convert "öéÿ") "(þÿ\u0000ö\u0000é\u0000ÿ)")
+  (check-equal? (convert "fôobár") "(þÿ\u0000f\u0000ô\u0000o\u0000b\u0000á\u0000r)")
   (check-equal? (convert #"foobar") "<666f6f626172>")
   (check-equal? (convert (seconds->date (quotient 1494483337320 1000) #f)) "(D:20170511061537Z)")
-  (check-equal? (convert (list "foobar" (String "öéÿ") #"foobar")) "[/foobar (þÿ\u0000ö\u0000é\u0000ÿ) <666f6f626172>]")
-  (check-true (let ([res (convert (hash "foo" 42 "bar" "fly"))])
+  (check-equal? (convert (list 'foobar "öéÿ" #"foobar")) "[/foobar (þÿ\u0000ö\u0000é\u0000ÿ) <666f6f626172>]")
+  (check-true (let ([res (convert (hash 'foo 42 'bar 'fly))])
                 (or (equal? res "<<\n/foo 42\n/bar /fly\n>>")
                     (equal? res "<<\n/bar /fly\n/foo 42\n>>"))))
   (check-equal? (convert 1234.56789) "1234.56789"))

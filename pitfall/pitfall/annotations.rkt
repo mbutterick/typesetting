@@ -15,16 +15,14 @@
 
     (define/public (annotate x y w h options)
       (hash-set*! options
-                  'Type "Annot"
+                  'Type 'Annot
                   'Rect (convert-rect x y w h)
                   'Border '(0 0 0))
-      (unless (equal? (hash-ref options 'Subtype #f) "Link")
+      (unless (eq? (hash-ref options 'Subtype #f) 'Link)
         (hash-ref! options 'C
                    (λ ()
                      (send this normalize-color (or (hash-ref options 'color #f) '(0 0 0))))))
       (hash-remove! options 'color)
-
-      (when (string? (hash-ref options 'Dest #f)) (hash-update! options 'Dest String))
 
       (for ([(k v) (in-hash options)])
         (hash-set! options (string->symbol (string-titlecase (symbol->string k))) v))
@@ -36,9 +34,9 @@
 
     (define/public (link x y w h url [options (mhasheq)])
       (hash-set*! options
-                  'Subtype "Link"
-                  'A (make-ref (mhash 'S "URI"
-                                      'URI (String url))))
+                  'Subtype 'Link
+                  'A (make-ref (mhash 'S 'URI
+                                      'URI url)))
       (send (hash-ref options 'A) end)
       (annotate x y w h options))
 

@@ -68,7 +68,7 @@
           (cond
             [(zero? (bytes-length bstr)) #false]
             [(and (current-compress-streams?) (not (hash-ref @payload 'Filter #f)))
-             (hash-set! @payload 'Filter "FlateDecode")
+             (hash-set! @payload 'Filter 'FlateDecode)
              (deflate bstr)]
             [else bstr])))
         

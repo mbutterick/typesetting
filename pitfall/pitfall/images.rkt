@@ -97,7 +97,7 @@
         [(and (string? src) (hash-ref @image-registry src #f))]
         [else
          (define new-image
-           (PDFImage-open src (format "I~a" (let () (set! @image-count (add1 @image-count)) @image-count))))
+           (PDFImage-open src (string->symbol (format "I~a" (let () (set! @image-count (add1 @image-count)) @image-count)))))
          (when (string? src) (hash-set! @image-registry src new-image))
          new-image]))))
 

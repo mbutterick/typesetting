@@ -37,27 +37,27 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/jpeg.coffee
            [(@width width) (read-16bit-integer jpeg-ip)]
            [(@channels channels) (read-byte jpeg-ip)]
            [(@colorSpace colorSpace) (case @channels
-                                       [(1) "DeviceGray"]
-                                       [(3) "DeviceRGB"]
-                                       [(4) "DeviceCMYK"])]
+                                       [(1) 'DeviceGray]
+                                       [(3) 'DeviceRGB]
+                                       [(4) 'DeviceCMYK])]
            [(@obj obj) #f])
 
     (define/public (embed)
       (unless @obj
         (set! @obj (make-ref
                     (mhash
-                     'Type "XObject"
-                     'Subtype "Image"
+                     'Type 'XObject
+                     'Subtype 'Image
                      'BitsPerComponent @bits
                      'Width @width
                      'Height @height
                      'ColorSpace @colorSpace
-                     'Filter "DCTDecode")))
+                     'Filter 'DCTDecode)))
     
         ;; add extra decode params for CMYK images. By swapping the
         ;; min and max values from the default, we invert the colors. See
         ;; section 4.8.4 of the spec. 
-        (when (equal? @colorSpace "DeviceCMYK")
+        (when (eq? @colorSpace 'DeviceCMYK)
           (dict-set! @obj 'Decode '(1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0)))
         (file-position @data 0)
         (send* @obj [write @data]

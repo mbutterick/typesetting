@@ -3,9 +3,6 @@
 (provide (all-defined-out))
 
 ;; structs
-
-(struct String (string) #:transparent)
-
 ;; for JPEG and PNG
 (struct image (label width height obj) #:transparent #:mutable)
 
