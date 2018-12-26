@@ -47,6 +47,7 @@
     (inherit-field @ctm) ; from vector mixin
     (inherit-field @font-families) (inherit font) ; from font mixin
     (inherit-field [@x x] [@y y]) ; from text
+    (inherit transform) ; from vector
     (inherit-field @pages) (inherit page) ; from base
 
     ;; initialize params
@@ -58,6 +59,10 @@
     ;; copy options
     (for ([(key val) (in-hash (hash-ref @options 'info (hasheq)))]) 
       (hash-set! @info key val))
+
+    ;; write the header now, before any other subroutine starts up
+    (write-bytes-out (format "%PDF-~a" (current-pdf-version)))
+    (write-bytes-out "%ÿÿÿÿ")
 
     (define/public (store-ref ref)
       (set! @refs (cons ref @refs)))
@@ -73,13 +78,10 @@
       ;; flip PDF coordinate system so that the origin is in
       ;; the top left rather than the bottom left
       (set! @ctm default-ctm-value)
-      (send this transform 1 0 0 -1 0 (get-field height (page)))
+      (transform 1 0 0 -1 0 (get-field height (page)))
       this)
 
     (define/public (end)
-      (write-bytes-out (format "%PDF-~a" (current-pdf-version)))
-      (write-bytes-out "%ÿÿÿÿ")
-
       (for ([page (in-list @pages)])
         (send page end))
 
