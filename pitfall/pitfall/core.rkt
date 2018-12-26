@@ -4,6 +4,8 @@
 
 ;; structs
 
+(struct $img (data label width height obj embed-proc) #:transparent #:mutable)
+
 (struct $ref (id payload offset port) #:transparent #:mutable
   #:methods gen:dict
   [(define (dict-ref $ key [thunk (λ () (error 'dict-ref-key-not-found))])

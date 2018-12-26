@@ -4,6 +4,7 @@
   racket/match
   sugar/unstable/dict
   "image.rkt"
+  "core.rkt"
   "page.rkt")
 (provide image-mixin)
 
@@ -21,14 +22,15 @@
 
       (define image (cond
                       [(and (string? src) (hash-ref @image-registry src #f))]
-                      [(and (object? src) (get-field width src) (get-field height src)) src]
+                      [(and (object? src) ($img-width src) ($img-height src)) src]
+                      [(and ($img? src) ($img-width src) ($img-height src)) src]
                       [else (send this open-image src)]))
-      (unless (get-field obj image) (send image embed))
+      (unless ($img-obj image) (($img-embed-proc image) image))
   
-      (hash-ref! (page-xobjects (page)) (get-field label image) (get-field obj image))
+      (hash-ref! (page-xobjects (page)) ($img-label image) ($img-obj image))
 
-      (define image-width (get-field width image))
-      (define image-height (get-field height image))
+      (define image-width ($img-width image))
+      (define image-height ($img-height image))
       (define options-width (hash-ref options 'width #f))
       (define options-height (hash-ref options 'height #f))
       (define w (or options-width image-width))
@@ -90,7 +92,7 @@
       (when (= @y y) (set! y (+ y h)))
       (send this save)
       (send this transform w 0 0 (- h) x (+ y h))
-      (send this add-content (format "/~a Do" (get-field label image)))
+      (send this add-content (format "/~a Do" ($img-label image)))
       (send this restore)
       this)
 
