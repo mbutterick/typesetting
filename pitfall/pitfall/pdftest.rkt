@@ -37,10 +37,10 @@
   (time
    (with-output-to-file ps
      (λ ()
-       (define doc (make-object PDFDocument (hash 'compress compress?)))
-       (send doc start-doc)
+       (define doc (make-$doc (hash 'compress compress?)))
+       (start-doc doc)
        (proc doc)
-       (send doc end-doc))
+       (end-doc doc))
      #:exists 'replace))
   (when test?
     (check-headers-equal? ps (this->control ps))

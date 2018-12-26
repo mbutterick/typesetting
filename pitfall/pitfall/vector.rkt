@@ -1,6 +1,6 @@
 #lang racket/base
 (require
-  "helper.rkt"
+  "core.rkt"
   racket/class
   racket/match
   racket/string
@@ -9,9 +9,11 @@
   sugar/unstable/js
   sugar/unstable/dict
   "path.rkt")
-(provide vector-mixin default-ctm-value)
+(provide vector-mixin default-ctm-value combine-transforms make-transform-string)
 
 (define default-ctm-value '(1 0 0 1 0 0))
+
+
 
 (define (vector-mixin [% mixin-tester%])
   (class %
@@ -39,16 +41,16 @@
     (define/public (line-cap [c #f])
       (define cap-styles (hasheq 'butt 0 'round 1 'square 2))
       (add-content
-            (format "~a J" (if (symbol? c)
-                               (hash-ref cap-styles c)
-                               ""))))
+       (format "~a J" (if (symbol? c)
+                          (hash-ref cap-styles c)
+                          ""))))
 
     (define/public (line-join [j #f])
       (define cap-styles (hasheq 'miter 0 'round 1 'bevel 2))
       (add-content
-            (format "~a j" (if (symbol? j)
-                               (hash-ref cap-styles j)
-                               ""))))
+       (format "~a j" (if (symbol? j)
+                          (hash-ref cap-styles j)
+                          ""))))
 
     (define/public (line-width w)
       (add-content (format "~a w" (number w))))
@@ -57,9 +59,9 @@
       (cond
         [(list? length)
          (add-content
-               (format "[~a] ~a d"
-                       (string-join (map number length) " ")
-                       (hash-ref options 'phase 0)))]
+          (format "[~a] ~a d"
+                  (string-join (map number length) " ")
+                  (hash-ref options 'phase 0)))]
         [length
          (define space (hash-ref options 'space length))
          (define phase (hash-ref options 'phase 0))
@@ -171,6 +173,9 @@
         (+ (* m1 m21) (* m3 m22))
         (+ (* m0 dx) (* m2 dy) m4)
         (+ (* m1 dx) (* m3 dy) m5)))
+
+(define (make-transform-string ctm)
+      (format "~a cm" (string-join (map numberizer ctm) " ")))
 
 (module+ test
   (require rackunit)

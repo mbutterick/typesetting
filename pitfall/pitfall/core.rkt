@@ -4,6 +4,30 @@
 
 ;; structs
 
+(struct $doc (options
+              pages
+              refs
+              root
+              info
+              opacity-registry
+              opacity-count
+              grad-count
+              current-fill-color
+              ctm
+              ctm-stack
+              font-families
+              font-count
+              current-font-size
+              current-font
+              registered-fonts
+              line-gap
+              text-options
+              x
+              y
+              image-registry
+              image-count) #:transparent #:mutable)
+
+
 ;; for JPEG and PNG
 (struct $img (data label width height ref embed-proc) #:transparent #:mutable)
 

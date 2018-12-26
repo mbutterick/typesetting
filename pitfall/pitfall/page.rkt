@@ -12,56 +12,56 @@
 
 (define (make-page [page-parent #false] [options (mhash)])
   [define size (hash-ref options 'size "letter")]
-           [define layout (hash-ref options 'layout "portrait")]
-           [define dimensions (if (list? size)
-                           size
-                           (hash-ref page-sizes (string-upcase size)))]
-           [define width (list-ref dimensions (if (equal? layout "portrait") 0 1))]
-           [define height (list-ref dimensions (if (equal? layout "portrait") 1 0))]
-           [define content (make-ref)]
-           [define resources (make-ref (mhash 'ProcSet '(PDF Text ImageB ImageC ImageI)))]
-           [define margins
-            (let ([margin-value (hash-ref options 'margin #f)])
-              (if (number? margin-value)
-                  (margin margin-value margin-value margin-value margin-value)
-                  (hash-ref options 'margins (current-default-margins))))]
-           ;; The page dictionary
-           [define dictionary
-            (make-ref
-                  (mhash 'Type 'Page
-                         'Parent page-parent
-                         'MediaBox (list 0 0 width height)
-                         'Contents content
-                         'Resources resources))]
+  [define layout (hash-ref options 'layout "portrait")]
+  [define dimensions (if (list? size)
+                         size
+                         (hash-ref page-sizes (string-upcase size)))]
+  [define width (list-ref dimensions (if (equal? layout "portrait") 0 1))]
+  [define height (list-ref dimensions (if (equal? layout "portrait") 1 0))]
+  [define content (make-ref)]
+  [define resources (make-ref (mhash 'ProcSet '(PDF Text ImageB ImageC ImageI)))]
+  [define margins
+    (let ([margin-value (hash-ref options 'margin #f)])
+      (if (number? margin-value)
+          (margin margin-value margin-value margin-value margin-value)
+          (hash-ref options 'margins (current-default-margins))))]
+  ;; The page dictionary
+  [define dictionary
+    (make-ref
+     (mhash 'Type 'Page
+            'Parent page-parent
+            'MediaBox (list 0 0 width height)
+            'Contents content
+            'Resources resources))]
   ($page page-parent options size layout dimensions width height content resources margins dictionary))
 
-    (define (page-fonts p)
-      (dict-ref! ($page-resources p) 'Font (make-hasheq)))
+(define (page-fonts p)
+  (dict-ref! ($page-resources p) 'Font (make-hasheq)))
 
-    (define (page-xobjects p)
-      (dict-ref! ($page-resources p) 'XObject (make-hasheq)))
+(define (page-xobjects p)
+  (dict-ref! ($page-resources p) 'XObject (make-hasheq)))
 
-    (define (page-ext_gstates p)
-      (dict-ref! ($page-resources p) 'ExtGState (make-hasheq)))
+(define (page-ext_gstates p)
+  (dict-ref! ($page-resources p) 'ExtGState (make-hasheq)))
 
-    (define (page-patterns p)
-      (dict-ref! ($page-resources p) 'Pattern (make-hasheq)))
+(define (page-patterns p)
+  (dict-ref! ($page-resources p) 'Pattern (make-hasheq)))
 
-    (define (page-annotations p [annot #f])
-      (if annot
-          (dict-update! ($page-dictionary p) 'Annots (λ (val) (cons annot val)) null)
-          (dict-ref! ($page-dictionary p) 'Annots null)))
+(define (page-annotations p [annot #f])
+  (if annot
+      (dict-update! ($page-dictionary p) 'Annots (λ (val) (cons annot val)) null)
+      (dict-ref! ($page-dictionary p) 'Annots null)))
 
-    (define (page-maxY p)
-      (- ($page-height p) (margin-bottom ($page-margins p))))
+(define (page-maxY p)
+  (- ($page-height p) (margin-bottom ($page-margins p))))
 
-    (define (page-write p chunk)
-      (ref-write ($page-content p) chunk)) 
+(define (page-write p chunk)
+  (ref-write ($page-content p) chunk)) 
 
-    (define (page-end p)
-      (ref-end ($page-dictionary p))
-      (ref-end ($page-resources p))
-      (ref-end ($page-content p)))
+(define (page-end p)
+  (ref-end ($page-dictionary p))
+  (ref-end ($page-resources p))
+  (ref-end ($page-content p)))
 
 
 (define page-sizes
