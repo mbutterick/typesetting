@@ -3,11 +3,8 @@
   "core.rkt"
   "page.rkt"
   "color.rkt"
-  racket/class
   racket/match
   racket/string
-  racket/contract
-  sugar/unstable/class
   sugar/unstable/js
   sugar/unstable/dict
   brag/support
