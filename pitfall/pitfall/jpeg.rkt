@@ -1,6 +1,5 @@
 #lang debug racket/base
 (require
-  racket/class
   racket/match
   "reference.rkt"
   "core.rkt"
@@ -18,8 +17,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/jpeg.coffee
                          #xffc8 #xffc9 #xffca #xffcb
                          #xffcc #xffcd #xffce #xffcf))
 
-(struct $jpeg $img (bits channels colorSpace)
-  #:transparent #:mutable)
+(struct $jpeg $img (bits channels colorSpace) #:transparent #:mutable)
 
 (define (make-jpeg data [label #f])
   
@@ -44,10 +42,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/jpeg.coffee
   (define obj #f)
   ($jpeg data label width height obj jpeg-embed bits channels colorSpace))
   
-
 (define (jpeg-embed jpeg)
-  (unless ($img-obj jpeg)
-    (set-$img-obj! jpeg
+  (unless ($img-ref jpeg)
+    (set-$img-ref! jpeg
                    (make-ref
                     (mhash
                      'Type 'XObject
@@ -62,10 +59,10 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/jpeg.coffee
     ;; min and max values from the default, we invert the colors. See
     ;; section 4.8.4 of the spec. 
     (when (eq? ($jpeg-colorSpace jpeg) 'DeviceCMYK)
-      (dict-set! ($img-obj jpeg) 'Decode '(1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0)))
+      (dict-set! ($img-ref jpeg) 'Decode '(1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0)))
     (file-position ($img-data jpeg) 0)
-    (ref-write ($img-obj jpeg) ($img-data jpeg))
-    (ref-end ($img-obj jpeg))))
+    (ref-write ($img-ref jpeg) ($img-data jpeg))
+    (ref-end ($img-ref jpeg))))
 
 (define (read-16bit-integer ip-or-bytes)
   (define signed #f) (define big-endian #t)

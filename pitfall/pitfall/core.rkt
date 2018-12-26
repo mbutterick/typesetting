@@ -4,8 +4,10 @@
 
 ;; structs
 
-(struct $img (data label width height obj embed-proc) #:transparent #:mutable)
+;; for JPEG and PNG
+(struct $img (data label width height ref embed-proc) #:transparent #:mutable)
 
+;; for reference
 (struct $ref (id payload offset port) #:transparent #:mutable
   #:methods gen:dict
   [(define (dict-ref $ key [thunk (λ () (error 'dict-ref-key-not-found))])
@@ -15,9 +17,6 @@
    (define (dict-set! $ key val) (hash-set! ($ref-payload $) key val))
    (define (dict-update! $ key updater [failure-result (λ () (error 'update-no-key))])
      (hash-update! ($ref-payload $) key updater failure-result))])
-
-;; for JPEG and PNG
-(struct image (label width height obj) #:transparent #:mutable)
 
 ;; for page
 (struct margin (top left bottom right) #:transparent #:mutable)

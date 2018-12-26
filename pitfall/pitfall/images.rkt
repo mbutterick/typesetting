@@ -3,10 +3,23 @@
   racket/class
   racket/match
   sugar/unstable/dict
-  "image.rkt"
   "core.rkt"
-  "page.rkt")
+  "page.rkt"
+  "png.rkt"
+  "jpeg.rkt")
 (provide image-mixin)
+
+(define (open-pdf-image src label)
+  (define data (cond
+                 [(bytes? src) (open-input-bytes src)]
+                 [(regexp-match #rx"^data:.+;base64,(.*)$" src) (void)] ;; base64 ; todo
+                 [else (open-input-file src)]))
+  (define img-constructor
+    (cond
+      [(equal? (peek-bytes 2 0 data) (bytes #xff #xd8)) make-jpeg]
+      [(equal? (peek-bytes 4 0 data) (apply bytes (map char->integer '(#\u0089 #\P #\N #\G)))) make-png]
+      [else (raise-argument-error 'open-pdf-image "valid image format" src)]))
+  (img-constructor data label))
 
 (define (image-mixin [% object%])
   (class %
@@ -22,12 +35,11 @@
 
       (define image (cond
                       [(and (string? src) (hash-ref @image-registry src #f))]
-                      [(and (object? src) ($img-width src) ($img-height src)) src]
                       [(and ($img? src) ($img-width src) ($img-height src)) src]
                       [else (send this open-image src)]))
-      (unless ($img-obj image) (($img-embed-proc image) image))
+      (unless ($img-ref image) (($img-embed-proc image) image))
   
-      (hash-ref! (page-xobjects (page)) ($img-label image) ($img-obj image))
+      (hash-ref! (page-xobjects (page)) ($img-label image) ($img-ref image))
 
       (define image-width ($img-width image))
       (define image-height ($img-height image))
@@ -100,8 +112,9 @@
       (cond
         [(and (string? src) (hash-ref @image-registry src #f))]
         [else
-         (define new-image
-           (PDFImage-open src (string->symbol (format "I~a" (let () (set! @image-count (add1 @image-count)) @image-count)))))
+         (set! @image-count (add1 @image-count))
+         (define image-id (string->symbol (format "I~a" @image-count)))
+         (define new-image (open-pdf-image src image-id))
          (when (string? src) (hash-set! @image-registry src new-image))
          new-image]))))
 

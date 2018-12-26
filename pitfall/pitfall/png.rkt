@@ -28,8 +28,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
   ($png data label width height obj png-embed image pixel-bit-length img-data alpha-channel))
 
 (define (png-embed png)
-  (unless ($img-obj png)
-    (set-$img-obj! png
+  (unless ($img-ref png)
+    (set-$img-ref! png
                    (make-ref
                     (mhash 'Type 'XObject
                            'Subtype 'Image
@@ -44,7 +44,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
                              'Colors (hash-ref ($png-image png) 'colors)
                              'BitsPerComponent (hash-ref ($png-image png) 'bits)
                              'Columns ($img-width png))))
-      (dict-set! ($img-obj png) 'DecodeParms params)
+      (dict-set! ($img-ref png) 'DecodeParms params)
       (ref-end params))
 
     (cond
@@ -54,9 +54,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
        (ref-write palette-ref (hash-ref ($png-image png) 'palette))
        (ref-end palette-ref)
        ;; build the color space array for the image
-       (dict-set! ($img-obj png) 'Colorspace
+       (dict-set! ($img-ref png) 'Colorspace
                   (list 'Indexed 'DeviceRGB (sub1 (/ (bytes-length (hash-ref ($png-image png) 'palette)) 3)) palette-ref))]
-      [else (dict-set! ($img-obj png) 'ColorSpace 'DeviceRGB)])
+      [else (dict-set! ($img-ref png) 'ColorSpace 'DeviceRGB)])
 
    
     (cond
@@ -89,11 +89,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
               'Decode '(0 1))))
     (ref-write sMask-ref ($png-alpha-channel png))
     (ref-end sMask-ref)
-    (dict-set! ($img-obj png) 'SMask sMask-ref))
+    (dict-set! ($img-ref png) 'SMask sMask-ref))
   
   ;; embed the actual image data
-  (ref-write ($img-obj png) ($png-img-data png))
-  (ref-end ($img-obj png)))
+  (ref-write ($img-ref png) ($png-img-data png))
+  (ref-end ($img-ref png)))
 
 
 (define (split-alpha-channel png)
