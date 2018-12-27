@@ -5,6 +5,7 @@
   racket/format
   racket/dict
   sugar/unstable/dict
+  "annotations.rkt"
   "reference.rkt"
   "object.rkt"
   "page.rkt"
@@ -57,6 +58,7 @@
                         y
                         image-registry))
   (set-current-ref-id! 1)
+  (reset-annotations-cache!)
   (register-ref-listener (λ (ref) (store-ref new-doc ref)))
   (set-$doc-root! new-doc (make-ref (mhasheq 'Type 'Catalog
                                              'Pages (make-ref (mhasheq 'Type 'Pages)))))
