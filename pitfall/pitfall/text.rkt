@@ -2,8 +2,8 @@
 (require
   "core.rkt"
   "page.rkt"
-  "annotations.rkt"
-  "fonts.rkt"
+  "annotation.rkt"
+  "font.rkt"
   "vector.rkt"
   "color.rkt"
   racket/class

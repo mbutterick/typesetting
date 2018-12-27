@@ -5,12 +5,12 @@
   racket/format
   racket/dict
   sugar/unstable/dict
-  "annotations.rkt"
+  "annotation.rkt"
   "reference.rkt"
   "object.rkt"
   "page.rkt"
   "vector.rkt"
-  "fonts.rkt")
+  "font.rkt")
 (provide (all-defined-out))
 
 (define (store-ref doc ref)

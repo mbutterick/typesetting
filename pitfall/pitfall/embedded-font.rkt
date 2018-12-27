@@ -9,7 +9,7 @@
   racket/list
   racket/dict
   sugar/unstable/dict
-  "font.rkt"
+  "font-base.rkt"
   fontland)
 (provide embedded-font%)
 

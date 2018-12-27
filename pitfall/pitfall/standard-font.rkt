@@ -4,7 +4,7 @@
   racket/string
   racket/match
   sugar/unstable/dict
-  "font.rkt"
+  "font-base.rkt"
   "core.rkt"
   "reference.rkt"
   fontland
