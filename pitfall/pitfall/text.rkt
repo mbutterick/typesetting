@@ -84,7 +84,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; 180321: the first call to this operation is very slow from Quad
   ;; 181126: because `encode` calls `layout`
   (match-define (list encoded-char-strs positions)
-    (map list->vector (send ($doc-current-font doc) encode text (hash-ref options 'features #f))))
+    (send ($doc-current-font doc) encode text (hash-ref options 'features #f)))
   
   (define scale (/ ($doc-current-font-size doc) 1000.0))
   (define commands empty)

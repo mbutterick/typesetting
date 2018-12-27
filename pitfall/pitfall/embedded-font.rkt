@@ -84,7 +84,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
           (scale-glyph-position! posn scale)
           (values subset-idx posn)))
-      (list subset-idxs new-positions))
+      (list (list->vector subset-idxs) (list->vector new-positions)))
 
 
     (define/override (embed)

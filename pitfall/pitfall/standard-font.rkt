@@ -63,14 +63,13 @@
       (hash-ref @kern-pairs (make-kern-table-key left right) 0))
 
     (define/override (encode text [options #f])
-      (define encoded (for/list ([c (in-string text)])
+      (define encoded (for/vector ([c (in-string text)])
                         (define cint (char->integer c))
                         (number->string (hash-ref win-ansi-table cint cint) 16)))
       (define glyphs (glyphs-for-string text))
-      (define positions
-        (for/list ([glyph (in-list glyphs)]
-                   [advance (in-list (advances-for-glyphs glyphs))])
-          (+glyph-position advance 0 0 0 (glyph-width glyph)))) 
+      (define positions (for/vector ([glyph (in-list glyphs)]
+                                     [advance (in-list (advances-for-glyphs glyphs))])
+                          (+glyph-position advance 0 0 0 (glyph-width glyph)))) 
       (list encoded positions))
 
     (define/override (string-width str size [options #f])
