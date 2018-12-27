@@ -1,6 +1,5 @@
 #lang debug racket/base
 (require
-  (for-syntax racket/base)
   "core.rkt"
   "reference.rkt"
   racket/class
@@ -58,34 +57,37 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
     (define/override (string-width str size [features null])
       ; #f disables features ; null enables default features ; list adds features
-      (match-define (list _ posns) (encode str features))
       (define scale (/ size (+ (font-units-per-em font) 0.0)))
+      ;; use `encode` because it's cached.
+      ;; we assume that the side effects of `encode`
+      ;; (e.g., appending to `widths` and `unicode`)
+      ;; are ok because every string that gets measured is going to be encoded eventually
+      (match-define (list _ posns) (encode str features)) 
       (define width (for/sum ([p (in-vector posns)]) (glyph-position-x-advance p)))
       (* width scale))
 
-    (define layout-cache (make-hash))
+    (define encoding-cache (make-hash))
+
     ;; called from text.rkt    
-    (define/override (encode str [features null])      
-      (hash-ref! (hash-ref! layout-cache features make-hash) str
+    (define/override (encode str [features null])
+      (define features-key (and features (sort features string<?)))
+      (hash-ref! encoding-cache (cons features-key str) 
                  (λ () 
-                   (define glyph-run (layout font str features))
+                   (define glyph-run (layout font str features-key))
                    (define glyphs (glyphrun-glyphs glyph-run))
                    (define positions (glyphrun-positions glyph-run))
                    (define-values (subset-idxs new-positions)
                      (for/lists (idxs posns)
-                                ([(g i) (in-indexed glyphs)]
+                                ([g (in-list glyphs)]
                                  [posn (in-list positions)])
                        (define gid (subset-add-glyph! subset (glyph-id g)))
                        (define subset-idx (to-hex gid))
                        (set-glyph-position-advance-width! posn (glyph-advance-width g))
-
                        (hash-ref! widths gid (λ () (glyph-position-advance-width posn)))
                        (hash-ref! unicode gid (λ () (glyph-codepoints g)))
-
                        (scale-glyph-position! posn scale)
                        (values subset-idx posn)))
                    (list (list->vector subset-idxs) (list->vector new-positions)))))
-
 
     (define/override (embed)
       ;; no CFF support
@@ -202,11 +204,11 @@ HERE
 (module+ test
   (require rackunit fontland sugar/unstable/js)
   (define ef (make-object embedded-font% "../ptest/assets/charter.ttf"))
-  (check-equal? (send ef string-width "f" 1000) 321.0)
   (check-equal? (· ef ascender) 980)
   (check-equal? (· ef descender) -238)
   (check-equal? (· ef line-gap) 0)
   (check-equal? (bbox->list (· ef bbox)) '(-161 -236 1193 963))
   (define H-gid 41)
   (check-equal? (· ef widths) (mhasheqv 0 278))
+  (check-equal? (send ef string-width "f" 1000) 321.0)
   (check-equal? (glyph-advance-width (get-glyph (· ef font) H-gid)) 738))

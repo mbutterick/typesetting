@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require
   racket/class
   racket/string
@@ -62,19 +62,25 @@
     (define/public (get-kern-pair left right)
       (hash-ref @kern-pairs (make-kern-table-key left right) 0))
 
-    (define/override (encode text [options #f])
-      (define encoded (for/vector ([c (in-string text)])
-                        (define cint (char->integer c))
-                        (number->string (hash-ref win-ansi-table cint cint) 16)))
-      (define glyphs (glyphs-for-string text))
-      (define positions (for/vector ([glyph (in-list glyphs)]
-                                     [advance (in-list (advances-for-glyphs glyphs))])
-                          (+glyph-position advance 0 0 0 (glyph-width glyph)))) 
-      (list encoded positions))
+    (define encoding-cache (make-hash))
+
+    (define/override (encode str [options #f])
+      (hash-ref encoding-cache str
+                (λ ()
+                  (define encoded
+                    (for/vector ([c (in-string str)])
+                      (define cint (char->integer c))
+                      (number->string (hash-ref win-ansi-table cint cint) 16)))
+                  (define glyphs (glyphs-for-string str))
+                  (define positions
+                    (for/vector ([glyph (in-list glyphs)]
+                                 [advance (in-list (advances-for-glyphs glyphs))])
+                      (+glyph-position advance 0 0 0 (glyph-width glyph)))) 
+                  (list encoded positions))))
 
     (define/override (string-width str size [options #f])
-      (define glyphs (glyphs-for-string str))
-      (define width (apply + (advances-for-glyphs glyphs)))
+      (match-define (list _ posns) (encode str options))
+      (define width (for/sum ([p (in-vector posns)]) (glyph-position-x-advance p)))
       (define scale (/ size 1000.0))
       (* width scale))))
 
