@@ -31,7 +31,7 @@
                       [else (open-image doc src)]))
       (unless ($img-ref image) (($img-embed-proc image) image))
   
-      (hash-ref! (page-xobjects (page doc)) ($img-label image) ($img-ref image))
+      (hash-ref! (page-xobjects (current-page doc)) ($img-label image) ($img-ref image))
 
       (define image-width ($img-width image))
       (define image-height ($img-height image))

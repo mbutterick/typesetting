@@ -1,44 +1,41 @@
 #lang debug racket/base
 (require
   racket/dict
+  racket/match
   "reference.rkt"
   sugar/unstable/dict
   "core.rkt")
 
 (provide (all-defined-out))
 
-(define (page doc) (car ($doc-pages doc)))
+(define (current-page doc) (car ($doc-pages doc)))
 
 (define (add-content doc data)
-  (page-write (page doc) data))
+  (page-write (current-page doc) data))
 
 (struct $page (page-parent options size layout dimensions width height content resources margins dictionary)
   #:transparent #:mutable)
 
-(define (make-page [page-parent #false] [options (mhash)])
-  [define size (hash-ref options 'size "letter")]
-  [define layout (hash-ref options 'layout "portrait")]
-  [define dimensions (if (list? size)
+(define (make-page [page-parent #false] [options (mhasheq)])
+  (define size (hash-ref options 'size "letter"))
+  (define layout (hash-ref options 'layout "portrait"))
+  (define dimensions (if (list? size)
                          size
-                         (hash-ref page-sizes (string-upcase size)))]
-  [define width (list-ref dimensions (if (equal? layout "portrait") 0 1))]
-  [define height (list-ref dimensions (if (equal? layout "portrait") 1 0))]
-  [define content (make-ref)]
-  [define resources (make-ref (mhash 'ProcSet '(PDF Text ImageB ImageC ImageI)))]
-  [define margins
-    (let ([margin-value (hash-ref options 'margin #f)])
-      (if (number? margin-value)
-          (margin margin-value margin-value margin-value margin-value)
-          (hash-ref options 'margins (current-default-margins))))]
-  ;; The page dictionary
-  [define dictionary
-    (make-ref
-     (mhash 'Type 'Page
-            'Parent page-parent
-            'MediaBox (list 0 0 width height)
-            'Contents content
-            'Resources resources))]
-  ($page page-parent options size layout dimensions width height content resources margins dictionary))
+                         (hash-ref page-sizes (string-upcase size))))
+  (match-define (list width height) ((if (equal? layout "portrait") values reverse) dimensions))
+  (define content (make-ref))
+  (define resources (make-ref (mhash 'ProcSet '(PDF Text ImageB ImageC ImageI))))
+  (define margins
+    (match (hash-ref options 'margin #f)
+      [(? number? margin-value) (margin margin-value margin-value margin-value margin-value)]
+      [_ (hash-ref options 'margins (current-default-margins))]))
+  (define page-dictionary
+    (make-ref (mhasheq 'Type 'Page
+                       'Parent page-parent
+                       'MediaBox (list 0 0 width height)
+                       'Contents content
+                       'Resources resources)))
+  ($page page-parent options size layout dimensions width height content resources margins page-dictionary))
 
 (define (page-fonts p)
   (dict-ref! ($page-resources p) 'Font (make-hasheq)))

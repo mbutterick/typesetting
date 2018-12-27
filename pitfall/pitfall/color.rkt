@@ -26,7 +26,7 @@
                    (ref-end ref-dict)
                    (define opacity-index (add1 (length (hash-keys ($doc-opacity-registry doc)))))
                    (list ref-dict (string->symbol (format "Gs~a" opacity-index))))))
-    (hash-set! (page-ext_gstates (page doc)) name dictionary)        
+    (hash-set! (page-ext_gstates (current-page doc)) name dictionary)        
     (add-content doc (format "/~a gs" name))))
 
 (define (fill-color doc color [opacity 1])

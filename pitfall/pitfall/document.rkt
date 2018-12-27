@@ -75,12 +75,12 @@
   (set-$doc-pages! doc (cons (make-page page-parent options-arg) ($doc-pages doc)))
       
   ;; reset x and y coordinates
-  (set-$doc-x! doc (margin-left ($page-margins (page doc))))
-  (set-$doc-y! doc (margin-right ($page-margins (page doc))))
+  (set-$doc-x! doc (margin-left ($page-margins (current-page doc))))
+  (set-$doc-y! doc (margin-right ($page-margins (current-page doc))))
   ;; flip PDF coordinate system so that the origin is in
   ;; the top left rather than the bottom left
   (set-$doc-ctm! doc default-ctm-value)
-  (transform doc 1 0 0 -1 0 ($page-height (page doc)))
+  (transform doc 1 0 0 -1 0 ($page-height (current-page doc)))
   doc)
 
 (define (start-doc doc)

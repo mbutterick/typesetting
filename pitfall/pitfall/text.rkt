@@ -59,7 +59,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
   ;; flip coordinate system
   (save doc)
-  (define page-height ($page-height (page doc)))
+  (define page-height ($page-height (current-page doc)))
   (transform doc 1 0 0 -1 0 page-height)
   (define y (- page-height
                y-in
@@ -68,7 +68,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
   ;; add current font to page if necessary
   (define current-font-id (get-field id ($doc-current-font doc)))
-  (hash-ref! (page-fonts (page doc)) current-font-id  (λ () (send ($doc-current-font doc) make-font-ref)))
+  (hash-ref! (page-fonts (current-page doc)) current-font-id  (λ () (send ($doc-current-font doc) make-font-ref)))
   
   (add-content doc "BT") ; begin the text object
   (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position

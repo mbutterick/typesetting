@@ -24,7 +24,7 @@
     (hash-set! options (string->symbol (string-titlecase (symbol->string k))) v))
 
   (define annots-ref (make-ref options))
-  (page-annotations (page doc) annots-ref)
+  (page-annotations (current-page doc) annots-ref)
   (ref-end annots-ref)
   doc)
 
