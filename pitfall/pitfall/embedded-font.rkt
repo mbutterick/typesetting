@@ -58,22 +58,15 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
     (define/override (string-width str size [features null])
       ; #f disables features ; null enables default features ; list adds features
-      (hash-ref! width-cache
-                 (list str size (and features (sort features symbol<?)))
-                 (λ ()
-                   (define run (layout font str features))
-                   (define width (glyphrun-advance-width run))
-                   (define scale (/ size (+ (font-units-per-em font) 0.0)))
-                   (* width scale))))
+      (match-define (list _ posns) (encode str features))
+      (define scale (/ size (+ (font-units-per-em font) 0.0)))
+      (define width (for/sum ([p (in-vector posns)]) (glyph-position-x-advance p)))
+      (* width scale))
 
-    ;; called from text.rkt
     (define layout-cache (make-hash))
-    
-    (define/override (encode str [features null])
-      (define layout-subcache
-        (hash-ref! layout-cache features make-hash))
-      
-      (hash-ref! layout-subcache str
+    ;; called from text.rkt    
+    (define/override (encode str [features null])      
+      (hash-ref! (hash-ref! layout-cache features make-hash) str
                  (λ () 
                    (define glyph-run (layout font str features))
                    (define glyphs (glyphrun-glyphs glyph-run))
