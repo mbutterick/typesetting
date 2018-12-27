@@ -198,7 +198,7 @@ HERE
 (module+ test
   (require rackunit fontland sugar/unstable/js)
   (define f (open-font "../ptest/assets/charter.ttf"))
-  (define ef (make-object EmbeddedFont #f f #f))
+  (define ef (make-object EmbeddedFont f #f))
   (check-equal? (send ef string-width "f" 1000) 321.0)
   (check-equal? (· ef ascender) 980)
   (check-equal? (· ef descender) -238)
