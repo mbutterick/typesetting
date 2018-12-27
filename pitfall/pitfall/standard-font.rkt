@@ -1,8 +1,10 @@
 #lang racket/base
 (require
+  racket/class
   racket/string
   racket/match
   sugar/unstable/dict
+  "font.rkt"
   "core.rkt"
   "reference.rkt"
   fontland
