@@ -56,35 +56,42 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                    [@descender descender]
                    [@ref ref])
 
-    (define/override (string-width string size [features #f])
+    (define/override (string-width str size [features null])
       ; #f disables features ; null enables default features ; list adds features
       (hash-ref! width-cache
-                 (list string size (and features (sort features symbol<?)))
+                 (list str size (and features (sort features symbol<?)))
                  (λ ()
-                   (define run (layout font string features))
+                   (define run (layout font str features))
                    (define width (glyphrun-advance-width run))
                    (define scale (/ size (+ (font-units-per-em font) 0.0)))
                    (* width scale))))
 
     ;; called from text.rkt
-    (define/override (encode text [features #f])
-      (define glyphRun (layout font text features))
-      (define glyphs (glyphrun-glyphs glyphRun))
-      (define positions (glyphrun-positions glyphRun))
-      (define-values (subset-idxs new-positions)
-        (for/lists (idxs posns)
-                   ([(g i) (in-indexed glyphs)]
-                    [posn (in-list positions)])
-          (define gid (subset-add-glyph! subset (glyph-id g)))
-          (define subset-idx (to-hex gid))
-          (set-glyph-position-advance-width! posn (glyph-advance-width g))
+    (define layout-cache (make-hash))
+    
+    (define/override (encode str [features null])
+      (define layout-subcache
+        (hash-ref! layout-cache features make-hash))
+      
+      (hash-ref! layout-subcache str
+                 (λ () 
+                   (define glyph-run (layout font str features))
+                   (define glyphs (glyphrun-glyphs glyph-run))
+                   (define positions (glyphrun-positions glyph-run))
+                   (define-values (subset-idxs new-positions)
+                     (for/lists (idxs posns)
+                                ([(g i) (in-indexed glyphs)]
+                                 [posn (in-list positions)])
+                       (define gid (subset-add-glyph! subset (glyph-id g)))
+                       (define subset-idx (to-hex gid))
+                       (set-glyph-position-advance-width! posn (glyph-advance-width g))
 
-          (hash-ref! widths gid (λ () (glyph-position-advance-width posn)))
-          (hash-ref! unicode gid (λ () (glyph-codepoints g)))
+                       (hash-ref! widths gid (λ () (glyph-position-advance-width posn)))
+                       (hash-ref! unicode gid (λ () (glyph-codepoints g)))
 
-          (scale-glyph-position! posn scale)
-          (values subset-idx posn)))
-      (list (list->vector subset-idxs) (list->vector new-positions)))
+                       (scale-glyph-position! posn scale)
+                       (values subset-idx posn)))
+                   (list (list->vector subset-idxs) (list->vector new-positions)))))
 
 
     (define/override (embed)

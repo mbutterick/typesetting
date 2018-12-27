@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require
   "core.rkt"
   "page.rkt"
