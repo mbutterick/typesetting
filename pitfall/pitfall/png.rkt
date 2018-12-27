@@ -95,7 +95,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
   (ref-write ($img-ref png) ($png-img-data png))
   (ref-end ($img-ref png)))
 
-
 (define (split-alpha-channel png)
   (define ip ($img-data png))
   (file-position ip 0)

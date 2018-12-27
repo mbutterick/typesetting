@@ -9,8 +9,7 @@
 
 (define (PDFFont-open src family id)
   (cond
-    [(and (string? src) (isStandardFont src))
-     (make-object StandardFont src id)]
+    [(and (string? src) (standard-font? src)) (make-object StandardFont src id)]
     [else
      (define font
        (cond
