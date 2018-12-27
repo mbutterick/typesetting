@@ -92,9 +92,8 @@
 
   (define doc-info (make-ref ($doc-info doc)))
   (ref-end doc-info)
-    
-  (for ([font (in-hash-values ($doc-font-families doc))])
-    (send font end))
+
+  (for-each font-end (hash-values ($doc-font-families doc)))
 
   (define pages-ref (dict-ref ($doc-root doc) 'Pages))
   (dict-set! pages-ref 'Count (length ($doc-pages doc)))

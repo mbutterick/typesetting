@@ -63,12 +63,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (transform doc 1 0 0 -1 0 page-height)
   (define y (- page-height
                y-in
-               (* (/ (get-field ascender ($doc-current-font doc)) 1000)
+               (* (/ ($font-ascender ($doc-current-font doc)) 1000)
                   ($doc-current-font-size doc))))
 
   ;; add current font to page if necessary
-  (define current-font-id (get-field id ($doc-current-font doc)))
-  (hash-ref! (page-fonts (page doc)) current-font-id  (λ () (send ($doc-current-font doc) make-font-ref)))
+  (define current-font-id ($font-id ($doc-current-font doc)))
+  (hash-ref! (page-fonts (page doc)) current-font-id  (λ () (make-font-ref ($doc-current-font doc))))
   
   (add-content doc "BT") ; begin the text object
   (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
@@ -83,8 +83,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; Add the actual text
   ;; 180321: the first call to this operation is very slow from Quad
   ;; 181126: because `encode` calls `layout`
+  (define encode-proc ($font-encode-proc ($doc-current-font doc)))
   (match-define (list encoded-char-strs positions)
-    (map list->vector (send ($doc-current-font doc) encode text (hash-ref options 'features #f))))
+    (map list->vector (encode-proc text (hash-ref options 'features #f))))
   
   (define scale (/ ($doc-current-font-size doc) 1000.0))
   (define commands empty)
@@ -148,5 +149,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (move-down doc #:factor -1))
 
 (define (string-width doc str [options (mhash)])
-  (+ (send ($doc-current-font doc) string-width str ($doc-current-font-size doc) (hash-ref options 'features #f))
+  (define string-width-proc ($font-string-width-proc ($doc-current-font doc)))
+  (+ (string-width-proc str ($doc-current-font-size doc) (hash-ref options 'features #f))
      (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
