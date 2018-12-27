@@ -27,12 +27,6 @@
 ;; for JPEG and PNG
 (struct $img (data label width height ref embed-proc) #:transparent #:mutable)
 
-;; for fonts
-(struct $font (name id
-                    ascender descender line-gap bbox
-                    dictionary embedded
-                    embed-proc encode-proc string-width-proc) #:transparent #:mutable)
-
 ;; for reference
 (struct $ref (id payload offset port) #:transparent #:mutable
   #:methods gen:dict

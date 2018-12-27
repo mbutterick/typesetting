@@ -12,6 +12,7 @@
   sugar/unstable/dict
   "font.rkt"
   fontland)
+(provide EmbeddedFont)
 
 #|
 approximates
@@ -31,7 +32,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
    (for/list ([code (in-list codePoints)])
      (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
 
-#;(define EmbeddedFont
+(define EmbeddedFont
   (class PDFFont
     (init-field font id)
     (field [subset (create-subset font)]
@@ -194,7 +195,7 @@ HERE
       (ref-end cmap)
       cmap)))
 
-#;(module+ test
+(module+ test
   (require rackunit fontland sugar/unstable/js)
   (define f (open-font "../ptest/assets/charter.ttf"))
   (define ef (make-object EmbeddedFont #f f #f))
