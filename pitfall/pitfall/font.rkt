@@ -1,8 +1,11 @@
 #lang racket/base
 (require racket/class "reference.rkt")
-(provide PDFFont)
+(provide pdf-font%)
 
-(define PDFFont
+;; 181227 structifying the fonts didn't do anything for speed
+;; the class is implementation is equally fast, and less code
+
+(define pdf-font%
   (class object%
     (super-new)
     (init-field [(@ascender ascender) #f]
@@ -19,7 +22,7 @@
         (set! @dictionary (make-ref)))
       @dictionary)
 
-    (define/public (end)
+    (define/public (font-end)
       (unless (or @embedded (not @dictionary))
         (embed)
         (set! @embedded #t)))
@@ -27,8 +30,3 @@
     (define/public (line-height size [include-gap #f])
       (define gap (if include-gap @line-gap 0))
       (* (/ (+ @ascender gap (- @descender)) 1000.0) size))))
-
-
-
-
-

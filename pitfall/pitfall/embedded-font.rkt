@@ -12,7 +12,7 @@
   sugar/unstable/dict
   "font.rkt"
   fontland)
-(provide EmbeddedFont)
+(provide embedded-font%)
 
 #|
 approximates
@@ -32,14 +32,17 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
    (for/list ([code (in-list codePoints)])
      (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
 
-(define EmbeddedFont
-  (class PDFFont
-    (init-field font id)
-    (field [subset (create-subset font)]
+(define embedded-font%
+  (class pdf-font%
+    (init-field name-in [id #f])
+    (field [font (cond
+                   [(string? name-in) (open-font name-in)]
+                   [(path? name-in) (open-font (path->string name-in))])]
+           [subset (create-subset font)]
            ;; we make `unicode` and `width` fields integer-keyed hashes not lists
            ;; because they offer better random access and growability 
-           [unicode (mhash 0 '(0))] ; always include the missing glyph (gid = 0)
-           [widths (mhash 0 (glyph-advance-width (get-glyph font 0)))]
+           [unicode (mhasheqv 0 '(0))] ; always include the missing glyph (gid = 0)
+           [widths (mhasheqv 0 (glyph-advance-width (get-glyph font 0)))]
            ;; always include the width of the missing glyph (gid = 0)
            [name (font-postscript-name font)]
            [scale (/ 1000 (font-units-per-em font))])
@@ -49,6 +52,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                [line-gap (* (font-linegap font) scale)])
 
     (inherit-field [@ascender ascender]
+                   [@bbox bbox]
                    [@descender descender]
                    [@dictionary dictionary])
 
@@ -94,9 +98,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (ref-write font-file (get-output-bytes (encode-to-port subset)))
       (ref-end font-file)
 
-      (define family-class (if (has-table? font 'OS/2)
-                               (floor (/ (hash-ref (get-OS/2-table font) 'sFamilyClass) 256)) ; >> 8
-                               0))
+      (define family-class
+        (if (has-table? font 'OS/2)
+            (floor (/ (hash-ref (get-OS/2-table font) 'sFamilyClass) 256)) ; >> 8
+            0))
+      
       ;; font descriptor flags
       (match-define (list FIXED_PITCH SERIF SYMBOLIC SCRIPT _UNUSED NONSYMBOLIC ITALIC)
         (map (λ (x) (expt 2 x)) (range 7)))
@@ -113,18 +119,16 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (define tag (list->string (for/list ([i (in-range 6)])
                                   (integer->char (random 65 (+ 65 26))))))
       (define name (string->symbol (string-append tag "+" (font-postscript-name font))))
-      (define bbox (font-bbox font))
       (define descriptor (make-ref
-                          (mhash
+                          (mhasheq
                            'Type 'FontDescriptor
                            'FontName name
                            'Flags flags
-                           'FontBBox (map (λ (x) (* scale x))
-                                          (bbox->list bbox))
+                           'FontBBox (map (λ (x) (* scale x)) (bbox->list @bbox))
                            'ItalicAngle (font-italic-angle font)
                            'Ascent @ascender
                            'Descent @descender
-                           'CapHeight (* (or (font-cap-height font) (font-ascent font)) scale)
+                           'CapHeight (* (or (font-cap-height font) @ascender) scale)
                            'XHeight (* (or (font-x-height font) 0) scale)
                            'StemV 0)))
 
@@ -132,12 +136,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (ref-end descriptor)
 
       (define descendant-font (make-ref
-                               (mhash
+                               (mhasheq
                                 'Type 'Font
-                                'Subtype (string->symbol (string-append "CIDFontType" (if isCFF "0" "2")))
+                                'Subtype (if isCFF 'CIDFontType0 'CIDFontType2)
                                 'BaseFont name
                                 'CIDSystemInfo
-                                (mhash
+                                (mhasheq
                                  'Registry "Adobe"
                                  'Ordering "Identity"
                                  'Supplement 0)
@@ -146,18 +150,18 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                              (hash-ref widths idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
       (ref-end descendant-font)
       
-      [dict-set! @dictionary 'Type 'Font]
-      [dict-set! @dictionary 'Subtype 'Type0]
-      [dict-set! @dictionary 'BaseFont name]
-      [dict-set! @dictionary 'Encoding 'Identity-H]
-      [dict-set! @dictionary 'DescendantFonts (list descendant-font)]
-      [dict-set! @dictionary 'ToUnicode (toUnicodeCmap)]
+      (dict-set*! @dictionary
+                  'Type 'Font
+                  'Subtype 'Type0
+                  'BaseFont name
+                  'Encoding 'Identity-H
+                  'DescendantFonts (list descendant-font)
+                  'ToUnicode (to-unicode-cmap))
 
       (ref-end @dictionary))
 
-
-    (define/public (toUnicodeCmap)
-      (define cmap (make-ref))
+    (define/public (to-unicode-cmap)
+      (define cmap-ref (make-ref))
       (define entries
         (for/list ([idx (in-range (length (hash-keys unicode)))])
           (define codepoints (hash-ref unicode idx))
@@ -191,19 +195,18 @@ end
 HERE
         )
   
-      (ref-write cmap (format unicode-cmap-str (to-hex (sub1 (length entries))) (string-join entries " ")))
-      (ref-end cmap)
-      cmap)))
+      (ref-write cmap-ref (format unicode-cmap-str (to-hex (sub1 (length entries))) (string-join entries " ")))
+      (ref-end cmap-ref)
+      cmap-ref)))
 
 (module+ test
   (require rackunit fontland sugar/unstable/js)
-  (define f (open-font "../ptest/assets/charter.ttf"))
-  (define ef (make-object EmbeddedFont f #f))
+  (define ef (make-object embedded-font% "../ptest/assets/charter.ttf"))
   (check-equal? (send ef string-width "f" 1000) 321.0)
   (check-equal? (· ef ascender) 980)
   (check-equal? (· ef descender) -238)
   (check-equal? (· ef line-gap) 0)
   (check-equal? (bbox->list (· ef bbox)) '(-161 -236 1193 963))
   (define H-gid 41)
-  (check-equal? (· ef widths) (mhash 0 278))
+  (check-equal? (· ef widths) (mhasheqv 0 278))
   (check-equal? (glyph-advance-width (get-glyph (· ef font) H-gid)) 738))

@@ -12,12 +12,12 @@
   racket/list
   with-cache)
 
-(provide standard-font? StandardFont)
+(provide standard-font-name? standard-font%)
 
 (define-runtime-path here ".")
 
-(define StandardFont
-  (class PDFFont
+(define standard-font%
+  (class pdf-font%
     (init-field name id)
 
     (match-define (list atts gws kps) (parse-afm (open-input-file (build-path here (format "data/~a.afm" name)))))
@@ -95,16 +95,16 @@
                         Times-Roman
                         ZapfDingbats)))
 
-(define (standard-font? name) (and (member name standard-fonts) #t))
+(define (standard-font-name? name) (and (string? name) (member name standard-fonts) #t))
 
 (module+ test
   (require rackunit)
-  (check-true (standard-font? "Helvetica"))
-  (check-true (standard-font? "Courier"))
-  (check-true (standard-font? "ZapfDingbats"))
-  (check-false (standard-font? "Not A Font Name"))
+  (check-true (standard-font-name? "Helvetica"))
+  (check-true (standard-font-name? "Courier"))
+  (check-true (standard-font-name? "ZapfDingbats"))
+  (check-false (standard-font-name? "Not A Font Name"))
   
-  (define stdfont (make-object StandardFont "Helvetica" #f)))
+  (define stdfont (make-object standard-font% "Helvetica" #f)))
 
 
 (define (make-kern-table-key left right)
