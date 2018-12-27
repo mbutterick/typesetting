@@ -13,7 +13,7 @@
 (define (add-content doc data)
   (page-write (current-page doc) data))
 
-(struct $page (page-parent options size layout dimensions width height content resources margins dictionary)
+(struct $page (page-parent options size layout dimensions width height content resources margins ref)
   #:transparent #:mutable)
 
 (define (make-page [page-parent #false] [options (mhasheq)])
@@ -29,13 +29,13 @@
     (match (hash-ref options 'margin #f)
       [(? number? margin-value) (margin margin-value margin-value margin-value margin-value)]
       [_ (hash-ref options 'margins (current-default-margins))]))
-  (define page-dictionary
+  (define page-ref
     (make-ref (mhasheq 'Type 'Page
                        'Parent page-parent
                        'MediaBox (list 0 0 width height)
                        'Contents content
                        'Resources resources)))
-  ($page page-parent options size layout dimensions width height content resources margins page-dictionary))
+  ($page page-parent options size layout dimensions width height content resources margins page-ref))
 
 (define (page-fonts p)
   (dict-ref! ($page-resources p) 'Font (make-hasheq)))
@@ -51,8 +51,8 @@
 
 (define (page-annotations p [annot #f])
   (if annot
-      (dict-update! ($page-dictionary p) 'Annots (λ (val) (cons annot val)) null)
-      (dict-ref! ($page-dictionary p) 'Annots null)))
+      (dict-update! ($page-ref p) 'Annots (λ (val) (cons annot val)) null)
+      (dict-ref! ($page-ref p) 'Annots null)))
 
 (define (page-maxY p)
   (- ($page-height p) (margin-bottom ($page-margins p))))
@@ -61,7 +61,7 @@
   (ref-write ($page-content p) chunk)) 
 
 (define (page-end p)
-  (ref-end ($page-dictionary p))
+  (ref-end ($page-ref p))
   (ref-end ($page-resources p))
   (ref-end ($page-content p)))
 

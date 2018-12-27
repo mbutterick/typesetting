@@ -15,7 +15,7 @@
 (check-equal? ($page-width p) 612.0)
 (check-equal? (dict-ref ($page-resources p) 'ProcSet) '(PDF Text ImageB ImageC ImageI))
 
-(check-equal? (dict-ref ($page-dictionary p) 'Type) 'Page)
-(check-equal? (dict-ref ($page-dictionary p) 'MediaBox)  '(0 0 612.0 792.0))
-(check-true ($ref? (dict-ref ($page-dictionary p) 'Contents)))
-(check-true ($ref? (dict-ref ($page-dictionary p) 'Resources)))
+(check-equal? (dict-ref ($page-ref p) 'Type) 'Page)
+(check-equal? (dict-ref ($page-ref p) 'MediaBox)  '(0 0 612.0 792.0))
+(check-true ($ref? (dict-ref ($page-ref p) 'Contents)))
+(check-true ($ref? (dict-ref ($page-ref p) 'Resources)))

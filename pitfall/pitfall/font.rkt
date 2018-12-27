@@ -12,18 +12,18 @@
                 [(@descender descender) #f]
                 [(@line-gap line-gap) #f]
                 [(@bbox bbox) #f])
-    (field [(@dictionary dictionary) #f]
+    (field [(@ref ref) #f]
            [@embedded #f])
 
     (abstract embed encode string-width)
     
     (define/public (make-font-ref)
-      (unless @dictionary
-        (set! @dictionary (make-ref)))
-      @dictionary)
+      (unless @ref
+        (set! @ref (make-ref)))
+      @ref)
 
     (define/public (font-end)
-      (unless (or @embedded (not @dictionary))
+      (unless (or @embedded (not @ref))
         (embed)
         (set! @embedded #t)))
 

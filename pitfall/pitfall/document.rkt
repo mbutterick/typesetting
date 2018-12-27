@@ -98,7 +98,7 @@
 
   (define pages-ref (dict-ref ($doc-root doc) 'Pages))
   (dict-set! pages-ref 'Count (length ($doc-pages doc)))
-  (dict-set! pages-ref 'Kids (map $page-dictionary (reverse ($doc-pages doc))))
+  (dict-set! pages-ref 'Kids (map $page-ref (reverse ($doc-pages doc))))
   (ref-end pages-ref)
       
   (ref-end ($doc-root doc))

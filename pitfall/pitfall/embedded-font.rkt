@@ -54,7 +54,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
     (inherit-field [@ascender ascender]
                    [@bbox bbox]
                    [@descender descender]
-                   [@dictionary dictionary])
+                   [@ref ref])
 
     (define/override (string-width string size [features #f])
       ; #f disables features ; null enables default features ; list adds features
@@ -150,7 +150,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                              (hash-ref widths idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
       (ref-end descendant-font)
       
-      (dict-set*! @dictionary
+      (dict-set*! @ref
                   'Type 'Font
                   'Subtype 'Type0
                   'BaseFont name
@@ -158,7 +158,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                   'DescendantFonts (list descendant-font)
                   'ToUnicode (to-unicode-cmap))
 
-      (ref-end @dictionary))
+      (ref-end @ref))
 
     (define/public (to-unicode-cmap)
       (define cmap-ref (make-ref))

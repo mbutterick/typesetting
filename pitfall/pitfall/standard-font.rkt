@@ -29,18 +29,18 @@
            [descender (string->number (hash-ref @attributes 'Descender "0"))]
            [bbox (for/list ([attr (in-list (string-split (hash-ref @attributes 'FontBBox)))])
                    (or (string->number attr) 0))]
-           [line-gap (- (list-ref bbox 3) (list-ref bbox 1) ascender descender)])
+           [line-gap (- (third bbox) (first bbox) ascender descender)])
       (super-new [ascender ascender] [descender descender] [bbox bbox] [line-gap line-gap]))
 
-    (inherit-field [@dictionary dictionary])
+    (inherit-field [@ref ref])
 
     (define/override (embed)
-      (set-$ref-payload! @dictionary
+      (set-$ref-payload! @ref
                          (mhash 'Type 'Font
                                 'BaseFont (string->symbol name)
                                 'Subtype 'Type1
                                 'Encoding 'WinAnsiEncoding))
-      (ref-end @dictionary))
+      (ref-end @ref))
 
     (define/public (character-to-glyph char)
       (define cint (char->integer char))
