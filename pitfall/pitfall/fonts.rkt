@@ -32,8 +32,8 @@
   (match (hash-ref ($doc-font-families doc) cache-key #f) ; check if the font is already in the PDF
     [(? values val) (set-$doc-current-font! doc val)]
     [_ ; if not, load the font
-     (set-$doc-font-count! doc (add1 ($doc-font-count doc)))
-     (define id (string->symbol (format "F~a" ($doc-font-count doc))))
+     (define font-index (add1 (length (hash-keys ($doc-font-families doc)))))
+     (define id (string->symbol (format "F~a" font-index)))
      (set-$doc-current-font! doc (PDFFont-open src family id))
      ;; check for existing font families with the same name already in the PDF
      (match (hash-ref ($doc-font-families doc) (get-field name ($doc-current-font doc)) #f)

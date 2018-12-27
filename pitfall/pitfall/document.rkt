@@ -26,13 +26,10 @@
   (for ([(key val) (in-hash (hash-ref options 'info (hasheq)))]) 
     (hash-set! info key val))
   (define opacity-registry (make-hash))
-  (define opacity-count 0)
-  (define grad-count 0)
   (define current-fill-color #false)
   (define ctm default-ctm-value)
   (define ctm-stack null)
   (define font-families (make-hash))
-  (define font-count 0)
   (define current-font-size 12)
   (define current-font #false)
   (define registered-fonts (make-hash))
@@ -41,20 +38,16 @@
   (define x 0)
   (define y 0)
   (define image-registry (make-hash))
-  (define image-count 0)
   (define new-doc ($doc options
                         pages
                         refs
                         'dummy-root-value-that-will-be-replaced-below
                         info
                         opacity-registry
-                        opacity-count
-                        grad-count
                         current-fill-color
                         ctm
                         ctm-stack
                         font-families
-                        font-count
                         current-font-size
                         current-font
                         registered-fonts
@@ -62,8 +55,7 @@
                         text-options
                         x
                         y
-                        image-registry
-                        image-count))
+                        image-registry))
   (set-current-ref-id! 1)
   (register-ref-listener (λ (ref) (store-ref new-doc ref)))
   (set-$doc-root! new-doc (make-ref (mhasheq 'Type 'Catalog
@@ -213,7 +205,7 @@
         (write-bytes-out "xref")
         (write-bytes-out (format "0 ~a" (add1 (length @refs))))
         (write-bytes-out "0000000000 65535 f ")
-        (for ([ref (in-list (reverse @refs))])
+        (for ([ref (in-list @refs)])
           (write-bytes-out
            (string-append (~r ($ref-offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
         (write-bytes-out "trailer")

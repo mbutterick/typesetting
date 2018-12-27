@@ -104,8 +104,8 @@
       (cond
         [(and (string? src) (hash-ref ($doc-image-registry doc) src #f))]
         [else
-         (set-$doc-image-count! doc (add1 ($doc-image-count doc)))
-         (define image-id (string->symbol (format "I~a" ($doc-image-count doc))))
+         (define image-idx (add1 (length (hash-keys ($doc-image-registry doc)))))
+         (define image-id (string->symbol (format "I~a" image-idx)))
          (define new-image (open-pdf-image src image-id))
          (when (string? src) (hash-set! ($doc-image-registry doc) src new-image))
          new-image]))

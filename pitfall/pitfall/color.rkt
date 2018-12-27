@@ -24,8 +24,8 @@
                      (hash-set! dictionary 'CA stroke-opacity))
                    (define ref-dict (make-ref dictionary))
                    (ref-end ref-dict)
-                   (set-$doc-opacity-count! doc (add1 ($doc-opacity-count doc)))
-                   (list ref-dict (string->symbol (format "Gs~a" ($doc-opacity-count doc)))))))
+                   (define opacity-index (add1 (length (hash-keys ($doc-opacity-registry doc)))))
+                   (list ref-dict (string->symbol (format "Gs~a" opacity-index))))))
     (hash-set! (page-ext_gstates (page doc)) name dictionary)        
     (add-content doc (format "/~a gs" name))))
 
@@ -102,26 +102,6 @@
                                                [else 1.0])))
                               (if (integer? x) (inexact->exact x) x))]
     [_ #false]))
-
-#;(define (color-mixin [% object%])
-    (class %
-      (super-new)
-      (field [@opacity-registry (make-hash)]
-             [@opacity-count 0]
-             [@grad-count 0]
-             [(@current-fill-color current-fill-color) #false])
-
-    
-    
-      
-
-      
-
-      
-
-      
-    
-      ))
 
 (define named-colors
   (hash "aliceblue" '(240 248 255)
