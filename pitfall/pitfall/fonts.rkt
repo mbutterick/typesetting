@@ -4,14 +4,11 @@
   "reference.rkt"
   racket/match
   sugar/unstable/dict
-  racket/class
   "standard-font.rkt"
-  "font.rkt"
   fontland
   "embedded-font.rkt")
 
 (provide (all-defined-out))
-
 
 (define (make-font-ref font)
   (unless ($font-dictionary font)
@@ -30,14 +27,14 @@
 (define (PDFFont-open src family id)
   (cond
     [(and (string? src) (standard-font? src)) (make-standard-font src id)]
-    #;[else
+    [else
      (define font
        (cond
          [(string? src) (open-font src)]
          [(path? src) (open-font (path->string src))]
          ;; todo: other font-loading cases
          [else (raise-argument-error 'PDFFont-open "loadable font thingy" src)]))
-     (make-object EmbeddedFont font id)]))
+     (make-embedded-font font id)]))
 
 
 (define (current-line-height doc [include-gap #f])
