@@ -108,7 +108,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
          (pos port (+ (pos port) glyfPos))
          (define startPos (pos port))
          (define glyph-data (decode GlyfHeader port))
-         (match (· glyph-data numberOfContours)
+         (match (hash-ref glyph-data 'numberOfContours)
            [(? positive?) (decode-simple glyph-data port)]
            [(? negative?) (decode-composite glyph-data port startPos)])
          glyph-data)))
@@ -122,7 +122,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFGlyph.js
 
   ;; this is a simple glyph
   (dict-set! glyph-data 'points empty)
-  (define endpts-of-contours (decode (x:array #:type uint16be #:length (· glyph-data numberOfContours)) port))
+  (define endpts-of-contours (decode (x:array #:type uint16be #:length (hash-ref glyph-data 'numberOfContours)) port))
   (dict-set! glyph-data 'instructions (decode (x:array #:type uint8be #:length uint16be) port))
   (define num-coords (add1 (last endpts-of-contours)))
 

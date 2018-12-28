@@ -84,8 +84,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (define glyf-bytes (read-bytes (- next-offset this-offset) port))
 
   ;; if it is a compound glyph, include its components
-  (when (and ttf-glyf-data (negative? (· ttf-glyf-data numberOfContours)))
-    (for ([ttf-glyph-component (in-list (· ttf-glyf-data components))])
+  (when (and ttf-glyf-data (negative? (hash-ref ttf-glyf-data 'numberOfContours)))
+    (for ([ttf-glyph-component (in-list (hash-ref ttf-glyf-data 'components))])
       (define gid (subset-add-glyph! ss (ttf-glyph-component-glyph-id ttf-glyph-component)))
       ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
       (bytes-copy! glyf-bytes (ttf-glyph-component-pos ttf-glyph-component) (encode uint16be gid #f))))
@@ -97,7 +97,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (hash-update! (ttf-subset-hmtx ss) 'metrics
                 (λ (ms) (append ms
                                 (list (mhash 'advance (glyph-advance-width glyph)
-                                             'bearing (· (get-glyph-metrics glyph) leftBearing))))))
+                                             'bearing (hash-ref (get-glyph-metrics glyph) 'leftBearing))))))
   (set-ttf-subset-offset! ss (+ (ttf-subset-offset ss) (bytes-length glyf-bytes)))
   (sub1 (length (ttf-subset-glyf ss))))
 

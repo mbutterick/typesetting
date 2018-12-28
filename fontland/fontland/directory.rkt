@@ -30,13 +30,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 
 (define (directory-post-decode this-res)
   (define new-tables-val (mhash))
-  (for ([table (in-list (· this-res tables))])
-    (hash-set! new-tables-val (escape-tag (· table tag)) table))
+  (for ([table (in-list (hash-ref this-res 'tables))])
+    (hash-set! new-tables-val (escape-tag (hash-ref table 'tag)) table))
   (dict-set! this-res 'tables new-tables-val)
   this-res)
 
 (define (directory-pre-encode this-val)
-  (define tables (for/list ([(tag table) (in-hash (· this-val tables))])
+  (define tables (for/list ([(tag table) (in-hash (hash-ref this-val 'tables))])
                    (define table-codec (hash-ref table-codecs tag))
                    (mhash 'tag (unescape-tag tag)
                           'checkSum 0
