@@ -1,10 +1,7 @@
 #lang racket/base
 (require xenomorph
-         sugar/unstable/class
-         sugar/unstable/dict
-         sugar/unstable/js
-         "../helper.rkt")
-(provide (all-defined-out))
+         sugar/unstable/dict)
+(provide post)
 
 #|
 approximates
@@ -31,23 +28,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
                 2.5 (dictify 'numberOfGlyphs uint16be
                                                    'offsets (x:array #:type uint8))
                 3 null
-                4 (dictify 'map (x:array #:type uint32be #:length (λ (t) (· t parent maxp numGlyphs)))))))
+                4 (dictify 'map (x:array #:type uint32be #:length (λ (t) (hash-ref (hash-ref (hash-ref t 'parent) 'maxp) 'numGlyphs)))))))
 
 (module+ test
- (require rackunit racket/serialize racket/class)
+ (require rackunit racket/serialize racket/class "../helper.rkt")
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
- (define offset (· dir tables post offset))
- (define len (· dir tables post length))
+ (define offset (hash-ref (hash-ref (hash-ref dir 'tables) 'post) 'offset))
+ (define len (hash-ref (hash-ref (hash-ref dir 'tables) 'post) 'length))
  (check-equal? offset 41520)
- (check-equal? len 514)
- (define ds (open-input-bytes (peek-bytes len offset ip)))
- (define version (decode fixed32be ds)) ; version = 2
- #|
-(send post force-version! version)
- (define table-data (decode post ds))
- (check-equal? (· table-data underlineThickness) 58)
- (check-equal? (· table-data underlinePosition) -178)
- (check-equal? (· table-data names) '("periodcentered" "macron"))
-|#
-  )
+ (check-equal? len 514))

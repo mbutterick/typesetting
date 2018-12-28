@@ -1,15 +1,10 @@
 #lang debug racket/base
 (require xenomorph
-         sugar/unstable/class
-         sugar/unstable/js
-         racket/dict
          sugar/unstable/dict
-         racket/class
          racket/list
          racket/promise
-         "../struct.rkt"
-         "../helper.rkt")
-(provide (all-defined-out))
+         "../struct.rkt")
+(provide loca)
 
 (define 16bit-style 0)
 (define 32bit-style 1)
@@ -20,21 +15,20 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 |#
 
-
 (define (loca-pre-encode val)
-  (unless (dict-has-key? val x:version-key)
-    (dict-set! val x:version-key (if (> (last (· val offsets)) max-32-bit-value)
+  (unless (hash-has-key? val x:version-key)
+    (hash-set! val x:version-key (if (> (last (hash-ref val 'offsets)) max-32-bit-value)
                                 32bit-style
                                 16bit-style))
-    (when (= 16bit-style (dict-ref val x:version-key))
-      (dict-update! val 'offsets (λ (offsets) (map (λ (x) (/ x 2)) offsets)))))
+    (when (= 16bit-style (hash-ref val x:version-key))
+      (hash-update! val 'offsets (λ (offsets) (map (λ (x) (/ x 2)) offsets)))))
   val)
 
 (define (loca-post-decode val)
-  (when (= 16bit-style (dict-ref val x:version-key))
+  (when (= 16bit-style (hash-ref val x:version-key))
     ;; in a 16bits-style loca table, actual 32bit offset values are divided by 2 (to fit into 16 bits)
     ;; so we re-inflate them.
-    (dict-update! val 'offsets (λ (offsets) (map (λ (x) (* 2 x)) offsets))))
+    (hash-update! val 'offsets (λ (offsets) (map (λ (x) (* 2 x)) offsets))))
   val)
 
 (define loca (x:versioned-struct
@@ -55,15 +49,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
                   1 (dictify 'offsets (x:array #:type uint32be)))))
 
 (module+ test
-  (require rackunit racket/serialize)
+  (require rackunit racket/serialize "../helper.rkt")
   (check-equal?
    (encode loca (mhasheq x:version-key 0 'offsets '(0 76 156)) #f) #"\0\0\0L\0\234")
   (check-equal?
    (encode loca (mhasheq x:version-key 1 'offsets '(0 76 156)) #f) #"\0\0\0\0\0\0\0L\0\0\0\234")
   (define ip (open-input-file charter-path))
   (define dir (deserialize (read (open-input-file charter-directory-path))))
-  (define offset (dict-ref (dict-ref (dict-ref dir 'tables) 'loca) 'offset))
-  (define len (dict-ref (dict-ref (dict-ref dir 'tables) 'loca) 'length))
+  (define offset (hash-ref (hash-ref (hash-ref dir 'tables) 'loca) 'offset))
+  (define len (hash-ref (hash-ref (hash-ref dir 'tables) 'loca) 'length))
   (check-equal? offset 38692)
   (check-equal? len 460)
   (define offset-bytes (peek-bytes len offset ip))

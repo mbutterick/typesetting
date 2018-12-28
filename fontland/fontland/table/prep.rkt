@@ -1,9 +1,7 @@
 #lang racket/base
-(require sugar/unstable/dict
-         sugar/unstable/js
-         "../helper.rkt"
-         xenomorph)
-(provide (all-defined-out))
+(require sugar/unstable/dict xenomorph)
+(provide prep)
+
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/prep.js
@@ -12,14 +10,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/prep.js
 (define prep (x:struct 'controlValueProgram (x:array #:type uint8)))
 
 (module+ test
- (require rackunit racket/dict racket/serialize sugar/unstable/port)
+ (require rackunit racket/dict racket/serialize "../helper.rkt")
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
- (define offset (· dir tables prep offset))
- (define len (· dir tables prep length))
+ (define offset (hash-ref (hash-ref (hash-ref dir 'tables) 'prep) 'offset))
+ (define len (hash-ref (hash-ref (hash-ref dir 'tables) 'prep) 'length))
  (check-equal? offset 4512)
  (check-equal? len 78)
- (set-port-position! ip 0)
+ (file-position ip 0)
  (define table-bytes #"\270\0\0+\0\272\0\1\0\1\0\2+\1\272\0\2\0\1\0\2+\1\277\0\2\0C\0007\0+\0\37\0\23\0\0\0\b+\0\277\0\1\0\200\0i\0R\0;\0#\0\0\0\b+\0\272\0\3\0\5\0\a+\270\0\0 E}i\30D")
  (check-equal? table-bytes (peek-bytes len offset ip))
  (define ds (open-input-bytes (peek-bytes len offset ip)))

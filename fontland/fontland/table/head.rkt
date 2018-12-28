@@ -1,15 +1,11 @@
 #lang racket/base
-(require "../helper.rkt"
-         sugar/unstable/class
-         sugar/unstable/dict
-         xenomorph)
-(provide (all-defined-out))
+(require xenomorph)
+(provide head)
 
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
 |#
-
 
 (define head (x:struct
                 'version            int32be                   ;; 0x00010000 (version 1.0)
@@ -34,32 +30,30 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
 
 
 (module+ test
- (require rackunit
-          racket/serialize
-         sugar/unstable/js
-         sugar/unstable/port)
+ (require rackunit "../helper.rkt"
+          racket/serialize)
  (define ip (open-input-file charter-italic-path))
  (define dir (deserialize (read (open-input-file charter-italic-directory-path))))
- (define offset (· dir tables head offset))
- (define length (· dir tables head length))
+ (define offset (hash-ref (hash-ref (hash-ref dir 'tables) 'head) 'offset))
+ (define length (hash-ref (hash-ref (hash-ref dir 'tables) 'head) 'length))
  (check-equal? offset 236)
  (check-equal? length 54)
  (define table-bytes #"\0\1\0\0\0\2\0\0.\252t<_\17<\365\0\t\3\350\0\0\0\0\316\3\301\261\0\0\0\0\316\3\304\364\377\36\377\24\4\226\3\324\0\2\0\t\0\2\0\0\0\0")
- (set-port-position! ip 0)
+ (file-position ip 0)
  (check-equal? (peek-bytes length offset ip) table-bytes)
  (define table-data (decode head table-bytes))
- (check-equal? (· table-data unitsPerEm) 1000)
- (check-equal? (· table-data yMin) -236)
- (check-equal? (· table-data yMax) 980)
- (check-equal? (· table-data xMax) 1174)
- (check-equal? (· table-data xMin) -226)
- (check-equal? (· table-data macStyle) (make-hasheq '((shadow . #f)
+ (check-equal? (hash-ref table-data 'unitsPerEm) 1000)
+ (check-equal? (hash-ref table-data 'yMin) -236)
+ (check-equal? (hash-ref table-data 'yMax) 980)
+ (check-equal? (hash-ref table-data 'xMax) 1174)
+ (check-equal? (hash-ref table-data 'xMin) -226)
+ (check-equal? (hash-ref table-data 'macStyle) (make-hasheq '((shadow . #f)
                                                       (extended . #f)
                                                       (condensed . #f)
                                                       (underline . #f)
                                                       (outline . #f)
                                                       (bold . #f)
                                                       (italic . #t))))
- (check-equal? (· table-data magicNumber) #x5F0F3CF5)
- (check-equal? (· table-data indexToLocFormat) 0) ; used in loca table
+ (check-equal? (hash-ref table-data 'magicNumber) #x5F0F3CF5)
+ (check-equal? (hash-ref table-data 'indexToLocFormat) 0) ; used in loca table
  (check-equal? (encode head table-data #f) table-bytes))

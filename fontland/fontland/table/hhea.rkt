@@ -1,9 +1,6 @@
 #lang racket/base
-(require sugar/unstable/class
-         sugar/unstable/dict
-         "../helper.rkt"
-         xenomorph)
-(provide (all-defined-out))
+(require xenomorph sugar/unstable/dict)
+(provide hhea)
 
 (define hhea (x:struct
               (dictify
@@ -24,21 +21,19 @@
                )))
 
 (module+ test
-  (require rackunit
-           racket/serialize
-           sugar/unstable/js
-           sugar/unstable/port)
+  (require rackunit "../helper.rkt"
+           racket/serialize)
   (define ip (open-input-file charter-path))
   (define dir (deserialize (read (open-input-file charter-directory-path))))
-  (define offset (· dir tables hhea offset))
-  (define length (· dir tables hhea length))
+  (define offset (hash-ref (hash-ref (hash-ref dir 'tables) 'hhea) 'offset))
+  (define length (hash-ref (hash-ref (hash-ref dir 'tables) 'hhea) 'length))
   (check-equal? offset 292)
   (check-equal? length 36)
   (define table-bytes #"\0\1\0\0\3\324\377\22\0\0\4\311\377_\377`\4\251\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\345")
-  (set-port-position! ip 0)
+  (file-position ip 0)
   (check-equal? (peek-bytes length offset ip) table-bytes)
   (define table-data (decode hhea table-bytes))
-  (check-equal? (· table-data ascent) 980)
-  (check-equal? (· table-data descent) -238)
-  (check-equal? (· table-data numberOfMetrics) 229))
+  (check-equal? (hash-ref table-data 'ascent) 980)
+  (check-equal? (hash-ref table-data 'descent) -238)
+  (check-equal? (hash-ref table-data 'numberOfMetrics) 229))
 

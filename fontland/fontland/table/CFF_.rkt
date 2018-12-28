@@ -1,6 +1,5 @@
 #lang racket/base
-(require sugar/unstable/class
-         xenomorph)
+(require xenomorph)
 (provide CFF_)
 
 #|

@@ -1,9 +1,6 @@
 #lang racket/base
-(require xenomorph
-         sugar/unstable/class
-         sugar/unstable/dict
-         "../helper.rkt")
-(provide (all-defined-out))
+(require xenomorph)
+(provide maxp)
 
 (define maxp (x:struct
               'version                int32be
@@ -23,20 +20,17 @@
               'maxComponentDepth      uint16be  ;; Maximum levels of recursion; 1 for simple components
               ))
 
-
 (module+ test
- (require rackunit racket/serialize
-          sugar/unstable/js
-          sugar/unstable/port)
+ (require rackunit racket/serialize "../helper.rkt")
  (define ip (open-input-file charter-path))
  (define dir (deserialize (read (open-input-file charter-directory-path))))
- (define maxp-offset (· dir tables maxp offset))
- (define maxp-length (· dir tables maxp length))
+ (define maxp-offset (hash-ref (hash-ref (hash-ref dir 'tables) 'maxp) 'offset))
+ (define maxp-length (hash-ref (hash-ref (hash-ref dir 'tables) 'maxp) 'length))
  (check-equal? maxp-offset 328)
  (check-equal? maxp-length 32)
  (define maxp-bytes #"\0\1\0\0\0\345\0f\0\a\0O\0\4\0\1\0\0\0\0\0\n\0\0\2\0\1s\0\2\0\1")
- (set-port-position! ip 0)
+ (file-position ip 0)
  (check-equal? (peek-bytes maxp-length maxp-offset ip) maxp-bytes)
  (define maxp-data (decode maxp maxp-bytes))
- (check-equal? (· maxp-data numGlyphs) 229)
- (check-equal? (· maxp-data version) 65536)) 
+ (check-equal? (hash-ref maxp-data 'numGlyphs) 229)
+ (check-equal? (hash-ref maxp-data 'version) 65536)) 

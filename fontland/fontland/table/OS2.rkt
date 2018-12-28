@@ -1,9 +1,6 @@
 #lang racket/base
-(require xenomorph
-         sugar/unstable/class
-         sugar/unstable/dict
-         "../helper.rkt")
-(provide (all-defined-out))
+(require xenomorph sugar/unstable/dict)
+(provide OS/2)
 
 #|
 approximates
@@ -67,16 +64,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
                  5 (append type-1 type-2 type-5)))))
 
 (module+ test
- (require rackunit racket/serialize sugar/unstable/js)
- (define ip (open-input-file charter-path))
- (define dir (deserialize (read (open-input-file charter-directory-path))))
- (define offset (· dir tables OS/2 offset))
- (define len (· dir tables OS/2 length))
- (check-equal? offset 360)
- (check-equal? len 96)
- (define ds (open-input-bytes (peek-bytes len offset ip)))
- (define version (decode uint16be ds))
- #;(send OS/2 force-version! version)
- #;(define table-data (send OS/2 decode ds))
- #;(check-equal? (· table-data panose) '(2 0 5 3 6 0 0 2 0 4))
- #;(check-equal? (· table-data sFamilyClass) 0))
+  (require rackunit racket/serialize "../helper.rkt")
+  (define ip (open-input-file charter-path))
+  (define dir (deserialize (read (open-input-file charter-directory-path))))
+  (define offset (hash-ref (hash-ref (hash-ref dir 'tables) 'OS/2) 'offset))
+  (define len (hash-ref (hash-ref (hash-ref dir 'tables) 'OS/2) 'length))
+  (check-equal? offset 360)
+  (check-equal? len 96))
