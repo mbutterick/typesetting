@@ -1,6 +1,5 @@
 #lang debug racket
-(require sugar/unstable/js
-         xenomorph
+(require xenomorph
          "tables.rkt"
          "struct.rkt"
          (for-syntax "tables.rkt"))

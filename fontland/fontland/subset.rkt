@@ -1,10 +1,8 @@
 #lang debug racket/base
 (require racket/serialize
-         racket/class
          racket/list
          racket/match
          sugar/unstable/dict
-         sugar/unstable/js
          "table/loca.rkt"
          "table-stream.rkt"
          "directory.rkt"

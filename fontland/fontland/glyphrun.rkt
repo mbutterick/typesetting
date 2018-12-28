@@ -1,7 +1,5 @@
 #lang racket/base
-(require sugar/unstable/js
-         racket/class
-         "glyph-position.rkt")
+(require "glyph-position.rkt")
 (provide (all-defined-out))
 
 #|

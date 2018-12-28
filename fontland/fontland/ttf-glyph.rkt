@@ -2,12 +2,8 @@
 (require (for-syntax racket/base)
          racket/match
          racket/list
-         racket/class
          racket/dict
-         "glyph.rkt"
          "struct.rkt"
-         sugar/unstable/dict
-         sugar/unstable/js
          xenomorph
          racket/struct)
 (provide (all-defined-out))

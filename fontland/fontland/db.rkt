@@ -1,6 +1,6 @@
 #lang debug racket
-(require sugar/debug sugar/cache racket/class racket/match
-         db racket/logging racket/draw openssl/sha1 racket/runtime-path)
+(require sugar/cache racket/match
+         db racket/runtime-path)
 (provide (all-defined-out))
 
 (define-runtime-path db-file "fontland.sqlite")
@@ -20,7 +20,7 @@
 (define (add-record! rec)
   (query-exec-logging "insert or replace into layouts (crc, layout) values ($1, $2)" (car rec) (cdr rec)))
 
-(define/caching (get-layout-from-db which)
+(define (get-layout-from-db which)
   (match (query-rows-logging "select layout from layouts where crc==$1" which)
     [(list (vector val)) val]
     [_ #false]))

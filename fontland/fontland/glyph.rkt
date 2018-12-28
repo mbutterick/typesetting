@@ -1,6 +1,5 @@
 #lang racket/base
-(require (for-syntax)
-         sugar/unstable/dict
+(require sugar/unstable/dict
          "unsafe/freetype.rkt"
          "table-stream.rkt"
          "struct.rkt"

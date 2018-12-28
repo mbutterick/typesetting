@@ -4,7 +4,7 @@
          racket/list
          racket/promise
          "../struct.rkt")
-(provide loca)
+(provide loca loca-pre-encode loca-post-decode)
 
 (define 16bit-style 0)
 (define 32bit-style 1)

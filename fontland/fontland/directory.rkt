@@ -3,10 +3,7 @@
          "tables.rkt"
          racket/dict
          sugar/unstable/dict
-         racket/string
-         sugar/unstable/class
-         sugar/unstable/js
-         racket/class)
+         racket/string)
 
 (provide (all-defined-out))
 
