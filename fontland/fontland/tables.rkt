@@ -14,7 +14,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/index.js
                                                (syntax->list #'(TABLE-ID ...)))]) 
                    #'(begin
                        (r+p TABLE-ID-STRING ...)
-                       (test-module (require (submod TABLE-ID-STRING test) ...))
                        (define ID (make-hasheq (map cons (list 'TABLE-ID ...) (list TABLE-ID ...))))))]))
 
 (define-table-codecs table-codecs head hhea hmtx maxp OS/2 post cvt_ fpgm loca prep glyf)

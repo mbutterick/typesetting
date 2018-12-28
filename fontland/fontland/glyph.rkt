@@ -18,6 +18,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
 ; There are several subclasses of the base Glyph class internally that may be returned depending
 ; on the font format, but they all inherit from this class.
 
+(define (is-mark? codepoint)
+  ;; mark classes = Mn Me Mc
+  (regexp-match #px"\\p{Mn}|\\p{Me}|\\p{Mc}" (string (integer->char codepoint))))
+
 (define (+glyph id codepoints font
                 [is-mark? (andmap is-mark? codepoints)]
                 [is-ligature? (> (length codepoints) 1)]
