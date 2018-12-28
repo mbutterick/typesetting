@@ -28,7 +28,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
           (define orig-pos (pos port))
           (pos port (+ stream-starting-pos (* (send @type x:size #f new-parent) index)))
           (begin0
-            (send @type x:decode port new-parent)
+            (send @type decode port new-parent)
             (pos port orig-pos)))
         (pos port (+ (pos port) (* len (send @type x:size #f new-parent))))))
 
