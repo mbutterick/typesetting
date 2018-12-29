@@ -24,12 +24,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (for/sum ([c (in-list (list COND ...))]
             [v (in-list (list VAL ...))]
             #:when c)
-    v))
+           v))
 
 (define (to-hex . codePoints)
   (string-append*
    (for/list ([code (in-list codePoints)])
-     (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
+             (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
 
 (define embedded-font%
   (class pdf-font%
@@ -76,18 +76,23 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                    (define glyph-run (layout font str features-key))
                    (define glyphs (glyphrun-glyphs glyph-run))
                    (define positions (glyphrun-positions glyph-run))
-                   (define-values (subset-idxs new-positions)
-                     (for/lists (idxs posns)
-                                ([g (in-list glyphs)]
-                                 [posn (in-list positions)])
-                       (define gid (subset-add-glyph! subset (glyph-id g)))
-                       (define subset-idx (to-hex gid))
-                       (set-glyph-position-advance-width! posn (glyph-advance-width g))
-                       (hash-ref! widths gid (λ () (glyph-position-advance-width posn)))
-                       (hash-ref! unicode gid (λ () (glyph-codepoints g)))
-                       (scale-glyph-position! posn scale)
-                       (values subset-idx posn)))
-                   (list (list->vector subset-idxs) (list->vector new-positions)))))
+                   (define len (vector-length glyphs))
+                   (define subset-idxs (make-vector len))
+                   (define new-positions (make-vector len))
+                   (for ([glyph (in-vector glyphs)]
+                         [posn (in-vector positions)]
+                         [idx (in-range len)])
+                        (define gid (subset-add-glyph! subset (glyph-id glyph)))
+                        (define subset-idx (to-hex gid))
+                        (vector-set! subset-idxs idx subset-idx)
+                        
+                        (set-glyph-position-advance-width! posn (glyph-advance-width glyph))
+                        (scale-glyph-position! posn scale)
+                        (vector-set! new-positions idx posn)
+                        
+                        (hash-ref! widths gid (λ () (glyph-position-advance-width posn)))
+                        (hash-ref! unicode gid (λ () (glyph-codepoints glyph))))
+                   (list subset-idxs new-positions))))
 
     (define/override (embed)
       ;; no CFF support
@@ -119,7 +124,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
       (when (test-mode) (random-seed 0))
       (define tag (list->string (for/list ([i (in-range 6)])
-                                  (integer->char (random 65 (+ 65 26))))))
+                                          (integer->char (random 65 (+ 65 26))))))
       (define name (string->symbol (string-append tag "+" (font-postscript-name font))))
       (define descriptor (make-ref
                           (mhasheq
@@ -149,7 +154,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                                  'Supplement 0)
                                 'FontDescriptor descriptor
                                 'W (list 0 (for/list ([idx (in-range (length (hash-keys widths)))])
-                                             (hash-ref widths idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
+                                                     (hash-ref widths idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
       (ref-end descendant-font)
       
       (dict-set*! @ref
@@ -166,12 +171,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
       (define cmap-ref (make-ref))
       (define entries
         (for/list ([idx (in-range (length (hash-keys unicode)))])
-          (define codepoints (hash-ref unicode idx))
-          (define encoded ; encode codePoints to utf16
-            ;; todo: full utf16 support. for now just utf8
-            (for/list ([value (in-list codepoints)])
-              (to-hex value)))
-          (format "<~a>" (string-join encoded " "))))
+                  (define codepoints (hash-ref unicode idx))
+                  (define encoded ; encode codePoints to utf16
+                    ;; todo: full utf16 support. for now just utf8
+                    (for/list ([value (in-list codepoints)])
+                              (to-hex value)))
+                  (format "<~a>" (string-join encoded " "))))
 
       (define unicode-cmap-str #<<HERE
 /CIDInit /ProcSet findresource begin
