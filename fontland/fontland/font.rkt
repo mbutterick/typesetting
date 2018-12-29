@@ -80,11 +80,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (hb_buffer_reset buf)
   (define codepoints (for/list ([c (in-string str)]) (char->integer c)))
   (hb_buffer_add_codepoints buf codepoints)
-  (define chars (map hb_glyph_info_t-codepoint (hb_buffer_get_glyph_infos buf)))
   (hb_shape (hb-font font) buf (map tag->hb-feature (or features null)))
   (define gis (hb_buffer_get_glyph_infos buf))
   (define hb-gids (map hb_glyph_info_t-codepoint gis))
-  (define hb-clusters (break-at chars (map hb_glyph_info_t-cluster gis)))
+  (define hb-clusters (break-at codepoints (map hb_glyph_info_t-cluster gis)))
   (define hb-positions (map hb_glyph_position_t->list (hb_buffer_get_glyph_positions buf)))
   (define glyphs (for/vector ([gidx (in-list hb-gids)]
                             [cluster (in-list hb-clusters)])
