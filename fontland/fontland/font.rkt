@@ -73,23 +73,28 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; (though this is good news, as it avoids massive disk caches hanging around)
 ;; ram cache in pitfall suffices
 
-;; todo: preserve semantics of user-features argument from pitfall, which is
-;; #f = no features, null = default features, list = explicit features
-(define (layout font str [features #f] [script #f] [language #f])
+(define (layout font str
+                [features null]
+                [script 'HB_SCRIPT_LATIN]
+                [lang #"en"]
+                [direction 'HB_DIRECTION_LTR])
   (define buf (hb-buf font))
   (hb_buffer_reset buf)
+  (hb_buffer_set_script buf script)
+  (hb_buffer_set_language buf (hb_language_from_string lang))
+  (hb_buffer_set_direction buf direction)
   (define codepoints (for/list ([c (in-string str)]) (char->integer c)))
   (hb_buffer_add_codepoints buf codepoints)
-  (hb_shape (hb-font font) buf (map tag->hb-feature (or features null)))
+  (hb_shape (hb-font font) buf (map tag->hb-feature features))
   (define gis (hb_buffer_get_glyph_infos buf))
   (define hb-gids (map hb_glyph_info_t-codepoint gis))
   (define hb-clusters (break-at codepoints (map hb_glyph_info_t-cluster gis)))
   (define hb-positions (map hb_glyph_position_t->list (hb_buffer_get_glyph_positions buf)))
   (define glyphs (for/vector ([gidx (in-list hb-gids)]
-                            [cluster (in-list hb-clusters)])
-                           (get-glyph font gidx cluster)))
+                              [cluster (in-list hb-clusters)])
+                   (get-glyph font gidx cluster)))
   (define positions (for/vector ([posn (in-list hb-positions)])
-                              (apply +glyph-position posn)))
+                      (apply +glyph-position posn)))
   (glyphrun glyphs positions))
 
 
@@ -124,8 +129,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
    ;; rather than use a `probe` function,
    ;; just try making a font with each format and see what happens
    (for/first ([font-format (in-list font-formats)])
-              (with-handlers ([probe-fail? (λ (exn) #f)])
-                (font-format port)))
+     (with-handlers ([probe-fail? (λ (exn) #f)])
+       (font-format port)))
    (error 'create-font "unknown font format")))
 
 (module+ test
