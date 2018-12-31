@@ -33,7 +33,7 @@
 (define (default-buffer-setup buf)
   (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
   (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
-  (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
+  (hb_buffer_set_language buf (hb_language_from_string #"en"))
   buf)
 
 (define-harfbuzz hb_buffer_create (_fun -> (buf : _hb_buffer_t)
@@ -63,7 +63,7 @@
 (define-harfbuzz hb_buffer_set_script (_fun _hb_buffer_t _hb_script_t -> _void))
 (define-harfbuzz hb_buffer_get_script (_fun _hb_buffer_t -> _hb_script_t))
 
-(define-harfbuzz hb_language_from_string (_fun _bstring _int -> _hb_language_t))
+(define-harfbuzz hb_language_from_string (_fun _bstring (_int = -1) -> _hb_language_t))
 (define-harfbuzz hb_language_to_string (_fun _hb_language_t -> _bstring))
 (define-harfbuzz hb_buffer_set_language (_fun _hb_buffer_t _hb_language_t -> _void))
 (define-harfbuzz hb_buffer_get_language (_fun _hb_buffer_t -> _hb_language_t))
@@ -188,17 +188,17 @@
   (hb_feature_from_string bs))
   
 (define liga_on (tag->hb-feature #"liga"))
-(define liga_off (make-hb_feature_t (->tag #"liga") 0 0 4294967295))
+(define liga_off (make-hb_feature_t (->tag #"liga") 0 HB_FEATURE_GLOBAL_START HB_FEATURE_GLOBAL_END))
 (define kern_on (tag->hb-feature #"kern"))
-(define kern_off (make-hb_feature_t (->tag #"kern") 0 0 4294967295))
+(define kern_off (make-hb_feature_t (->tag #"kern") 0 HB_FEATURE_GLOBAL_START HB_FEATURE_GLOBAL_END))
 (define onum_on (tag->hb-feature #"onum"))
-(define onum_off (make-hb_feature_t (->tag #"onum") 0 0 4294967295))
+(define onum_off (make-hb_feature_t (->tag #"onum") 0 HB_FEATURE_GLOBAL_START HB_FEATURE_GLOBAL_END))
 
 (define (shape font text [feats null])
   (define buf (hb_buffer_create))
   (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
   (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
-  (hb_buffer_set_language buf (hb_language_from_string #"en" -1))
+  (hb_buffer_set_language buf (hb_language_from_string #"en"))
   (hb_buffer_add_utf8 buf text)
   (hb_shape font buf feats)
   (begin0
@@ -210,7 +210,7 @@
 (define (random-string len)
   (define chars (map integer->char (range 65 91)))
   (list->string (for/list ([i (in-range len)])
-                          (list-ref chars (random (length chars))))))
+                  (list-ref chars (random (length chars))))))
 
 (module+ test
   (define f (make-font test-font-path))
