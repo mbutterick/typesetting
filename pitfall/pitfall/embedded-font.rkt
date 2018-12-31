@@ -26,9 +26,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
             #:when c)
            v))
 
-(define (to-hex . codePoints)
+(define (to-hex . codepoints)
   (string-append*
-   (for/list ([code (in-list codePoints)])
+   (for/list ([code (in-list codepoints)])
              (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
 
 (define embedded-font%
@@ -70,7 +70,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
 
     ;; called from text.rkt    
     (define/override (encode str [features null])
-      (define features-key (and features (sort features string<?)))
+      (define features-key (and features (sort features bytes<?)))
       (hash-ref! encoding-cache (cons features-key str) 
                  (λ () 
                    (define glyph-run (layout font str features-key))

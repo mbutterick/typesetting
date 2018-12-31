@@ -14,11 +14,11 @@
               ctm
               ctm-stack
               font-families
+              current-font-features
               current-font-size
               current-font
               registered-fonts
               line-gap
-              text-options
               x
               y
               image-registry) #:transparent #:mutable)

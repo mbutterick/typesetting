@@ -31,11 +31,11 @@
   (define ctm default-ctm-value)
   (define ctm-stack null)
   (define font-families (make-hash))
+  (define current-font-features null) ; connotes default features
   (define current-font-size 12)
   (define current-font #false)
   (define registered-fonts (make-hash))
   (define line-gap 0)
-  (define text-options #false)
   (define x 0)
   (define y 0)
   (define image-registry (make-hash))
@@ -49,11 +49,11 @@
                         ctm
                         ctm-stack
                         font-families
+                        current-font-features
                         current-font-size
                         current-font
                         registered-fonts
                         line-gap
-                        text-options
                         x
                         y
                         image-registry))

@@ -41,7 +41,21 @@
   doc)
 
 (define (font-size doc size)
+  (unless (and (number? size) (not (negative? size)))
+    (raise-argument-error 'font-size "non-negative number" size))
   (set-$doc-current-font-size! doc size)
+  doc)
+
+(define (font-features doc features [unfeatures null])
+  (unless (or (not features) (and (list? features) (andmap bytes? features)))
+    (raise-argument-error 'font-features "list of byte strings or #f" features))
+  (unless (and (list? unfeatures) (andmap bytes? unfeatures))
+    (raise-argument-error 'font-features "list of byte strings" unfeatures))
+  (set-$doc-current-font-features! doc
+                                   (and features
+                                        (sort (for/list ([f (in-list features)]
+                                                         #:unless (memv f unfeatures))
+                                                f) bytes<?)))
   doc)
 
 (define (register-font doc name src)
