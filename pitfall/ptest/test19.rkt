@@ -14,7 +14,7 @@
   [font doc "the-font"]
   [font-size doc 100]
   [text doc "A&B" 100 100 (hash 'width #f)]
-  [text doc "X&Y" 100 200 (hash 'width #f 'features '(ss03))])
+  [text doc "X&Y" 100 200 (hash 'width #f 'features (list (cons #"ss03" 1)))])
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test19rkt.pdf")

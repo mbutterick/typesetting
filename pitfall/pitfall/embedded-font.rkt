@@ -69,11 +69,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
     (define encoding-cache (make-hash))
 
     ;; called from text.rkt    
-    (define/override (encode str [features null])
-      (define features-key (and features (sort features bytes<?)))
-      (hash-ref! encoding-cache (cons features-key str) 
+    (define/override (encode str [features-in null])
+      (define features (sort (remove-duplicates features-in) bytes<? #:key car))
+      (hash-ref! encoding-cache (cons str features) 
                  (λ () 
-                   (define glyph-run (layout font str features-key))
+                   (define glyph-run (layout font str #:features features))
                    (define glyphs (glyphrun-glyphs glyph-run))
                    (define positions (glyphrun-positions glyph-run))
                    (define len (vector-length glyphs))

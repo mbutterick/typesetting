@@ -31,7 +31,7 @@
   (define ctm default-ctm-value)
   (define ctm-stack null)
   (define font-families (make-hash))
-  (define current-font-features null) ; connotes default features
+  (define current-font-features null)
   (define current-font-size 12)
   (define current-font #false)
   (define registered-fonts (make-hash))
