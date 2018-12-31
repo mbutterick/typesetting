@@ -129,7 +129,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
    (error 'create-font "unknown font format")))
 
 (module+ test
-  (require rackunit racket/struct)
+  (require rackunit racket/struct racket/vector)
   (define charter (open-font charter-path))
   (define fira (open-font (path->string fira-path)))
   (define otf (open-font (path->string fira-otf-path)))
@@ -144,10 +144,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
   (check-equal? (font-cap-height charter) 671)
   (check-equal? (font-x-height charter) 481)
   (check-equal? (bbox->list (font-bbox charter)) '(-161 -236 1193 963))
-  (check-equal? (glyph-position-x-advance (car (glyphrun-positions (layout charter "f")))) 321)
+  (check-equal? (glyph-position-x-advance (vector-ref (glyphrun-positions (layout charter "f")) 0)) 321)
   (check-true (has-table? charter #"cmap"))
   (check-exn exn:fail:contract? (λ () (get-table charter 'nonexistent-table-tag)))
   (check-true
    (let ([gr (layout fira "Rifle")])
-     (and (equal? (map glyph-id (glyphrun-glyphs gr)) '(227 480 732 412))
-          (equal? (map struct->list (glyphrun-positions gr)) '((601 0 0 0 0) (279 0 0 0 0) (580 0 0 0 0) (547 0 0 0 0)))))))
+     (and (equal? (vector-map glyph-id (glyphrun-glyphs gr)) '#(227 480 732 412))
+          (equal? (vector-map struct->list (glyphrun-positions gr)) '#((601 0 0 0 0) (279 0 0 0 0) (580 0 0 0 0) (547 0 0 0 0)))))))
