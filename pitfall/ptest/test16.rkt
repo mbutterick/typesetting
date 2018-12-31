@@ -12,7 +12,7 @@
   ;; Set the font, draw some text
   [font doc "the-font"]
   [font-size doc 100]
-  [text doc "Wofine" 100 100 (hash 'width #f)])
+  [text doc "Wofine" 100 100])
 
 
 (define-runtime-path this "test16rkt.pdf")

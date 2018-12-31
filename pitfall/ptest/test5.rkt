@@ -6,7 +6,7 @@
 (define (proc doc)
   [font doc "Times-Italic"]
   [font-size doc 25]
-  [text doc "Some fantastic text!" 100 100 (hash 'lineBreak #f)]
+  [text doc "Some fantastic text!" 100 100]
   [image doc death 100 160 (hash 'width 412)])
 
 (define-runtime-path this "test5rkt.pdf")

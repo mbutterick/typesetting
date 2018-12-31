@@ -12,7 +12,7 @@
   ;; Set the font, draw some text
   [font doc "the-font"]
   [font-size doc 50]
-  [text doc "The fifth rifle" 100 100 (hash 'width #f)])
+  [text doc "The fifth rifle" 100 100])
 
 
 (define-runtime-path this "test17rkt.pdf")

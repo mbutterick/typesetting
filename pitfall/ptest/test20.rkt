@@ -14,7 +14,7 @@
   (send* doc
     [font "the-font"]
     [font-size 40]
-    [text "Embedded OTF" 100 100 (hash 'width #f)]))
+    [text "Embedded OTF" 100 100]))
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test20rkt.pdf")

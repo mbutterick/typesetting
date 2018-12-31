@@ -10,7 +10,7 @@
   ;; Set the font, draw some text
   [font doc "Charter"]
   [font-size doc 25]
-  [text doc "Åcçénts äre în" 100 100 (hash 'width #f)])
+  [text doc "Åcçénts äre în" 100 100])
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test13rkt.pdf")
