@@ -13,9 +13,7 @@
     HB_DIRECTION_BTT = 7))
 
 (define (->tag bstr)
-  (define bs (bytes->list bstr))
-  (for/sum ([(b i) (in-indexed (reverse bs))])
-    (* b (expt 2 (* i 8)))))
+  (integer-bytes->integer bstr #f #;(= unsigned) 'big-endian))
 
 (define hb-script-values
   `(HB_SCRIPT_COMMON = ,(->tag #"Zyyy")
