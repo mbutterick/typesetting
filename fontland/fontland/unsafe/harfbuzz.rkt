@@ -182,17 +182,17 @@
 
 (define HB_FEATURE_GLOBAL_START 0)
 (define HB_FEATURE_GLOBAL_END 4294967295)
-(define (tag->hb-feature bs)
+(define (tag->hb-feature bs [val 1])
   (unless (and (bytes? bs) (= (bytes-length bs) 4))
     (raise-argument-error 'tag->hb-feature "4 bytes" bs))
-  (hb_feature_from_string bs))
+  (make-hb_feature_t (->tag bs) val HB_FEATURE_GLOBAL_START HB_FEATURE_GLOBAL_END))
   
 (define liga_on (tag->hb-feature #"liga"))
-(define liga_off (make-hb_feature_t (->tag #"liga") 0 HB_FEATURE_GLOBAL_START HB_FEATURE_GLOBAL_END))
+(define liga_off (tag->hb-feature #"liga" 0))
 (define kern_on (tag->hb-feature #"kern"))
-(define kern_off (make-hb_feature_t (->tag #"kern") 0 HB_FEATURE_GLOBAL_START HB_FEATURE_GLOBAL_END))
+(define kern_off (tag->hb-feature #"kern" 0))
 (define onum_on (tag->hb-feature #"onum"))
-(define onum_off (make-hb_feature_t (->tag #"onum") 0 HB_FEATURE_GLOBAL_START HB_FEATURE_GLOBAL_END))
+(define onum_off (tag->hb-feature #"onum" 0))
 
 (define (shape font text [feats null])
   (define buf (hb_buffer_create))

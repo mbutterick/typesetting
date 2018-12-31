@@ -74,18 +74,21 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 ;; ram cache in pitfall suffices
 
 (define (layout font str
-                [features null]
-                [script 'HB_SCRIPT_LATIN]
-                [lang #"en"]
-                [direction 'HB_DIRECTION_LTR])
+                #:features [features null]
+                #:script [script #f]
+                #:language [lang #f]
+                #:direction [direction #f])
   (define buf (hb-buf font))
   (hb_buffer_reset buf)
-  (hb_buffer_set_script buf script)
-  (hb_buffer_set_language buf (hb_language_from_string lang))
-  (hb_buffer_set_direction buf direction)
+  (when script
+    (hb_buffer_set_script buf script))
+  (when lang
+    (hb_buffer_set_language buf (hb_language_from_string lang)))
+  (when direction
+    (hb_buffer_set_direction buf direction))
   (define codepoints (for/list ([c (in-string str)]) (char->integer c)))
   (hb_buffer_add_codepoints buf codepoints)
-  (hb_shape (hb-font font) buf (map tag->hb-feature features))
+  (hb_shape (hb-font font) buf (map (λ (fpr) (tag->hb-feature (car fpr) (cdr fpr))) features))
   (define gis (hb_buffer_get_glyph_infos buf))
   (define hb-gids (map hb_glyph_info_t-codepoint gis))
   (define hb-clusters (break-at codepoints (map hb_glyph_info_t-cluster gis)))
