@@ -81,8 +81,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (add-content doc (format "~a Tc" character-spacing)))
 
   ;; Add the actual text
-  ;; 180321: the first call to this operation is very slow from Quad
-  ;; 181126: because `encode` calls `layout`
   (match-define (list encoded-char-strs positions)
     (send ($doc-current-font doc) encode text (hash-ref options 'features ($doc-current-font-features doc))))
   
@@ -139,13 +137,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; 181224 unsuppress size tracking in test mode to preserve test 04
   ;; otherwise we'll be doing our own line measurement
   (when (test-mode) (set-$doc-x! doc (+ ($doc-x doc) (string-width doc str)))))
-
-(define (move-down doc [lines 1] #:factor [factor 1])
-  (set-$doc-y! (+ ($doc-y doc) (* factor (current-line-height #t) (+ lines ($doc-line-gap doc)))))
-  doc)
-
-(define (move-up doc [lines 1])
-  (move-down doc #:factor -1))
 
 (define (string-width doc str [options (mhash)])
   (+ (send ($doc-current-font doc) string-width str ($doc-current-font-size doc) (hash-ref options 'features ($doc-current-font-features doc)))
