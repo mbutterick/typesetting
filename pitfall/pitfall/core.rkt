@@ -4,7 +4,7 @@
 
 ;; structs
 
-(struct $doc (options
+(struct pdf (options
               pages
               refs
               root

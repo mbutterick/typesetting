@@ -15,15 +15,15 @@
 (define default-ctm-value '(1 0 0 1 0 0))
 
 (define (save doc)
-  (set-$doc-ctm-stack! doc (cons ($doc-ctm doc) ($doc-ctm-stack doc)))
+  (set-pdf-ctm-stack! doc (cons (pdf-ctm doc) (pdf-ctm-stack doc)))
   (add-content doc "q"))
 
 (define (restore doc)
-  (set-$doc-ctm! doc
-                 (if (pair? ($doc-ctm-stack doc))
+  (set-pdf-ctm! doc
+                 (if (pair? (pdf-ctm-stack doc))
                      (begin0
-                       (car ($doc-ctm-stack doc))
-                       (set-$doc-ctm-stack! doc (cdr ($doc-ctm-stack doc))))
+                       (car (pdf-ctm-stack doc))
+                       (set-pdf-ctm-stack! doc (cdr (pdf-ctm-stack doc))))
                      default-ctm-value))
   (add-content doc "Q"))
 
@@ -125,10 +125,10 @@
 
 (define scale
   (match-lambda*
-    [(list (? $doc? doc) (? number? x-factor)) (scale doc x-factor (mhash))]
-    [(list (? $doc? doc) (? number? xFactor) (? hash? options)) (scale doc xFactor xFactor options)]
-    [(list (? $doc? doc) (? number? xFactor) (? number? yFactor)) (scale doc xFactor yFactor (mhash))]
-    [(list (? $doc? doc) (? number? xFactor) (? number? yFactor) (? hash? options))
+    [(list (? pdf? doc) (? number? x-factor)) (scale doc x-factor (mhash))]
+    [(list (? pdf? doc) (? number? xFactor) (? hash? options)) (scale doc xFactor xFactor options)]
+    [(list (? pdf? doc) (? number? xFactor) (? number? yFactor)) (scale doc xFactor yFactor (mhash))]
+    [(list (? pdf? doc) (? number? xFactor) (? number? yFactor) (? hash? options))
      (match-define (list x y)
        (match-let ([(list xo yo) (hash-ref options 'origin '(0 0))])
          (list (* xo (- 1 xFactor)) (* yo (- 1 yFactor)))))
@@ -143,7 +143,7 @@
 
 (define (transform doc scaleX shearY shearX scaleY mdx mdy)
   (define new-ctm (list scaleX shearY shearX scaleY mdx mdy))
-  (set-$doc-ctm! doc (combine-transforms ($doc-ctm doc) new-ctm))
+  (set-pdf-ctm! doc (combine-transforms (pdf-ctm doc) new-ctm))
   (add-content doc (make-transform-string new-ctm)))
 
 (define (translate doc x y)

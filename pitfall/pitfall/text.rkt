@@ -21,8 +21,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 |#
 
 (define (text doc str [x #f] [y #f] [options (mhash)])
-  (when x (set-$doc-x! doc x))
-  (when y (set-$doc-y! doc y))
+  (when x (set-pdf-x! doc x))
+  (when y (set-pdf-y! doc y))
   (line doc str options)
   doc)
 
@@ -44,9 +44,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (when (or (hash-ref options 'underline #f) (hash-ref options 'strike #f))
     (save doc)
     (unless (hash-ref options 'stroke #f)
-      (define fill-color-args ($doc-current-fill-color doc))
+      (define fill-color-args (pdf-current-fill-color doc))
       (apply stroke-color doc fill-color-args))
-    (define new-line-width (if (< ($doc-current-font-size doc) 10) 0.5 (floor (/ ($doc-current-font-size doc) 10))))
+    (define new-line-width (if (< (pdf-current-font-size doc) 10) 0.5 (floor (/ (pdf-current-font-size doc) 10))))
     (line-width doc new-line-width)
     (define d (if (hash-ref options 'underline) 1 2))
     (define line-y (+ y-in (/ (current-line-height doc) d)))
@@ -63,17 +63,17 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (transform doc 1 0 0 -1 0 page-height)
   (define y (- page-height
                y-in
-               (* (/ (get-field ascender ($doc-current-font doc)) 1000)
-                  ($doc-current-font-size doc))))
+               (* (/ (get-field ascender (pdf-current-font doc)) 1000)
+                  (pdf-current-font-size doc))))
 
   ;; add current font to page if necessary
-  (define current-font-id (get-field id ($doc-current-font doc)))
-  (hash-ref! (page-fonts (current-page doc)) current-font-id  (λ () (send ($doc-current-font doc) make-font-ref)))
+  (define current-font-id (get-field id (pdf-current-font doc)))
+  (hash-ref! (page-fonts (current-page doc)) current-font-id  (λ () (send (pdf-current-font doc) make-font-ref)))
   
   (add-content doc "BT") ; begin the text object
   (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
   (add-content doc (format "/~a ~a Tf" current-font-id
-                           (numberizer ($doc-current-font-size doc)))) ; font and font size
+                           (numberizer (pdf-current-font-size doc)))) ; font and font size
   (let ([mode (+ (if (hash-ref options 'fill #f) 1 0) (if (hash-ref options 'stroke #f) 1 0))])
     (when (and mode (not (zero? mode)))
       (add-content doc (format "~a Tr" mode))))
@@ -82,9 +82,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
   ;; Add the actual text
   (match-define (list encoded-char-strs positions)
-    (send ($doc-current-font doc) encode text (hash-ref options 'features ($doc-current-font-features doc))))
+    (send (pdf-current-font doc) encode text (hash-ref options 'features (pdf-current-font-features doc))))
   
-  (define scale (/ ($doc-current-font-size doc) 1000.0))
+  (define scale (/ (pdf-current-font-size doc) 1000.0))
   (define commands empty)
   
   ;; Adds a segment of text to the TJ command buffer
@@ -133,11 +133,11 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (restore doc)) ; restore flipped coordinate system
 
 (define (line doc str [options (mhasheq)])
-  (fragment doc str ($doc-x doc) ($doc-y doc) options)
+  (fragment doc str (pdf-x doc) (pdf-y doc) options)
   ;; 181224 unsuppress size tracking in test mode to preserve test 04
   ;; otherwise we'll be doing our own line measurement
-  (when (test-mode) (set-$doc-x! doc (+ ($doc-x doc) (string-width doc str)))))
+  (when (test-mode) (set-pdf-x! doc (+ (pdf-x doc) (string-width doc str)))))
 
 (define (string-width doc str [options (mhash)])
-  (+ (send ($doc-current-font doc) string-width str ($doc-current-font-size doc) (hash-ref options 'features ($doc-current-font-features doc)))
+  (+ (send (pdf-current-font doc) string-width str (pdf-current-font-size doc) (hash-ref options 'features (pdf-current-font-features doc)))
      (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))

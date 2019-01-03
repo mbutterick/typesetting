@@ -22,11 +22,11 @@
   (img-constructor data label))
 
     (define (image doc src [x-in #f] [y-in #f] [options (mhasheq)])
-      (define x (or x-in (hash-ref options 'x #f) ($doc-x doc)))
-      (define y (or y-in (hash-ref options 'y #f) ($doc-y doc)))
+      (define x (or x-in (hash-ref options 'x #f) (pdf-x doc)))
+      (define y (or y-in (hash-ref options 'y #f) (pdf-y doc)))
 
       (define image (cond
-                      [(and (string? src) (hash-ref ($doc-image-registry doc) src #f))]
+                      [(and (string? src) (hash-ref (pdf-image-registry doc) src #f))]
                       [(and ($img? src) ($img-width src) ($img-height src)) src]
                       [else (open-image doc src)]))
       (unless ($img-ref image) (($img-embed-proc image) image))
@@ -93,7 +93,7 @@
           [("bottom") (set! y (+ y bh - h))]))
 
       ;; Set the current y position to below the image if it is in the document flow
-      (when (= ($doc-y doc) y) (set! y (+ y h)))
+      (when (= (pdf-y doc) y) (set! y (+ y h)))
       (save doc)
       (transform doc w 0 0 (- h) x (+ y h))
       (add-content doc (format "/~a Do" ($img-label image)))
@@ -102,11 +102,11 @@
 
     (define (open-image doc src)
       (cond
-        [(and (string? src) (hash-ref ($doc-image-registry doc) src #f))]
+        [(and (string? src) (hash-ref (pdf-image-registry doc) src #f))]
         [else
-         (define image-idx (add1 (length (hash-keys ($doc-image-registry doc)))))
+         (define image-idx (add1 (length (hash-keys (pdf-image-registry doc)))))
          (define image-id (string->symbol (format "I~a" image-idx)))
          (define new-image (open-pdf-image src image-id))
-         (when (string? src) (hash-set! ($doc-image-registry doc) src new-image))
+         (when (string? src) (hash-set! (pdf-image-registry doc) src new-image))
          new-image]))
 

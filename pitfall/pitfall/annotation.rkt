@@ -44,7 +44,7 @@
   (let ([y2 y1]
         [y1 (+ y1 h)]
         [x2 (+ x1 w)])
-    (match-define (list m0 m1 m2 m3 m4 m5) ($doc-ctm doc))
+    (match-define (list m0 m1 m2 m3 m4 m5) (pdf-ctm doc))
     (let* ([x1 (+ (* x1 m0) (* y1 m2) m4)]
            [y1 (+ (* x1 m1) (* y1 m3) m5)]
            [x2 (+ (* x2 m0) (* y2 m2) m4)]

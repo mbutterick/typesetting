@@ -2,7 +2,7 @@
 (require racket/class
          rackunit
          racket/dict
-         "document.rkt"
+         "pdf.rkt"
          "page.rkt"
          "reference.rkt"
          "core.rkt"

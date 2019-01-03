@@ -8,7 +8,7 @@
 
 (provide (all-defined-out))
 
-(define (current-page doc) (car ($doc-pages doc)))
+(define (current-page doc) (car (pdf-pages doc)))
 
 (define (add-content doc data)
   (page-write (current-page doc) data))

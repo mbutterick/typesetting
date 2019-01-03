@@ -11,8 +11,8 @@
 
 (test-mode #t)
 
-(require rackunit pitfall/document pitfall/vector pitfall/color pitfall/text pitfall/font pitfall/image racket/runtime-path racket/class)
-(provide (all-from-out  rackunit racket/runtime-path pitfall/document pitfall/vector pitfall/text pitfall/color pitfall/font  pitfall/image  racket/class))
+(require rackunit pitfall/pdf pitfall/vector pitfall/color pitfall/text pitfall/font pitfall/image racket/runtime-path racket/class)
+(provide (all-from-out  rackunit racket/runtime-path pitfall/pdf pitfall/vector pitfall/text pitfall/color pitfall/font  pitfall/image  racket/class))
 
 (define (this->control this) (path-add-extension this #"" #" copy."))
 
@@ -37,7 +37,7 @@
   (time
    (with-output-to-file ps
      (λ ()
-       (define doc (make-$doc (hash 'compress compress?)))
+       (define doc (make-pdf (hash 'compress compress?)))
        (start-doc doc)
        (proc doc)
        (end-doc doc))

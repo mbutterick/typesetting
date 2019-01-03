@@ -15,7 +15,7 @@
                         (if fill-opacity (numberizer fill-opacity) "")
                         (if stroke-opacity (numberizer stroke-opacity) "")))
     (match-define (list dictionary name)
-      (hash-ref! ($doc-opacity-registry doc) key
+      (hash-ref! (pdf-opacity-registry doc) key
                  (λ ()
                    (define dictionary (make-hasheq '((Type . ExtGState))))
                    (when fill-opacity
@@ -24,7 +24,7 @@
                      (hash-set! dictionary 'CA stroke-opacity))
                    (define ref-dict (make-ref dictionary))
                    (ref-end ref-dict)
-                   (define opacity-index (add1 (length (hash-keys ($doc-opacity-registry doc)))))
+                   (define opacity-index (add1 (length (hash-keys (pdf-opacity-registry doc)))))
                    (list ref-dict (string->symbol (format "Gs~a" opacity-index))))))
     (hash-set! (page-ext_gstates (current-page doc)) name dictionary)        
     (add-content doc (format "/~a gs" name))))
@@ -35,7 +35,7 @@
   (when (set-color doc color #f) (fill-opacity doc opacity))
   ;; save this for text wrapper, which needs to reset
   ;; the fill color on new pages
-  (set-$doc-current-fill-color! doc (list color opacity))
+  (set-pdf-current-fill-color! doc (list color opacity))
   doc)
 
 (define (fill-opacity doc opacity)
