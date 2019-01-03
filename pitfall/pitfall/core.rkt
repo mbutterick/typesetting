@@ -5,23 +5,24 @@
 ;; structs
 
 (struct pdf (options
-              pages
-              refs
-              root
-              info
-              opacity-registry
-              current-fill-color
-              ctm
-              ctm-stack
-              font-families
-              current-font-features
-              current-font-size
-              current-font
-              registered-fonts
-              line-gap
-              x
-              y
-              image-registry) #:transparent #:mutable)
+             pages
+             refs
+             root
+             info
+             opacity-registry
+             current-fill-color
+             ctm
+             ctm-stack
+             font-families
+             current-font-features
+             current-font-size
+             current-font
+             registered-fonts
+             line-gap
+             x
+             y
+             image-registry
+             output-path) #:transparent #:mutable)
 
 
 ;; for JPEG and PNG
@@ -42,6 +43,7 @@
 (struct margin (top left bottom right) #:transparent #:mutable)
 
 ;; params
+
 
 (define test-mode (make-parameter #f))
 (define current-compress-streams (make-parameter #f))

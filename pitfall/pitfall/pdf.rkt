@@ -2,6 +2,7 @@
 (require
   "core.rkt"
   racket/class
+  racket/match
   racket/format
   racket/dict
   sugar/unstable/dict
@@ -17,6 +18,7 @@
   (set-pdf-refs! doc (cons ref (pdf-refs doc))))
 
 (define (make-pdf [options (make-hasheq)]
+                  #:output-path [output-path #f]
                   #:compress [compress? (current-compress-streams)]
                   #:auto-first-page [auto-first-page? (current-auto-first-page)])
 
@@ -27,7 +29,7 @@
                         'Creator "PITFALL"
                         'CreationDate (current-seconds)))
   (for ([(key val) (in-hash (hash-ref options 'info (hasheq)))]) 
-    (hash-set! info key val))
+       (hash-set! info key val))
   (define opacity-registry (make-hash))
   (define current-fill-color #false)
   (define ctm default-ctm-value)
@@ -42,35 +44,35 @@
   (define y 0)
   (define image-registry (make-hash))
   (define new-doc (pdf options
-                        pages
-                        refs
-                        'dummy-root-value-that-will-be-replaced-below
-                        info
-                        opacity-registry
-                        current-fill-color
-                        ctm
-                        ctm-stack
-                        font-families
-                        current-font-features
-                        current-font-size
-                        current-font
-                        registered-fonts
-                        line-gap
-                        x
-                        y
-                        image-registry))
+                       pages
+                       refs
+                       'dummy-root-value-that-will-be-replaced-below
+                       info
+                       opacity-registry
+                       current-fill-color
+                       ctm
+                       ctm-stack
+                       font-families
+                       current-font-features
+                       current-font-size
+                       current-font
+                       registered-fonts
+                       line-gap
+                       x
+                       y
+                       image-registry
+                       output-path))
   (set-current-ref-id! 1)
   (reset-annotations-cache!)
   (register-ref-listener (λ (ref) (store-ref new-doc ref)))
   (set-pdf-root! new-doc (make-ref (mhasheq 'Type 'Catalog
-                                             'Pages (make-ref (mhasheq 'Type 'Pages)))))
+                                            'Pages (make-ref (mhasheq 'Type 'Pages)))))
 
   ;; initialize params
   (current-compress-streams compress?)
   (current-auto-first-page auto-first-page?)
   (when (current-auto-first-page) (add-page new-doc))
   (when (current-auto-helvetica) (font new-doc "Helvetica"))
-  
   new-doc)
 
 (define (add-page doc [options-arg (pdf-options doc)])
@@ -87,7 +89,15 @@
   (transform doc 1 0 0 -1 0 ($page-height (current-page doc)))
   doc)
 
+(define last-output-port #f)
+
 (define (start-doc doc)
+  (define output-port (match (pdf-output-path doc)
+                        [(? path-string? ps) (open-output-file ps #:exists 'replace)]
+                        [(? output-port? op) op]
+                        [#false (current-output-port)]))
+  (set! last-output-port (current-output-port))
+  (current-output-port output-port)
   (write-bytes-out (format "%PDF-~a" (current-pdf-version)))
   (write-bytes-out "%ÿÿÿÿ"))
 
@@ -98,7 +108,7 @@
   (ref-end doc-info)
     
   (for ([font (in-hash-values (pdf-font-families doc))])
-    (send font font-end))
+       (send font font-end))
 
   (define pages-ref (dict-ref (pdf-root doc) 'Pages))
   (dict-set! pages-ref 'Count (length (pdf-pages doc)))
@@ -113,15 +123,17 @@
   (write-bytes-out (format "0 ~a" xref-count))
   (write-bytes-out "0000000000 65535 f ")
   (for ([ref (in-list (reverse (pdf-refs doc)))])
-    (write-bytes-out
-     (string-append (~r ($ref-offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
+       (write-bytes-out
+        (string-append (~r ($ref-offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
   (write-bytes-out "trailer")
   (write-bytes-out (convert (mhasheq 'Size xref-count
                                      'Root (pdf-root doc)
                                      'Info doc-info)))
   (write-bytes-out "startxref")
   (write-bytes-out (numberizer xref-offset))
-  (write-bytes-out "%%EOF"))
+  (write-bytes-out "%%EOF")
+  (close-output-port (current-output-port))
+  (current-output-port last-output-port))
 
 (module+ test
   (define d (make-pdf)))
