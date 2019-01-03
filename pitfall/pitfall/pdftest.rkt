@@ -37,7 +37,7 @@
   (time
    (with-output-to-file ps
      (λ ()
-       (define doc (make-pdf (hash 'compress compress?)))
+       (define doc (make-pdf #:compress compress?))
        (start-doc doc)
        (proc doc)
        (end-doc doc))

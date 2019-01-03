@@ -31,7 +31,7 @@
     (let ([bstr (get-output-bytes ($ref-port ref))])
       (cond
         [(zero? (bytes-length bstr)) #false]
-        [(and (current-compress-streams?) (not (hash-ref ($ref-payload ref) 'Filter #f)))
+        [(and (current-compress-streams) (not (hash-ref ($ref-payload ref) 'Filter #f)))
          (hash-set! ($ref-payload ref) 'Filter 'FlateDecode)
          (deflate bstr)]
         [else bstr])))

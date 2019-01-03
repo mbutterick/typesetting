@@ -16,7 +16,9 @@
 (define (store-ref doc ref)
   (set-pdf-refs! doc (cons ref (pdf-refs doc))))
 
-(define (make-pdf [options (make-hasheq)])
+(define (make-pdf [options (make-hasheq)]
+                  #:compress [compress? (current-compress-streams)]
+                  #:auto-first-page [auto-first-page? (current-auto-first-page)])
 
   ;; initial values
   (define pages null)
@@ -64,8 +66,8 @@
                                              'Pages (make-ref (mhasheq 'Type 'Pages)))))
 
   ;; initialize params
-  (current-compress-streams? (hash-ref options 'compress #t))
-  (current-auto-first-page (hash-ref options 'autoFirstPage #t))
+  (current-compress-streams compress?)
+  (current-auto-first-page auto-first-page?)
   (when (current-auto-first-page) (add-page new-doc))
   (when (current-auto-helvetica) (font new-doc "Helvetica"))
   
