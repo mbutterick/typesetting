@@ -24,6 +24,17 @@
              image-registry
              output-path) #:transparent #:mutable)
 
+(struct pdf-font (name
+                  id
+                  ascender
+                  descender
+                  line-gap
+                  bbox
+                  ref
+                  embedded
+                  embed
+                  encode
+                  measure-string)  #:transparent #:mutable)
 
 ;; for JPEG and PNG
 (struct $img (data label width height ref embed-proc) #:transparent #:mutable)

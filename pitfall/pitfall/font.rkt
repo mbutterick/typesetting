@@ -4,15 +4,41 @@
   racket/match
   racket/class
   racket/list
-  "standard-font.rkt"
-  "embedded-font.rkt")
+  "reference.rkt"
+  "font-standard.rkt"
+  "font-embedded.rkt")
 (provide (all-defined-out))
 
+(define (make-font-ref f)
+  (or (pdf-font-ref f)
+      (and (set-pdf-font-ref! f (make-ref)) (pdf-font-ref f))))
+
+(define (embed f)
+  (define embed-proc (pdf-font-embed f))
+  (embed-proc f))
+
+(define (encode f str [options #f])
+  (define encode-proc (pdf-font-encode f))
+  (encode-proc f str options))
+
+(define (measure-string f str size [options #f])
+  (define measure-proc (pdf-font-measure-string f))
+  (measure-proc f str size options))
+
+(define (font-end f)
+  (unless (or (pdf-font-embedded f) (not (pdf-font-ref f)))
+    (embed f)
+    (set-pdf-font-embedded! f #t)))
+
+(define (line-height f size [include-gap #f])
+  (define gap (if include-gap (pdf-font-line-gap f) 0))
+  (* (/ (+ (pdf-font-ascender f) gap (- (pdf-font-descender f))) 1000.0) size))
+
 (define (open-pdf-font name id)
-  (make-object (if (standard-font-name? name) standard-font% embedded-font%) name id))
+  ((if (standard-font-name? name) make-standard-font make-embedded-font) name id))
 
 (define (current-line-height doc [include-gap #f])
-  (send (pdf-current-font doc) line-height (pdf-current-font-size doc) include-gap))
+  (line-height (pdf-current-font doc) (pdf-current-font-size doc) include-gap))
 
 (define (font doc src [size #f])
   ;; check registered fonts if src is a string
@@ -34,11 +60,11 @@
      (define id (string->symbol (format "F~a" font-index)))
      (set-pdf-current-font! doc (open-pdf-font src id))
      ;; check for existing font families with the same name already in the PDF
-     (match (hash-ref (pdf-font-families doc) (get-field name (pdf-current-font doc)) #f)
+     (match (hash-ref (pdf-font-families doc) (pdf-font-name (pdf-current-font doc)) #f)
        [(? values font) (set-pdf-current-font! doc font)]
        [_ ;; save the font for reuse later
         (when cache-key (hash-set! (pdf-font-families doc) cache-key (pdf-current-font doc)))
-        (hash-set! (pdf-font-families doc) (get-field name (pdf-current-font doc)) (pdf-current-font doc))])])
+        (hash-set! (pdf-font-families doc) (pdf-font-name (pdf-current-font doc)) (pdf-current-font doc))])])
   doc)
 
 (define (font-size doc size)

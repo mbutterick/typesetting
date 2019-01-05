@@ -63,12 +63,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (transform doc 1 0 0 -1 0 page-height)
   (define y (- page-height
                y-in
-               (* (/ (get-field ascender (pdf-current-font doc)) 1000)
+               (* (/ (pdf-font-ascender (pdf-current-font doc)) 1000)
                   (pdf-current-font-size doc))))
 
   ;; add current font to page if necessary
-  (define current-font-id (get-field id (pdf-current-font doc)))
-  (hash-ref! (page-fonts (current-page doc)) current-font-id  (λ () (send (pdf-current-font doc) make-font-ref)))
+  (define current-font-id (pdf-font-id (pdf-current-font doc)))
+  (hash-ref! (page-fonts (current-page doc)) current-font-id  (λ () (make-font-ref (pdf-current-font doc))))
   
   (add-content doc "BT") ; begin the text object
   (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
@@ -82,7 +82,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
   ;; Add the actual text
   (match-define (list encoded-char-strs positions)
-    (send (pdf-current-font doc) encode text (hash-ref options 'features (pdf-current-font-features doc))))
+    (encode (pdf-current-font doc) text (hash-ref options 'features (pdf-current-font-features doc))))
   
   (define scale (/ (pdf-current-font-size doc) 1000.0))
   (define commands empty)
@@ -139,5 +139,5 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (when (test-mode) (set-pdf-x! doc (+ (pdf-x doc) (string-width doc str)))))
 
 (define (string-width doc str [options (mhash)])
-  (+ (send (pdf-current-font doc) string-width str (pdf-current-font-size doc) (hash-ref options 'features (pdf-current-font-features doc)))
+  (+ (measure-string (pdf-current-font doc) str (pdf-current-font-size doc) (hash-ref options 'features (pdf-current-font-features doc)))
      (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))

@@ -4,7 +4,6 @@
   racket/string
   racket/match
   sugar/unstable/dict
-  "font-base.rkt"
   "core.rkt"
   "reference.rkt"
   fontland
@@ -12,77 +11,75 @@
   racket/list
   with-cache)
 
-(provide standard-font-name? standard-font%)
+(provide standard-font-name? make-standard-font)
 
 (define-runtime-path here ".")
 
-(define standard-font%
-  (class pdf-font%
-    (init-field name id)
+(struct sfont pdf-font (attributes glyph-widths kern-pairs) #:transparent #:mutable)
 
-    (match-define (list atts gws kps) (parse-afm (open-input-file (build-path here (format "data/~a.afm" name)))))
-    (field [@attributes (make-hasheq atts)]
-           [@glyph-widths (make-hash gws)]
-           [@kern-pairs (make-hash kps)])
+(define (make-standard-font name id)
+  (match-define (list atts gws kps) (parse-afm (open-input-file (build-path here (format "data/~a.afm" name)))))
+  (define attributes (make-hasheq atts))
+  (define glyph-widths (make-hash gws))
+  (define kern-pairs (make-hash kps))
+  (define ascender (string->number (hash-ref attributes 'Ascender "0")))
+  (define descender (string->number (hash-ref attributes 'Descender "0")))
+  (define bbox (for/list ([attr (in-list (string-split (hash-ref attributes 'FontBBox)))])
+                 (or (string->number attr) 0)))
+  (define line-gap (- (third bbox) (first bbox) ascender descender))
+  (sfont
+   name id ascender descender line-gap bbox #f #f sfont-embed sfont-encode sfont-measure-string
+    attributes glyph-widths kern-pairs))
 
-    (let* ([ascender (string->number (hash-ref @attributes 'Ascender "0"))]
-           [descender (string->number (hash-ref @attributes 'Descender "0"))]
-           [bbox (for/list ([attr (in-list (string-split (hash-ref @attributes 'FontBBox)))])
-                   (or (string->number attr) 0))]
-           [line-gap (- (third bbox) (first bbox) ascender descender)])
-      (super-new [ascender ascender] [descender descender] [bbox bbox] [line-gap line-gap]))
+(define (sfont-embed sf)
+  (set-$ref-payload! (pdf-font-ref sf)
+                     (mhash 'Type 'Font
+                            'BaseFont (string->symbol (pdf-font-name sf))
+                            'Subtype 'Type1
+                            'Encoding 'WinAnsiEncoding))
+  (ref-end (pdf-font-ref sf)))
 
-    (inherit-field [@ref ref])
-
-    (define/override (embed)
-      (set-$ref-payload! @ref
-                         (mhash 'Type 'Font
-                                'BaseFont (string->symbol name)
-                                'Subtype 'Type1
-                                'Encoding 'WinAnsiEncoding))
-      (ref-end @ref))
-
-    (define/public (character-to-glyph char)
-      (define cint (char->integer char))
-      (define idx (hash-ref win-ansi-table cint cint))
-      (vector-ref characters (if (< idx (vector-length characters)) idx 0)))
+(define (character-to-glyph char)
+  (define cint (char->integer char))
+  (define idx (hash-ref win-ansi-table cint cint))
+  (vector-ref characters (if (< idx (vector-length characters)) idx 0)))
     
-    (define/public (glyphs-for-string str)
-      (for/list ([c (in-string str)])
-        (character-to-glyph c)))
+(define (glyphs-for-string str)
+  (for/list ([c (in-string str)])
+    (character-to-glyph c)))
 
-    (define/public (glyph-width glyph)
-      (hash-ref @glyph-widths glyph 0))
+(define (glyph-width sf glyph)
+  (hash-ref (sfont-glyph-widths sf) glyph 0))
 
-    (define/public (advances-for-glyphs glyphs)
-      (for/list ([left (in-list glyphs)]
-                 [right (in-list (append (cdr glyphs) (list #\nul)))])
-        (+ (glyph-width left) (get-kern-pair left right))))
+(define (advances-for-glyphs sf glyphs)
+  (for/list ([left (in-list glyphs)]
+             [right (in-list (append (cdr glyphs) (list #\nul)))])
+    (+ (glyph-width sf left) (get-kern-pair sf left right))))
 
-    (define/public (get-kern-pair left right)
-      (hash-ref @kern-pairs (make-kern-table-key left right) 0))
+(define (get-kern-pair sf left right)
+  (hash-ref (sfont-kern-pairs sf) (make-kern-table-key left right) 0))
 
-    (define encoding-cache (make-hash))
+(define encoding-cache (make-hash))
 
-    (define/override (encode str [options #f])
-      (hash-ref encoding-cache str
-                (λ ()
-                  (define encoded
-                    (for/vector ([c (in-string str)])
-                      (define cint (char->integer c))
-                      (number->string (hash-ref win-ansi-table cint cint) 16)))
-                  (define glyphs (glyphs-for-string str))
-                  (define positions
-                    (for/vector ([glyph (in-list glyphs)]
-                                 [advance (in-list (advances-for-glyphs glyphs))])
-                      (+glyph-position advance 0 0 0 (glyph-width glyph)))) 
-                  (list encoded positions))))
+(define (sfont-encode sf str [options #f])
+  (hash-ref encoding-cache str
+            (λ ()
+              (define encoded
+                (for/vector ([c (in-string str)])
+                  (define cint (char->integer c))
+                  (number->string (hash-ref win-ansi-table cint cint) 16)))
+              (define glyphs (glyphs-for-string str))
+              (define positions
+                (for/vector ([glyph (in-list glyphs)]
+                             [advance (in-list (advances-for-glyphs sf glyphs))])
+                  (+glyph-position advance 0 0 0 (glyph-width sf glyph)))) 
+              (list encoded positions))))
 
-    (define/override (string-width str size [options #f])
-      (match-define (list _ posns) (encode str options))
-      (define width (for/sum ([p (in-vector posns)]) (glyph-position-x-advance p)))
-      (define scale (/ size 1000.0))
-      (* width scale))))
+(define (sfont-measure-string sf str size [options #f])
+  (match-define (list _ posns) (sfont-encode sf str options))
+  (define width (for/sum ([p (in-vector posns)]) (glyph-position-x-advance p)))
+  (define scale (/ size 1000.0))
+  (* width scale))
 
 (define standard-fonts
   (map symbol->string '(Courier-Bold
@@ -109,7 +106,7 @@
   (check-true (standard-font-name? "ZapfDingbats"))
   (check-false (standard-font-name? "Not A Font Name"))
   
-  (define stdfont (make-object standard-font% "Helvetica" #f)))
+  (define stdfont (make-standard-font "Helvetica" #f)))
 
 
 (define (make-kern-table-key left right)
