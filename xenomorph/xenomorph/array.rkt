@@ -1,6 +1,6 @@
 #lang racket/base
 (require racket/class
-         "helper.rkt"
+         "base.rkt"
          "number.rkt"
          "util.rkt"
          sugar/unstable/dict)

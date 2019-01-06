@@ -4,7 +4,7 @@
          racket/sequence
          racket/match
          racket/list
-         "helper.rkt"
+         "base.rkt"
          "number.rkt"
          sugar/unstable/dict)
 (provide (all-defined-out))

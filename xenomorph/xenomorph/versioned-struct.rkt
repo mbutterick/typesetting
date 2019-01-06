@@ -1,5 +1,5 @@
 #lang racket/base
-(require "helper.rkt" "struct.rkt"
+(require "base.rkt" "struct.rkt"
          racket/dict
          racket/match
          racket/class

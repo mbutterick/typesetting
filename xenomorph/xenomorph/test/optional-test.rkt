@@ -1,7 +1,7 @@
 #lang racket/base
 (require rackunit
          racket/class
-         "../helper.rkt"
+         "../base.rkt"
          "../number.rkt"
          "../optional.rkt"
          "../generic.rkt")

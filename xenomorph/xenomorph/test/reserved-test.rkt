@@ -2,7 +2,7 @@
 (require rackunit
          racket/class
          "../number.rkt"
-         "../helper.rkt"
+         "../base.rkt"
          "../reserved.rkt"
          "../generic.rkt")
 

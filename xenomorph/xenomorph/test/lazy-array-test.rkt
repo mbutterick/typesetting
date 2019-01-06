@@ -3,7 +3,7 @@
          racket/class
          racket/stream
          "../array.rkt"
-         "../helper.rkt"
+         "../base.rkt"
          "../number.rkt"
          "../lazy-array.rkt"
          "../generic.rkt")

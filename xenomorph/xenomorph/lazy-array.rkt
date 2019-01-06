@@ -1,6 +1,6 @@
 #lang racket/base
 (require racket/class
-         "helper.rkt" "util.rkt" "number.rkt" "array.rkt" racket/stream sugar/unstable/dict)
+         "base.rkt" "util.rkt" "number.rkt" "array.rkt" racket/stream sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|

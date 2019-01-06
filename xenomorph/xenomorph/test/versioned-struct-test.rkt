@@ -2,7 +2,7 @@
 (require rackunit
          racket/dict
          sugar/unstable/dict
-         "../helper.rkt"
+         "../base.rkt"
          "../number.rkt"
          "../string.rkt"
          "../pointer.rkt"

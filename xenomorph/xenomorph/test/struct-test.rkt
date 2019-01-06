@@ -1,7 +1,7 @@
 #lang racket/base
 (require rackunit racket/dict
          racket/class
-         "../helper.rkt"
+         "../base.rkt"
          "../struct.rkt"
          "../string.rkt"
          "../pointer.rkt"

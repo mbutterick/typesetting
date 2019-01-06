@@ -2,7 +2,7 @@
 (require rackunit
          racket/dict
          racket/class
-         "../helper.rkt"
+         "../base.rkt"
          "../pointer.rkt"
          "../number.rkt"
          "../struct.rkt"
