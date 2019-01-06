@@ -111,7 +111,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
   (new (generate-subclass x:symbol% pre-proc post-proc) [len len] [encoding encoding]))
 
 (module+ test
-  (require rackunit "generic.rkt")
+  (require rackunit "base.rkt")
   (define S-fixed (x:string 4 'utf8))
   (check-equal? (encode S-fixed "Mike" #f) #"Mike")
   (check-exn exn:fail? (λ () (encode S-fixed "Mikes" #f))) ; too long for fixed string 

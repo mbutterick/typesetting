@@ -103,7 +103,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define uint32le (x:int 4 #:signed #f #:endian 'le))
 
 (module+ test
-  (require rackunit "generic.rkt")
+  (require rackunit "base.rkt")
   (check-exn exn:fail:contract? (λ () (x:int 'not-a-valid-type)))
   (check-exn exn:fail:contract? (λ () (encode uint8 256 #f)))
   (check-not-exn (λ () (encode uint8 255 #f)))

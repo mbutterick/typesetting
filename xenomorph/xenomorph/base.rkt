@@ -1,7 +1,5 @@
 #lang racket/base
-(require racket/private/generic-methods
-         racket/class
-         "generic.rkt")
+(require racket/class)
 (provide (all-defined-out))
 
 (struct x:ptr (type val parent) #:transparent)
@@ -30,29 +28,25 @@
     (file-position p new-pos))
   (file-position p))
 
-(define xenomorphic<%>
-  (interface* ()
-              ([(generic-property gen:xenomorphic)
-                (generic-method-table
-                 gen:xenomorphic                                      
-                 (define (decode xo [port-arg (current-input-port)] #:parent [parent #f])
-                   (define port
-                     (cond
-                       [(input-port? port-arg) port-arg]
-                       [(bytes? port-arg) (open-input-bytes port-arg)]
-                       [else (raise-argument-error 'decode "byte string or input port" port-arg)]))
-                   (send xo decode port parent))
+(define (decode xo [port-arg (current-input-port)] #:parent [parent #f])
+  (define port
+    (cond
+      [(input-port? port-arg) port-arg]
+      [(bytes? port-arg) (open-input-bytes port-arg)]
+      [else (raise-argument-error 'decode "byte string or input port" port-arg)]))
+  (send xo decode port parent))
                                       
-                 (define (encode xo val [port-arg (current-output-port)]
-                                 #:parent [parent #f])
-                   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-                   (send xo x:encode val port parent)
-                   (unless port-arg (get-output-bytes port)))
+(define (encode xo val [port-arg (current-output-port)]
+                #:parent [parent #f])
+  (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
+  (send xo x:encode val port parent)
+  (unless port-arg (get-output-bytes port)))
                                       
-                 (define (size xo [val #f] #:parent [parent #f])
-                   (send xo x:size val parent)))])))
+(define (size xo [val #f] #:parent [parent #f])
+  (send xo x:size val parent))
 
 (define (xenomorphic-type? x) (is-a? x xenobase%))
+(define xenomorphic? xenomorphic-type?)
 
 (define-syntax-rule (generate-subclass CLASS PRE-ENCODE-PROC POST-DECODE-PROC)
   (cond
@@ -72,7 +66,7 @@
     [else CLASS]))
 
 (define xenobase%
-  (class* object% (xenomorphic<%>)
+  (class object%
     (super-new)
     
     (define/pubment (x:decode input-port [parent #f])

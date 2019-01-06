@@ -6,7 +6,7 @@
          "../pointer.rkt"
          "../number.rkt"
          "../struct.rkt"
-         "../generic.rkt"
+         "../base.rkt"
          racket/promise
          sugar/unstable/dict)
 

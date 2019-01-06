@@ -102,7 +102,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (new (generate-subclass x:struct% pre-proc post-proc) [fields fields]))
 
 (module+ test
-  (require rackunit "number.rkt" "generic.rkt")
+  (require rackunit "number.rkt" "base.rkt")
   (define (random-pick xs) (list-ref xs (random (length xs))))
   (check-exn exn:fail:contract? (λ () (x:struct 42)))
   (for ([i (in-range 20)])

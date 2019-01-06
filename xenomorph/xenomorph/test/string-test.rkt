@@ -4,7 +4,7 @@
          "../base.rkt"
          "../string.rkt"
          "../number.rkt"
-         "../generic.rkt"
+         "../base.rkt"
          sugar/unstable/dict)
 
 #|

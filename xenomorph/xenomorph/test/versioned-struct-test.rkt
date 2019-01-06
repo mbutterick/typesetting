@@ -7,7 +7,7 @@
          "../string.rkt"
          "../pointer.rkt"
          "../struct.rkt"
-         "../generic.rkt"
+         "../base.rkt"
          "../versioned-struct.rkt")
 
 #|

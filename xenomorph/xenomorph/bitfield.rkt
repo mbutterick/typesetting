@@ -41,7 +41,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
   (new (generate-subclass x:bitfield% pre-proc post-proc) [type type] [flags flags]))
 
 (module+ test
-  (require rackunit "number.rkt" "generic.rkt")
+  (require rackunit "number.rkt" "base.rkt")
   (define bfer (x:bitfield uint16be '(bold italic underline #f shadow condensed extended)))
   (define bf (decode bfer #"\0\25"))
   (check-equal? (length (hash-keys bf)) 6) ; omits #f flag

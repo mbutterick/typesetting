@@ -6,7 +6,7 @@
          "../string.rkt"
          "../pointer.rkt"
          "../number.rkt"
-         "../generic.rkt"
+         "../base.rkt"
          sugar/unstable/dict)
 
 #|

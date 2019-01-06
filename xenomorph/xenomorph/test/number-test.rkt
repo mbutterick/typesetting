@@ -2,7 +2,7 @@
 (require rackunit
          racket/class
          "../number.rkt"
-         "../generic.rkt")
+         "../base.rkt")
 
 #|
 approximates

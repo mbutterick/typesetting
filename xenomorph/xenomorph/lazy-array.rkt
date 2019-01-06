@@ -50,7 +50,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
        [count-bytes? #false]))
 
 (module+ test
-  (require rackunit "number.rkt" "generic.rkt")
+  (require rackunit "number.rkt" "base.rkt")
   (define bstr #"ABCD1234")
   (define ds (open-input-bytes bstr))
   (define la (x:lazy-array uint8 4))

@@ -6,7 +6,7 @@
          sugar/unstable/dict
          "../number.rkt"
          "../bitfield.rkt"
-         "../generic.rkt")
+         "../base.rkt")
 
 #|
 approximates

@@ -99,7 +99,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 (define (x:array? x) (is-a? x x:array%))
   
 (module+ test
-  (require rackunit "generic.rkt")
+  (require rackunit "base.rkt")
   (check-equal? (decode (x:array uint16be 3) #"ABCDEF") '(16706 17220 17734))
   (check-equal? (encode (x:array uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
   (check-equal? (size (x:array uint16be) '(1 2 3)) 6)

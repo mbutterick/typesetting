@@ -6,7 +6,7 @@
          "../base.rkt"
          "../number.rkt"
          "../lazy-array.rkt"
-         "../generic.rkt")
+         "../base.rkt")
 
 #|
 approximates

@@ -3,7 +3,7 @@
          racket/class
          "../number.rkt"
          "../enum.rkt"
-         "../generic.rkt")
+         "../base.rkt")
 
 #|
 approximates

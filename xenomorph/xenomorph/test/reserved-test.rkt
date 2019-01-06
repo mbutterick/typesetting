@@ -4,7 +4,7 @@
          "../number.rkt"
          "../base.rkt"
          "../reserved.rkt"
-         "../generic.rkt")
+         "../base.rkt")
 
 #|
 approximates
