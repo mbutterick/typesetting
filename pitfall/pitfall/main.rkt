@@ -1,3 +1,7 @@
 #lang racket/base
-(require "pdf.rkt")
-(provide (all-from-out "pdf.rkt"))
+(require "pdf.rkt"
+         "text.rkt"
+         "font.rkt")
+(provide (all-from-out "pdf.rkt"
+                       "text.rkt"
+                       "font.rkt"))
