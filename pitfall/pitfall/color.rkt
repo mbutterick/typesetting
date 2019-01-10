@@ -93,7 +93,7 @@
          ; match two at a time and convert to hex
          (match-let ([(list hsh r r2 g g2 b b2) (string->list color)])
            (map (λ (str) (string->number str 16)) (list (string r r2) (string g g2) (string b b2)))))]
-       [(hash-ref named-colors color #f) => normalize-color]
+       [(hash-ref named-colors (string-downcase color) #f) => normalize-color]
        [else #false])]
     [(list (? number?) ...) (for/list ([c (in-list color)])
                               (define x (/ c (case (length color)
