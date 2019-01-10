@@ -31,7 +31,7 @@
   (for ([(key val) (in-hash (hash-ref options 'info (hasheq)))]) 
        (hash-set! info key val))
   (define opacity-registry (make-hash))
-  (define current-fill-color #false)
+  (define current-fill-color '("black" 1))
   (define ctm default-ctm-value)
   (define ctm-stack null)
   (define font-families (make-hash))

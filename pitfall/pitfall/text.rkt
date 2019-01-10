@@ -13,76 +13,32 @@
   sugar/unstable/dict
   racket/promise
   fontland/glyph-position)
-(provide (all-defined-out))
+(provide text string-width)
 
 #|
 approximates
 https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 |#
 
-(define (text doc str [x #f] [y #f] [options (mhash)])
-  (when x (set-pdf-x! doc x))
-  (when y (set-pdf-y! doc y))
-  (line doc str options)
-  doc)
-
-(define (fragment doc text x y-in options)
-  (define character-spacing (hash-ref options 'characterSpacing 0))
-
-  ;; calculate the actual rendered width of the string after word and character spacing
-  (define rendered-width
-    ;; wrap this in delay so it's only calculated if needed
-    (delay
-      (+ (string-width doc text options)
-         (* character-spacing (sub1 (string-length text))))))
-
-  ;; create link annotations if the link option is given
-  (when (hash-ref options 'link #f)
-    (link doc x y-in (force rendered-width) (current-line-height doc) (hash-ref options 'link)))
-  
-  ;; create underline or strikethrough line
-  (when (or (hash-ref options 'underline #f) (hash-ref options 'strike #f))
-    (save doc)
-    (unless (hash-ref options 'stroke #f)
-      (define fill-color-args (pdf-current-fill-color doc))
-      (apply stroke-color doc fill-color-args))
-    (define new-line-width (if (< (pdf-current-font-size doc) 10) 0.5 (floor (/ (pdf-current-font-size doc) 10))))
-    (line-width doc new-line-width)
-    (define d (if (hash-ref options 'underline) 1 2))
-    (define line-y (+ y-in (/ (current-line-height doc) d)))
-    (when (hash-ref options 'underline)
-      (set! line-y (+ line-y (- new-line-width))))
-    (move-to doc x line-y)
-    (line-to doc (+ x (force rendered-width)) line-y)
-    (stroke doc)
-    (restore doc))
-
-  ;; flip coordinate system
+(define (do-horiz-line doc x y width [underline? #f])
   (save doc)
-  (define page-height ($page-height (current-page doc)))
-  (transform doc 1 0 0 -1 0 page-height)
-  (define y (- page-height
-               y-in
-               (* (/ (pdf-font-ascender (pdf-current-font doc)) 1000)
-                  (pdf-current-font-size doc))))
+  (when underline?
+    (apply stroke-color doc (pdf-current-fill-color doc)))
+  (define new-line-width (max 0.5 (floor (/ (pdf-current-font-size doc) 10))))
+  (line-width doc new-line-width)
+  (define vert-em-adjustment (if underline? 1 0.6))
+  (define vert-line-pos (+ y
+                           (* (current-line-height doc) vert-em-adjustment)
+                           (- (if underline? new-line-width 0))))
+  (move-to doc x vert-line-pos)
+  (line-to doc (+ x width) vert-line-pos)
+  (stroke doc)
+  (restore doc))
 
-  ;; add current font to page if necessary
-  (define current-font-id (pdf-font-id (pdf-current-font doc)))
-  (hash-ref! (page-fonts (current-page doc)) current-font-id  (λ () (make-font-ref (pdf-current-font doc))))
-  
-  (add-content doc "BT") ; begin the text object
-  (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))) ; text position
-  (add-content doc (format "/~a ~a Tf" current-font-id
-                           (numberizer (pdf-current-font-size doc)))) ; font and font size
-  (let ([mode (+ (if (hash-ref options 'fill #f) 1 0) (if (hash-ref options 'stroke #f) 1 0))])
-    (when (and mode (not (zero? mode)))
-      (add-content doc (format "~a Tr" mode))))
-  (when (not (zero? character-spacing))
-    (add-content doc (format "~a Tc" character-spacing)))
+(define (do-underline doc x y width) (do-horiz-line doc x y width 'underline))
 
-  ;; Add the actual text
-  (match-define (list encoded-char-strs positions)
-    (encode (pdf-current-font doc) text (hash-ref options 'features (pdf-current-font-features doc))))
+(define (add-text doc x y str features)
+  (match-define (list encoded-char-strs positions) (encode (pdf-current-font doc) str features))
   
   (define scale (/ (pdf-current-font-size doc) 1000.0))
   (define commands empty)
@@ -104,9 +60,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
       (add-content doc (format "[~a] TJ" (string-join (reverse commands) " ")))
       (set! commands empty)))
   
-  (for/fold ([had-offset #f] [x x])
+  (for/fold ([previous-had-offset #f] [x x])
             ([(posn idx) (in-indexed positions)])
-    (define having-offset
+    (define has-offset
       (cond
         ;; If we have an x or y offset, we have to break out of the current TJ command
         ;; so we can move the text position.
@@ -120,24 +76,87 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
          #true]
         [else
          ;; If the last character had an offset, reset the text position
-         (when had-offset
+         (when previous-had-offset
            (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))))
          ;; Group segments that don't have any advance adjustments
          (unless (zero? (- (glyph-position-x-advance posn) (glyph-position-advance-width posn)))
            (add-segment (add1 idx)))
          #false]))
-    (values having-offset (+ x (* (glyph-position-x-advance posn) scale))))
+    (values has-offset (+ x (* (glyph-position-x-advance posn) scale))))
       
-  (flush (vector-length positions))
-  (add-content doc "ET") ; end the text object
-  (restore doc)) ; restore flipped coordinate system
+  (flush (vector-length positions)))
 
-(define (line doc str [options (mhasheq)])
-  (fragment doc str (pdf-x doc) (pdf-y doc) options)
+(define (text doc str [x-in #f] [y-in #f]
+              #:features [features (pdf-current-font-features doc)]
+              #:fill [fill? #t]
+              #:stroke [stroke? #f]
+              #:spacing [character-spacing 0]
+              #:underline [underline? #f]
+              #:link [link-url #f]
+              #:strike [strike? #f])
+  (when x-in (set-pdf-x! doc x-in))
+  (when y-in (set-pdf-y! doc y-in))
+  (define x (pdf-x doc))
+  (define y (pdf-y doc))
+
+  ;; 180109: character spacing works in pdf, but quad doesn't account for it yet
+
+  ;; calculate the actual rendered width of the string after word and character spacing
+  (define rendered-width
+    ;; wrap this in delay so it's only calculated if needed
+    (delay
+      (+ (string-width doc str
+                       #:spacing character-spacing
+                       #:features features)
+         (* character-spacing (sub1 (string-length str))))))
+
+  ;; create link annotations if the link option is given
+  (when link-url
+    (link doc x y (force rendered-width) (current-line-height doc) link-url))
+  
+  ;; create underline or strikethrough line
+  (when underline? (do-underline doc x y (force rendered-width)))
+  (when strike? (do-horiz-line doc x y (force rendered-width)))
+
+  ;; flip coordinate system
+  (save doc)
+  (define page-height ($page-height (current-page doc)))
+  (transform doc 1 0 0 -1 0 page-height)
+  (define next-y (- page-height
+                    y
+                    (* (/ (pdf-font-ascender (pdf-current-font doc)) 1000)
+                       (pdf-current-font-size doc))))
+
+  ;; add current font to page if necessary
+  (define current-font-id (pdf-font-id (pdf-current-font doc)))
+  (hash-ref! (page-fonts (current-page doc)) current-font-id  (λ () (make-font-ref (pdf-current-font doc))))
+  
+  (add-content doc "BT") ; begin the text object
+  (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer next-y))) ; text position
+  (add-content doc (format "/~a ~a Tf" current-font-id
+                           (numberizer (pdf-current-font-size doc)))) ; font and font size
+
+  (when stroke?
+    ;; default Tr mode (fill) is 0
+    ;; stroke only = 1; fill + stroke = 2
+    (add-content doc (format "~a Tr" (+ 1 (if fill? 1 0)))))
+  (unless (zero? character-spacing)
+    (add-content doc (format "~a Tc" character-spacing)))
+
+  ;; Add the actual text
+  (add-text doc x next-y str features)
+
+  (add-content doc "ET") ; end the text object
+  (restore doc) ; restore flipped coordinate system
+
   ;; 181224 unsuppress size tracking in test mode to preserve test 04
   ;; otherwise we'll be doing our own line measurement
-  (when (test-mode) (set-pdf-x! doc (+ (pdf-x doc) (string-width doc str)))))
+  (when (test-mode) (set-pdf-x! doc (+ (pdf-x doc) (string-width doc str))))
+  doc)
 
-(define (string-width doc str [options (mhash)])
-  (+ (measure-string (pdf-current-font doc) str (pdf-current-font-size doc) (hash-ref options 'features (pdf-current-font-features doc)))
-     (* (hash-ref options 'characterSpacing 0) (sub1 (string-length str)))))
+
+(define (string-width doc str
+                      #:spacing [character-spacing 0]
+                      #:features [features (pdf-current-font-features doc)])
+  (+ (measure-string (pdf-current-font doc) str (pdf-current-font-size doc) features)
+     (* character-spacing (sub1 (string-length str)))))
