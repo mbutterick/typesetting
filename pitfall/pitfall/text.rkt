@@ -35,6 +35,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (stroke doc)
   (restore doc))
 
+(define (do-bgcolor doc x y width bgcolor)
+  (save doc)
+  (rect doc x y width (current-line-height doc))
+  (fill-color doc bgcolor)
+  (fill doc)
+  (restore doc))
+
+
 (define (do-underline doc x y width) (do-horiz-line doc x y width 'underline))
 
 (define (add-text doc x y str features)
@@ -93,7 +101,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
               #:spacing [character-spacing 0]
               #:underline [underline? #f]
               #:link [link-url #f]
-              #:strike [strike? #f])
+              #:strike [strike? #f]
+              #:bg [bgcolor #f])
   (when x-in (set-pdf-x! doc x-in))
   (when y-in (set-pdf-y! doc y-in))
   (define x (pdf-x doc))
@@ -117,6 +126,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; create underline or strikethrough line
   (when underline? (do-underline doc x y (force rendered-width)))
   (when strike? (do-horiz-line doc x y (force rendered-width)))
+  (when bgcolor (do-bgcolor doc x y (force rendered-width) bgcolor))
 
   ;; flip coordinate system
   (save doc)
