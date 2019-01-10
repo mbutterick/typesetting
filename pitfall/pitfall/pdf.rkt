@@ -22,13 +22,11 @@
                   #:auto-first-page [auto-first-page? (current-auto-first-page)]
                   #:size [size "letter"]
                   #:orientation [orientation "portrait"]
-                  #:width [width-arg 612.0]
-                  #:height [height-arg 792.0])
+                  #:width [width-arg #f]
+                  #:height [height-arg #f])
   (match-define (list parsed-width parsed-height)
     (sort
-     (if (list? size)
-         size
-         (hash-ref page-sizes (string-upcase size)))
+     (hash-ref page-sizes (string-upcase size) "letter")
      ;; for portrait, shorter edge is width
      (if (member orientation '("portrait" "tall")) < >)))
   (define width (or width-arg parsed-width))
