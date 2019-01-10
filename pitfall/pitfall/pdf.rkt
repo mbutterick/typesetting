@@ -17,10 +17,22 @@
 (define (store-ref doc ref)
   (set-pdf-refs! doc (cons ref (pdf-refs doc))))
 
-(define (make-pdf [options (make-hasheq)]
-                  #:output-path [output-path #f]
+(define (make-pdf #:output-path [output-path #f]
                   #:compress [compress? (current-compress-streams)]
-                  #:auto-first-page [auto-first-page? (current-auto-first-page)])
+                  #:auto-first-page [auto-first-page? (current-auto-first-page)]
+                  #:size [size "letter"]
+                  #:orientation [orientation "portrait"]
+                  #:width [width-arg 612.0]
+                  #:height [height-arg 792.0])
+  (match-define (list parsed-width parsed-height)
+    (sort
+     (if (list? size)
+         size
+         (hash-ref page-sizes (string-upcase size)))
+     ;; for portrait, shorter edge is width
+     (if (member orientation '("portrait" "tall")) < >)))
+  (define width (or width-arg parsed-width))
+  (define height (or height-arg parsed-height))
 
   ;; initial values
   (define pages null)
@@ -28,8 +40,6 @@
   (define info (mhasheq 'Producer "PITFALL"
                         'Creator "PITFALL"
                         'CreationDate (current-seconds)))
-  (for ([(key val) (in-hash (hash-ref options 'info (hasheq)))]) 
-       (hash-set! info key val))
   (define opacity-registry (make-hash))
   (define current-fill-color '("black" 1))
   (define ctm default-ctm-value)
@@ -43,7 +53,8 @@
   (define x 0)
   (define y 0)
   (define image-registry (make-hash))
-  (define new-doc (pdf options
+  (define new-doc (pdf width
+                       height
                        pages
                        refs
                        'dummy-root-value-that-will-be-replaced-below
@@ -75,14 +86,15 @@
   (when (current-auto-helvetica) (font new-doc "Helvetica"))
   new-doc)
 
-(define (add-page doc [options-arg (pdf-options doc)])
+(define (add-page doc [width (pdf-width doc)] [height (pdf-height doc)])
   ;; create a page object
   (define page-parent (dict-ref (pdf-root doc) 'Pages))
-  (set-pdf-pages! doc (cons (make-page page-parent options-arg) (pdf-pages doc)))
+  (set-pdf-pages! doc (cons (make-page #:parent page-parent #:width width #:height height) (pdf-pages doc)))
       
-  ;; reset x and y coordinates
-  (set-pdf-x! doc (margin-left ($page-margins (current-page doc))))
-  (set-pdf-y! doc (margin-right ($page-margins (current-page doc))))
+  (when (test-mode)
+    ;; default values for tests
+    (set-pdf-x! doc 72)
+    (set-pdf-y! doc 72))
   ;; flip PDF coordinate system so that the origin is in
   ;; the top left rather than the bottom left
   (set-pdf-ctm! doc default-ctm-value)

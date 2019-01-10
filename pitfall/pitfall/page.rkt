@@ -16,29 +16,21 @@
 (define (add-content doc data)
   (page-write (current-page doc) data))
 
-(struct $page (page-parent options size layout dimensions width height content resources margins ref)
+(struct $page (page-parent width height content resources ref)
   #:transparent #:mutable)
 
-(define (make-page [page-parent #false] [options (mhasheq)])
-  (define size (hash-ref options 'size "letter"))
-  (define layout (hash-ref options 'layout "portrait"))
-  (define dimensions (if (list? size)
-                         size
-                         (hash-ref page-sizes (string-upcase size))))
-  (match-define (list width height) ((if (equal? layout "portrait") values reverse) dimensions))
+(define (make-page #:parent [page-parent #false]
+                   #:width [width 612.0]
+                   #:height [height 792.0])
   (define content (make-ref))
   (define resources (make-ref (mhash 'ProcSet '(PDF Text ImageB ImageC ImageI))))
-  (define margins
-    (match (hash-ref options 'margin #f)
-      [(? number? margin-value) (margin margin-value margin-value margin-value margin-value)]
-      [_ (hash-ref options 'margins (current-default-margins))]))
   (define page-ref
     (make-ref (mhasheq 'Type 'Page
                        'Parent page-parent
                        'MediaBox (list 0 0 width height)
                        'Contents content
                        'Resources resources)))
-  ($page page-parent options size layout dimensions width height content resources margins page-ref))
+  ($page page-parent width height content resources page-ref))
 
 (define (page-fonts p)
   (dict-ref! ($page-resources p) 'Font (make-hasheq)))
@@ -56,9 +48,6 @@
   (if annot
       (dict-update! ($page-ref p) 'Annots (λ (val) (cons annot val)) null)
       (dict-ref! ($page-ref p) 'Annots null)))
-
-(define (page-maxY p)
-  (- ($page-height p) (margin-bottom ($page-margins p))))
 
 (define (page-write p chunk)
   (ref-write ($page-content p) chunk)) 

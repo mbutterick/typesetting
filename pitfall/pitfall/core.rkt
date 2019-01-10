@@ -4,7 +4,8 @@
 
 ;; structs
 
-(struct pdf (options
+(struct pdf (width
+             height
              pages
              refs
              root
@@ -42,16 +43,13 @@
 ;; for reference
 (struct $ref (id payload offset port) #:transparent #:mutable
   #:methods gen:dict
-  [(define (dict-ref $ key [thunk (λ () (error 'dict-ref-key-not-found))])
-     (hash-ref ($ref-payload $) key))
-   (define (dict-ref! $ key thunk)
-     (hash-ref! ($ref-payload $) key thunk))
-   (define (dict-set! $ key val) (hash-set! ($ref-payload $) key val))
-   (define (dict-update! $ key updater [failure-result (λ () (error 'update-no-key))])
-     (hash-update! ($ref-payload $) key updater failure-result))])
-
-;; for page
-(struct margin (top left bottom right) #:transparent #:mutable)
+  [(define (dict-ref ref key [thunk (λ () (error 'dict-ref-key-not-found))])
+     (hash-ref ($ref-payload ref) key))
+   (define (dict-ref! ref key thunk)
+     (hash-ref! ($ref-payload ref) key thunk))
+   (define (dict-set! ref key val) (hash-set! ($ref-payload ref) key val))
+   (define (dict-update! ref key updater [failure-result (λ () (error 'update-no-key))])
+     (hash-update! ($ref-payload ref) key updater failure-result))])
 
 ;; params
 
@@ -62,8 +60,6 @@
 (define current-pdf-version (make-parameter 1.3))
 (define current-auto-first-page (make-parameter #t))
 (define current-auto-helvetica (make-parameter #t))
-
-(define current-default-margins (make-parameter (margin 72 72 72 72)))
 
 (define current-font (make-parameter #f))
 (define current-font-size (make-parameter 12))
