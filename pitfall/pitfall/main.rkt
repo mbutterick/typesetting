@@ -1,11 +1,13 @@
 #lang racket/base
-(require "pdf.rkt"
+(require "core.rkt"
+         "pdf.rkt"
          "text.rkt"
          "font.rkt"
          "color.rkt"
          "vector.rkt")
-(provide (all-from-out "pdf.rkt"
-                       "text.rkt"
-                       "font.rkt"
-                       "color.rkt"
-                       "vector.rkt"))
+(provide (all-from-out  "core.rkt"
+                        "pdf.rkt"
+                        "text.rkt"
+                        "font.rkt"
+                        "color.rkt"
+                        "vector.rkt"))
