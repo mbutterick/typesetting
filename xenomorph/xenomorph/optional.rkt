@@ -20,16 +20,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
         [(? procedure? proc) (proc parent)]
         [val val]))
 
-    (define/augment (x:decode port parent)
+    (define/augment (:decode port parent)
       (when (resolve-condition parent)
-        (send @type x:decode port parent)))
+        (send @type :decode port parent)))
 
-    (define/augment (x:encode val port [parent #f])
+    (define/augment (:encode val port [parent #f])
       (when (resolve-condition parent)
-        (send @type x:encode val port parent)))
+        (send @type :encode val port parent)))
     
-    (define/augment (x:size [val #f] [parent #f])
-      (if (resolve-condition parent) (send @type x:size val parent) 0))))
+    (define/augment (:size [val #f] [parent #f])
+      (if (resolve-condition parent) (send @type :size val parent) 0))))
 
 (define no-val (gensym))
 (define (x:optional [type-arg #f] [cond-arg no-val]

@@ -31,7 +31,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
             (raise-argument-error 'x:versioned-struct-encode (format "valid field version: ~v" (dict-keys @versions)) version-key)))
       (if (x:struct? field-object) (get-field fields field-object) field-object))
 
-    (define/override (x:decode port parent [length 0])
+    (define/override (:decode port parent [length 0])
       (define res (setup-private-fields port parent length))
       (define which-version (match @type
                               [(? integer? int) int]
@@ -39,7 +39,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                               [(? procedure? proc) #:when parent (proc parent)]
                               [(or (? symbol?) (? procedure?))
                                (raise-argument-error 'x:versioned-struct-decode "valid parent" parent)]
-                              [_ (send @type x:decode port parent)]))
+                              [_ (send @type :decode port parent)]))
       (dict-set! res x:version-key which-version)
 
       (cond
@@ -53,10 +53,10 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
            (raise-argument-error 'x:versioned-struct-decode (format "valid field version: ~v" (dict-keys @versions)) which-version)]))
       
       (match field-object
-        [(? x:versioned-struct?) (send field-object x:decode port parent)]
+        [(? x:versioned-struct?) (send field-object :decode port parent)]
         [_ (parse-fields port res field-object)]))
 
-    (define/override (x:encode field-data port [parent-arg #f])
+    (define/override (:encode field-data port [parent-arg #f])
       (unless (dict? field-data)
         (raise-argument-error 'x:versioned-struct-encode "dict" field-data))
       (define parent (mhasheq x:pointers-key null
@@ -64,22 +64,22 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                               x:parent-key parent-arg
                               x:val-key field-data
                               x:pointer-size-key 0))
-      (hash-set! parent x:pointer-offset-key (+ (pos port) (x:size field-data parent #f)))
+      (hash-set! parent x:pointer-offset-key (+ (pos port) (:size field-data parent #f)))
       (unless (or (symbol? @type) (procedure? @type))
-        (send @type x:encode (dict-ref field-data x:version-key #f) port parent))
+        (send @type :encode (dict-ref field-data x:version-key #f) port parent))
       (for ([(key type) (in-dict (dict-ref @versions 'header null))])
-        (send type x:encode (dict-ref field-data key) port parent))
+        (send type :encode (dict-ref field-data key) port parent))
 
       (define fields (select-field-set field-data))
       (unless (andmap (λ (key) (member key (hash-keys field-data))) (dict-keys fields))
         (raise-argument-error 'x:versioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (hash-keys field-data)))
       (for ([(key type) (in-dict fields)])
-        (send type x:encode (hash-ref field-data key) port parent))
+        (send type :encode (hash-ref field-data key) port parent))
       (for ([ptr (in-list (hash-ref parent x:pointers-key))])
         (match ptr
-          [(x:ptr type val parent) (send type x:encode val port parent)])))
+          [(x:ptr type val parent) (send type :encode val port parent)])))
     
-    (define/override (x:size [val #f] [parent-arg #f] [include-pointers #t])
+    (define/override (:size [val #f] [parent-arg #f] [include-pointers #t])
       (unless val
         (raise-argument-error 'x:versioned-struct-size "value" val))
       (define parent (mhasheq x:parent-key parent-arg
@@ -88,14 +88,14 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define version-size
         (match @type
           [(or (? symbol?) (? procedure?)) 0]
-          [_ (send @type x:size (dict-ref val x:version-key) parent)]))
+          [_ (send @type :size (dict-ref val x:version-key) parent)]))
       
       (define header-size
         (for/sum ([(key type) (in-dict (dict-ref @versions 'header null))])
-          (send type x:size (and val (dict-ref val key)) parent)))
+          (send type :size (and val (dict-ref val key)) parent)))
       (define fields-size
         (for/sum ([(key type) (in-dict (select-field-set val))])
-          (send type x:size (and val (dict-ref val key)) parent)))
+          (send type :size (and val (dict-ref val key)) parent)))
       (define pointer-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
       (+ version-size header-size fields-size pointer-size))))
 

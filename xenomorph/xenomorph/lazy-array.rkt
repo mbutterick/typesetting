@@ -13,7 +13,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
     (super-new)
     (inherit-field [@type type] [@len len])
 
-    (define/override (x:decode port parent)
+    (define/override (:decode port parent)
       (define starting-pos (pos port)) ; ! placement matters. `resolve-length` will change `pos`
       (define len (resolve-length @len port parent))
       (define new-parent (if (x:int? @len)
@@ -26,17 +26,17 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
       (begin0
         (for/stream ([index (in-range len)])
           (define orig-pos (pos port))
-          (pos port (+ stream-starting-pos (* (send @type x:size #f new-parent) index)))
+          (pos port (+ stream-starting-pos (* (send @type :size #f new-parent) index)))
           (begin0
             (send @type decode port new-parent)
             (pos port orig-pos)))
-        (pos port (+ (pos port) (* len (send @type x:size #f new-parent))))))
+        (pos port (+ (pos port) (* len (send @type :size #f new-parent))))))
 
-    (define/override (x:encode val port [parent #f])
-      (super x:encode (if (stream? val) (stream->list val) val) port parent))
+    (define/override (:encode val port [parent #f])
+      (super :encode (if (stream? val) (stream->list val) val) port parent))
     
-    (define/override (x:size [val #f] [parent #f])
-      (super x:size (if (stream? val) (stream->list val) val) parent))))
+    (define/override (:size [val #f] [parent #f])
+      (super :size (if (stream? val) (stream->list val) val) parent))))
 
 (define (x:lazy-array [type-arg #f] [len-arg #f]
                       #:type [type-kwarg #f]
