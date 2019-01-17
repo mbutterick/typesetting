@@ -70,12 +70,16 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                 ([i (in-range @size)])
         (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))))
 
-(define (x:int [size 2]
+(define (x:int [size-arg #f]
+               #:size [size-kwarg 2]
                #:signed [signed #true]
                #:endian [endian system-endian]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f])
-  (new (generate-subclass x:int% pre-proc post-proc) [size size] [signed signed] [endian endian]))
+  (new (generate-subclass x:int% pre-proc post-proc)
+       [size (or size-arg size-kwarg)]
+       [signed signed]
+       [endian endian]))
 
 (define int8 (x:int 1))
 (define int16 (x:int 2))
