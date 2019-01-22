@@ -78,27 +78,29 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                 #:script [script #f]
                 #:language [lang #f]
                 #:direction [direction #f])
-  (define buf (hb-buf font))
-  (hb_buffer_reset buf)
-  (when script
-    (hb_buffer_set_script buf script))
-  (when lang
-    (hb_buffer_set_language buf (hb_language_from_string lang)))
-  (when direction
-    (hb_buffer_set_direction buf direction))
-  (define codepoints (for/list ([c (in-string str)]) (char->integer c)))
-  (hb_buffer_add_codepoints buf codepoints)
-  (hb_shape (hb-font font) buf (map (λ (fpr) (tag->hb-feature (car fpr) (cdr fpr))) features))
-  (define gis (hb_buffer_get_glyph_infos buf))
-  (define hb-gids (map hb_glyph_info_t-codepoint gis))
-  (define hb-clusters (break-at codepoints (map hb_glyph_info_t-cluster gis)))
-  (define hb-positions (map hb_glyph_position_t->list (hb_buffer_get_glyph_positions buf)))
-  (define glyphs (for/vector ([gidx (in-list hb-gids)]
-                              [cluster (in-list hb-clusters)])
-                   (get-glyph font gidx cluster)))
-  (define positions (for/vector ([posn (in-list hb-positions)])
-                      (apply +glyph-position posn)))
-  (glyphrun glyphs positions))
+  (match (for/list ([c (in-string str)]) (char->integer c))
+    [(? null?) (glyphrun (vector) (vector))]
+    [codepoints
+     (define buf (hb-buf font))
+     (hb_buffer_reset buf)
+     (when script
+       (hb_buffer_set_script buf script))
+     (when lang
+       (hb_buffer_set_language buf (hb_language_from_string lang)))
+     (when direction
+       (hb_buffer_set_direction buf direction))
+     (hb_buffer_add_codepoints buf codepoints)
+     (hb_shape (hb-font font) buf (map (λ (fpr) (tag->hb-feature (car fpr) (cdr fpr))) features))
+     (define gis (hb_buffer_get_glyph_infos buf))
+     (define hb-gids (map hb_glyph_info_t-codepoint gis))
+     (define hb-clusters (break-at codepoints (map hb_glyph_info_t-cluster gis)))
+     (define hb-positions (map hb_glyph_position_t->list (hb_buffer_get_glyph_positions buf)))
+     (define glyphs (for/vector ([gidx (in-list hb-gids)]
+                                 [cluster (in-list hb-clusters)])
+                      (get-glyph font gidx cluster)))
+     (define positions (for/vector ([posn (in-list hb-positions)])
+                         (apply +glyph-position posn)))
+     (glyphrun glyphs positions)]))
 
 
 #|
