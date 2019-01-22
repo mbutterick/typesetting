@@ -29,7 +29,7 @@
   (define line-gap (- (third bbox) (first bbox) ascender descender))
   (sfont
    name id ascender descender line-gap bbox #f #f sfont-embed sfont-encode sfont-measure-string
-    attributes glyph-widths kern-pairs))
+   attributes glyph-widths kern-pairs))
 
 (define (sfont-embed sf)
   (set-$ref-payload! (pdf-font-ref sf)
@@ -52,9 +52,11 @@
   (hash-ref (sfont-glyph-widths sf) glyph 0))
 
 (define (advances-for-glyphs sf glyphs)
-  (for/list ([left (in-list glyphs)]
-             [right (in-list (append (cdr glyphs) (list #\nul)))])
-    (+ (glyph-width sf left) (get-kern-pair sf left right))))
+  (if (empty? glyphs)
+      empty
+      (for/list ([left (in-list glyphs)]
+                 [right (in-list (append (cdr glyphs) (list #\nul)))])
+        (+ (glyph-width sf left) (get-kern-pair sf left right)))))
 
 (define (get-kern-pair sf left right)
   (hash-ref (sfont-kern-pairs sf) (make-kern-table-key left right) 0))
