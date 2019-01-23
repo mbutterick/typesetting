@@ -120,8 +120,11 @@
 (define (quadratic-curve-to doc cpx cpy x y)
   (add-content doc (format "~a v" (string-join (map numberizer (list cpx cpy x y)) " "))))
 
-(define (rect doc x y w h)
+(define (rect doc x y w [h w])
   (add-content doc (format "~a re" (string-join (map numberizer (list x y w h)) " "))))
+
+(define (rect-centered doc x y w [h w])
+  (rect doc (- x (/ w 2)) (- y (/ h 2)) w h))
 
 (define scale
   (match-lambda*
@@ -137,7 +140,8 @@
 (define (shear doc x y)
   (transform doc 1 y x 1 0 0))
 
-(define (stroke doc [color #f])
+(define (stroke doc [color #f] [width #f])
+  (when width (line-width doc width))
   (when color (stroke-color doc color))
   (add-content doc "S"))
 
