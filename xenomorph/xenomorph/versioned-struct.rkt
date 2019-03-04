@@ -53,7 +53,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
            (raise-argument-error 'x:versioned-struct-decode (format "valid field version: ~v" (dict-keys @versions)) which-version)]))
       
       (match field-object
-        [(? x:versioned-struct?) (send field-object :decode port parent)]
+        [(? x:versioned-struct?) (send field-object decode port parent)]
         [_ (parse-fields port res field-object)]))
 
     (define/override (:encode field-data port [parent-arg #f])

@@ -2,6 +2,7 @@
 (require rackunit
          racket/class
          "../array.rkt"
+         "../struct.rkt"
          "../number.rkt"
          "../pointer.rkt"
          "../base.rkt"
@@ -16,6 +17,15 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
  "array: decode fixed length"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (check-equal? (decode (x:array #:type uint8 #:length 4)) '(1 2 3 4))))
+
+(test-case 
+ "array: decode nested"
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
+   (check-equal? (decode (x:array #:type (x:struct 'foo uint8) #:length 4))
+                 (list (mhasheq 'foo 1)
+                       (mhasheq 'foo 2)
+                       (mhasheq 'foo 3)
+                       (mhasheq 'foo 4)))))
 
 (test-case 
  "array: decode with post-decode"

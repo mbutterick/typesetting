@@ -43,10 +43,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                            [else +inf.0]))
          (for/list ([i (in-naturals)]
                     #:break (or (eof-object? (peek-byte port)) (= (pos port) end-pos)))
-           (send @type :decode port new-parent))]
+           (send @type decode port new-parent))]
         ;; we have len, which is treated as count of items
         [else (for/list ([i (in-range len)])
-                (send @type :decode port new-parent))]))
+                (send @type decode port new-parent))]))
 
     (define/augride (:encode array port [parent #f])
       (unless (sequence? array)

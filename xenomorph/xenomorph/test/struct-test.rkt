@@ -22,6 +22,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
     (mhasheq 'name "roxyb" 'age 21))))
 
 (test-case
+ "struct: decode nested struct into an object"
+ (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15\x05roxyb\x15")])
+   (check-equal?
+    (decode (x:struct 'name (x:string #:length uint8) 'age uint8
+                      'nested (x:struct 'name (x:string #:length uint8) 'age uint8)))
+    (mhasheq 'name "roxyb" 'age 21 'nested (mhasheq 'name "roxyb" 'age 21)))))
+
+(test-case
  "struct: decode with process hook"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
    (define struct (x:struct #:post-decode (λ (o) (hash-set! o 'canDrink (>= (hash-ref o 'age) 21)) o)

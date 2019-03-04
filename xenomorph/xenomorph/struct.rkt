@@ -30,7 +30,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (for ([(key type) (in-dict fields)])
     (define val (match type
                   [(? procedure? proc) (proc mheq)]
-                  [_ (send type :decode port mheq)]))
+                  [_ (send type decode port mheq)]))
     (unless (void? val)
       (hash-set! mheq key val))
     (hash-set! mheq x:current-offset-key (- (pos port) (hash-ref mheq x:start-offset-key))))
@@ -101,7 +101,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                    (apply cons kv)))
   (new (generate-subclass x:struct% pre-proc post-proc) [fields fields]))
 
-(module+ test
+#;(module+ test
   (require rackunit "number.rkt" "base.rkt")
   (define (random-pick xs) (list-ref xs (random (length xs))))
   (check-exn exn:fail:contract? (λ () (x:struct 42)))

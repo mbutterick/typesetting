@@ -178,7 +178,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (super-new)
     (init-field [(@fracbits fracbits)])
     (unless (exact-positive-integer? @fracbits)
-      (raise-argument-error '+xfixed "exact positive integer for fracbits" @fracbits))
+      (raise-argument-error 'xfixed "exact positive integer for fracbits" @fracbits))
 
     (define fixed-shift (arithmetic-shift 1 @fracbits))
                 

@@ -30,6 +30,22 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
      (check-equal? (decode vstruct) (mhasheq 'name "roxyb 🤘" 'age 21 x:version-key 1 'gender 0)))))
 
 (test-case
+ "versioned struct: decode should get version from number type, nested"
+ (let ([vstruct (x:versioned-struct uint8
+                                    (dictify
+                                     0 (dictify 'name (x:string #:length uint8 #:encoding 'ascii)
+                                                'age uint8
+                                                'nested (x:struct 'foo uint8))
+                                     1 (x:struct 'name (x:string #:length uint8 #:encoding 'utf8)
+                                                'age uint8
+                                                'gender uint8
+                                                'nested (x:struct 'foo uint8))))])
+   (parameterize ([current-input-port (open-input-bytes #"\x00\x05roxyb\x15\x2a")])
+     (check-equal? (decode vstruct) (mhasheq 'name "roxyb" 'age 21 'nested (mhasheq 'foo 42) x:version-key 0)))
+   (parameterize ([current-input-port (open-input-bytes (string->bytes/utf-8 "\x01\x0aroxyb 🤘\x15\x00\x2a"))])
+     (check-equal? (decode vstruct) (mhasheq 'name "roxyb 🤘" 'age 21 x:version-key 1 'gender 0  'nested (mhasheq 'foo 42))))))
+
+(test-case
  "versioned struct: decode should throw for unknown version"
  (let ([vstruct (x:versioned-struct uint8
                                     (dictify

@@ -50,7 +50,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                     (define orig-pos (pos port))
                     (pos port ptr)
                     (begin0
-                      (send @type :decode port parent)
+                      (send @type decode port parent)
                       (pos port orig-pos)))
                   (if @pointer-lazy? (delay (decode-value)) (decode-value))]
            [else ptr])]))
