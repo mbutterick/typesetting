@@ -70,13 +70,13 @@
     (super-new)
     
     (define/pubment (:decode input-port [parent #f])
-      (post-decode (inner (error ':decode-not-augmented) :decode input-port parent)))
+      (post-decode (inner (error 'decode-not-augmented) :decode input-port parent)))
 
     (define/public (decode input-port [parent #f])
       (:decode input-port parent))
     
     (define/pubment (:encode val output-port [parent #f])
-      (define encode-result (inner (error ':encode-not-augmented) :encode (pre-encode val) output-port parent))
+      (define encode-result (inner (error 'encode-not-augmented) :encode (pre-encode val) output-port parent))
       (when (bytes? encode-result) (write-bytes encode-result output-port)))
     
     (define/pubment (:size [val #f] [parent #f] . args)
