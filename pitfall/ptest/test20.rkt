@@ -2,19 +2,18 @@
 (require pitfall/pdftest)
 
 ;; subset OTF font
-(define-runtime-path otf-path "assets/charter.otf")
+(define-runtime-path otf-path "assets/fira.otf")
 
 ;; embed otf
 
 (define (proc doc)
   ;; Register a font name for use later
-  (send doc register-font "the-font" (path->string otf-path))
+  (register-font doc "the-font" (path->string otf-path))
 
   ;; Set the font, draw some text
-  (send* doc
-    [font "the-font"]
-    [font-size 40]
-    [text "Embedded OTF" 100 100]))
+  [font doc "the-font"]
+  [font-size doc 40]
+  [text doc "Fira OTF rifle fire" 100 100])
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test20rkt.pdf")

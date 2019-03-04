@@ -6,12 +6,12 @@ fs = require 'fs'
 make = (doc) -> 
 
   # Register a font name for use later
-  doc.registerFont('the-font', 'assets/charter.otf')
+  doc.registerFont('the-font', 'assets/fira.otf')
 
   # Set the font, draw some text
   doc.font('the-font')
      .fontSize(40)
-     .text('Embedded OTF', 100, 100, {width: false})
+     .text('Fira OTF rifle fire', 100, 100, {width: false})
                  
   doc.end()
 
