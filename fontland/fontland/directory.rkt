@@ -65,7 +65,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define (file-directory-decode ps)
   (directory-decode (open-input-file ps)))
 
-#;(test-module
-   (define ip (open-input-file charter-path))
-   (define decoded-dir (deserialize (read (open-input-file charter-directory-path))))
-   (check-equal? (directory-decode ip) decoded-dir))
+#;(module+ test
+  (require rackunit "helper.rkt" racket/serialize racket/file racket/pretty)
+   (define ip (open-input-file fira-otf-path))
+  (define dir  (serialize (directory-decode ip)))
+  (pretty-write dir)
+   (with-output-to-file    "assets/fira-otf-directory.rktd"
+     (λ () (pretty-write dir)) #:exists 'replace))

@@ -13,3 +13,4 @@
 (define-runtime-path fira-otf-path "assets/fira.otf")
 (define-runtime-path charter-directory-path "assets/charter-directory.rktd")
 (define-runtime-path charter-italic-directory-path "assets/charter-italic-directory.rktd")
+(define-runtime-path fira-otf-directory-path "assets/fira-otf-directory.rktd")

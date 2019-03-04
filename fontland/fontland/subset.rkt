@@ -43,7 +43,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/Subset.js
 
 (define (encode-to-port ss)
   (define p (open-output-bytes))
-  (subset-encode ss p)
+  ((if (cff-subset? ss)
+       cff-subset-encode
+       ttf-subset-encode) ss p)
   p)
 
 (define (subset-add-glyph! ss glyph-or-gid) ; fka `includeGlyph`
@@ -64,7 +66,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 (struct cff-subset subset (cff strings charstrings gsubrs) #:transparent #:mutable)
 
 (define (+cff-subset font [glyphs empty] [mapping (mhash)]
-                     [cff #f]
+                     [cff (get-table font 'CFF_)]
                      [strings #f]
                      [charstrings #f]
                      [gsubrs #f])
@@ -72,7 +74,21 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
   (subset-add-glyph! ss 0)
   ss)
 
-(module+ test
+(define (subsetCharstrings this)
+  (set-cff-subset-charstrings! this null)
+  (define gsubrs (make-hash))
+  #;(for ([gid (in-list (subset-glyphs this))])
+       (define new-string (getCharString (cff-subset-cff this) gid))
+       (set-cff-subset-charstrings! this (cons new-string (cff-subset-charstrings this))))
+  (error 'subsetCharStrings-unfinished))
+
+(define (cff-subset-encode ss port)
+  ;; ss = this
+  ;; port = stream
+  (subsetCharstrings ss)
+  (error 'cff-subset-encode-unfinished))
+
+#;(module+ test
   (require "font.rkt" "helper.rkt")
   (define otf (open-font (path->string fira-otf-path)))
   (define cffss (+cff-subset otf))
@@ -137,7 +153,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
 
 (define (clone-deep val) (deserialize (serialize val)))
 
-(define (subset-encode ss port)  
+(define (ttf-subset-encode ss port)  
   (set-ttf-subset-glyf! ss empty)
   (set-ttf-subset-offset! ss 0)
   (set-ttf-subset-loca! ss (mhash 'offsets empty))

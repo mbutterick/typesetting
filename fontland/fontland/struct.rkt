@@ -20,3 +20,5 @@
 (struct glyph (id codepoints font is-mark? is-ligature? metrics) #:transparent #:mutable)
 
 (struct ttf-glyph glyph () #:transparent)
+
+(struct cff-glyph glyph () #:transparent)

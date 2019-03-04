@@ -44,15 +44,21 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
                 'leftBearing (FT_Glyph_Metrics-horiBearingX ft-glyph-metrics)))
   (glyph-metrics g))
 
-;; Represents a TrueType glyph.
-
 (define (+ttf-glyph . args)
   (apply +glyph #:constructor ttf-glyph args))
+
+(define (+cff-glyph . args)
+  (apply +glyph #:constructor cff-glyph args))
+
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/glyph/TTFFont.js
+|#
 
 ;; Returns a glyph object for the given glyph id.
 ;; You can pass the array of code points this glyph represents for
 ;; your use later, and it will be stored in the glyph object.
 (define (get-glyph font gid [codepoints null])
   ((if (has-table? font #"CFF_")
-       (error 'cff-fonts-unsupported)
+       +cff-glyph
        +ttf-glyph) gid codepoints font))
