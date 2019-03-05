@@ -51,14 +51,14 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (when @fields (unless (dict? @fields)
                     (raise-argument-error '+xstruct "dict" @fields)))
 
-    (define/augride (:decode port parent [len 0])
+    (define/augride (decode port parent [len 0])
       (define res (setup-private-fields port parent len))
       (parse-fields port res @fields))
 
-    (define/override (decode port parent)
-      (dict->mutable-hash (:decode port parent)))
+    (define/override (post-decode val)
+      (dict->mutable-hash val))
 
-    (define/augride (:encode field-data port [parent-arg #f])
+    (define/augride (encode field-data port [parent-arg #f])
       (unless (dict? field-data)
         (raise-result-error 'x:struct-encode "dict" field-data))
       ;; check keys, because `size` also relies on keys being valid
@@ -71,20 +71,20 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                               x:parent-key parent-arg
                               x:val-key field-data
                               x:pointer-size-key 0)) 
-      (hash-set! parent x:pointer-offset-key (+ (pos port) (:size field-data parent #f))) 
+      (hash-set! parent x:pointer-offset-key (+ (pos port) (size field-data parent #f))) 
       (for ([(key type) (in-dict @fields)])
-        (send type :encode (dict-ref field-data key) port parent))
+        (send type encode (dict-ref field-data key) port parent))
       (for ([ptr (in-list (hash-ref parent x:pointers-key))])
         (match ptr
-          [(x:ptr type val parent) (send type :encode val port parent)])))
+          [(x:ptr type val parent) (send type encode val port parent)])))
     
-    (define/augride (:size [val #f] [parent-arg #f] [include-pointers #t])
+    (define/augride (size [val #f] [parent-arg #f] [include-pointers #t])
       (define parent (mhasheq x:parent-key parent-arg
                               x:val-key val
                               x:pointer-size-key 0))
       (define fields-size (for/sum ([(key type) (in-dict @fields)]
                                     #:when (xenomorphic-type? type))
-                            (send type :size (and val (dict-ref val key)) parent)))
+                            (send type size (and val (dict-ref val key)) parent)))
       (define pointers-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
       (+ fields-size pointers-size))))
 

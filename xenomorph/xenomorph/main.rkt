@@ -16,4 +16,5 @@
      "reserved.rkt"
      "string.rkt"
      "struct.rkt"
-     "versioned-struct.rkt")
+     "versioned-struct.rkt"
+     "util.rkt")
