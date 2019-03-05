@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require xenomorph sugar/unstable/dict "cff-index.rkt")
 (provide CFFTop)
 
@@ -13,8 +13,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
    (dictify
     1 (dictify 'hdrSize uint8
                'offSize uint8
-               ;;'nameIndex (CFFIndex (x:string #:length 'length))
-               ;;'topDictIndex (CFFIndex CFFTopDict)
+               'nameIndex (CFFIndex (x:string #:length 'length))
+               ;'topDictIndex (CFFIndex CFFTopDict)
                ;;'stringIndex (CFFIndex (x:string #:length 'length))
                ;;'globalSubrIndex (CFFIndex)
                )

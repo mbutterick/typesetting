@@ -25,11 +25,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
 
 (module+ test
   (require rackunit racket/serialize racket/stream "../helper.rkt")
-  (define dir (deserialize (read (open-input-file #R fira-otf-directory-path))))
-  (define cff-offset (hash-ref (hash-ref (hash-ref dir 'tables) 'CFF_) 'offset))
-  (define cff-length (hash-ref (hash-ref (hash-ref dir 'tables) 'CFF_) 'length))
+  (define dir (deserialize (read (open-input-file fira-otf-directory-path))))
+  (define cff (hash-ref (hash-ref dir 'tables) 'CFF_))
+  (define cff-offset (hash-ref cff 'offset))
+  (check-equal? cff-offset 33472)
+  (define cff-length (hash-ref cff 'length))
+  (check-equal? cff-length 164604)
   (define ip (open-input-file fira-otf-path))
-  (define cff-bytes (peek-bytes #R cff-length #R cff-offset ip))
+  (define cff-bytes (peek-bytes cff-length cff-offset ip))
   (define cff-data (decode CFFFont cff-bytes))
+  (check-equal? (hash-ref cff-data 'nameIndex) '("FiraSans-Book"))
   cff-data
   )
