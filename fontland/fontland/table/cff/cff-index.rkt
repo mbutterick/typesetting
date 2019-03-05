@@ -21,12 +21,12 @@
       (match (decode (if (>= (getCFFVersion parent) 2) uint32be uint16be) stream)
         [0 null]
         [count (define offSize (decode uint8 stream))
-               (define offsetType (case offSize
-                                    [(1) uint8]
-                                    [(2) uint16be]
-                                    [(3) uint24be]
-                                    [(4) uint32be]
-                                    [else (error 'bad-offset-size-in-CFFIndex)]))
+               (define offsetType (match offSize
+                                    [1 uint8]
+                                    [2 uint16be]
+                                    [3 uint24be]
+                                    [4 uint32be]
+                                    [_ (error 'bad-offset-size-in-CFFIndex)]))
                (define startPos (+ (pos stream) (* (add1 count) offSize) -1))
                (for/fold ([vals null]
                           [start (decode offsetType stream)]
