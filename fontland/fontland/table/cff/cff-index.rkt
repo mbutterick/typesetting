@@ -9,7 +9,10 @@
 
     (define (getCFFVersion ctx)
       (let loop ([ctx ctx])
-        (if (and ctx (not (hash-ref ctx 'hdrSize)))
+        (if (and ctx
+                 (hash? ctx)
+                 (hash-has-key? ctx 'hdrSize)
+                 (not (hash-ref ctx 'hdrSize)))
             (loop (hash-ref ctx 'parent))
             (if ctx (hash-ref ctx 'x:version) -1))))
     
