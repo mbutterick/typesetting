@@ -1,5 +1,5 @@
 #lang debug racket/base
-(require racket/class xenomorph sugar/unstable/dict)
+ (require racket/class xenomorph sugar/unstable/dict)
 (provide CFFDict)
 
 #|

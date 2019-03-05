@@ -3,7 +3,8 @@
          "cff-index.rkt"
          "cff-dict.rkt"
          "cff-charsets.rkt"
-         "cff-pointer.rkt")
+         "cff-pointer.rkt"
+         "cff-encodings.rkt")
 (provide CFFTop)
 
 #|
@@ -27,6 +28,23 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
    'first uint16be
    'nLeft uint16be))
 
+(define CFFEncodingVersion
+  (x:int #:size 1
+         #:signed #false
+         #:post-decode (λ (res) (bitwise-and res #x7f))))
+
+(define CFFCustomEncoding
+  (x:versioned-struct
+   CFFEncodingVersion
+   (dictify
+    0 (dictify 'nCodes uint8
+               'codes (x:array uint8 'nCodes))
+    1 (dictify 'nRanges uint8
+               'ranges (x:array Range1 'nRanges)))))
+
+(define CFFEncoding (PredefinedOp (list StandardEncoding ExpertEncoding)
+                                  (CFFPointer CFFCustomEncoding #:lazy #true)))
+
 ;; Decodes an array of ranges until the total
 ;; length is equal to the provided length.
 
@@ -43,7 +61,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
         (define range (decode @type stream parent))
         (hash-set! range 'offset count)
         (values (cons range res) (+ count (hash-ref range 'nLeft) 1))))))
-   
 
 (define CFFCustomCharset
   (let ([tproc (λ (t) (sub1 (length (hash-ref (hash-ref t 'parent) 'CharStrings))))])
@@ -57,6 +74,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 (define CFFCharset (make-object PredefinedOp
                      (list ISOAdobeCharset ExpertCharset ExpertSubsetCharset)
                      (CFFPointer CFFCustomCharset #:lazy #true)))
+
+(define ptr (CFFPointer CFFPrivateDict))
 
 (define CFFTopDict
   (CFFDict
