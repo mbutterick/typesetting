@@ -1,14 +1,62 @@
 #lang debug racket/base
-(require xenomorph sugar/unstable/dict
+(require xenomorph sugar/unstable/dict racket/class
          "cff-index.rkt"
          "cff-dict.rkt"
-         "cff-charsets.rkt")
+         "cff-charsets.rkt"
+         "cff-pointer.rkt")
 (provide CFFTop)
 
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 |#
+
+(define PredefinedOp
+  (class xenobase%
+    (super-new)
+    (init-field [(@predefinedOps predefinedOps)]
+                [(@type type) #f])))
+
+(define Range1
+  (x:struct
+   'first uint16be
+   'nLeft uint8))
+
+(define Range2
+  (x:struct
+   'first uint16be
+   'nLeft uint16be))
+
+;; Decodes an array of ranges until the total
+;; length is equal to the provided length.
+
+(define RangeArray
+  (class x:array%
+    (inherit-field [@len len] [@type type])
+    (define (:decode stream parent)
+      (define length (resolve-length @len stream parent))
+      (for/fold ([res null]
+                 [count 0]
+                 #:result (reverse res))
+                ([i (in-naturals)]
+                 #:break (not (< count length)))
+        (define range (decode @type stream parent))
+        (hash-set! range 'offset count)
+        (values (cons range res) (+ count (hash-ref range 'nLeft) 1))))))
+   
+
+(define CFFCustomCharset
+  (let ([tproc (λ (t) (sub1 (length (hash-ref (hash-ref t 'parent) 'CharStrings))))])
+    (x:versioned-struct
+     uint8
+     (dictify
+      0 (dictify 'glyphs (x:array uint16be tproc))
+      1 (dictify 'ranges (RangeArray Range1 tproc))
+      2 (dictify 'ranges (RangeArray Range2 tproc))))))
+
+(define CFFCharset (make-object PredefinedOp
+                     (list ISOAdobeCharset ExpertCharset ExpertSubsetCharset)
+                     (CFFPointer CFFCustomCharset #:lazy #true)))
 
 (define CFFTopDict
   (CFFDict
