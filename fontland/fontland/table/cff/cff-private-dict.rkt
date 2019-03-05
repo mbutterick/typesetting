@@ -11,7 +11,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPrivateDict.js
 |#
 
 (define CFFBlendOp
-  (class xenobase%
+  (class x:base%
     (define/augment (decode stream parent operands)
       (match (reverse operands)
         [(cons numBlends operands)

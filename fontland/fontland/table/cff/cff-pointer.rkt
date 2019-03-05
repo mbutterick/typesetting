@@ -23,7 +23,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
     (inherit-field offset-type)
     
     (define/override (decode stream parent operands)
-      (set! offset-type (class xenobase%
+      (set! offset-type (class x:base%
                           (super-new)
                           (define/augment (decode . args) (first operands))))
       (super decode stream parent operands))
@@ -32,14 +32,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
       (cond
         [(not stream)
          ;; compute the size (so ctx.pointerSize is correct)
-         (set! offset-type (class xenobase%
+         (set! offset-type (class x:base%
                              (super-new)
                              (define/augment (size . args) 0)))
          (send this size value ctx)
          (Ptr 0)]
         [else
          (define ptr #false)
-         (set! offset-type (class xenobase%
+         (set! offset-type (class x:base%
                              (super-new)
                              (define/augment (encode stream val) (set! ptr val))))
          (super encode stream value ctx)

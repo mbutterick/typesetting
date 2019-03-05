@@ -8,7 +8,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 |#
 
 (define CFFDict%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@ops ops)])
     (field [fields (for/hash ([field (in-list @ops)])

@@ -11,7 +11,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
 ;; so it should return a hash.
 
 (define CFFFont%
-  (class xenobase%
+  (class x:base%
     (super-new)
 
     (define/augride (decode stream parent)

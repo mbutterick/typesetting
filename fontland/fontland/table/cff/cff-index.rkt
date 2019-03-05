@@ -3,7 +3,7 @@
 (provide CFFIndex)
 
 (define CFFIndex%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@type type) #f])
 
@@ -15,8 +15,9 @@
                  (not (hash-ref ctx 'hdrSize)))
             (loop (hash-ref ctx 'parent))
             (if ctx (hash-ref ctx 'x:version) -1))))
-    
-    (define/augride (decode stream parent)
+
+    (augride [@decode decode])
+    (define (@decode stream parent)
       (match (decode (if (>= (getCFFVersion parent) 2) uint32be uint16be) stream)
         [0 null]
         [count (define offSize (decode uint8 stream))

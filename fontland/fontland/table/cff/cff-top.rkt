@@ -14,7 +14,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 |#
 
 (define PredefinedOp%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@predefinedOps predefinedOps)]
                 [(@type type) #f])
@@ -113,7 +113,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 (define ptr (CFFPointer CFFPrivateDict))
 (define (CFFPrivateOp . args)
   (apply make-object
-         (class xenobase%
+         (class x:base%
            (super-new)
            (define/augment (decode stream parent operands)
              (hash-set! parent 'length (first operands))
