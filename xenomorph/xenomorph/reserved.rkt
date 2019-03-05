@@ -8,7 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
 |#
 
 (define x:reserved%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@type type)] [(@count count)])
 

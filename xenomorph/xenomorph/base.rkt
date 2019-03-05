@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class)
+(require racket/class racket/match)
 (provide (all-defined-out))
 
 (struct x:ptr (type val parent) #:transparent)
@@ -45,7 +45,7 @@
 (define (size xo [val #f] #:parent [parent #f])
   (send xo size val parent))
 
-(define (xenomorphic-type? x) (is-a? x xenobase%))
+(define (xenomorphic-type? x) (is-a? x x:base%))
 (define xenomorphic? xenomorphic-type?)
 
 (define-syntax-rule (generate-subclass CLASS PRE-ENCODE-PROC POST-DECODE-PROC)
@@ -65,7 +65,7 @@
        (define/override (post-decode x) (POST-DECODE-PROC (super post-decode x))))]
     [else CLASS]))
 
-(define xenobase%
+(define x:base%
   (class object%
     (super-new)
     
@@ -73,14 +73,14 @@
       (post-decode (inner (error 'decode-not-augmented) decode input-port parent)))
     
     (define/pubment (encode val output-port [parent #f])
-      (define encode-result (inner (error 'encode-not-augmented) encode (pre-encode val) output-port parent))
-      (when (bytes? encode-result) (write-bytes encode-result output-port)))
+      (match (inner (error 'encode-not-augmented) encode (pre-encode val) output-port parent)
+        [(? bytes? encode-result) (write-bytes encode-result output-port)]
+        [_ (void)]))
     
     (define/pubment (size [val #f] [parent #f] . args)
-      (define asize (inner 0 size val parent . args))
-      (unless (and (integer? asize) (not (negative? asize)))
-        (raise-argument-error 'size "nonnegative integer" asize))
-      asize)
+      (match (inner 0 size val parent . args)
+        [(? exact-nonnegative-integer? size) size]
+        [other (raise-argument-error 'size "nonnegative integer" other)]))
     
     (define/public (post-decode val) val)
     (define/public (pre-encode val) val)))

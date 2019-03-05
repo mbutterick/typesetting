@@ -8,7 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
 |#
 
 (define x:enum%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@type type)] [(@values values)])
      

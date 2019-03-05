@@ -12,7 +12,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
 (define x:array%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@type type)] [(@len len)] [(@count-bytes? count-bytes?)])
     

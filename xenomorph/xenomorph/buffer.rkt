@@ -8,7 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 |#
 
 (define x:buffer%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@len len)])
     (unless (length-resolvable? @len)

@@ -44,7 +44,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   h)
 
 (define x:struct%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@fields fields)])
     

@@ -24,7 +24,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [else (raise-argument-error 'x:pointer "VoidPointer" val)]))
 
 (define x:pointer%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@offset-type offset-type)]
                 [(@type type)]
@@ -113,7 +113,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
        [null-value null-value]))
 
 ;; A pointer whose type is determined at decode time
-(define x:void-pointer% (class xenobase%
+(define x:void-pointer% (class x:base%
                          (super-new)
                          (init-field type value)))
 (define (x:void-pointer . args) (apply make-object x:void-pointer% args))

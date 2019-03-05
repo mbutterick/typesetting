@@ -29,7 +29,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
   (not (eof-object? (peek-byte port))))
 
 (define x:string%
-  (class xenobase%
+  (class x:base%
     (super-new)
     (init-field [(@len len)] [(@encoding encoding)])
 
