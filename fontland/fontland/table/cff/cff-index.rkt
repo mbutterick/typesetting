@@ -13,7 +13,7 @@
             (loop (hash-ref ctx 'parent))
             (if ctx (hash-ref ctx 'x:version) -1))))
     
-    (define/augride (:decode stream parent)
+    (define/augride (decode stream parent)
       (match (decode (if (>= (getCFFVersion parent) 2) uint32be uint16be) stream)
         [0 null]
         [count (define offSize (decode uint8 stream))
@@ -43,10 +43,10 @@
                               'length (- end start))]))
                  (values (cons val vals) end))]))
 
-    (define/augride (:size arr parent)
+    (define/augride (size arr parent)
       (error 'cff-index-size-not-implemented))
 
-    (define/augride (:encode stream arr parent)
+    (define/augride (encode stream arr parent)
       (error 'cff-index-encode-not-implemented))))
 
 (define (CFFIndex [type #f])

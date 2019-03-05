@@ -1,10 +1,11 @@
 #lang debug racket/base
-(require xenomorph sugar/unstable/dict racket/class
+(require xenomorph racket/list sugar/unstable/dict racket/class
          "cff-index.rkt"
          "cff-dict.rkt"
          "cff-charsets.rkt"
          "cff-pointer.rkt"
-         "cff-encodings.rkt")
+         "cff-encodings.rkt"
+         "cff-private-dict.rkt")
 (provide CFFTop)
 
 #|
@@ -12,11 +13,26 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 |#
 
-(define PredefinedOp
+(define PredefinedOp%
   (class xenobase%
     (super-new)
     (init-field [(@predefinedOps predefinedOps)]
-                [(@type type) #f])))
+                [(@type type) #f])
+    (define/augment (decode stream parent operands)
+      (error 'predefined-op-decode-not-finished))
+
+    (define/augment (size value ctx)
+      (error 'predefined-op-size-not-finished))
+
+    (define/augment (encode stream value ctx)
+      (error 'predefined-op-encode-not-finished))))
+
+(define (PredefinedOp predefinedOps type) (make-object PredefinedOp% predefinedOps type))
+
+(define CFFEncodingVersion
+  (x:int #:size 1
+         #:signed #false
+         #:post-decode (λ (res) (bitwise-and res #x7f))))
 
 (define Range1
   (x:struct
@@ -27,11 +43,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (x:struct
    'first uint16be
    'nLeft uint16be))
-
-(define CFFEncodingVersion
-  (x:int #:size 1
-         #:signed #false
-         #:post-decode (λ (res) (bitwise-and res #x7f))))
 
 (define CFFCustomEncoding
   (x:versioned-struct
@@ -48,8 +59,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 ;; Decodes an array of ranges until the total
 ;; length is equal to the provided length.
 
-(define RangeArray
+(define RangeArray%
   (class x:array%
+    (super-new)
     (inherit-field [@len len] [@type type])
     (define (:decode stream parent)
       (define length (resolve-length @len stream parent))
@@ -61,9 +73,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
         (define range (decode @type stream parent))
         (hash-set! range 'offset count)
         (values (cons range res) (+ count (hash-ref range 'nLeft) 1))))))
+(define (RangeArray . args) (apply x:array #:base-class RangeArray% args))
+
+(define (base-tproc t) (length (hash-ref (hash-ref t 'parent) 'CharStrings)))
 
 (define CFFCustomCharset
-  (let ([tproc (λ (t) (sub1 (length (hash-ref (hash-ref t 'parent) 'CharStrings))))])
+  (let ([tproc (λ (t) (sub1 (base-tproc t)))])
     (x:versioned-struct
      uint8
      (dictify
@@ -71,11 +86,45 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
       1 (dictify 'ranges (RangeArray Range1 tproc))
       2 (dictify 'ranges (RangeArray Range2 tproc))))))
 
-(define CFFCharset (make-object PredefinedOp
-                     (list ISOAdobeCharset ExpertCharset ExpertSubsetCharset)
-                     (CFFPointer CFFCustomCharset #:lazy #true)))
+(define CFFCharset (PredefinedOp
+                    (list ISOAdobeCharset ExpertCharset ExpertSubsetCharset)
+                    (CFFPointer CFFCustomCharset #:lazy #true)))
+
+(define FDRange3
+  (x:struct 'first uint16be
+            'fd uint8))
+
+(define FDRange4
+  (x:struct 'first uint32be
+            'fd uint16be))
+
+(define FDSelect
+  (x:versioned-struct
+   uint8
+   (dictify
+    0 (dictify 'fds (x:array uint8 base-tproc))
+    3 (dictify 'nRanges uint16be
+               'ranges (x:array FDRange3 'nRanges)
+               'sentinel uint16be)
+    4 (dictify 'nRanges uint32be
+               'ranges (x:array FDRange4 'nRanges)
+               'sentinel uint32be))))
 
 (define ptr (CFFPointer CFFPrivateDict))
+(define (CFFPrivateOp . args)
+  (apply make-object
+         (class xenobase%
+           (super-new)
+           (define/augment (decode stream parent operands)
+             (hash-set! parent 'length (first operands))
+             (decode ptr stream parent (list (second operands)))))
+         args))
+
+(define FontDict
+  (CFFDict
+   ;; key      name                 type(s)                              default
+   `((18       Private              ,(CFFPrivateOp)                      #false)
+     ((12 38)  FontName             sid                                  #false))))
 
 (define CFFTopDict
   (CFFDict

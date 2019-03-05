@@ -12,7 +12,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPrivateDict.js
 
 (define CFFBlendOp
   (class xenobase%
-    (define/augment (:decode stream parent operands)
+    (define/augment (decode stream parent operands)
       (match (reverse operands)
         [(cons numBlends operands)
          ;; TODO: actually blend. For now just consume the deltas
@@ -42,4 +42,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPrivateDict.js
     (21        nominalWidthX        number                                      0)
     (22        vsindex              number                                      0)
     (23        blend               ,CFFBlendOp                                  #false)
-    (19        Subrs               ,(CFFPointer CFFIndex #:type 'local)         #false)))
+    (19        Subrs               ,(CFFPointer CFFIndex #:offset-type 'local)         #false)))
