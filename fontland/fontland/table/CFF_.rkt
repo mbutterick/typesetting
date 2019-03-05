@@ -34,6 +34,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
   (define ip (open-input-file fira-otf-path))
   (define cff-bytes (peek-bytes cff-length cff-offset ip))
   (define cff-data (decode CFFFont cff-bytes))
+  (check-equal? (hash-ref cff-data 'length) 13)
+  (check-equal? (hash-ref cff-data 'hdrSize) 4)
+  (check-equal? (hash-ref cff-data 'offSize) 3)
   (check-equal? (hash-ref cff-data 'nameIndex) '("FiraSans-Book"))
+  (check-equal? (hash-ref cff-data 'length) (string-length (car (hash-ref cff-data 'nameIndex))))
   cff-data
   )

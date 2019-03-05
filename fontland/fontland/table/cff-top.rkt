@@ -14,7 +14,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
     1 (dictify 'hdrSize uint8
                'offSize uint8
                'nameIndex (CFFIndex (x:string #:length 'length))
-               ;'topDictIndex (CFFIndex CFFTopDict)
+               ;;'topDictIndex (CFFIndex CFFTopDict)
                ;;'stringIndex (CFFIndex (x:string #:length 'length))
                ;;'globalSubrIndex (CFFIndex)
                )
