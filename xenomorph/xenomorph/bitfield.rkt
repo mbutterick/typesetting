@@ -35,10 +35,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
                     #:type [type-kwarg #f]
                     #:flags [flag-kwarg #f]
                     #:pre-encode [pre-proc #f]
-                    #:post-decode [post-proc #f])
+                    #:post-decode [post-proc #f]
+                    #:base-class [base-class x:bitfield%])
   (define type (or type-arg type-kwarg))
   (define flags (or flag-arg flag-kwarg null))
-  (new (generate-subclass x:bitfield% pre-proc post-proc) [type type] [flags flags]))
+  (new (generate-subclass base-class pre-proc post-proc) [type type] [flags flags]))
 
 (module+ test
   (require rackunit "number.rkt" "base.rkt")

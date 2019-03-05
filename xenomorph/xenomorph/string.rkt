@@ -84,10 +84,11 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                   #:length [len-kwarg #f]
                   #:encoding [enc-kwarg #f]
                   #:pre-encode [pre-proc #f]
-                  #:post-decode [post-proc #f])
+                  #:post-decode [post-proc #f]
+                  #:base-class [base-class x:string%])
   (define len (or len-arg len-kwarg))
   (define encoding (or enc-arg enc-kwarg 'ascii))
-  (new (generate-subclass x:string% pre-proc post-proc) [len len] [encoding encoding]))
+  (new (generate-subclass base-class pre-proc post-proc) [len len] [encoding encoding]))
 
 (define x:symbol%
   (class x:string%
@@ -105,10 +106,11 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                   #:length [len-kwarg #f]
                   #:encoding [enc-kwarg #f]
                   #:pre-encode [pre-proc #f]
-                  #:post-decode [post-proc #f])
+                  #:post-decode [post-proc #f]
+                  #:base-class [base-class x:symbol%])
   (define len (or len-arg len-kwarg))
   (define encoding (or enc-arg enc-kwarg 'utf8))
-  (new (generate-subclass x:symbol% pre-proc post-proc) [len len] [encoding encoding]))
+  (new (generate-subclass base-class pre-proc post-proc) [len len] [encoding encoding]))
 
 (module+ test
   (require rackunit "base.rkt")

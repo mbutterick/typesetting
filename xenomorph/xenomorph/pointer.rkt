@@ -98,12 +98,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                    #:allow-null [allow-null? #t]
                    #:null [null-value 0]
                    #:pre-encode [pre-proc #f]
-                   #:post-decode [post-proc #f])
+                   #:post-decode [post-proc #f]
+                   #:base-class [base-class x:pointer%])
   (define valid-pointer-relatives '(local immediate parent global))
   (unless (memq pointer-relative-to valid-pointer-relatives)
     (raise-argument-error '+xpointer (format "~v" valid-pointer-relatives) pointer-relative-to))
   (define type-in (or type-arg type-kwarg uint8))
-  (new (generate-subclass x:pointer% pre-proc post-proc)
+  (new (generate-subclass base-class pre-proc post-proc)
        [offset-type (or offset-arg offset-kwarg uint8)]
        [type (case type-in [(void) #f][else type-in])]
        [pointer-relative-to pointer-relative-to]

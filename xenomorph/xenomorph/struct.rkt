@@ -91,17 +91,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 (define (x:struct? x) (is-a? x x:struct%))
 
 (define (x:struct #:pre-encode [pre-proc #f]
-                  #:post-decode [post-proc #f] . dicts)
+                  #:post-decode [post-proc #f]
+                  #:base-class [base-class x:struct%]
+                  . dicts)
   (define args (flatten dicts))
   (unless (even? (length args))
-    (raise-argument-error '+xstruct "equal number of keys and values" dicts))
+    (raise-argument-error 'x:struct "equal number of keys and values" dicts))
   (define fields (for/list ([kv (in-slice 2 args)])
                    (unless (symbol? (car kv))
                      (raise-argument-error '+xstruct "symbol" (car kv)))
                    (apply cons kv)))
-  (new (generate-subclass x:struct% pre-proc post-proc) [fields fields]))
+  (new (generate-subclass base-class pre-proc post-proc) [fields fields]))
 
-#;(module+ test
+(module+ test
   (require rackunit "number.rkt" "base.rkt")
   (define (random-pick xs) (list-ref xs (random (length xs))))
   (check-exn exn:fail:contract? (λ () (x:struct 42)))

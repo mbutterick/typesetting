@@ -27,12 +27,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
     (define/augment (size [val #f] [parent #f])
       (match val
         [(? bytes?) (bytes-length val)]
-        [(== #false) (resolve-length @len val parent)]
+        [#false (resolve-length @len val parent)]
         [_ (raise-argument-error 'x:buffer-size "bytes or #f" val)]))))
 
 (define (x:buffer [len-arg #f]
                   #:length [len-kwarg #f]
                   #:pre-encode [pre-proc #f]
-                  #:post-decode [post-proc #f])
+                  #:post-decode [post-proc #f]
+                  #:base-class [base-class x:buffer%])
   (define len (or len-arg len-kwarg #xffff))
-  (new (generate-subclass x:buffer% pre-proc post-proc) [len len]))
+  (new (generate-subclass base-class pre-proc post-proc) [len len]))

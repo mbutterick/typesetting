@@ -36,10 +36,11 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
                     #:type [type-kwarg #f]
                     #:condition [cond-kwarg no-val]
                     #:pre-encode [pre-proc #f]
-                    #:post-decode [post-proc #f])
+                    #:post-decode [post-proc #f]
+                    #:base-class [base-class x:optional%])
   (define type (or type-arg type-kwarg))
   (define condition (cond
                       [(and (eq? cond-arg no-val) (eq? cond-kwarg no-val)) #true]
                       [(not (eq? cond-arg no-val)) cond-arg]
                       [(not (eq? cond-kwarg no-val)) cond-kwarg]))
-  (new (generate-subclass x:optional% pre-proc post-proc) [type type] [condition condition]))
+  (new (generate-subclass base-class pre-proc post-proc) [type type] [condition condition]))

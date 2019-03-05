@@ -33,7 +33,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
                 #:type [type-kwarg #f]
                 #:values [values-kwarg #f]
                 #:pre-encode [pre-proc #f]
-                #:post-decode [post-proc #f])
+                #:post-decode [post-proc #f]
+                #:base-class [base-class x:enum%])
   (define type (or type-arg type-kwarg))
   (define values (or values-arg values-kwarg))
-  (new (generate-subclass x:enum% pre-proc post-proc) [type type] [values values]))
+  (new (generate-subclass base-class pre-proc post-proc) [type type] [values values]))

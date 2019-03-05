@@ -42,10 +42,11 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
                       #:type [type-kwarg #f]
                       #:length [len-kwarg #f]
                       #:pre-encode [pre-proc #f]
-                      #:post-decode [post-proc #f])
+                      #:post-decode [post-proc #f]
+                      #:base-class [base-class x:lazy-array%])
   (define type (or type-arg type-kwarg))
   (define len (or len-arg len-kwarg))
-  (new (generate-subclass x:lazy-array% pre-proc post-proc) [type type]
+  (new (generate-subclass base-class pre-proc post-proc) [type type]
        [len len]
        [count-bytes? #false]))
 

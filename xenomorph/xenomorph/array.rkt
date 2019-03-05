@@ -91,8 +91,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
                  #:length [len-kwarg #f]
                  #:count-bytes [count-bytes? #f]
                  #:pre-encode [pre-proc #f]
-                 #:post-decode [post-proc #f])
-  (new (generate-subclass x:array% pre-proc post-proc) [type (or type-arg type-kwarg)]
+                 #:post-decode [post-proc #f]
+                 #:base-class [base-class x:array%])
+  (new (generate-subclass base-class pre-proc post-proc) [type (or type-arg type-kwarg)]
        [len (or len-arg len-kwarg)]
        [count-bytes? count-bytes?]))
 

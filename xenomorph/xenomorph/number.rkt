@@ -17,7 +17,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define (reverse-bytes bstr)
   (apply bytes
          (for/list ([b (in-bytes bstr (sub1 (bytes-length bstr)) -1 -1)])
-           b)))
+                   b)))
 
 (define (exact-if-possible x) (if (integer? x) (inexact->exact x) x))
 
@@ -57,7 +57,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
       (define bs ((if (eq? @endian system-endian) values reverse-bytes) (read-bytes @size port)))
       (define uint (for/sum ([b (in-bytes bs)]
                              [i (in-naturals)])
-                     (arithmetic-shift b (* 8 i))))
+                            (arithmetic-shift b (* 8 i))))
       (if signed (unsigned->signed uint @bits) uint))
                 
     (define/augment (encode val . _)
@@ -74,9 +74,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                #:size [size-kwarg 2]
                #:signed [signed #true]
                #:endian [endian system-endian]
-                 #:pre-encode [pre-proc #f]
-                 #:post-decode [post-proc #f])
-  (new (generate-subclass x:int% pre-proc post-proc)
+               #:pre-encode [pre-proc #f]
+               #:post-decode [post-proc #f]
+               #:base-class [base-class x:int%])
+  (new (generate-subclass base-class pre-proc post-proc)
        [size (or size-arg size-kwarg)]
        [signed signed]
        [endian endian]))
@@ -162,8 +163,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 
 (define (x:float [size 4] #:endian [endian system-endian]
                  #:pre-encode [pre-proc #f]
-                 #:post-decode [post-proc #f])
-  (new (generate-subclass x:float% pre-proc post-proc) [size size] [endian endian]))
+                 #:post-decode [post-proc #f]
+                 #:base-class [base-class x:float%])
+  (new (generate-subclass base-class pre-proc post-proc) [size size] [endian endian]))
 
 (define float (x:float 4))
 (define floatbe (x:float 4 #:endian 'be))
@@ -193,8 +195,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                  #:endian [endian system-endian]
                  #:fracbits [fracbits (/ (* size 8) 2)]
                  #:pre-encode [pre-proc #f]
-                 #:post-decode [post-proc #f])  
-  (new (generate-subclass x:fixed% pre-proc post-proc) [size size] [signed signed] [endian endian] [fracbits fracbits]))
+                 #:post-decode [post-proc #f]
+                 #:base-class [base-class x:fixed%])  
+  (new (generate-subclass base-class pre-proc post-proc) [size size] [signed signed] [endian endian] [fracbits fracbits]))
 
 (define fixed16 (x:fixed 2))
 (define fixed16be (x:fixed 2 #:endian 'be))
