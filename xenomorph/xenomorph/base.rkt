@@ -70,10 +70,10 @@
     (super-new)
     
     (define/pubment (decode input-port [parent #f])
-      (post-decode (inner (error 'decode-not-augmented) decode input-port parent)))
+      (post-decode (inner (error 'xenomorph (format "decode not augmented in ~a" this)) decode input-port parent)))
     
     (define/pubment (encode val output-port [parent #f])
-      (match (inner (error 'encode-not-augmented) encode (pre-encode val) output-port parent)
+      (match (inner (error 'xenomorph (format "encode not augmented in ~a" this)) encode (pre-encode val) output-port parent)
         [(? bytes? encode-result) (write-bytes encode-result output-port)]
         [_ (void)]))
     
