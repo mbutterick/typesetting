@@ -32,6 +32,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
     (define (encodeOperands type stream ctx operands)
       (error 'cff-dict-encodeOperands-undefined))
 
+    (define/override (post-decode val)
+      (dict->mutable-hash val))
+    
     (augment [@decode decode])
     (define (@decode stream parent)
       (define end (+ (pos stream) (hash-ref parent 'length)))
@@ -46,6 +49,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
       (for ([(key field) (in-hash @fields)])
            (hash-set! ret (second field) (fourth field)))
 
+      #R ret
       (let loop ()
         (when (< (pos stream) end)
           (define b (read-byte stream))
@@ -64,7 +68,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
              (set! operands null)]
             [else
              ;; use `send` here to pass b as value arg
-             (set! operands (append operands (list (send CFFOperand decode stream b))))])
+             (set! operands (append operands (list (decode CFFOperand stream b))))])
           (loop)))
 
       ret)
@@ -75,4 +79,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
     (define/augment (encode stream dict parent)
       (error 'cff-dict-encode-undefined))))
 
-(define (CFFDict [ops null]) #R (make-object CFFDict% ops))
+(define (CFFDict [ops null]) (make-object CFFDict% ops))

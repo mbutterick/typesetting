@@ -27,11 +27,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
       (hash-set! cff-font 'version (hash-ref cff-font 'x:version))
 
       (when (and (hash-has-key? cff-font 'version) (< (hash-ref cff-font 'version) 2))
-          (match (hash-ref cff-font 'topDictIndex)
-            [(list dict) (hash-set! cff-font 'topDict dict)]
-            [_ (error 'only-single-font-allowed-in-cff)]))
+        (match (hash-ref cff-font 'topDictIndex)
+          [(list dict) (hash-set! cff-font 'topDict dict)]
+          [_ (error 'only-single-font-allowed-in-cff)]))
 
-      #;(hash-set! cff-font 'isCIDFont (hash-ref (hash-ref cff-font 'topDict) 'ROS))
+      (hash-set! cff-font 'isCIDFont (hash-ref (hash-ref cff-font 'topDict) 'ROS))
       cff-font)))
 
 (define CFFFont (make-object CFFFont%))
@@ -52,10 +52,19 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
   (check-equal? (hash-ref cff-font 'hdrSize) 4)
   (check-equal? (hash-ref cff-font 'offSize) 3)
   (check-equal? (hash-ref cff-font 'nameIndex) '("FiraSans-Book"))
-  (check-equal? (take-right (hash-ref cff-font 'stringIndex) 2)
-                (list
-                 "Digitized data copyright \\(c\\) 2012-2015, The Mozilla Foundation and Telefonica S.A."
-                 "Fira Sans Book"))
-  (hash-ref cff-font 'topDict)
   (check-equal? (length (hash-ref cff-font 'globalSubrIndex)) 820)
-  )
+  (check-equal? (length (hash-ref cff-font 'stringIndex)) 2404)
+  ; 'version string
+  (check-equal? (hash-ref (hash-ref cff-font 'topDict) 'version) 2401)
+  (check-equal?
+   (list-ref (hash-ref cff-font 'stringIndex) 2401)
+   "004.106")
+  ; 'Notice string
+  (check-equal?
+   (list-ref (hash-ref cff-font 'stringIndex) 2402)
+   "Digitized data copyright \\(c\\) 2012-2015, The Mozilla Foundation and Telefonica S.A.")
+  ; 'FullName string
+  (check-equal?
+   (list-ref (hash-ref cff-font 'stringIndex) 2403)
+   "Fira Sans Book")
+  (hash-ref (hash-ref cff-font 'topDict) 'Copyright))

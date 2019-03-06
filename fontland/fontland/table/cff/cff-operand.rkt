@@ -22,7 +22,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
     (super-new)
 
     (augment [@decode decode])
-    (define (@decode stream value)
+    (define (@decode stream _ value)
       (cond
         [(<= 32 value 246) (- value 139)]
         [(<= 247 value 250) (+ (* (- value 247) 256) (read-byte stream) 108)]
