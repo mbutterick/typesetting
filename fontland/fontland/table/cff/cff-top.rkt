@@ -174,12 +174,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
                'offSize uint8
                'nameIndex (CFFIndex (x:string #:length 'length))
                'topDictIndex (CFFIndex CFFTopDict)
-               ;;'stringIndex (CFFIndex (x:string #:length 'length))
-               ;;'globalSubrIndex (CFFIndex)
-               )
+               'stringIndex (CFFIndex (x:string #:length 'length))
+               'globalSubrIndex (CFFIndex))
     
-    2 (dictify 'hdrSize uint8
+    #|
+2 (dictify 'hdrSize uint8
                'length  uint16be
-               ;;'topDict CFF2TopDict
-               ;;'globalSubrIndex (CFFIndex)
-               ))))
+               'topDict CFF2TopDict
+               'globalSubrIndex (CFFIndex))
+|#
+               )))

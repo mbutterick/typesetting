@@ -20,20 +20,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                       (values key field))])
 
     (define (decodeOperands type stream ret operands)
-      (cond
-        [(list? type)
+      (match type
+        [(? list?)
          (for/list ([(op i) (in-indexed operands)])
                    (decodeOperands (list-ref type i) stream ret (list op)))]
-        [(hash-ref type 'decode #f) => (λ (proc) (proc stream ret operands))]
-        [else (case type
-                [(number offset sid) (car operands)]
-                [(boolean) (if (car operands) #t #f)]
-                [else operands])]))
+        [(hash-table 'decode proc) (proc stream ret operands)]
+        [(or 'number 'offset 'sid) (car operands)]
+        ['boolean (if (car operands) #t #f)]
+        [_ operands]))
 
     (define (encodeOperands type stream ctx operands)
       (error 'cff-dict-encodeOperands-undefined))
 
-    (define/augment (decode stream parent)
+    (augment [@decode decode])
+    (define (@decode stream parent)
       (define end (+ (pos stream) (hash-ref parent 'length)))
       (define ret (make-hash))
       (define operands null)
@@ -53,7 +53,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
             [(< b 28)
              (when (= b 12)
                (set! b (bitwise-ior (arithmetic-shift b 8) (read-byte stream))))
-
              (define field (hash-ref @fields b #false))
              (unless field
                (error 'cff-dict-decode (format "unknown operator: ~a" b)))
@@ -64,8 +63,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                (hash-set! ret (second field) val))
              (set! operands null)]
             [else
-             (set! operands (append operands (list (decode CFFOperand stream b))))])
-          (loop))))
+             ;; use `send` here to pass b as value arg
+             (set! operands (append operands (list (send CFFOperand decode stream b))))])
+          (loop)))
+
+      ret)
 
     (define/augment (size dict parent [includePointers #true])
       (error 'cff-dict-size-undefined))
@@ -73,4 +75,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
     (define/augment (encode stream dict parent)
       (error 'cff-dict-encode-undefined))))
 
-(define (CFFDict [ops null]) (make-object CFFDict% ops))
+(define (CFFDict [ops null]) #R (make-object CFFDict% ops))

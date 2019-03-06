@@ -48,10 +48,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
   (define ip (open-input-file fira-otf-path))
   (define cff-bytes (peek-bytes cff-length cff-offset ip))
   (define cff-font (decode CFFFont cff-bytes))
-  (check-equal? (hash-ref cff-font 'length) 13)
+  (check-equal? (hash-ref cff-font 'version) 1)
   (check-equal? (hash-ref cff-font 'hdrSize) 4)
   (check-equal? (hash-ref cff-font 'offSize) 3)
   (check-equal? (hash-ref cff-font 'nameIndex) '("FiraSans-Book"))
-  (check-equal? (hash-ref cff-font 'length) (string-length (car (hash-ref cff-font 'nameIndex))))
-  cff-font
+  (check-equal? (take-right (hash-ref cff-font 'stringIndex) 2)
+                (list
+                 "Digitized data copyright \\(c\\) 2012-2015, The Mozilla Foundation and Telefonica S.A."
+                 "Fira Sans Book"))
+  (hash-ref cff-font 'topDict)
+  (check-equal? (length (hash-ref cff-font 'globalSubrIndex)) 820)
   )

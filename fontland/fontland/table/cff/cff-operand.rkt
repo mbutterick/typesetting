@@ -21,7 +21,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
   (class x:base%
     (super-new)
 
-    (define (decode stream value)
+    (augment [@decode decode])
+    (define (@decode stream value)
       (cond
         [(<= 32 value 246) (- value 139)]
         [(<= 247 value 250) (+ (* (- value 247) 256) (read-byte stream) 108)]
@@ -48,7 +49,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
                    (let ([strs (cons (vector-ref FLOAT_LOOKUP n2) strs)])
                      (values strs #false))]))]))]))
 
-    (define (size value-arg)
+    (define/augment (size value-arg)
       ;; if the value needs to be forced to the largest size (32 bit)
       ;; e.g. for unknown pointers, set to 32768
       (define value (if (hash-ref value-arg 'forceLarge #f) 32768 value-arg))
@@ -62,7 +63,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
         [(<= -32768 value 32767) 3]
         [else 5]))
 
-    (define (encode stream value)
+    (augment [@encode encode])
+    (define (@encode stream value)
       ;; if the value needs to be forced to the largest size (32 bit)
       ;; e.g. for unknown pointers, save the old value and set to 32768
       (define val (string->number (format "~a" value)))
@@ -107,5 +109,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
          (encode uint32be val stream)]))))
 
 
-(define (CFFOperand . args)
-  (apply make-object CFFOperand% args))
+(define CFFOperand (make-object CFFOperand%))
