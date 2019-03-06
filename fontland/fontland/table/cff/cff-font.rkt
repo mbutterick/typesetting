@@ -26,10 +26,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
       ;; because fontkit depends on overloading 'version key, and we don't
       (hash-set! cff-font 'version (hash-ref cff-font 'x:version))
 
-      #;(when (and (hash-has-key? cff-font 'version) (< (hash-ref cff-font 'version) 2))
-        (match (hash-ref cff-font 'topDictIndex)
-          [(list dict) (hash-set! cff-font 'topDict dict)]
-          [_ (error 'only-single-font-allowed-in-cff)]))
+      (when (and (hash-has-key? cff-font 'version) (< (hash-ref cff-font 'version) 2))
+          (match (hash-ref cff-font 'topDictIndex)
+            [(list dict) (hash-set! cff-font 'topDict dict)]
+            [_ (error 'only-single-font-allowed-in-cff)]))
 
       #;(hash-set! cff-font 'isCIDFont (hash-ref (hash-ref cff-font 'topDict) 'ROS))
       cff-font)))
