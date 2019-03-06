@@ -55,7 +55,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
   (check-equal? (length (hash-ref cff-font 'globalSubrIndex)) 820)
   (check-equal? (length (hash-ref cff-font 'stringIndex)) 2404)
   ; 'version string
-  (check-equal? (hash-ref (hash-ref cff-font 'topDict) 'version) 2401)
+  #;(check-equal? (hash-ref (hash-ref cff-font 'topDict) 'version) 2401)
   (check-equal?
    (list-ref (hash-ref cff-font 'stringIndex) 2401)
    "004.106")

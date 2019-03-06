@@ -18,7 +18,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                                     [(list* 0th 1st _) (bitwise-ior (arithmetic-shift 0th 8) 1st)]
                                     [val val]))
                       (values key field))])
-
+    
     (define (decodeOperands type stream ret operands)
       (match type
         [(? list?)
@@ -49,19 +49,22 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
       (for ([(key field) (in-hash @fields)])
            (hash-set! ret (second field) (fourth field)))
 
-      #R ret
       (let loop ()
         (when (< (pos stream) end)
           (define b (read-byte stream))
           (cond
             [(< b 28)
+             #R b
              (when (= b 12)
                (set! b (bitwise-ior (arithmetic-shift b 8) (read-byte stream))))
              (define field (hash-ref @fields b #false))
+             #R field
              (unless field
                (error 'cff-dict-decode (format "unknown operator: ~a" b)))
 
              (define val (decodeOperands (third field) stream ret operands))
+
+             #R val
              (unless (void? val)
                ;; ignoring PropertyDescriptor nonsense
                (hash-set! ret (second field) val))
