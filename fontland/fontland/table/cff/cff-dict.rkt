@@ -51,19 +51,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
           (cond
             [(< b 28)
              (when (= b 12)
-               (set! b (bitwise-or (arithmetic-shift b 8) (read-byte stream))))
+               (set! b (bitwise-ior (arithmetic-shift b 8) (read-byte stream))))
 
              (define field (hash-ref @fields b #false))
              (unless field
                (error 'cff-dict-decode (format "unknown operator: ~a" b)))
 
              (define val (decodeOperands (third field) stream ret operands))
-             (when val
-               (if (PropertyDescriptor? val)
-
-          (loop)))
-
-      )
+             (unless (void? val)
+               ;; ignoring PropertyDescriptor nonsense
+               (hash-set! ret (second field) val))
+             (set! operands null)]
+            [else
+             (set! operands (append operands (list (decode CFFOperand stream b))))])
+          (loop))))
 
     (define/augment (size dict parent [includePointers #true])
       (error 'cff-dict-size-undefined))
