@@ -14,5 +14,25 @@
     [(? x:int?) #:when port (decode x port)]
     [_ (raise-argument-error 'resolve-length "fixed-size argument" x)]))
 
+(define-values (PropertyDescriptor-prop PropertyDescriptor? _)
+  (make-impersonator-property 'PropertyDescriptor))
 
-(struct PropertyDescriptor (kvs) #:transparent)
+(define (PropertyDescriptor [opts (make-hash)])
+  (define mh (make-hash))
+  (for ([(k v) (in-hash opts)])
+    (hash-set! mh k v))
+  (impersonate-hash mh
+                    (λ (h k) (values k (λ (h k v) v)))
+                    (λ (h k v) (values k v))
+                    (λ (h k) k)
+                    (λ (h k) k)
+                    PropertyDescriptor-prop
+                    #true))
+
+(module+ test
+  (require rackunit)
+  (define pd (PropertyDescriptor))
+  (hash-set! pd 'k 42)
+  (check-equal? (hash-ref pd 'k) 42)
+  (check-true (PropertyDescriptor? pd))
+  (check-true (hash? pd)))
