@@ -36,13 +36,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
     (hash-set! mheq x:current-offset-key (- (pos port) (hash-ref mheq x:start-offset-key))))
   mheq)
 
-(define (dict->mutable-hash x)
-  (define h (make-hasheq))
-  (for ([(k v) (in-dict x)]
-        #:unless (memq k private-keys))
-    (hash-set! h k v))
-  h)
-
 (define x:struct%
   (class x:base%
     (super-new)

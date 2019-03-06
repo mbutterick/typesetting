@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class racket/match)
+(require racket/class racket/dict racket/match)
 (provide (all-defined-out))
 
 (struct x:ptr (type val parent) #:transparent)
@@ -18,6 +18,13 @@
 (define private-keys (list x:parent-key x:start-offset-key x:current-offset-key x:length-key x:pointer-size-key
                            x:pointers-key x:pointer-offset-key x:pointer-type-key x:val-key))
 
+(define (dict->mutable-hash x)
+  (define h (make-hasheq))
+  (for ([(k v) (in-dict x)]
+        #:unless (memq k private-keys))
+    (hash-set! h k v))
+  h)
+
 (define (hash-ref* d . keys)
   (for/fold ([d d])
             ([k (in-list keys)])
@@ -28,22 +35,23 @@
     (file-position p new-pos))
   (file-position p))
 
-(define (decode xo [port-arg (current-input-port)] #:parent [parent #f])
+(define (decode xo [port-arg (current-input-port)] #:parent [parent #f] . args)
   (define port
     (cond
       [(input-port? port-arg) port-arg]
       [(bytes? port-arg) (open-input-bytes port-arg)]
       [else (raise-argument-error 'decode "byte string or input port" port-arg)]))
-  (send xo decode port parent))
+  (send xo decode port parent . args))
                                       
 (define (encode xo val [port-arg (current-output-port)]
-                #:parent [parent #f])
+                #:parent [parent #f]
+                . args)
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  (send xo encode val port parent)
+  (send xo encode val port parent . args)
   (unless port-arg (get-output-bytes port)))
                                       
-(define (size xo [val #f] #:parent [parent #f])
-  (send xo size val parent))
+(define (size xo [val #f] #:parent [parent #f] . args)
+  (send xo size val parent . args))
 
 (define (xenomorphic-type? x) (is-a? x x:base%))
 (define xenomorphic? xenomorphic-type?)
@@ -69,11 +77,11 @@
   (class object%
     (super-new)
     
-    (define/pubment (decode input-port [parent #f])
-      (post-decode (inner (error 'xenomorph (format "decode not augmented in ~a" this)) decode input-port parent)))
+    (define/pubment (decode input-port [parent #f] . args)
+      (post-decode (inner (error 'xenomorph (format "decode not augmented in ~a" this)) decode input-port parent . args)))
     
-    (define/pubment (encode val output-port [parent #f])
-      (match (inner (error 'xenomorph (format "encode not augmented in ~a" this)) encode (pre-encode val) output-port parent)
+    (define/pubment (encode val output-port [parent #f] . args)
+      (match (inner (error 'xenomorph (format "encode not augmented in ~a" this)) encode (pre-encode val) output-port parent . args)
         [(? bytes? encode-result) (write-bytes encode-result output-port)]
         [_ (void)]))
     
