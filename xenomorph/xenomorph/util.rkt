@@ -13,3 +13,6 @@
     [(? symbol? key) #:when parent (dict-ref parent key)]
     [(? x:int?) #:when port (decode x port)]
     [_ (raise-argument-error 'resolve-length "fixed-size argument" x)]))
+
+
+(struct PropertyDescriptor (kvs) #:transparent)
