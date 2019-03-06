@@ -1,5 +1,6 @@
 #lang debug racket/base
-(require racket/class racket/match racket/list xenomorph sugar/unstable/dict)
+(require racket/class racket/match racket/list xenomorph sugar/unstable/dict
+         "cff-operand.rkt")
 (provide CFFDict)
 
 #|
