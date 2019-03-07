@@ -90,6 +90,22 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                         (+ (hash-ref new-parent x:pointer-size-key) (send type size val new-parent)))))
       (send @offset-type size))))
 
+#|
+The arguments here are renamed slightly compared to the original.
+
+offsetType => offset-type
+The type of the thing the pointer points to.
+
+type => type
+The type of the pointer value itself.
+
+options.type => relative-to
+The reference point of the pointer value (local, immediate, parent, global). It was confusing to have two things named `type`, however.
+
+relativeTo => [not supported]
+This allows the pointer to be calculated relative to a property on the parent. I saw no use for this, so I dropped it.
+|#
+
 (define (x:pointer [offset-arg #f] [type-arg #f]
                    #:offset-type [offset-kwarg #f]
                    #:type [type-kwarg #f]

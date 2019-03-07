@@ -43,6 +43,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
    (check-equal? (decode (x:pointer #:relative-to 'global) #:parent (mhash x:parent-key (mhash x:parent-key (mhash x:start-offset-key 2))))
                  53)))
 
+;; skipping
+;; 'should support offsets relative to a property on the parent'
+
 (test-case
  "pointer: decode should support returning pointer if there is no decode type"
  (parameterize ([current-input-port (open-input-bytes (bytes 4))])
