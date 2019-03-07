@@ -315,7 +315,7 @@
                                    -> (cond
                                         [(zero? err)
                                          ;; see https://www.freetype.org/freetype2/docs/tutorial/step1.html
-                                         (FT_Set_Char_Size ftf 0 1000 0 0)
+                                         
                                          ftf]
                                         [(= err 1)
                                          (error 'FT_New_Face (format "font ~v not found" path))]
@@ -346,11 +346,29 @@
 
 (define+provide FT_KERNING_UNSCALED 2)
 (define+provide FT_LOAD_DEFAULT #x0)
+(define+provide FT_LOAD_NO_SCALE (arithmetic-shift 1 0))
+(define+provide FT_LOAD_NO_HINTING (arithmetic-shift 1 1))
 (define+provide FT_LOAD_RENDER (arithmetic-shift 1 2))
 (define+provide FT_LOAD_LINEAR_DESIGN (arithmetic-shift 1 13))
 (define+provide FT_LOAD_NO_RECURSE (arithmetic-shift 1 10))
-(define+provide FT_LOAD_NO_SCALE (arithmetic-shift 1 0))
+(define+provide FT_LOAD_COMPUTE_METRICS (arithmetic-shift 1 21))
 
+(define+provide FT_FACE_FLAG_SCALABLE          (arithmetic-shift 1  0))
+(define+provide FT_FACE_FLAG_FIXED_SIZES       (arithmetic-shift 1  1))
+(define+provide FT_FACE_FLAG_FIXED_WIDTH       (arithmetic-shift 1  2))
+(define+provide FT_FACE_FLAG_SFNT              (arithmetic-shift 1  3))
+(define+provide FT_FACE_FLAG_HORIZONTAL        (arithmetic-shift 1  4))
+(define+provide FT_FACE_FLAG_VERTICAL          (arithmetic-shift 1  5))
+(define+provide FT_FACE_FLAG_KERNING           (arithmetic-shift 1  6))
+(define+provide FT_FACE_FLAG_FAST_GLYPHS       (arithmetic-shift 1  7))
+(define+provide FT_FACE_FLAG_MULTIPLE_MASTERS  (arithmetic-shift 1  8))
+(define+provide FT_FACE_FLAG_GLYPH_NAMES       (arithmetic-shift 1  9))
+(define+provide FT_FACE_FLAG_EXTERNAL_STREAM   (arithmetic-shift 1 10))
+(define+provide FT_FACE_FLAG_HINTER            (arithmetic-shift 1 11))
+(define+provide FT_FACE_FLAG_CID_KEYED         (arithmetic-shift 1 12))
+(define+provide FT_FACE_FLAG_TRICKY            (arithmetic-shift 1 13))
+(define+provide FT_FACE_FLAG_COLOR             (arithmetic-shift 1 14))
+(define+provide FT_FACE_FLAG_VARIATION         (arithmetic-shift 1 15))
 
 
 (define-freetype FT_Get_Postscript_Name (_fun _FT_Face -> _string))
@@ -394,7 +412,7 @@
   (integer->integer-bytes int 4 signed? big-endian?))
 
 (module+ test
-  (require rackunit)
+  (require rackunit racket/list)
   (define ft-library (FT_Init_FreeType))
   (define (test-face face-str)
     (define face (FT_New_Face ft-library face-str))
@@ -415,11 +433,17 @@
              (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
 
     (define H-gid (FT_Get_Char_Index face 72))
-    (FT_Load_Glyph face H-gid FT_LOAD_NO_RECURSE)
+    (FT_Load_Glyph face H-gid FT_LOAD_NO_SCALE)
     ; want bearingX (lsb) and advanceX (advance width)
     (define g (FT_FaceRec-glyph face))
     (define metrics (FT_GlyphSlotRec-metrics g))
-    #R (FT_Glyph_Metrics->list metrics)
+    #|
+see
+https://www.freetype.org/freetype2/docs/tutorial/step2.html
+"As not all fonts do contain vertical metrics, the values of vertBearingX, vertBearingY and vertAdvance should not be considered reliable if FT_HAS_VERTICAL returns false."
+|#
+    (define horiz-metrics (take (FT_Glyph_Metrics->list metrics) 5))
+    (check-equal? horiz-metrics '(672 671 33 671 738))
     (define bearingX (FT_Glyph_Metrics-horiBearingX metrics))
     (check-equal? bearingX 33)
     (define advanceX (FT_Glyph_Metrics-horiAdvance metrics))
@@ -441,8 +465,8 @@
     (check-equal? (FT_TT_OS2-sTypoDescender os2-table) -238)
     (check-equal? (FT_TT_OS2-sCapHeight os2-table) 671)
     (check-equal? (FT_TT_OS2-sxHeight os2-table) 481)
-
-    (FT_Done_Face face))
+    (FT_Done_Face face)
+    )
 
   (test-face "../assets/charter.ttf")
   (test-face "../assets/charter.otf")
