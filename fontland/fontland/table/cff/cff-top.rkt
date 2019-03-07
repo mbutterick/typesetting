@@ -18,8 +18,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
     (super-new)
     (init-field [(@predefinedOps predefinedOps)]
                 [(@type type) #f])
-    (define/augment (decode stream parent operands)
-      (error 'predefined-op-decode-not-finished))
+
+    (augment [@decode decode])
+    (define (@decode stream parent operands)
+      (define idx (car operands))
+      (cond
+        [(and (< idx (length @predefinedOps)) (list-ref @predefinedOps idx))]
+        [else (decode @type stream #:parent parent operands)]))
 
     (define/augment (size value ctx)
       (error 'predefined-op-size-not-finished))
@@ -115,9 +120,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (apply make-object
          (class x:base%
            (super-new)
-           (define/augment (decode stream parent operands)
+           (augment [@decode decode])
+           (define (@decode stream parent operands)
              (hash-set! parent 'length (first operands))
-             (decode ptr stream parent (list (second operands)))))
+             (decode ptr stream #:parent parent (list (second operands)))))
          args))
 
 (define FontDict
@@ -149,7 +155,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
      (14       XUID                 array                                #false)
      (15       charset             ,CFFCharset                          ,ISOAdobeCharset)
      (16       Encoding            ,CFFEncoding                         ,StandardEncoding)
-     (17       CharStrings         ,(CFFPointer CFFIndex)                #false)
+     (17       CharStrings         ,(CFFPointer (CFFIndex))                #false)
      (18       Private             ,(CFFPrivateOp)                       #false)
      ((12 20)  SyntheticBase        number                               #false)
      ((12 21)  PostScript           sid                                  #false)
@@ -175,7 +181,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
                'nameIndex (CFFIndex (x:string #:length 'length))
                'topDictIndex (CFFIndex CFFTopDict)
                'stringIndex (CFFIndex (x:string #:length 'length))
-               'globalSubrIndex (CFFIndex))
+               'globalSubrIndex (CFFIndex)
+               )
     
     #|
 2 (dictify 'hdrSize uint8
@@ -183,4 +190,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
                'topDict CFF2TopDict
                'globalSubrIndex (CFFIndex))
 |#
-               )))
+    )))

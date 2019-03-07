@@ -32,19 +32,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
         [(= value 30)
          (for/fold ([strs null]
                     [break? #false]
-                    #:result (* (string->number (string-append (reverse strs)) 1.0)))
+                    #:result (* (string->number (apply string-append (reverse strs))) 1.0))
                    ([i (in-naturals)]
                     #:break break?)
            (define b (read-byte stream))
 
            (define n1 (arithmetic-shift b -4))
+           
            (cond
              [(= n1 FLOAT_EOF) (values strs 'break-now)]
              [else
               (let ([strs (cons (vector-ref FLOAT_LOOKUP n1) strs)])
                 (define n2 (bitwise-and b 15))
                 (cond
-                  [(= n2 FLOAT_EOF (values strs 'break-now))]
+                  [(= n2 FLOAT_EOF) (values strs 'break-now)]
                   [else
                    (let ([strs (cons (vector-ref FLOAT_LOOKUP n2) strs)])
                      (values strs #false))]))]))]))

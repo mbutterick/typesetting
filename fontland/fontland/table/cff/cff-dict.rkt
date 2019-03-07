@@ -24,10 +24,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         [(? list?)
          (for/list ([(op i) (in-indexed operands)])
                    (decodeOperands (list-ref type i) stream ret (list op)))]
-        [(hash-table 'decode proc) (proc stream ret operands)]
+        [(? xenomorphic?) (decode type stream #:parent ret operands)]
         [(or 'number 'offset 'sid) (car operands)]
         ['boolean (if (car operands) #t #f)]
-        [_ operands]))
+        [_  operands]))
 
     (define (encodeOperands type stream ctx operands)
       (error 'cff-dict-encodeOperands-undefined))
@@ -54,23 +54,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
           (define b (read-byte stream))
           (cond
             [(< b 28)
-             #R b
              (when (= b 12)
                (set! b (bitwise-ior (arithmetic-shift b 8) (read-byte stream))))
              (define field (hash-ref @fields b #false))
-             #R field
              (unless field
                (error 'cff-dict-decode (format "unknown operator: ~a" b)))
 
              (define val (decodeOperands (third field) stream ret operands))
 
-             #R val
+
              (unless (void? val)
                ;; ignoring PropertyDescriptor nonsense
                (hash-set! ret (second field) val))
              (set! operands null)]
             [else
-             ;; use `send` here to pass b as value arg
              (set! operands (append operands (list (decode CFFOperand stream b))))])
           (loop)))
 

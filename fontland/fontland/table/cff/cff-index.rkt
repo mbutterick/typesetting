@@ -9,12 +9,11 @@
 
     (define (getCFFVersion ctx)
       (let loop ([ctx ctx])
-        (if (and ctx
-                 (hash? ctx)
-                 (hash-has-key? ctx 'hdrSize)
-                 (not (hash-ref ctx 'hdrSize)))
-            (loop (hash-ref ctx 'parent))
-            (if ctx (hash-ref ctx 'x:version) -1))))
+        (cond
+          [(and ctx (hash? ctx) (not (hash-ref ctx 'hdrSize #f)))
+           (loop (hash-ref ctx 'x:parent))]
+          [(and ctx (hash-ref ctx 'x:version #f))]
+          [else -1])))
 
     (augride [@decode decode])
     (define (@decode stream parent)
