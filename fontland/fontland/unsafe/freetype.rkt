@@ -315,7 +315,8 @@
                                    -> (cond
                                         [(zero? err)
                                          ;; see https://www.freetype.org/freetype2/docs/tutorial/step1.html
-                                         
+                                         ;; for meaning of these arguments
+                                         (FT_Set_Char_Size ftf 0 1000 0 0)
                                          ftf]
                                         [(= err 1)
                                          (error 'FT_New_Face (format "font ~v not found" path))]

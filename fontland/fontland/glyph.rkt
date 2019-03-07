@@ -38,12 +38,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
     (FT_Load_Glyph face (glyph-id g) FT_LOAD_NO_RECURSE)
     (define glyph (FT_FaceRec-glyph face))
     (define ft-glyph-metrics (FT_GlyphSlotRec-metrics glyph))
-    #R (FT_Glyph_Metrics->list ft-glyph-metrics)
     (set-glyph-metrics! g (mhash))
     (hash-set*! (glyph-metrics g)
                 'advanceWidth (FT_Glyph_Metrics-horiAdvance ft-glyph-metrics)
                 'leftBearing (FT_Glyph_Metrics-horiBearingX ft-glyph-metrics)))
-  #R (glyph-metrics g))
+  (glyph-metrics g))
 
 (define (+ttf-glyph . args)
   (apply +glyph #:constructor ttf-glyph args))
