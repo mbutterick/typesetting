@@ -1,5 +1,7 @@
 #lang debug racket/base
-(require racket/class racket/match racket/list xenomorph "cff-top.rkt")
+(require racket/class racket/match racket/list xenomorph
+         "cff-top.rkt"
+         "cff-standard-strings.rkt")
 (provide (all-defined-out))
 
 #|
@@ -32,6 +34,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
 
       (hash-set! cff-font 'isCIDFont (hash-ref (hash-ref cff-font 'topDict) 'ROS))
       cff-font)))
+
+(define (CFFont-string this sid)
+  (let ([sid (or sid 0)])
+    #R sid
+    (cond
+      [(>= (hash-ref this 'version) 2) #false]
+      [(< sid (length standardStrings)) (list-ref standardStrings sid)]
+      [else (list-ref (hash-ref this 'stringIndex) (- sid (length standardStrings)))])))
+
+(define (CFFFont-postscriptName this)
+  (cond
+    [(< (hash-ref this 'version) 2)
+     (list-ref (hash-ref this 'nameIndex) 0)]
+    [else #false]))
 
 (define CFFFont (make-object CFFFont%))
 

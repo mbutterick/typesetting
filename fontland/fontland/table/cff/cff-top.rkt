@@ -174,6 +174,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 
 (define CFFTop
   (x:versioned-struct
+   #:pre-encode
+   (λ (val)
+      ;; because fontkit depends on overloading 'version key, and we don't
+      (hash-set! val 'x:version (hash-ref val 'version))
+     val)
    fixed16be
    (dictify
     1 (dictify 'hdrSize uint8

@@ -73,9 +73,33 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
       ret)
 
     (define/augment (size dict parent [includePointers #true])
-      (error 'cff-dict-size-undefined))
+      (define ctx
+        (mhasheq x:parent-key parent
+                 x:val-key dict
+                 x:pointer-size-key 0
+                 x:start-offset-key (hash-ref parent x:start-offset-key 0)))
 
-    (define/augment (encode stream dict parent)
-      (error 'cff-dict-encode-undefined))))
+      (define len 0)
+
+      (for* ([(k field) (in-hash @fields)]
+             [val (in-value (hash-ref dict (list-ref field 1)))]
+             #:unless (or (not val) (equal? val (list-ref field 3))))
+            (define operands (encodeOperands (list-ref field 2) #f ctx val))
+            (set! len (+ len
+                         (for/sum ([op (in-list operands)])
+                                  (size CFFOperand op))))
+
+            (define key (if (list? (list-ref field 0))
+                            (list-ref field 0)
+                            (list (list-ref field 0))))
+            (set! len (+ len (length key))))
+
+      (when includePointers
+        (set! len (+ len (hash-ref ctx x:pointer-size-key))))
+
+      len)
+
+  (define/augment (encode stream dict parent)
+    (error 'cff-dict-encode-undefined))))
 
 (define (CFFDict [ops null]) (make-object CFFDict% ops))

@@ -47,7 +47,29 @@
                  (values (cons val vals) end))]))
 
     (define/augride (size arr parent)
-      (error 'cff-index-size-not-implemented))
+      (define size 2)
+      (cond
+        [(zero? (length arr)) size]
+        [else
+         (define type (or @type (bytes)))
+
+         ;; find maximum offset to determinine offset type
+         (define offset 1)
+         (for ([(item i) (in-indexed arr)])
+              (set! offset (+ offset (send type size item parent))))
+
+         (define offsetType
+           (cond
+             [(<= offset #xff) uint8]
+             [(<= offset #xffff) uint16be]
+             [(<= offset #xffffff) uint24be]
+             [(<= offset #xffffffff) uint32be]
+             [else (error 'CFFIndex-size (format "bad offset: ~a" offset))]))
+
+         (set! size (+ size 1 (* (send offsetType size) (add1 (length arr)))))
+         (set! size (+ size (sub1 offset)))
+
+         size]))
 
     (define/augride (encode stream arr parent)
       (error 'cff-index-encode-not-implemented))))

@@ -21,6 +21,6 @@
 
 (struct ttf-glyph glyph () #:transparent)
 
-(struct cff-glyph glyph ([usedGsubrs #:auto] [usedSubrs #:auto])
+(struct cff-glyph glyph ([_usedGsubrs #:auto] [_usedSubrs #:auto])
   #:transparent
   #:auto-value (make-hash))
