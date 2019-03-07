@@ -35,6 +35,13 @@
     (file-position p new-pos))
   (file-position p))
 
+#|
+We make `parent` a kwarg so that we can pass it without necessitating an explicit port-arg. (Meaning, if it's positional, whenever we want to use it, we also have to make port-arg explicit, which is boring.)
+
+We don't make port-arg a kwarg because it's the most common arg passed.
+
+We don't make port-arg the last arg (similar to other Racket port funcs) because we want to let the functions be variable arity.
+|#
 (define (decode xo [port-arg (current-input-port)] #:parent [parent #f] . args)
   (define port
     (cond
