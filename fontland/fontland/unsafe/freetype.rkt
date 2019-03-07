@@ -337,10 +337,12 @@
 (define-freetype FT_Get_Char_Index (_fun _FT_Face _FT_ULong
                                          -> _FT_UInt))
 
-(define-freetype FT_Load_Glyph (_fun _FT_Face _FT_UInt _FT_Int32
+(define-freetype FT_Load_Glyph (_fun _FT_Face
+                                     _FT_UInt
+                                     [_FT_Int32 = FT_LOAD_NO_SCALE]
                                      -> (err : _FT_Error)
                                      -> (unless (zero? err)
-                                          (error 'FT_Load_Glyph "failed, try using FT_LOAD_NO_RECURSE flag instead"))))
+                                          (error 'FT_Load_Glyph "failed, try using FT_LOAD_NO_RECURSE or FT_LOAD_NO_SCALE flag instead"))))
 
 (define-freetype FT_Load_Char (_fun _FT_Face _FT_ULong _FT_Int32
                                     -> (err : _FT_Error)))
@@ -434,7 +436,7 @@
              (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
 
     (define H-gid (FT_Get_Char_Index face 72))
-    (FT_Load_Glyph face H-gid FT_LOAD_NO_SCALE)
+    (FT_Load_Glyph face H-gid)
     ; want bearingX (lsb) and advanceX (advance width)
     (define g (FT_FaceRec-glyph face))
     (define metrics (FT_GlyphSlotRec-metrics g))
