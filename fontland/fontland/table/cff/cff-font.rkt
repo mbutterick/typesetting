@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require racket/class racket/match racket/list xenomorph "cff-top.rkt")
-(provide (rename-out (CFFFont CFF_)))
+(provide CFFFont)
 
 #|
 approximates

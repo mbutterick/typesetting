@@ -62,7 +62,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
              (define val (decodeOperands (third field) stream ret operands))
 
-
              (unless (void? val)
                ;; ignoring PropertyDescriptor nonsense
                (hash-set! ret (second field) val))

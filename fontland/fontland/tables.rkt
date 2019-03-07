@@ -16,7 +16,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/index.js
                        (r+p TABLE-ID-STRING ...)
                        (define ID (make-hasheq (map cons (list 'TABLE-ID ...) (list TABLE-ID ...))))))]))
 
-(define-table-codecs table-codecs head hhea hmtx maxp OS/2 post cvt_ fpgm loca prep glyf #;CFF_)
+(define-table-codecs table-codecs head hhea hmtx maxp OS/2 post cvt_ fpgm loca prep glyf CFF_)
 
 
 #|
