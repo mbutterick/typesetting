@@ -10,7 +10,8 @@
          fontland/glyph
          fontland/ttf-glyph
          xenomorph
-         racket/dict)
+         racket/dict
+         fontland/table/cff/cff-font)
 
 (provide subset +subset
          ttf-subset +ttf-subset
@@ -77,22 +78,40 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 (define (subsetCharstrings this)
   (set-cff-subset-charstrings! this null)
   (define gsubrs (make-hash))
-  #;(for ([gid (in-list (subset-glyphs this))])
-       (define new-string (getCharString (cff-subset-cff this) gid))
-       (set-cff-subset-charstrings! this (cons new-string (cff-subset-charstrings this))))
-  (error 'subsetCharStrings-unfinished))
+  (for ([gid (in-list (subset-glyphs this))])
+       (set-cff-subset-charstrings!
+        this
+        (append (cff-subset-charstrings this)
+                (list (getCharString (cff-subset-cff this) gid))))
 
-(define (cff-subset-encode ss port)
-  ;; ss = this
-  ;; port = stream
-  (subsetCharstrings ss)
+       #R gid
+       (define glyph (get-glyph (subset-font this) gid))
+       (define path (hash-ref glyph 'path)) ;; this causes the glyph to be parsed
+
+       (for ([subr (in-list (hash-ref glyph '_usedGsubrs))])
+            (hash-set! gsubrs subr #true)))
+
+  (set-cff-subset-gsubrs! this (subsetSubrs (hash-ref (cff-subset-cff this) 'globalSubrIndex gsubrs))))
+
+(define (subsetSubrs this subrs used)
+  (for/list ([(subr i) (in-indexed subrs)])
+            (cond
+              [(list-ref used i)
+               (peek-bytes (hash-ref subr 'length)
+                           (hash-ref subr 'offset)
+                           (hash-ref (cff-subset-cff this) 'stream))]
+              [else (bytes 11)])))
+           
+  
+(define (cff-subset-encode this stream)
+  (subsetCharstrings this)
   (error 'cff-subset-encode-unfinished))
 
 #;(module+ test
-  (require "font.rkt" "helper.rkt")
-  (define otf (open-font (path->string fira-otf-path)))
-  (define cffss (+cff-subset otf))
-  cffss)
+    (require "font.rkt" "helper.rkt")
+    (define otf (open-font (path->string fira-otf-path)))
+    (define cffss (+cff-subset otf))
+    cffss)
 
 #|
 approximates

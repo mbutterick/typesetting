@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require ffi/unsafe
          ffi/unsafe/define
          racket/draw/private/libs)
@@ -92,6 +92,7 @@
    [vertBearingY _FT_Pos]
    [vertAdvance _FT_Pos]))
 (provide (struct-out FT_Glyph_Metrics)
+         FT_Glyph_Metrics->list
          _FT_Glyph_Metrics _FT_Glyph_Metrics-pointer)
 
 (define-cstruct _FT_Vector
@@ -344,10 +345,11 @@
                                     -> (err : _FT_Error)))
 
 (define+provide FT_KERNING_UNSCALED 2)
-(define+provide FT_LOAD_DEFAULT 0)
-(define+provide FT_LOAD_RENDER (expt 2 2))
-(define+provide FT_LOAD_LINEAR_DESIGN (expt 2 13))
-(define+provide FT_LOAD_NO_RECURSE (expt 2 10))
+(define+provide FT_LOAD_DEFAULT #x0)
+(define+provide FT_LOAD_RENDER (arithmetic-shift 1 2))
+(define+provide FT_LOAD_LINEAR_DESIGN (arithmetic-shift 1 13))
+(define+provide FT_LOAD_NO_RECURSE (arithmetic-shift 1 10))
+(define+provide FT_LOAD_NO_SCALE (arithmetic-shift 1 0))
 
 
 
@@ -394,51 +396,56 @@
 (module+ test
   (require rackunit)
   (define ft-library (FT_Init_FreeType))
-  (define face (FT_New_Face ft-library "../assets/charter.ttf"))
-  (check-equal? (FT_Get_Postscript_Name face) "Charter")
-  (check-equal? (FT_FaceRec-units_per_EM face) 1000)
-  (check-true (FT_Load_Sfnt_Table face (tag->int #"cmap") 0 0 0))
-  (check-false (FT_Load_Sfnt_Table face (tag->int #"zzap") 0 0 0))
-  (check-true (cpointer? (FT_Get_Sfnt_Table face 'ft_sfnt_hhea)))
-  (define charter-hhea-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_hhea) _pointer _FT_HoriHeader-pointer))
-  (check-equal? (FT_HoriHeader-ascent charter-hhea-table) 980)
-  (check-equal? (FT_HoriHeader-descent charter-hhea-table) -238)
-  (check-equal? (FT_HoriHeader-lineGap charter-hhea-table) 0)
-  (check-equal?
-   (let ([bbox (FT_FaceRec-bbox face)])
-     (list (FT_BBox-xMin bbox)
-           (FT_BBox-yMin bbox)
-           (FT_BBox-xMax bbox)
-           (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
+  (define (test-face face-str)
+    (define face (FT_New_Face ft-library face-str))
+    (check-equal? (FT_Get_Postscript_Name face) "Charter")
+    (check-equal? (FT_FaceRec-units_per_EM face) 1000)
+    (check-true (FT_Load_Sfnt_Table face (tag->int #"cmap") 0 0 0))
+    (check-false (FT_Load_Sfnt_Table face (tag->int #"zzap") 0 0 0))
+    (check-true (cpointer? (FT_Get_Sfnt_Table face 'ft_sfnt_hhea)))
+    (define charter-hhea-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_hhea) _pointer _FT_HoriHeader-pointer))
+    (check-equal? (FT_HoriHeader-ascent charter-hhea-table) 980)
+    (check-equal? (FT_HoriHeader-descent charter-hhea-table) -238)
+    (check-equal? (FT_HoriHeader-lineGap charter-hhea-table) 0)
+    (check-equal?
+     (let ([bbox (FT_FaceRec-bbox face)])
+       (list (FT_BBox-xMin bbox)
+             (FT_BBox-yMin bbox)
+             (FT_BBox-xMax bbox)
+             (FT_BBox-yMax bbox))) '(-161 -236 1193 963))
 
-  (define H-gid (FT_Get_Char_Index face 72))
-  (FT_Load_Glyph face H-gid FT_LOAD_NO_RECURSE)
-  ; want bearingX (lsb) and advanceX (advance width)
-  (define g (FT_FaceRec-glyph face))
-  (define metrics (FT_GlyphSlotRec-metrics g))
-  (define bearingX (FT_Glyph_Metrics-horiBearingX metrics))
-  (check-equal? bearingX 33)
-  (define advanceX (FT_Glyph_Metrics-horiAdvance metrics))
-  (check-equal? advanceX 738)
+    (define H-gid (FT_Get_Char_Index face 72))
+    (FT_Load_Glyph face H-gid FT_LOAD_NO_RECURSE)
+    ; want bearingX (lsb) and advanceX (advance width)
+    (define g (FT_FaceRec-glyph face))
+    (define metrics (FT_GlyphSlotRec-metrics g))
+    #R (FT_Glyph_Metrics->list metrics)
+    (define bearingX (FT_Glyph_Metrics-horiBearingX metrics))
+    (check-equal? bearingX 33)
+    (define advanceX (FT_Glyph_Metrics-horiAdvance metrics))
+    (check-equal? advanceX 738)
 
-  (define charter-post-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_post) _pointer _FT_TT_Postscript-pointer))
-  (check-equal? (FT_TT_Postscript-italicAngle charter-post-table) 0)
-  (check-equal? (FT_TT_Postscript-underlinePosition charter-post-table) -178) ; -207 + 1/2 of thickness = -207 + 29
-  (check-equal? (FT_TT_Postscript-underlineThickness charter-post-table) 58)
+    (define charter-post-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_post) _pointer _FT_TT_Postscript-pointer))
+    (check-equal? (FT_TT_Postscript-italicAngle charter-post-table) 0)
+    (check-equal? (FT_TT_Postscript-underlinePosition charter-post-table) -178) ; -207 + 1/2 of thickness = -207 + 29
+    (check-equal? (FT_TT_Postscript-underlineThickness charter-post-table) 58)
 
-  (define os2-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_os2) _pointer _FT_TT_OS2-pointer))
-  (check-equal? (FT_TT_OS2-fsType os2-table) #b1000)
-  (check-equal? (FT_TT_OS2-yStrikeoutSize os2-table) 61)
-  (check-equal? (FT_TT_OS2-yStrikeoutPosition os2-table) 240)
+    (define os2-table (cast (FT_Get_Sfnt_Table face 'ft_sfnt_os2) _pointer _FT_TT_OS2-pointer))
+    (check-equal? (FT_TT_OS2-fsType os2-table) #b1000)
+    (check-equal? (FT_TT_OS2-yStrikeoutSize os2-table) 61)
+    (check-equal? (FT_TT_OS2-yStrikeoutPosition os2-table) 240)
 
-  (check-equal? (FT_panose->list (FT_TT_OS2-panose os2-table)) '(2 0 5 3 6 0 0 2 0 4))
+    (check-equal? (FT_panose->list (FT_TT_OS2-panose os2-table)) '(2 0 5 3 6 0 0 2 0 4))
 
-  (check-equal? (FT_TT_OS2-sTypoAscender os2-table) 762)
-  (check-equal? (FT_TT_OS2-sTypoDescender os2-table) -238)
-  (check-equal? (FT_TT_OS2-sCapHeight os2-table) 671)
-  (check-equal? (FT_TT_OS2-sxHeight os2-table) 481)
+    (check-equal? (FT_TT_OS2-sTypoAscender os2-table) 762)
+    (check-equal? (FT_TT_OS2-sTypoDescender os2-table) -238)
+    (check-equal? (FT_TT_OS2-sCapHeight os2-table) 671)
+    (check-equal? (FT_TT_OS2-sxHeight os2-table) 481)
 
-  (FT_Done_Face face)
+    (FT_Done_Face face))
+
+  (test-face "../assets/charter.ttf")
+  (test-face "../assets/charter.otf")
   )
 
 

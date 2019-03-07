@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require racket/class racket/match racket/list xenomorph "cff-top.rkt")
-(provide CFFFont)
+(provide (all-defined-out))
 
 #|
 approximates
@@ -34,6 +34,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
       cff-font)))
 
 (define CFFFont (make-object CFFFont%))
+
+(define (getCharString cff-font glyph-id)
+  (define glyph-record (list-ref (hash-ref (hash-ref cff-font 'topDict) 'CharStrings) glyph-id))
+  (peek-bytes (hash-ref glyph-record 'length) (hash-ref glyph-record 'offset) (hash-ref cff-font 'stream)))
 
 
 (module+ test
@@ -83,4 +87,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
   (check-equal? (hash-ref private 'BlueScale) 0.037)
   (check-equal? (hash-ref private 'BlueShift) 7)
   (check-equal? (hash-ref private 'ExpansionFactor) 0.06)
+  (check-equal?
+   (for/list ([h (in-list (take (hash-ref top-dict 'CharStrings) 100))])
+             (hash-ref h 'offset))
+   '(83610 83750 83753 83755 83776 83778 83810 83858 83890 83951 84023 84046 84068 84096 84132 84169 84233 84270 84292 84322 84380 84411 84439 84478 84498 84547 84575 84679 84711 84751 84784 84823 84919 84956 84964 84978 85011 85013 85101 85188 85300 85302 85396 85398 85407 85422 85436 85451 85547 85561 85587 85647 85784 85790 85824 85864 85933 85935 85960 85970 85972 86003 86027 86091 86106 86161 86176 86228 86238 86253 86273 86288 86347 86363 86385 86401 86423 86463 86496 86511 86541 86568 86578 86594 86627 86651 86680 86731 86733 86766 86769 86861 86887 86900 86919 86986 87017 87061 87098 87108))
   )
