@@ -35,13 +35,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
 (define (get-glyph-metrics g)
   (unless (glyph-metrics g)
     (define face (ft-face (glyph-font g)))
-    (FT_Load_Glyph face (glyph-id g) FT_LOAD_NO_RECURSE)
+    (FT_Load_Glyph face (glyph-id g))
     (define glyph (FT_FaceRec-glyph face))
     (define ft-glyph-metrics (FT_GlyphSlotRec-metrics glyph))
     (set-glyph-metrics! g (mhash))
+    ;; todo: get vertical metrics
     (hash-set*! (glyph-metrics g)
                 'advanceWidth (FT_Glyph_Metrics-horiAdvance ft-glyph-metrics)
-                'leftBearing (FT_Glyph_Metrics-horiBearingX ft-glyph-metrics)))
+                'leftBearing (FT_Glyph_Metrics-horiBearingX ft-glyph-metrics)
+                'advanceHeight 'unfinished
+                'topBearing 'unfinished))
   (glyph-metrics g))
 
 (define (+ttf-glyph . args)
