@@ -17,7 +17,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
     (super-new)
 
     (augride [@decode decode])
-    (define (@decode stream parent)
+    (define (@decode stream parent _)
       (define cff-font (make-hasheq))
       (hash-set! cff-font 'stream stream)
           
@@ -52,7 +52,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
 
 (define (getCharString cff-font glyph-id)
   (define glyph-record (list-ref (hash-ref (hash-ref cff-font 'topDict) 'CharStrings) glyph-id))
-  (peek-bytes (hash-ref glyph-record 'length) (hash-ref glyph-record 'offset) (hash-ref cff-font 'stream)))
+  (pos (hash-ref cff-font 'stream) (hash-ref glyph-record 'offset))
+  (read-bytes (hash-ref glyph-record 'length) (hash-ref cff-font 'stream)))
 
 
 (module+ test
