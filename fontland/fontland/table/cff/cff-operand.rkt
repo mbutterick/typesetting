@@ -50,10 +50,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
                    (let ([strs (cons (vector-ref FLOAT_LOOKUP n2) strs)])
                      (values strs #false))]))]))]))
 
-    (define/augment (size value-arg)
+    (define/augment (size value-arg _)
       ;; if the value needs to be forced to the largest size (32 bit)
       ;; e.g. for unknown pointers, set to 32768
-      (define value (if (hash-ref value-arg 'forceLarge #f) 32768 value-arg))
+      (define value (if (and (hash? value-arg) (hash-ref value-arg 'forceLarge #f))
+                        32768
+                        value-arg))
 
       (cond
         [(not (integer? value)) ; floating point

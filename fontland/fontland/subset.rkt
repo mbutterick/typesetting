@@ -78,16 +78,23 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
   (subset-add-glyph! ss 0)
   ss)
 
+(require racket/format racket/string)
+(define (bytes->hexes bs)
+  (string-join
+   (for/list ([b (in-bytes bs)])
+             (~r #:base 16 b #:min-width 2 #:pad-string "0"))  " "))
+
 (define (subsetCharstrings this)
   (set-cff-subset-charstrings! this null)
   (define gsubrs (make-hash))
   (for ([gid (in-list (subset-glyphs this))])
+       #R gid
+
        (set-cff-subset-charstrings!
         this
         (append (cff-subset-charstrings this)
                 (list (getCharString (cff-subset-cff this) gid))))
 
-       #R gid
        (define glyph (get-glyph (subset-font this) gid))
        ;; apparently path parsing is not necessary?
        #;(define path (hash-ref glyph 'path)) ;; this causes the glyph to be parsed
@@ -190,7 +197,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
              'stringIndex (cff-subset-strings this)
              'globalSubrIndex (cff-subset-gsubrs this)))
 
-  #R top
   (encode CFFTop top stream)
 
   (error 'boom))

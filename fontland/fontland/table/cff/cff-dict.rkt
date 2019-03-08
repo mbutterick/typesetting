@@ -30,7 +30,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         [_  operands]))
 
     (define (encodeOperands type stream ctx operands)
-      (error 'cff-dict-encodeOperands-undefined))
+      (cond
+        [(list? type)
+         (for/list ([(op i) (in-indexed operands)])
+                   (car (encodeOperands (list-ref type i) stream ctx op)))]
+        [(xenomorphic? type) (encode type operands stream #:parent ctx)]
+        [(number? operands) (list operands)]
+        [(boolean? operands) (list (if operands 1 0))]
+        [(list? operands) operands]
+        [else (list operands)]))
 
     (define/override (post-decode val)
       (dict->mutable-hash val))
@@ -72,7 +80,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
       ret)
 
-    (define/augment (size dict parent [includePointers #true])
+    (augment [@size size])
+    (define (@size dict parent [includePointers #true])
       (define ctx
         (mhasheq x:parent-key parent
                  x:val-key dict
@@ -99,7 +108,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
       len)
 
-  (define/augment (encode stream dict parent)
-    (error 'cff-dict-encode-undefined))))
+    (augment [@encode encode])
+    (define (@encode stream dict parent)
+      (error 'cff-dict-encode-undefined))))
 
 (define (CFFDict [ops null]) (make-object CFFDict% ops))

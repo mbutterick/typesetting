@@ -29,8 +29,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
     (define/augment (size value ctx)
       (error 'predefined-op-size-not-finished))
 
-    (define/augment (encode stream value ctx)
-      (error 'predefined-op-encode-not-finished))))
+    (augment [@encode encode])
+    (define (@encode stream value ctx)
+      #R (get-field pointer-relative-to @type)
+      (or (index-of @predefinedOps value)
+          (encode @type value stream #:parent ctx)))))
 
 (define (PredefinedOp predefinedOps type) (make-object PredefinedOp% predefinedOps type))
 
@@ -176,8 +179,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (x:versioned-struct
    #:pre-encode
    (λ (val)
-      ;; because fontkit depends on overloading 'version key, and we don't
-      (hash-set! val 'x:version (hash-ref val 'version))
+     ;; because fontkit depends on overloading 'version key, and we don't
+     (hash-set! val 'x:version (hash-ref val 'version))
      val)
    fixed16be
    (dictify
