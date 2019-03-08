@@ -36,12 +36,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
       cff-font)))
 
 (define (CFFont-string this sid)
-  (let ([sid (or sid 0)])
-    #R sid
-    (cond
-      [(>= (hash-ref this 'version) 2) #false]
-      [(< sid (length standardStrings)) (list-ref standardStrings sid)]
-      [else (list-ref (hash-ref this 'stringIndex) (- sid (length standardStrings)))])))
+  (cond
+    [(not sid) #false]
+    [(>= (hash-ref this 'version) 2) #false]
+    [(< sid (length standardStrings)) (list-ref standardStrings sid)]
+    [else (list-ref (hash-ref this 'stringIndex) (- sid (length standardStrings)))]))
 
 (define (CFFFont-postscriptName this)
   (cond
