@@ -12,17 +12,17 @@
        (with-syntax ([(GETTER-ID ...) (map (λ (tag) (datum->syntax stx (string->symbol (format "get-~a-table" (syntax->datum tag)))))
                                            (syntax->list #'(TABLE-TAG ...)))]
                      [(HAS-ID? ...) (map (λ (tag) (datum->syntax stx (string->symbol (format "has-~a-table?" (syntax->datum tag)))))
-                                           (syntax->list #'(TABLE-TAG ...)))])
-       #'(begin
-           (define (GETTER-ID this) (get-table this 'TABLE-TAG)) ...
-           (define (HAS-ID? this) (has-table? this 'TABLE-TAG)) ...)))]))
+                                         (syntax->list #'(TABLE-TAG ...)))])
+         #'(begin
+             (define (GETTER-ID this) (get-table this 'TABLE-TAG)) ...
+             (define (HAS-ID? this) (has-table? this 'TABLE-TAG)) ...)))]))
 
 (define (has-table? this tag)
   #;((or/c bytes? symbol?) . ->m . boolean?)
   (define directory (force (ttf-font-directory this)))
   (hash-has-key? (hash-ref directory 'tables) (match tag
-                                             [(? bytes?) (string->symbol (bytes->string/latin-1 tag))]
-                                             [_ tag])))
+                                                [(? bytes?) (string->symbol (bytes->string/latin-1 tag))]
+                                                [_ tag])))
 
 (define (get-table this table-tag)
   (unless (has-table? this table-tag)
@@ -39,11 +39,15 @@
 (define (decode-table this table-tag)
   (unless (hash-has-key? table-codecs table-tag)
     (raise-argument-error 'decode-table "decodable table" table-tag))
+
+  (define last-pos (pos (ttf-font-port this)))
+  (define stream (get-table-stream this table-tag))
+
+  (define table-decoder (hash-ref table-codecs table-tag))
   (define directory (force (ttf-font-directory this)))
   (define table (hash-ref (hash-ref directory 'tables) table-tag))
-  ;; todo: possible to avoid copying the bytes here?
-  (pos (ttf-font-port this) (hash-ref table 'offset))
-  (define table-bytes (open-input-bytes (peek-bytes (hash-ref table 'length) 0 (ttf-font-port this))))
-  (define table-decoder (hash-ref table-codecs table-tag))
-  (decode table-decoder table-bytes #:parent this))
+
+  (begin0
+    (decode table-decoder stream #:parent this (hash-ref table 'length))
+    (pos (ttf-font-port this) last-pos)))
 
