@@ -82,25 +82,25 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 (define (bytes->hexes bs)
   (string-join
    (for/list ([b (in-bytes bs)])
-             (~r #:base 16 b #:min-width 2 #:pad-string "0"))  " "))
+     (~r #:base 16 b #:min-width 2 #:pad-string "0"))  " "))
 
 (define (subsetCharstrings this)
   (set-cff-subset-charstrings! this null)
   (define gsubrs (make-hash))
   (for ([gid (in-list (subset-glyphs this))])
-       #R gid
+    #R gid
 
-       (set-cff-subset-charstrings!
-        this
-        (append (cff-subset-charstrings this)
-                (list (getCharString (cff-subset-cff this) gid))))
+    (set-cff-subset-charstrings!
+     this
+     (append (cff-subset-charstrings this)
+             (list (getCharString (cff-subset-cff this) gid))))
 
-       (define glyph (get-glyph (subset-font this) gid))
-       ;; apparently path parsing is not necessary?
-       #;(define path (hash-ref glyph 'path)) ;; this causes the glyph to be parsed
+    (define glyph (get-glyph (subset-font this) gid))
+    ;; apparently path parsing is not necessary?
+    #;(define path (hash-ref glyph 'path)) ;; this causes the glyph to be parsed
 
-       (for ([subr (in-hash-keys (cff-glyph-_usedGsubrs glyph))])
-            (hash-set! gsubrs subr #true)))
+    (for ([subr (in-hash-keys #R (cff-glyph-_usedGsubrs glyph))])
+      (hash-set! gsubrs subr #true)))
 
   (set-cff-subset-gsubrs! this (subsetSubrs
                                 this
@@ -108,13 +108,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
                                 gsubrs)))
 
 (define (subsetSubrs this subrs used)
+  #RRR 'in-subsetSubrs
   (for/list ([(subr i) (in-indexed subrs)])
-            (cond
-              [(hash-ref used i #false)
-               (peek-bytes (hash-ref subr 'length)
-                           (hash-ref subr 'offset)
-                           (hash-ref (cff-subset-cff this) 'stream))]
-              [else (bytes 11)])))
+    (cond
+      [(hash-ref used i #false)
+       (pos (hash-ref (cff-subset-cff this) 'stream) (hash-ref subr 'offset))
+       #RRR (read-bytes (hash-ref subr 'length) (hash-ref (cff-subset-cff this) 'stream))]
+      [else (bytes 11)])))
 
 
 (define (subsetFontdict this topDict)
@@ -124,11 +124,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 (define (createCIDFontdict this topDict)
   (define used_subrs (make-hash))
   (for ([gid (in-list (subset-glyphs this))])
-       (define glyph (get-glyph (subset-font this) gid))
-       ;; skip path parsing
+    (define glyph (get-glyph (subset-font this) gid))
+    ;; skip path parsing
        
-       (for ([subr (in-hash-keys (cff-glyph-_usedSubrs glyph))])
-            (hash-set! used_subrs subr #true)))
+    (for ([subr (in-hash-keys (cff-glyph-_usedSubrs glyph))])
+      (hash-set! used_subrs subr #true)))
 
   (define cff-topDict (hash-ref (cff-subset-cff this) 'topDict))
   (define privateDict (hash-copy (hash-ref cff-topDict 'Private (make-hash))))
@@ -175,8 +175,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
   (for ([key (in-list '(version Notice Copyright FullName
                                 FamilyName Weight PostScript
                                 BaseFontName FontName))])
-       (hash-update! topDict key
-                     (λ (tdk-val) (addString this (CFFont-string (cff-subset-cff this) tdk-val)))))
+    (hash-update! topDict key
+                  (λ (tdk-val) (addString this (CFFont-string (cff-subset-cff this) tdk-val)))))
 
   (hash-set! topDict 'ROS (list (addString this "Adobe")
                                 (addString this "Identity")
@@ -244,9 +244,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; if it is a compound glyph, include its components
   (when (and ttf-glyf-data (negative? (hash-ref ttf-glyf-data 'numberOfContours)))
     (for ([ttf-glyph-component (in-list (hash-ref ttf-glyf-data 'components))])
-         (define gid (subset-add-glyph! ss (ttf-glyph-component-glyph-id ttf-glyph-component)))
-         ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
-         (bytes-copy! glyf-bytes (ttf-glyph-component-pos ttf-glyph-component) (encode uint16be gid #f))))
+      (define gid (subset-add-glyph! ss (ttf-glyph-component-glyph-id ttf-glyph-component)))
+      ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
+      (bytes-copy! glyf-bytes (ttf-glyph-component-pos ttf-glyph-component) (encode uint16be gid #f))))
   
   (set-ttf-subset-glyf! ss (append (ttf-subset-glyf ss) (list glyf-bytes)))
   (hash-update! (ttf-subset-loca ss) 'offsets
@@ -277,8 +277,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   ;; glyphs to the array as component glyphs are discovered & enqueued
   (for ([idx (in-naturals)]
         #:break (= idx (length (subset-glyphs ss))))
-       (define gid (list-ref (subset-glyphs ss) idx))
-       (ttf-subset-add-glyph ss gid))
+    (define gid (list-ref (subset-glyphs ss) idx))
+    (ttf-subset-add-glyph ss gid))
   
   (define new-maxp-table (clone-deep (get-maxp-table (subset-font ss))))
   (dict-set! new-maxp-table 'numGlyphs (length (ttf-subset-glyf ss)))
@@ -306,7 +306,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                            'fpgm (get-fpgm-table (subset-font ss))))
       (for ([(k v) (in-dict kvs)]
             #:unless v)
-           (error 'encode (format "missing value for ~a" k)))
+        (error 'encode (format "missing value for ~a" k)))
       (make-hasheq kvs)))
   
   (encode Directory (mhash 'tables new-tables) port)

@@ -12,6 +12,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
     [(list* 0th 1st _) (bitwise-ior (arithmetic-shift 0th 8) 1st)]
     [val val]))
 
+(define (key->op key)
+  (list (list (bitwise-and (arithmetic-shift key -8) 255) (bitwise-and key 255))))
+
 (define CFFDict%
   (class x:base%
     (super-new)
@@ -27,7 +30,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         [(? list?)
          (for/list ([(op i) (in-indexed operands)])
            (decodeOperands (list-ref type i) stream ret (list op)))]
-        [(? xenomorphic?) (decode type stream #:parent ret operands)]
+        [(? xenomorphic?) (send type decode stream ret operands)]
         [(or 'number 'offset 'sid) (car operands)]
         ['boolean (if (car operands) #t #f)]
         [_  operands]))
@@ -85,7 +88,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
     (augment [@size size])
     (define (@size dict parent [includePointers #true])
-      #RRR 'in-cff-dict-size
+      #RR 'in-cff-dict-size
       #RR @name
       #RR includePointers
       
@@ -115,8 +118,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                         (list (list-ref field 0))))
         (set! len (+ len #R (length key))))
 
-      #RRR 'intermediate-len
-      #RR len
+      (define intermediate-len len)
+      #RR intermediate-len
       
       (when #RR includePointers
         (set! len (+ len #RR (hash-ref ctx x:pointer-size-key))))

@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang debug racket
 (require racket/class racket/match xenomorph sugar/unstable/dict)
 (provide CFFIndex)
 
@@ -28,10 +28,10 @@
                                     [_ (error 'bad-offset-size-in-CFFIndex)]))
                (define startPos (+ (pos stream) (* (add1 count) offSize) -1))
                (for/fold ([vals null]
-                          [start (decode offsetType stream)]
+                          [start (send offsetType decode stream)]
                           #:result (begin0 (reverse vals) (pos stream (+ startPos start))))
                          ([i (in-range count)])
-                 (define end (decode offsetType stream))
+                 (define end (send offsetType decode stream))
                  (define val
                    (cond
                      [@type
@@ -39,7 +39,7 @@
                       (pos stream (+ startPos start))
                       (hash-set! parent 'length (- end start))
                       (begin0
-                        (decode @type stream #:parent parent)
+                        (send @type decode stream parent)
                         (pos stream apos))]
                      [else
                       (hasheq 'offset (+ startPos start)
@@ -48,6 +48,10 @@
 
     (augride [@size size])
     (define (@size arr parent)
+      #RRR 'in-cff-index-size
+      #R (length arr)
+      (when (= 819 (length arr))
+        #R (take arr 3))
       (define size 2)
       (cond
         [(zero? (length arr)) size]
@@ -57,7 +61,9 @@
          ;; find maximum offset to determinine offset type
          (define offset 1)
          (for ([(item i) (in-indexed arr)])
-              (set! offset (+ offset (send type size item parent))))
+              (set! offset (+ offset #R (send #R type size item parent))))
+
+         #RR offset
 
          (define offsetType
            (cond
@@ -70,7 +76,7 @@
          (set! size (+ size 1 (* (send offsetType size) (add1 (length arr)))))
          (set! size (+ size (sub1 offset)))
 
-         size]))
+         #RR size]))
 
     (define/augride (encode arr stream parent)
       (error 'cff-index-encode-not-implemented))))
