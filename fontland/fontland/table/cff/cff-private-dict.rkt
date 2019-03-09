@@ -23,6 +23,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPrivateDict.js
 
 (define CFFPrivateDict
   (CFFDict
+   'CFFPrivateDict
    ;; key       name                 type                                        default
    `((6         BlueValues           delta                                       #false)
      (7         OtherBlues           delta                                       #false)

@@ -15,7 +15,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 (define CFFDict%
   (class x:base%
     (super-new)
-    (init-field [(@ops ops)])
+    (init-field [(@name name)] [(@ops ops)])
 
     (field [(@fields fields)
             (for/hash ([field (in-list @ops)])
@@ -86,6 +86,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
     (augment [@size size])
     (define (@size dict parent [includePointers #true])
       #RRR 'in-cff-dict-size
+      #RR @name
       #RR includePointers
       
       (define ctx
@@ -101,11 +102,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
              [field (in-value (dict-ref @fields k))]
              [val (in-value (dict-ref dict (list-ref field 1)))]
              #:unless (let ([ res (or (not val) (equal? val (list-ref field 3)))])
-                        (and res #R 'skipped #R k)))
-        #RR k
-        #RR len
+                        res))
+        #R k
+        #R len
         (define operands (encodeOperands (list-ref field 2) #f ctx val))
-        #RR operands
         (set! len (+ len
                      (for/sum ([op (in-list operands)])
                        (size CFFOperand op))))
@@ -118,14 +118,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
       #RRR 'intermediate-len
       #RR len
       
-      (when #RRR includePointers
-        (set! len (+ len (hash-ref ctx x:pointer-size-key))))
+      (when #RR includePointers
+        (set! len (+ len #RR (hash-ref ctx x:pointer-size-key))))
 
-      #RRR 'final-len
-      #R len)
+      (define final-len len)
+      #RR final-len)
 
     (augment [@encode encode])
     (define (@encode dict stream parent)
       (error 'cff-dict-encode-undefined))))
 
-(define (CFFDict [ops null]) (make-object CFFDict% ops))
+(define (CFFDict [name 'unknown] [ops null]) (make-object CFFDict% name ops))

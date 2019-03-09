@@ -31,22 +31,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
 
     (override [@encode encode])
     (define (@encode value stream ctx)
-      #RRR 'entering-cff-pointer-encode
-      #RR (get-field offset-type this)
-      #RR (get-field type this)
-      #RR stream
       (cond
-        [#RR (not stream)
+        [(not stream)
          ;; compute the size (so ctx.pointerSize is correct)
          (set! offset-type (make-object
                                (class x:base%
                                  (super-new)
                                  (define/augment (size . args) 0))))
          (send this size value ctx)
-         #RR (list (Ptr 0))]
+         (list (Ptr 0))]
         [else
-         #RRR value
-         #RRR stream
          (define ptr #false)
          (set! offset-type (make-object
                                (class x:base%

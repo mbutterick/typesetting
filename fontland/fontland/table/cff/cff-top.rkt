@@ -148,12 +148,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 
 (define FontDict
   (CFFDict
+   'FontDict
    ;; key      name                 type(s)                              default
    `((18       Private              ,(CFFPrivateOp)                      #false)
      ((12 38)  FontName             sid                                  #false))))
 
 (define CFFTopDict
   (CFFDict
+   'CFFTopDict
    ;; key      name                 type(s)                              default
    `(((12 30)  ROS                  (sid sid number)                     #false)
      (0        version              sid                                  #false)
