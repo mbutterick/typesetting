@@ -11,7 +11,7 @@
 (define x:parent-key 'x:parent)
 (define x:pointer-size-key 'x:ptr-size)
 (define x:pointers-key 'x:pointers)
-(define x:pointer-offset-key 'x:ptr-offset)
+(define x:pointer-offset-key 'x:ptr-offset) ;; formerly pointerOffset
 (define x:pointer-type-key 'x:ptr-type)
 (define x:val-key 'x:val)
 
@@ -90,7 +90,7 @@ We don't make port-arg the last arg (similar to other Racket port funcs) because
     (define/pubment (encode val output-port [parent #f] . args)
       (match (inner (error 'xenomorph (format "encode not augmented in ~a" this)) encode (pre-encode val) output-port parent . args)
         [(? bytes? encode-result) (write-bytes encode-result output-port)]
-        [_ (void)]))
+        [other other]))
     
     (define/pubment (size [val #f] [parent #f] . args)
       (match (inner 0 size val parent . args)
