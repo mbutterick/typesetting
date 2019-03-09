@@ -67,7 +67,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
         [else 5]))
 
     (augment [@encode encode])
-    (define (@encode stream value)
+    (define (@encode value stream)
       ;; if the value needs to be forced to the largest size (32 bit)
       ;; e.g. for unknown pointers, save the old value and set to 32768
       (define val (string->number (format "~a" value)))

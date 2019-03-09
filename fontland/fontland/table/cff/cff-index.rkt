@@ -46,7 +46,8 @@
                               'length (- end start))]))
                  (values (cons val vals) end))]))
 
-    (define/augride (size arr parent)
+    (augride [@size size])
+    (define (@size arr parent)
       (define size 2)
       (cond
         [(zero? (length arr)) size]
@@ -71,7 +72,7 @@
 
          size]))
 
-    (define/augride (encode stream arr parent)
+    (define/augride (encode arr stream parent)
       (error 'cff-index-encode-not-implemented))))
 
 (define (CFFIndex [type #f])

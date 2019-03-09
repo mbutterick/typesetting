@@ -19,6 +19,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
     (init-field [(@predefinedOps predefinedOps)]
                 [(@type type) #f])
 
+    (define/override (pre-encode val)
+      #R 'in-PredefinedOp%-pre-encode
+      ;; because fontkit depends on overloading 'version key, and we don't
+      (let ([val (make-hasheq val)])
+        (hash-set! val 'x:version (hash-ref val 'version))
+        val))
+
     (augment [@decode decode])
     (define (@decode stream parent operands)
       (define idx (car operands))
@@ -30,10 +37,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
       (error 'predefined-op-size-not-finished))
 
     (augment [@encode encode])
-    (define (@encode stream value ctx)
-      #R (get-field pointer-relative-to @type)
+    (define (@encode value stream ctx)
+      #R 'encode-pdop
+      #R value
+      #R stream
       (or (index-of @predefinedOps value)
-          (encode @type value stream #:parent ctx)))))
+          (send @type encode value stream ctx)))))
 
 (define (PredefinedOp predefinedOps type) (make-object PredefinedOp% predefinedOps type))
 
@@ -71,7 +80,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (class x:array%
     (super-new)
     (inherit-field [@len len] [@type type])
-    (define (:decode stream parent)
+    (define/override (decode stream parent)
       (define length (resolve-length @len stream parent))
       (for/fold ([res null]
                  [count 0]
@@ -179,6 +188,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (x:versioned-struct
    #:pre-encode
    (λ (val)
+     #R 'in-cfftop-pre-encode
      ;; because fontkit depends on overloading 'version key, and we don't
      (hash-set! val 'x:version (hash-ref val 'version))
      val)

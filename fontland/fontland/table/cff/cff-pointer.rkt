@@ -29,24 +29,31 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
                               (define/augment (decode . args) (first operands)))))
       (super decode stream parent))
 
-    (define/override (encode stream value ctx)
+    (override [@encode encode])
+    (inherit/super encode)
+    (define (@encode value stream ctx)
+      #R (get-field offset-type this)
+      #R (get-field type this)
+      #R stream
       (cond
-        [(not stream)
+        [#R (not stream)
          ;; compute the size (so ctx.pointerSize is correct)
          (set! offset-type (make-object
                                (class x:base%
                                  (super-new)
                                  (define/augment (size . args) 0))))
          (send this size value ctx)
-         (Ptr 0)]
+         (list (Ptr 0))]
         [else
+         #R value
+         #R stream
          (define ptr #false)
          (set! offset-type (make-object
                                (class x:base%
                                  (super-new)
-                                 (define/augment (encode stream val) (set! ptr val)))))
-         (super encode stream value ctx)
-         (Ptr ptr)]))))
+                                 (define/augment (encode val stream) (set! ptr val)))))
+         (super encode value stream ctx)
+         (list (Ptr ptr))]))))
 
 
 
