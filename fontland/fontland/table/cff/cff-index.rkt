@@ -48,11 +48,13 @@
 
     (augride [@size size])
     (define (@size arr parent)
+      #RRR 'in-cfff-index-size
       (define size 2)
       (cond
         [(zero? (length arr)) size]
         [else
-         (define type (or @type (bytes)))
+         (define type (or #RR @type (x:buffer)))
+         #RR type
 
          ;; find maximum offset to determinine offset type
          (define offset 1)

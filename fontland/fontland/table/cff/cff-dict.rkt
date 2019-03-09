@@ -1,5 +1,5 @@
 #lang debug racket/base
-(require racket/class racket/match racket/list xenomorph sugar/unstable/dict
+(require racket/class racket/match racket/list racket/dict xenomorph sugar/unstable/dict
          "cff-operand.rkt")
 (provide CFFDict)
 
@@ -7,15 +7,16 @@
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 |#
+(define (op->key op)
+  (match (car op)
+    [(list* 0th 1st _) (bitwise-ior (arithmetic-shift 0th 8) 1st)]
+    [val val]))
 
 (define CFFDict%
   (class x:base%
     (super-new)
     (init-field [(@ops ops)])
-    (define (op->key op)
-      (match (car op)
-        [(list* 0th 1st _) (bitwise-ior (arithmetic-shift 0th 8) 1st)]
-        [val val]))
+
     (field [(@fields fields)
             (for/hash ([field (in-list @ops)])
               (define key (op->key field))
@@ -38,7 +39,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         [(list? type)
          (for/list ([(op i) (in-indexed operands)])
            (car (encodeOperands (list-ref type i) stream ctx op)))]
-        [(xenomorphic? type) #R type (send type encode operands #R stream ctx)]
+        [(xenomorphic? type) #RRR type (send type encode operands #RRR stream ctx)]
         [(number? operands) (list operands)]
         [(boolean? operands) (list (if operands 1 0))]
         [(list? operands) operands]
@@ -95,16 +96,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                  x:start-offset-key (hash-ref parent x:start-offset-key 0)))
 
       (define len 0)
+      #RRR len
 
-      (for* ([k (in-list (sort (hash-keys @fields) <))]
-             [field (in-value (hash-ref @fields k))]
-             [val (in-value (hash-ref dict (list-ref field 1)))]
+      (for* ([k (in-list (sort (dict-keys @fields) <))]
+             [field (in-value (dict-ref @fields k))]
+             [val (in-value (dict-ref dict (list-ref field 1)))]
              #:unless (let ([ res (or (not val) (equal? val (list-ref field 3)))])
                         (and res #R 'skipped #R k)))
-        #R k
-        #R len
+        #RR k
+        #RR len
         (define operands (encodeOperands (list-ref field 2) #f ctx val))
-        #R operands
+        #RR operands
         (set! len (+ len
                      (for/sum ([op (in-list operands)])
                        #R (size CFFOperand op))))

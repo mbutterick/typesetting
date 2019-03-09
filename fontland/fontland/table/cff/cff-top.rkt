@@ -38,11 +38,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 
     (augment [@encode encode])
     (define (@encode value stream ctx)
-      #R 'encode-pdop
-      #R value
-      #R stream
+      #RRR 'encode-pdop
+      #RR '---------------------
       (or (index-of @predefinedOps value)
-          (send @type encode value stream ctx)))))
+          #RRR (send #RR @type encode #RR value #RR stream ctx)))))
 
 (define (PredefinedOp predefinedOps type) (make-object PredefinedOp% predefinedOps type))
 
@@ -80,7 +79,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (class x:array%
     (super-new)
     (inherit-field [@len len] [@type type])
+    #RRR @type
     (define/override (decode stream parent)
+      #RRR 'in-RangeArray%-decode
       (define length (resolve-length @len stream parent))
       (for/fold ([res null]
                  [count 0]
@@ -90,6 +91,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
         (define range (decode @type stream parent))
         (hash-set! range 'offset count)
         (values (cons range res) (+ count (hash-ref range 'nLeft) 1))))))
+
 (define (RangeArray . args) (apply x:array #:base-class RangeArray% args))
 
 (define (base-tproc t) (length (hash-ref (hash-ref t 'parent) 'CharStrings)))
