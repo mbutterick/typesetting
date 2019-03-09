@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require "base.rkt"
          "number.rkt"
          racket/dict
@@ -57,7 +57,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 
     (define/augride (encode val-in port [parent #f])
       (unless parent ; todo: furnish default pointer context? adapt from Struct?
-        (raise-argument-error 'pointer-encode "valid pointer context" parent))
+        (raise-argument-error 'xpointer-encode "valid pointer context" parent))
       (cond
         [val-in
          (define new-parent (case @pointer-relative-to
@@ -69,14 +69,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                                [(local parent) (hash-ref new-parent x:start-offset-key)]
                                [(immediate) (+ (pos port) (send @offset-type size val-in parent))]
                                [(global) 0])))
-         (define ctx new-parent)
-         #R (hash-ref ctx x:start-offset-key)
-         #;(hash-ref ctx x:pointer-offset-key)
-         #R (hash-ref ctx x:pointer-size-key)
-         #R (hash-ref ctx x:pointers-key)
-         #R (hash-keys (hash-ref ctx x:val-key))
-         #R (hash-ref ctx x:parent-key)
-         #R "\n"
          (send @offset-type encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
          (define-values (type val) (resolve-pointer @type val-in))
          (hash-update! new-parent x:pointers-key
