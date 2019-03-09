@@ -20,7 +20,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
                 [(@type type) #f])
 
     (define/override (pre-encode val)
-      #R 'in-PredefinedOp%-pre-encode
       ;; because fontkit depends on overloading 'version key, and we don't
       (let ([val (make-hasheq val)])
         (hash-set! val 'x:version (hash-ref val 'version))
@@ -38,10 +37,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 
     (augment [@encode encode])
     (define (@encode value stream ctx)
-      #RRR 'encode-pdop
-      #RR '---------------------
       (or (index-of @predefinedOps value)
-          #RRR (send #RR @type encode #RR value #RR stream ctx)))))
+          (send @type encode value stream ctx)))))
 
 (define (PredefinedOp predefinedOps type) (make-object PredefinedOp% predefinedOps type))
 
@@ -79,9 +76,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (class x:array%
     (super-new)
     (inherit-field [@len len] [@type type])
-    #RRR @type
     (define/override (decode stream parent)
-      #RRR 'in-RangeArray%-decode
       (define length (resolve-length @len stream parent))
       (for/fold ([res null]
                  [count 0]
@@ -130,15 +125,26 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
                'sentinel uint32be))))
 
 (define ptr (CFFPointer CFFPrivateDict))
+
+(define CFFPrivateOp%
+  (class x:base%
+    (super-new)
+    
+    (augment [@decode decode])
+    (define (@decode stream parent operands)
+      (hash-set! parent 'length (first operands))
+      (send ptr decode stream parent (list (second operands))))
+
+    (define/augment (size dict ctx)
+      (list (send CFFPrivateDict size dict ctx #false)
+            (car (send ptr size dict ctx))))
+
+    (define/augment (encode dict stream ctx)
+      (list (send CFFPrivateDict size dict ctx #false)
+            (car (send ptr encode dict stream ctx))))))
+
 (define (CFFPrivateOp . args)
-  (apply make-object
-         (class x:base%
-           (super-new)
-           (augment [@decode decode])
-           (define (@decode stream parent operands)
-             (hash-set! parent 'length (first operands))
-             (decode ptr stream #:parent parent (list (second operands)))))
-         args))
+  (apply make-object CFFPrivateOp% args))
 
 (define FontDict
   (CFFDict
@@ -190,7 +196,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (x:versioned-struct
    #:pre-encode
    (λ (val)
-     #R 'in-cfftop-pre-encode
      ;; because fontkit depends on overloading 'version key, and we don't
      (hash-set! val 'x:version (hash-ref val 'version))
      val)

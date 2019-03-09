@@ -33,13 +33,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         [_  operands]))
 
     (define (encodeOperands type stream ctx operands)
-      #R 'in-encode-operands
-      #R stream
       (cond
         [(list? type)
          (for/list ([(op i) (in-indexed operands)])
            (car (encodeOperands (list-ref type i) stream ctx op)))]
-        [(xenomorphic? type) #RRR type (send type encode operands #RRR stream ctx)]
+        [(xenomorphic? type) type (send type encode operands stream ctx)]
         [(number? operands) (list operands)]
         [(boolean? operands) (list (if operands 1 0))]
         [(list? operands) operands]
@@ -87,7 +85,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
     (augment [@size size])
     (define (@size dict parent [includePointers #true])
-      #R 'in-cff-dict-size
+      #RRR 'in-cff-dict-size
+      #RR includePointers
       
       (define ctx
         (mhasheq x:parent-key parent
@@ -109,17 +108,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         #RR operands
         (set! len (+ len
                      (for/sum ([op (in-list operands)])
-                       #R (size CFFOperand op))))
+                       (size CFFOperand op))))
 
         (define key (if (list? (list-ref field 0))
                         (list-ref field 0)
                         (list (list-ref field 0))))
         (set! len (+ len #R (length key))))
 
-      (when includePointers
+      #RRR 'intermediate-len
+      #RR len
+      
+      (when #RRR includePointers
         (set! len (+ len (hash-ref ctx x:pointer-size-key))))
 
-      #R 'final-len
+      #RRR 'final-len
       #R len)
 
     (augment [@encode encode])

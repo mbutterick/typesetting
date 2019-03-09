@@ -53,7 +53,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
     (define/augment (size value-arg _)
       ;; if the value needs to be forced to the largest size (32 bit)
       ;; e.g. for unknown pointers, set to 32768
-      #RRR value-arg
       (define value (cond
                       [(or (and (hash? value-arg) (hash-ref value-arg 'forceLarge #f))
                            (and (Ptr? value-arg) (Ptr-forceLarge value-arg)))
