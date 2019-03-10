@@ -9,6 +9,7 @@
          "struct.rkt"
          fontland/glyph
          fontland/ttf-glyph
+         fontland/cff-glyph
          xenomorph
          racket/dict
          fontland/table/cff/cff-font
@@ -35,10 +36,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/subset/Subset.js
 |#
-
-; glyphs = list of glyph ids in the subset
-; mapping = of glyph ids to indexes in glyphs
-(struct subset (font glyphs mapping) #:transparent #:mutable)
 
 (define (+subset font [glyphs empty] [mapping (mhash)])
   (define ss (subset font glyphs mapping))
@@ -67,7 +64,6 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 |#
 
-(struct cff-subset subset (cff strings charstrings gsubrs) #:transparent #:mutable)
 
 (define (+cff-subset font [glyphs empty] [mapping (mhash)]
                      [cff (get-table font 'CFF_)]
@@ -96,8 +92,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
              (list (getCharString (cff-subset-cff this) gid))))
 
     (define glyph (get-glyph (subset-font this) gid))
-    ;; apparently path parsing is not necessary?
-    #;(define path (hash-ref glyph 'path)) ;; this causes the glyph to be parsed
+    (unless (cff-glyph-path glyph)
+      (set-cff-glyph-path! glyph (getPath glyph))) ;; this causes the glyph to be parsed
 
     (for ([subr (in-hash-keys #R (cff-glyph-_usedGsubrs glyph))])
       (hash-set! gsubrs subr #true)))

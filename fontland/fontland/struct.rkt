@@ -21,6 +21,12 @@
 
 (struct ttf-glyph glyph () #:transparent)
 
-(struct cff-glyph glyph ([_usedGsubrs #:auto] [_usedSubrs #:auto])
-  #:transparent
-  #:auto-value (make-hash))
+; glyphs = list of glyph ids in the subset
+; mapping = of glyph ids to indexes in glyphs
+(struct subset (font glyphs mapping) #:transparent #:mutable)
+
+(struct cff-subset subset (cff strings charstrings gsubrs) #:transparent #:mutable)
+
+(struct cff-glyph glyph ([path #:auto] [_usedGsubrs #:auto] [_usedSubrs #:auto])
+  #:transparent #:mutable
+  #:auto-value #f)
