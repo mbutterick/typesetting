@@ -95,6 +95,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
     (unless (cff-glyph-path glyph)
       (set-cff-glyph-path! glyph (getPath glyph))) ;; this causes the glyph to be parsed
 
+    #R (cff-glyph-path glyph)
     (for ([subr (in-hash-keys #R (cff-glyph-_usedGsubrs glyph))])
       (hash-set! gsubrs subr #true)))
 

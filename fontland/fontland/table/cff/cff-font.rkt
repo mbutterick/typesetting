@@ -82,7 +82,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
 (define (privateDictForGlyph this gid)
   (cond
     [(and (hash-has-key? this 'topDict)
-          (hash-has-key? (hash-ref this 'topDict) 'FDSelect))
+          (hash-has-key? (hash-ref this 'topDict) 'FDSelect)
+          (hash-ref* this 'topDict 'FDSelect))
      (define fd (fdForGlyph this gid))
      (if (list-ref (hash-ref* this 'topDict 'FDArray) fd)
          (hash-ref (list-ref (hash-ref* 'topDict 'FDArray) fd) 'Private)
