@@ -11,7 +11,7 @@ make = (doc) ->
   # Set the font, draw some text
   doc.font('the-font')
      .fontSize(40)
-     .text('Fira OTF rifle fire', 100, 100, {width: false})
+     .text('o', 100, 100, {width: false})
                  
   doc.end()
 
