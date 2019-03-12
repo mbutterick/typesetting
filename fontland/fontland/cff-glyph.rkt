@@ -42,7 +42,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (define gsubrs (hash-ref cff 'globalSubrIndex null))
   (define gsubrsBias (bias this gsubrs))
 
-  (define privateDict (privateDictForGlyph cff (glyph-id this)))
+  (define privateDict (or (privateDictForGlyph cff (glyph-id this)) (make-hash)))
   (define subrs (hash-ref privateDict 'Subrs null))
   (define subrsBias (bias this subrs))
 

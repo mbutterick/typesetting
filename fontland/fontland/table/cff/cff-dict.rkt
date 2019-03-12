@@ -88,8 +88,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
     (augment [@size size])
     (define (@size dict parent [includePointers #true])
-      #RRR @name
-      #RRR includePointers
       
       (define ctx
         (mhasheq x:parent-key parent
@@ -104,8 +102,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
              [val (in-value (dict-ref dict (list-ref field 1) #false))]
              #:unless (let ([ res (or (not val) (equal? val (list-ref field 3)))])
                         res))
-        #R k
-        #R len
+        
         (define operands (encodeOperands (list-ref field 2) #f ctx val))
         (set! len (+ len
                      (for/sum ([op (in-list operands)])
@@ -114,16 +111,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         (define key (if (list? (list-ref field 0))
                         (list-ref field 0)
                         (list (list-ref field 0))))
-        (set! len (+ len #R (length key))))
+        (set! len (+ len (length key))))
       
-      (when #R includePointers
-        (set! len (+ len #R (hash-ref ctx x:pointer-size-key))))
+      (when includePointers
+        (set! len (+ len (hash-ref ctx x:pointer-size-key))))
 
-      (define final-len len)
-      #R final-len)
+      len)
 
     (augment [@encode encode])
     (define (@encode dict stream parent)
+      #RRR 'entering-cff-dict-encode
+        #R @name
+        #R @fields
       (define ctx (mhasheq
                    x:pointers-key null
                    x:start-offset-key (pos stream)
@@ -150,10 +149,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
       (define i 0)
       (let loop ()
-        (when (< i (length (hash-ref ctx x:pointers-key)))
+        (when (< i #R (length (hash-ref ctx x:pointers-key)))
           (define ptr (list-ref (hash-ref ctx x:pointers-key) i))
+          #R ptr
           (set! i (add1 i))
           (send (hash-ref ptr 'type) encode (hash-ref ptr 'val) stream (hash-ref ptr 'parent))
-          (loop))))))
+          (loop)))
+
+      #R 'returning-from-cff-dict-encode)))
 
       (define (CFFDict [name 'unknown] [ops null]) (make-object CFFDict% name ops))

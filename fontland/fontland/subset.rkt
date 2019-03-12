@@ -84,8 +84,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
   (set-cff-subset-charstrings! this null)
   (define gsubrs (make-hash))
   (for ([gid (in-list (subset-glyphs this))])
-    #R gid
-
     (set-cff-subset-charstrings!
      this
      (append (cff-subset-charstrings this)
@@ -191,6 +189,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
              'stringIndex (cff-subset-strings this)
              'globalSubrIndex (cff-subset-gsubrs this)))
 
+  (for ([k (sort (dict-keys topDict) symbol<?)])
+    (define val (dict-ref topDict k))
+    (unless (or (list? val) (dict? val))
+      k
+      val))
+  
   (encode CFFTop top stream))
 
 #;(module+ test
