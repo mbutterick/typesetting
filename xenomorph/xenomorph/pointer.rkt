@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require "base.rkt"
          "number.rkt"
          racket/dict
@@ -22,26 +22,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     [type (values type val)]
     [(xvoid-pointer? val) (values (xvoid-pointer-type val) (xvoid-pointer-value val))]
     [else (raise-argument-error 'x:pointer "VoidPointer" val)]))
-
-(define (pointer-encode this val-in port parent)         
-  (cond
-    [val-in
-     (define new-parent (case (get-field pointer-relative-to this)
-                          [(local immediate) parent]
-                          [(parent) (hash-ref parent x:parent-key)]
-                          [(global) (find-top-parent parent)]
-                          [else (error 'unknown-pointer-style)]))
-     (define relative (+ (case (get-field pointer-relative-to this)
-                           [(local parent) (hash-ref new-parent x:start-offset-key)]
-                           [(immediate) (+ (pos port) (send (get-field offset-type this) size val-in parent))]
-                           [(global) 0])))
-     (send (get-field offset-type this) encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
-     (define-values (type val) (resolve-pointer (get-field type this) val-in))
-     (hash-update! new-parent x:pointers-key
-                   (λ (ptrs) (append ptrs (list (x:ptr type val parent)))))
-     (hash-set! new-parent x:pointer-offset-key
-                (+ (hash-ref new-parent x:pointer-offset-key) (send type size val parent)))]
-    [else (send (get-field offset-type this) encode (get-field null-value this) port)]))
 
 (define x:pointer%
   (class x:base%
@@ -78,7 +58,24 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
     (define/augride (encode val-in port [parent #f])
       (unless parent ; todo: furnish default pointer context? adapt from Struct?
         (raise-argument-error 'xpointer-encode "valid pointer context" parent))
-      (pointer-encode this val-in port parent))
+      (cond
+        [val-in
+         (define new-parent (case @pointer-relative-to
+                              [(local immediate) parent]
+                              [(parent) (hash-ref parent x:parent-key)]
+                              [(global) (find-top-parent parent)]
+                              [else (error 'unknown-pointer-style)]))
+         (define relative (+ (case @pointer-relative-to
+                               [(local parent) (hash-ref new-parent x:start-offset-key)]
+                               [(immediate) (+ (pos port) (send @offset-type size val-in parent))]
+                               [(global) 0])))
+         (send @offset-type encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
+         (define-values (type val) (resolve-pointer @type val-in))
+         (hash-update! new-parent x:pointers-key
+                       (λ (ptrs) (append ptrs (list (x:ptr type val parent)))))
+         (hash-set! new-parent x:pointer-offset-key
+                    (+ (hash-ref new-parent x:pointer-offset-key) (send type size val parent)))]
+        [else (send @offset-type encode @null-value port)]))
 
     (define/augride (size [val-in #f] [parent #f])
       (define new-parent (case @pointer-relative-to
@@ -133,8 +130,8 @@ This allows the pointer to be calculated relative to a property on the parent. I
 
 ;; A pointer whose type is determined at decode time
 (define x:void-pointer% (class x:base%
-                          (super-new)
-                          (init-field type value)))
+                         (super-new)
+                         (init-field type value)))
 (define (x:void-pointer . args) (apply make-object x:void-pointer% args))
 (define (xvoid-pointer? x) (is-a? x x:void-pointer%))
 (define (xvoid-pointer-type x) (get-field type x))
