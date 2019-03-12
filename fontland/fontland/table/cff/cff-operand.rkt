@@ -77,7 +77,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
       (define val (if value (string->number (format "~a" value)) 0))
 
       (cond
-        [(and (hash? value-arg) (hash-ref value-arg 'forceLarge #f))
+        [(and (Ptr? value-arg) (Ptr-forceLarge value-arg))
          (encode uint8 29 stream)
          (encode int32be val stream)]
         [(not (integer? val)) ;; floating point

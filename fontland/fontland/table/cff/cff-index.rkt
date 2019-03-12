@@ -24,13 +24,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
     (define (@decode stream parent)
       (match (decode (if (>= (getCFFVersion parent) 2) uint32be uint16be) stream)
         [0 null]
-        [count (define offSize (decode uint8 stream))
+        [count  (define offSize (decode uint8 stream))
                (define offsetType (match offSize
                                     [1 uint8]
                                     [2 uint16be]
                                     [3 uint24be]
                                     [4 uint32be]
-                                    [_ (error 'bad-offset-size-in-CFFIndex)]))
+                                    [_ (error (format "bad-offset-size-in-CFFIndex ~a" offSize))]))
                (define startPos (+ (pos stream) (* (add1 count) offSize) -1))
                (for/fold ([vals null]
                           [start (send offsetType decode stream)]
@@ -98,11 +98,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
              [(<= offset #xff)
               uint8]
              [(<= offset #xffff)
-              uint16]
+              uint16be]
              [(<= offset #xffffff)
-              uint24]
+              uint24be]
              [(<= offset #xffffffff)
-              uint32]
+              uint32be]
              [else
               (error 'cff-index-encode-bad-offset!)]))
 
