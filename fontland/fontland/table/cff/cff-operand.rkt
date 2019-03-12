@@ -12,7 +12,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
 (define FLOAT_LOOKUP (vector "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "." "E" "E-" "" "-"))
 
 (define FLOAT_ENCODE_LOOKUP
-  (hasheq "." 10
+  (hash "." 10
           "E" 11
           "E-" 12
           "-" 14))

@@ -107,18 +107,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
               (error 'cff-index-encode-bad-offset!)]))
 
          ;; write offset size
-         (encode uint8 (size offsetType) stream)
+         (send uint8 encode (size offsetType) stream)
 
          ;; write elements
          (set! offset 1)
-         (encode offsetType offset stream)
+         (send offsetType encode offset stream)
 
          (for ([size (in-list sizes)])
            (set! offset (+ offset size))
-           (encode offsetType offset stream))
+           (send offsetType encode offset stream))
 
          (for ([item (in-list arr)])
-           (encode type item stream #:parent parent))]))))
+           (send type encode item stream parent))]))))
 
 (define (CFFIndex [type #f])
   (new CFFIndex% [type type]))

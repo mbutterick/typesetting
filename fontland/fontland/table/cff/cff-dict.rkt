@@ -121,8 +121,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
     (augment [@encode encode])
     (define (@encode dict stream parent)
       #RRR 'entering-cff-dict-encode
-        #R @name
-        #R @fields
+      #R @name
+      #R @fields
       (define ctx (mhasheq
                    x:pointers-key null
                    x:start-offset-key (pos stream)
@@ -150,12 +150,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
       (define i 0)
       (let loop ()
         (when (< i #R (length (hash-ref ctx x:pointers-key)))
-          (define ptr (list-ref (hash-ref ctx x:pointers-key) i))
-          #R ptr
+          (match (list-ref (hash-ref ctx x:pointers-key) i)
+            [(x:ptr type val parent) (send type encode val stream parent)])
           (set! i (add1 i))
-          (send (hash-ref ptr 'type) encode (hash-ref ptr 'val) stream (hash-ref ptr 'parent))
           (loop)))
 
       #R 'returning-from-cff-dict-encode)))
 
-      (define (CFFDict [name 'unknown] [ops null]) (make-object CFFDict% name ops))
+(define (CFFDict [name 'unknown] [ops null]) (make-object CFFDict% name ops))
