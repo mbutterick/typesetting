@@ -10,18 +10,18 @@ make = (doc) ->
   doc.registerFont('charter', 'assets/charter.otf')
 
   # Set the font, draw some text
-  doc.font('fira')
+  doc.font('charter')
      .fontSize(40)
-     .text('Fira OTF rifle fire', 100, 100, {width: false})
+     .text('Charter OTF rifle fire', 100, 100, {width: false})
                  
   doc.end()
 
 
 doc = new PDFDocument({compress: no})
-doc.pipe(fs.createWriteStream('test20.pdf'))
+doc.pipe(fs.createWriteStream('test21.pdf'))
 make doc
 
 doc = new PDFDocument({compress: yes})
-doc.pipe(fs.createWriteStream('test20c.pdf'))
+doc.pipe(fs.createWriteStream('test21c.pdf'))
 make doc
 
