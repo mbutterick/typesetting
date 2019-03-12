@@ -56,11 +56,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         [(? x:versioned-struct?) (send field-object decode port parent)]
         [_ (parse-fields port res field-object)]))
 
-    (define/override (pre-encode val)
-      (cond
-        [(and (not (dict-has-key? val x:version-key)) (dict-has-key? val 'version))
-         (dict-set val x:version-key (dict-ref val 'version))]
-        [else val]))
+    (define/override (pre-encode val) val)
 
     (define/override (encode field-data port [parent-arg #f])
       (unless (dict? field-data)
