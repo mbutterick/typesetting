@@ -19,6 +19,7 @@
              current-font-size
              current-font
              registered-fonts
+             font-count
              line-gap
              x
              y

@@ -47,6 +47,7 @@
   (define current-font-size 12)
   (define current-font #false)
   (define registered-fonts (make-hash))
+  (define font-count 0)
   (define line-gap 0)
   (define x 0)
   (define y 0)
@@ -66,6 +67,7 @@
                        current-font-size
                        current-font
                        registered-fonts
+                       font-count
                        line-gap
                        x
                        y
