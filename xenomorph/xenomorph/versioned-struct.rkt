@@ -57,7 +57,6 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         [_ (parse-fields port res field-object)]))
 
     (define/override (pre-encode val)
-      #R (dict-keys val)
       (cond
         [(and (not (dict-has-key? val x:version-key)) (dict-has-key? val 'version))
          (dict-set val x:version-key (dict-ref val 'version))]
@@ -78,11 +77,11 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         (send type encode (dict-ref field-data key) port parent))
 
       (define fields (select-field-set field-data))
-      (unless (andmap (λ (key) (member key (hash-keys field-data))) (dict-keys fields))
-        (raise-argument-error 'x:versioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (hash-keys field-data)))
+      (unless (andmap (λ (key) (member key (dict-keys field-data))) (dict-keys fields))
+        (raise-argument-error 'x:versioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (dict-keys field-data)))
       (for ([(key type) (in-dict fields)])
-        (send type encode (hash-ref field-data key) port parent))
-      (for ([ptr (in-list (hash-ref parent x:pointers-key))])
+        (send type encode (dict-ref field-data key) port parent))
+      (for ([ptr (in-list (dict-ref parent x:pointers-key))])
         (match ptr
           [(x:ptr type val parent) (send type encode val port parent)])))
     
