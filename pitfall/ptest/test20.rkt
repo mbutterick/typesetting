@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require pitfall/pdftest)
 
 ;; subset OTF font
