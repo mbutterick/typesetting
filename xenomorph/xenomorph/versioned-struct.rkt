@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require "base.rkt" "struct.rkt"
          racket/dict
          racket/match
@@ -56,6 +56,13 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         [(? x:versioned-struct?) (send field-object decode port parent)]
         [_ (parse-fields port res field-object)]))
 
+    (define/override (pre-encode val)
+      #R (dict-keys val)
+      (cond
+        [(and (not (dict-has-key? val x:version-key)) (dict-has-key? val 'version))
+         (dict-set val x:version-key (dict-ref val 'version))]
+        [else val]))
+
     (define/override (encode field-data port [parent-arg #f])
       (unless (dict? field-data)
         (raise-argument-error 'x:versioned-struct-encode "dict" field-data))
@@ -79,9 +86,10 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         (match ptr
           [(x:ptr type val parent) (send type encode val port parent)])))
     
-    (define/override (size [val #f] [parent-arg #f] [include-pointers #t])
-      (unless val
-        (raise-argument-error 'x:versioned-struct-size "value" val))
+    (define/override (size [val-arg #f] [parent-arg #f] [include-pointers #t])
+      (unless val-arg
+        (raise-argument-error 'x:versioned-struct-size "value" val-arg))
+      (define val (pre-encode val-arg))
       (define parent (mhasheq x:parent-key parent-arg
                               x:val-key val
                               x:pointer-size-key 0))
