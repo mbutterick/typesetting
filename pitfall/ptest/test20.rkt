@@ -13,7 +13,7 @@
   ;; Set the font, draw some text
   [font doc "the-font"]
   [font-size doc 40]
-  [text doc "o" 100 100])
+  [text doc "Fira OTF rifle fire" 100 100])
 
 ;; test against non-subsetted font version
 (define-runtime-path this "test20rkt.pdf")
