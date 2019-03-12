@@ -13,13 +13,15 @@
   (register-font doc "charter" (path->string charter))
 
   ;; Set the font, draw some text
-  [font doc "fira"]
+  [font doc "charter"]
   [font-size doc 40]
-  [text doc "Fira OTF rifle fire" 100 100])
+  [text doc "Charter OTF rifle fire" 100 100])
 
 ;; test against non-subsetted font version
-(define-runtime-path this "test20rkt.pdf")
+(define-runtime-path this "test21rkt.pdf")
 (make-doc this #f proc)
 
-(define-runtime-path that "test20crkt.pdf")
+(define-runtime-path that "test21crkt.pdf")
 (make-doc that #t proc)
+
+(check-font-subsets-equal? "test21rkt.pdf" "test21.pdf")

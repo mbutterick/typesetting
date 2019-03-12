@@ -1,5 +1,5 @@
 #lang debug racket
-(require rackunit (prefix-in zlib: pitfall/zlib))
+(require rackunit (prefix-in zlib: pitfall/zlib) fontland/table/cff/cff-top)
 (provide (all-defined-out))
 
 (define (xref-offset bs)
@@ -63,7 +63,7 @@
         (for/list ([kv (in-slice 2 items)]
                    ;; suppress these keys so we can compare pdfkit & pitfall output
                    #:unless (member (car kv) (list #"/Producer" #"/Creator" #"/CreationDate")))
-          (apply cons kv))
+                  (apply cons kv))
         bytes<?
         #:key car))
      (cond ;; might have a stream
@@ -96,7 +96,7 @@
 
 (define (parse-pdf-bytes bs)
   (for/list ([tok (in-port parse-1 (open-input-bytes bs))])
-    tok))
+            tok))
 
 (define (pdf->dict pdf)
   (define pdf-bs (file->bytes pdf))
@@ -108,14 +108,14 @@
      (sort ; sort by byte offset
       (cdr ; drop zeroth record: there is no zeroth object
        (for/list ([i (in-range ref-count)])
-         (cons i (read (open-input-bytes (car (regexp-match #px"\\d{10}" xref-ip)))))))
+                 (cons i (read (open-input-bytes (car (regexp-match #px"\\d{10}" xref-ip)))))))
       < #:key cdr)
      (list (cons #f xoff))))
   (sort ; sort by index
    (parameterize ([current-input-port (open-input-bytes pdf-bs)])
      (for/list ([(idx start) (in-dict obj-locations)]
                 [(_ end) (in-dict (cdr obj-locations))])
-       (cons idx (car (parse-pdf-bytes (peek-bytes (- end start) start))))))
+               (cons idx (car (parse-pdf-bytes (peek-bytes (- end start) start))))))
    < #:key car))
 
 (define (dict-compare arg1 arg2)
@@ -125,13 +125,13 @@
        (= (length d1) (length d2))
        (for/and ([(k1 v1) (in-dict d1)]
                  [(k2 v2) (in-dict d2)])
-         (unless (equal? k1 k2)
-           (error (format "keys unequal in ~a and ~a: ~a ≠ ~a" arg1 arg2 k1 k2)))
-         (unless (equal? v1 v2)
-           (error (format "values unequal in ~a and ~a: ~e ≠ ~e" arg1 arg2 v1 v2)))
-         (when (dict? v1)
-           (dict-compare v1 v2))
-         #true)))
+                (unless (equal? k1 k2)
+                  (error (format "keys unequal in ~a and ~a: ~a ≠ ~a" arg1 arg2 k1 k2)))
+                (unless (equal? v1 v2)
+                  (error (format "values unequal in ~a and ~a: ~e ≠ ~e" arg1 arg2 v1 v2)))
+                (when (dict? v1)
+                  (dict-compare v1 v2))
+                #true)))
 
 (define-simple-check (check-headers-equal? ps1 ps2)
   (equal? (peek-bytes 14 0 (open-input-file ps1))
@@ -140,8 +140,39 @@
 (define-simple-check (check-pdfs-equal? ps1 ps2)
   (dict-compare ps1 ps2))
 
+(define-simple-check (check-font-subsets-equal? f1 f2)
+  (define misses null)
+
+  (define (dump val)
+    (cond
+      [(promise? val) 'promise-omitted]
+      [(dict? val)
+       (for/list ([(k v) (in-dict (sort (dict->list val) #:key car symbol<?))])
+                 (list k (dump v)))]
+      [(list? val) (map dump val)]
+      [else val]))
+
+  (define (cmp v1 v2)
+    (cond
+      [(and (list? v1) (list? v2))
+       (and
+        (= (length v1) (length v2))
+        (for/and ([x1 (in-list v1)]
+                  [x2 (in-list v2)])
+                 (unless (cmp x1 x2)
+                   (set! misses (cons (list v1 x1 v2 x2) misses)))))]
+      [else (equal? v1 v2)]))
+
+  (define ibs1 (dict-ref (dict-ref (pdf->dict f1) 8) 'stream))
+  (define cfftop1 (dump (send CFFTop decode (open-input-bytes ibs1))))
+  (define ibs2 (dict-ref (dict-ref (pdf->dict f2) 8) 'stream))
+  (define cfftop2 (dump (send CFFTop decode (open-input-bytes ibs2))))
+
+  (cmp cfftop1 cfftop2)
+  (check-true (null? misses)))
+
 #;(module+ main
     (for ([p (in-directory)]
           #:when (path-has-extension? p #"pdf"))
-      (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
-        (pdf->dict p))))
+         (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
+           (pdf->dict p))))

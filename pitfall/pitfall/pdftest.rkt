@@ -7,7 +7,7 @@
   br/define
   "check-pdf.rkt")
 
-(provide check-copy-equal? check-pdfkit? make-doc)
+(provide check-copy-equal? check-pdfkit? make-doc check-font-subsets-equal?)
 
 (test-mode #t)
 

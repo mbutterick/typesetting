@@ -23,3 +23,6 @@
 
 (define-runtime-path that "test20crkt.pdf")
 (make-doc that #t proc)
+
+(check-font-subsets-equal? "test20rkt.pdf" "test20.pdf")
+
