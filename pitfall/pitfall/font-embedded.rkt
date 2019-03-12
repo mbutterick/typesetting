@@ -92,7 +92,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                (list subset-idxs new-positions))))
 
 (define (efont-embedded ef)
-  (define isCFF #false) ; no CFF support, but leave notations
+  (define isCFF (has-table? (efont-font ef) 'CFF_))
   (define font-file (make-ref))
 
   (when isCFF
