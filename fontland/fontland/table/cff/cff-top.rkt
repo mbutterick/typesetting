@@ -1,5 +1,5 @@
 #lang debug racket/base
-(require xenomorph racket/list sugar/unstable/dict racket/class
+(require xenomorph racket/list sugar/unstable/dict racket/class racket/dict
          "cff-index.rkt"
          "cff-dict.rkt"
          "cff-charsets.rkt"
@@ -115,6 +115,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 (define FDSelect
   (x:versioned-struct
    uint8
+   #:pre-encode
+   (λ (val)
+     ;; because fontkit depends on overloading 'version key, and we don't
+     (dict-set val 'x:version (dict-ref val 'version)))
    (dictify
     0 (dictify 'fds (x:array uint8 base-tproc))
     3 (dictify 'nRanges uint16be
@@ -141,7 +145,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 
     (define/augment (encode dict stream ctx)
       (list (send CFFPrivateDict size dict ctx #false)
-              (car (send ptr encode dict stream ctx))))))
+            (car (send ptr encode dict stream ctx))))))
 
 (define (CFFPrivateOp)
   (make-object CFFPrivateOp%))
