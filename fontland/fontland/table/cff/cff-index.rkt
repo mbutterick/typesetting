@@ -77,8 +77,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
 
          size]))
 
-    (define/augride (encode arr stream parent)
-      #R arr
+    (augride [@encode encode])
+    (define (@encode arr stream parent)
       (encode uint16be (length arr) stream)
       (cond
         [(zero? (length arr))]
