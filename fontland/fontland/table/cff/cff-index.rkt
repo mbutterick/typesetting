@@ -79,7 +79,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
 
     (augride [@encode encode])
     (define (@encode arr stream parent)
-      (encode uint16be (length arr) stream)
+      (send uint16be encode (length arr) stream)
       (cond
         [(zero? (length arr))]
         [else

@@ -32,7 +32,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
 
     (override [@encode encode])
     (define (@encode value stream ctx)
-      #R 'entering=cff-pointer-encode
       (cond
         [(not stream)
          ;; compute the size (so ctx.pointerSize is correct)

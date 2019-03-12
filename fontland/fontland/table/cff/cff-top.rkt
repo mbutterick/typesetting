@@ -132,7 +132,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
     
     (augment [@decode decode])
     (define (@decode stream parent operands)
-      (hash-set! parent 'length #R (list-ref operands 0))
+      (hash-set! parent 'length (list-ref operands 0))
       (send ptr decode stream parent (list (list-ref operands 1))))
 
     (define/augment (size dict ctx)
@@ -140,11 +140,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
             (car (send ptr size dict ctx))))
 
     (define/augment (encode dict stream ctx)
-      #R 'encoding-privateop
-      (begin0
       (list (send CFFPrivateDict size dict ctx #false)
-              #R (car (send ptr encode dict stream ctx)))
-      #R 'returning-from-privateop))))
+              (car (send ptr encode dict stream ctx))))))
 
 (define (CFFPrivateOp)
   (make-object CFFPrivateOp%))
