@@ -115,7 +115,7 @@
    (parameterize ([current-input-port (open-input-bytes pdf-bs)])
      (for/list ([(idx start) (in-dict obj-locations)]
                 [(_ end) (in-dict (cdr obj-locations))])
-       (cons idx (parse-pdf-bytes (peek-bytes (- end start) start)))))
+       (cons idx (car (parse-pdf-bytes (peek-bytes (- end start) start))))))
    < #:key car))
 
 (define (dict-compare arg1 arg2)
