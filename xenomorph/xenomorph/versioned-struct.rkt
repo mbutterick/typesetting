@@ -80,15 +80,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (unless (andmap (λ (key) (member key (dict-keys field-data))) (dict-keys fields))
         (raise-argument-error 'x:versioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (dict-keys field-data)))
       (for ([(key type) (in-dict fields)])
-        #R (list key 'in-verseioned-struct)
         (send type encode (dict-ref field-data key) port parent))
-      #R (list 'broccoli (length (dict-ref parent x:pointers-key)))
       (let loop ([i 0])
         (when (< i (length (dict-ref parent x:pointers-key)))
           (define ptr (list-ref (dict-ref parent x:pointers-key) i))
-          #R 'all-the-marbles
           (match ptr
-            [(x:ptr type val parent) #R i (send type encode val port parent)])
+            [(x:ptr type val parent) i (send type encode val port parent)])
           (loop (add1 i)))))
     
     (define/override (size [val-arg #f] [parent-arg #f] [include-pointers #t])
