@@ -80,6 +80,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (unless (andmap (λ (key) (member key (dict-keys field-data))) (dict-keys fields))
         (raise-argument-error 'x:versioned-struct-encode (format "hash that contains superset of xversioned-struct keys: ~a" (dict-keys fields)) (dict-keys field-data)))
       (for ([(key type) (in-dict fields)])
+        #R (list key 'in-verseioned-struct)
         (send type encode (dict-ref field-data key) port parent))
       (for ([ptr (in-list (dict-ref parent x:pointers-key))])
         (match ptr

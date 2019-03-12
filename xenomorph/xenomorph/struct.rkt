@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require racket/dict
          racket/class
          racket/sequence
@@ -66,6 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                               x:pointer-size-key 0)) 
       (hash-set! parent x:pointer-offset-key (+ (pos port) (size field-data parent #f))) 
       (for ([(key type) (in-dict @fields)])
+        #R (list key 'in-struct)
         (send type encode (dict-ref field-data key) port parent))
       (for ([ptr (in-list (hash-ref parent x:pointers-key))])
         (match ptr
