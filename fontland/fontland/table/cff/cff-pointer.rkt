@@ -48,6 +48,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
                                (class x:base%
                                  (super-new)
                                  (define/augment (encode val stream . _) (set! ptr val)))))
-         (pointer-encode this value stream ctx)
+         (super @encode value stream ctx)
          (list (Ptr ptr))]))))
 
