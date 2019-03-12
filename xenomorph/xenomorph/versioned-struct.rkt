@@ -82,9 +82,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (for ([(key type) (in-dict fields)])
         #R (list key 'in-verseioned-struct)
         (send type encode (dict-ref field-data key) port parent))
-      (for ([ptr (in-list (dict-ref parent x:pointers-key))])
+      #R (list 'broccoli (length (dict-ref parent x:pointers-key)))
+      (for ([(ptr i) (in-indexed #R (dict-ref parent x:pointers-key))])
+        #R 'all-the-marbles
+        #R i
         (match ptr
-          [(x:ptr type val parent) (send type encode val port parent)])))
+          [(x:ptr type val parent) #R i (send type encode val port parent)])))
     
     (define/override (size [val-arg #f] [parent-arg #f] [include-pointers #t])
       (unless val-arg
