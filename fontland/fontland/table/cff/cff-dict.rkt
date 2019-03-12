@@ -124,6 +124,36 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
     (augment [@encode encode])
     (define (@encode dict stream parent)
-      (error 'cff-dict-encode-undefined))))
+      (define ctx (mhasheq
+                   x:pointers-key null
+                   x:start-offset-key (pos stream)
+                   x:parent-key parent
+                   x:val-key dict
+                   x:pointer-size-key 0))
 
-(define (CFFDict [name 'unknown] [ops null]) (make-object CFFDict% name ops))
+      (hash-set! ctx x:pointer-offset-key (+ (pos stream) (@size dict ctx #false)))
+
+      (for ([field (in-list @ops)])
+        (define val (dict-ref dict (list-ref field 1) #false))
+        (cond
+          [(or (not val) (equal? val (list-ref field 3)))]
+          [else
+           (define operands (encodeOperands (list-ref field 2) stream ctx val))
+           (for ([op (in-list operands)])
+             (send CFFOperand encode op stream))
+
+           (define key (if (list? (list-ref field 0))
+                           (list-ref field 0)
+                           (list (list-ref field 0))))
+           (for ([op (in-list key)])
+             (encode uint8 op stream))]))
+
+      (define i 0)
+      (let loop ()
+        (when (< i (length (hash-ref ctx x:pointers-key)))
+          (define ptr (list-ref (hash-ref ctx x:pointers-key) i))
+          (set! i (add1 i))
+          (send (hash-ref ptr 'type) encode (hash-ref ptr 'val) stream (hash-ref ptr 'parent))
+          (loop))))))
+
+      (define (CFFDict [name 'unknown] [ops null]) (make-object CFFDict% name ops))

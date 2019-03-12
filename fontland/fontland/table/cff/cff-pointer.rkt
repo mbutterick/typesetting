@@ -1,5 +1,5 @@
 #lang debug racket/base
-(require racket/class racket/list xenomorph "cff-struct.rkt")
+(require racket/class racket/list xenomorph/pointer xenomorph/base "cff-struct.rkt")
 (provide CFFPointer)
 
 #|
@@ -20,6 +20,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
   (class x:pointer%
     (super-new)
 
+    (inherit/super [%encode encode])
     (inherit-field type offset-type)
     
     (define/override (decode stream parent operands)
@@ -41,12 +42,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
          (send this size value ctx)
          (list (Ptr 0))]
         [else
+         #RRR 'rees
          (define ptr #false)
          (set! offset-type (make-object
                                (class x:base%
                                  (super-new)
-                                 (define/augment (encode val stream) (set! ptr val)))))
-         (error 'branch-not-impl)
-         #;(super encode value stream ctx)
+                                 (define/augment (encode val stream . _) (set! ptr val)))))
+         (pointer-encode this value stream ctx)
          (list (Ptr ptr))]))))
 

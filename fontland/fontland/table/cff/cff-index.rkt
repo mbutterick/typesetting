@@ -89,7 +89,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
          (define sizes null)
          (define offset 1)
          (for ([item (in-list arr)])
-           (define s (send @type size item parent))
+           (define s (send type size item parent))
            (set! sizes (append sizes (list s)))
            (set! offset (+ offset s)))
 

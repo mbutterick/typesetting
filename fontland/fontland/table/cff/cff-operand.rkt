@@ -70,13 +70,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
         [else 5]))
 
     (augment [@encode encode])
-    (define (@encode value stream)
+    (define (@encode value-arg stream . _)
       ;; if the value needs to be forced to the largest size (32 bit)
       ;; e.g. for unknown pointers, save the old value and set to 32768
-      (define val (string->number (format "~a" value)))
+      (define value (if (Ptr? value-arg) (Ptr-val value-arg) value-arg))
+      (define val (if value (string->number (format "~a" value)) 0))
 
       (cond
-        [(hash-ref value 'forceLarge #f)
+        [(and (hash? value-arg) (hash-ref value-arg 'forceLarge #f))
          (encode uint8 29 stream)
          (encode int32be val stream)]
         [(not (integer? val)) ;; floating point
@@ -101,11 +102,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
         [(<= -107 value 107)
          (encode uint8 (+ val 139) stream)]
         [(<= 108 value 1131)
-         (encode uint8 (+ (arithmetic-shift val 8) 247) stream)
+         (encode uint8 (+ (arithmetic-shift val -8) 247) stream)
          (encode uint8 (bitwise-and val #xff) stream)]
         [(<= -1131 value -108)
          (let ([val (- (- val) 108)])
-           (encode uint8 (+ (arithmetic-shift val 8) 251) stream)
+           (encode uint8 (+ (arithmetic-shift val -8) 251) stream)
            (encode uint8 (bitwise-and val #xff) stream))]
         [(<= -32768 value 32767)
          (encode uint8 28 stream)

@@ -191,9 +191,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
              'stringIndex (cff-subset-strings this)
              'globalSubrIndex (cff-subset-gsubrs this)))
 
-  (encode CFFTop top stream)
-
-  (error 'boom))
+  (encode CFFTop top stream))
 
 #;(module+ test
     (require "font.rkt" "helper.rkt")
