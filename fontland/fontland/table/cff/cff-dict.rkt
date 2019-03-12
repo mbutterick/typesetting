@@ -130,8 +130,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
       (hash-set! ctx x:pointer-offset-key (+ (pos stream) (@size dict ctx #false)))
 
       (for ([field (in-list @ops)])
-        #R (pos stream)
-        #R field
+        #;(pos stream)
+        #;field
         (define val (dict-ref dict (list-ref field 1) #false))
         (cond
           [(or (not val) (equal? val (list-ref field 3)))]

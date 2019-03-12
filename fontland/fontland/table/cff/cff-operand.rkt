@@ -95,15 +95,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
               (define c2 (vector-ref str (add1 i)))
               (set! n2 (hash-ref FLOAT_ENCODE_LOOKUP c2 (string->number c2)))])
 
-           (encode uint8 (bitwise-ior (arithmetic-shift n1 -4) (bitwise-and n2 15)) stream))
+           (encode uint8 (bitwise-ior (arithmetic-shift n1 4) (bitwise-and n2 15)) stream))
                     
          (unless (= n2 FLOAT_EOF)
            (encode uint8 (arithmetic-shift FLOAT_EOF 4) stream))]
         [(<= -107 value 107)
          (encode uint8 (+ val 139) stream)]
         [(<= 108 value 1131)
+         (let ([val (- val 108)])
          (encode uint8 (+ (arithmetic-shift val -8) 247) stream)
-         (encode uint8 (bitwise-and val #xff) stream)]
+         (encode uint8 (bitwise-and val #xff) stream))]
         [(<= -1131 value -108)
          (let ([val (- (- val) 108)])
            (encode uint8 (+ (arithmetic-shift val -8) 251) stream)
