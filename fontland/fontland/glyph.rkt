@@ -51,7 +51,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Glyph.js
   (apply +glyph #:constructor ttf-glyph args))
 
 (define (+cff-glyph . args)
-  (apply +glyph #:constructor cff-glyph args))
+  (apply +glyph #:constructor make-cff-glyph args))
 
 #|
 approximates

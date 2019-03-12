@@ -27,9 +27,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (define end (+ (hash-ref str 'offset) (hash-ref str 'length)))
   (pos stream (hash-ref str 'offset))
 
-  #R (pos stream)
-  #R end
-  
   (define path (Path))
   (define stack null)
   (define trans null)
@@ -38,8 +35,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (define nStems 0)
   (define x 0)
   (define y 0)
-  (define usedGsubrs (cff-glyph-_usedGsubrs this))
-  (define usedSubrs (cff-glyph-_usedSubrs this))
+  (define usedGsubrs (make-hash))
+  (define usedSubrs (make-hash))
   (define open #false)
 
   (define gsubrs (hash-ref cff 'globalSubrIndex null))
@@ -70,7 +67,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
       [(> (length ID) 0)
        (define-values (head last) (split-at-right ID 1))
        (set! ID head)
-       last]))
+       (car last)]))
 
   (define (checkWidth)
     (unless width
@@ -91,12 +88,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
     (set! open #true))
                       
   (define (parse)
-    #R 'in-parse
     (let/ec return
       (let loop ()
         (when  (< (pos stream) end)
           (define op (read-byte stream))
-          #R op
           (cond
             [(< op 32)
              (case op
@@ -124,10 +119,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                   (when (>= (length stack) 1)
                     (if phase
                         (set! x (+ x (shift stack)))
-                        (set! y (+ y (shift stack)))))
-                  (loop))
-                (path-lineTo path x y)
-                (set! phase (not phase))]
+                        (set! y (+ y (shift stack))))
+                    (path-lineTo path x y)
+                    (set! phase (not phase))
+                    (loop)))]
                [(8) ;; rrcurveto
                 (let loop ()
                   (when (> (length stack) 0)
@@ -256,7 +251,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
                [(29) ;; callgsubr
                 (define index (+ (pop stack) gsubrsBias))
-                (define subr (hash-ref gsubrs index))
+                (define subr (list-ref gsubrs index))
                 (when subr
                   (hash-set! usedGsubrs index #true)
                   (define p (pos stream))
@@ -500,6 +495,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (when open
     (path-closePath path))
 
-  #R path
+  (set-cff-glyph-_usedSubrs! this usedSubrs)
+  (set-cff-glyph-_usedGsubrs! this usedGsubrs)
   (set-cff-glyph-path! this path)
   path)

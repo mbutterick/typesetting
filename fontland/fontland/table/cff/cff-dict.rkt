@@ -88,9 +88,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
     (augment [@size size])
     (define (@size dict parent [includePointers #true])
-      #RR 'in-cff-dict-size
-      #RR @name
-      #RR includePointers
+      #RRR @name
+      #RRR includePointers
       
       (define ctx
         (mhasheq x:parent-key parent
@@ -99,11 +98,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                  x:start-offset-key (hash-ref parent x:start-offset-key 0)))
 
       (define len 0)
-      #RRR len
 
       (for* ([k (in-list (sort (dict-keys @fields) <))]
              [field (in-value (dict-ref @fields k))]
-             [val (in-value (dict-ref dict (list-ref field 1)))]
+             [val (in-value (dict-ref dict (list-ref field 1) #false))]
              #:unless (let ([ res (or (not val) (equal? val (list-ref field 3)))])
                         res))
         #R k
@@ -117,15 +115,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                         (list-ref field 0)
                         (list (list-ref field 0))))
         (set! len (+ len #R (length key))))
-
-      (define intermediate-len len)
-      #RR intermediate-len
       
-      (when #RR includePointers
-        (set! len (+ len #RR (hash-ref ctx x:pointer-size-key))))
+      (when #R includePointers
+        (set! len (+ len #R (hash-ref ctx x:pointer-size-key))))
 
       (define final-len len)
-      #RR final-len)
+      #R final-len)
 
     (augment [@encode encode])
     (define (@encode dict stream parent)

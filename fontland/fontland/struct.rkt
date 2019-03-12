@@ -27,6 +27,8 @@
 
 (struct cff-subset subset (cff strings charstrings gsubrs) #:transparent #:mutable)
 
-(struct cff-glyph glyph ([path #:auto] [_usedGsubrs #:auto] [_usedSubrs #:auto])
-  #:transparent #:mutable
-  #:auto-value #f)
+(struct cff-glyph glyph (path _usedGsubrs _usedSubrs)
+  #:transparent #:mutable)
+
+(define (make-cff-glyph . args)
+  (apply cff-glyph (append args (list #f (make-hash) (make-hash)))))

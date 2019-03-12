@@ -92,11 +92,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
              (list (getCharString (cff-subset-cff this) gid))))
 
     (define glyph (get-glyph (subset-font this) gid))
-    (unless (cff-glyph-path glyph)
-      (set-cff-glyph-path! glyph (getPath glyph))) ;; this causes the glyph to be parsed
+    (unless (cff-glyph-path glyph) (getPath glyph)) ;; this causes the glyph to be parsed
 
-    #R (cff-glyph-path glyph)
-    (for ([subr (in-hash-keys #R (cff-glyph-_usedGsubrs glyph))])
+    (for ([subr (in-hash-keys (cff-glyph-_usedGsubrs glyph))])
       (hash-set! gsubrs subr #true)))
 
   (set-cff-subset-gsubrs! this (subsetSubrs
@@ -105,12 +103,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
                                 gsubrs)))
 
 (define (subsetSubrs this subrs used)
-  #RRR 'in-subsetSubrs
   (for/list ([(subr i) (in-indexed subrs)])
     (cond
       [(hash-ref used i #false)
        (pos (hash-ref (cff-subset-cff this) 'stream) (hash-ref subr 'offset))
-       #RRR (read-bytes (hash-ref subr 'length) (hash-ref (cff-subset-cff this) 'stream))]
+       (read-bytes (hash-ref subr 'length) (hash-ref (cff-subset-cff this) 'stream))]
       [else (bytes 11)])))
 
 
@@ -122,7 +119,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
   (define used_subrs (make-hash))
   (for ([gid (in-list (subset-glyphs this))])
     (define glyph (get-glyph (subset-font this) gid))
-    ;; skip path parsing
+    (unless (cff-glyph-path glyph) (getPath glyph)) ;; this causes the glyph to be parsed
        
     (for ([subr (in-hash-keys (cff-glyph-_usedSubrs glyph))])
       (hash-set! used_subrs subr #true)))

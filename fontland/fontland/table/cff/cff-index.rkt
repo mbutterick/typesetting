@@ -2,6 +2,11 @@
 (require racket/class racket/match xenomorph sugar/unstable/dict)
 (provide CFFIndex)
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
+|#
+
 (define CFFIndex%
   (class x:base%
     (super-new)
@@ -48,10 +53,6 @@
 
     (augride [@size size])
     (define (@size arr parent)
-      #RRR 'in-cff-index-size
-      #R (length arr)
-      (when (= 819 (length arr))
-        #R (take arr 3))
       (define size 2)
       (cond
         [(zero? (length arr)) size]
@@ -61,9 +62,7 @@
          ;; find maximum offset to determinine offset type
          (define offset 1)
          (for ([(item i) (in-indexed arr)])
-              (set! offset (+ offset #R (send #R type size item parent))))
-
-         #RR offset
+           (set! offset (+ offset (send type size item parent))))
 
          (define offsetType
            (cond
@@ -76,10 +75,50 @@
          (set! size (+ size 1 (* (send offsetType size) (add1 (length arr)))))
          (set! size (+ size (sub1 offset)))
 
-         #RR size]))
+         size]))
 
     (define/augride (encode arr stream parent)
-      (error 'cff-index-encode-not-implemented))))
+      #R arr
+      (encode uint16be (length arr) stream)
+      (cond
+        [(zero? (length arr))]
+        [else
+         (define type (or @type (x:buffer)))
+
+         ;; find maximum offset to detminine offset type
+         (define sizes null)
+         (define offset 1)
+         (for ([item (in-list arr)])
+           (define s (send @type size item parent))
+           (set! sizes (append sizes (list s)))
+           (set! offset (+ offset s)))
+
+         (define offsetType
+           (cond
+             [(<= offset #xff)
+              uint8]
+             [(<= offset #xffff)
+              uint16]
+             [(<= offset #xffffff)
+              uint24]
+             [(<= offset #xffffffff)
+              uint32]
+             [else
+              (error 'cff-index-encode-bad-offset!)]))
+
+         ;; write offset size
+         (encode uint8 (size offsetType) stream)
+
+         ;; write elements
+         (set! offset 1)
+         (encode offsetType offset stream)
+
+         (for ([size (in-list sizes)])
+           (set! offset (+ offset size))
+           (encode offsetType offset stream))
+
+         (for ([item (in-list arr)])
+           (encode type item stream #:parent parent))]))))
 
 (define (CFFIndex [type #f])
   (new CFFIndex% [type type]))
