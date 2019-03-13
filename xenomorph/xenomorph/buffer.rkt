@@ -14,17 +14,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
     (unless (length-resolvable? @len)
       (raise-argument-error 'x:buffer "resolvable length" @len))
 
-    (define/augment (decode port parent)
+    (define/augment (x:decode port parent)
       (read-bytes (resolve-length @len port parent)))
 
-    (define/augment (encode buf port [parent #f])
+    (define/augment (x:encode buf port [parent #f])
       (unless (bytes? buf)
         (raise-argument-error 'x:buffer-encode "bytes" buf))
       (when (x:int? @len)
-        (send @len encode (bytes-length buf) port))
+        (send @len x:encode (bytes-length buf) port))
       (write-bytes buf port))
     
-    (define/augment (size [val #f] [parent #f])
+    (define/augment (x:size [val #f] [parent #f])
       (match val
         [(? bytes?) (bytes-length val)]
         [#false (resolve-length @len val parent)]

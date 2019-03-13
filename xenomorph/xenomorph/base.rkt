@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require racket/class racket/dict racket/match)
 (provide (all-defined-out))
 
@@ -48,17 +48,17 @@ We don't make port-arg the last arg (similar to other Racket port funcs) because
       [(input-port? port-arg) port-arg]
       [(bytes? port-arg) (open-input-bytes port-arg)]
       [else (raise-argument-error 'decode "byte string or input port" port-arg)]))
-  (send xo decode port parent . args))
+  (send xo x:decode port parent . args))
                                       
 (define (encode xo val [port-arg (current-output-port)]
                 #:parent [parent #f]
                 . args)
   (define port (if (output-port? port-arg) port-arg (open-output-bytes)))
-  (send xo encode val port parent . args)
+  (send xo x:encode val port parent . args)
   (unless port-arg (get-output-bytes port)))
                                       
 (define (size xo [val #f] #:parent [parent #f] . args)
-  (send xo size val parent . args))
+  (send xo x:size val parent . args))
 
 (define (xenomorphic-type? x) (is-a? x x:base%))
 (define xenomorphic? xenomorphic-type?)
@@ -84,16 +84,16 @@ We don't make port-arg the last arg (similar to other Racket port funcs) because
   (class object%
     (super-new)
     
-    (define/pubment (decode input-port [parent #f] . args)
-      (post-decode (inner (error 'xenomorph (format "decode not augmented in ~a" this)) decode input-port parent . args)))
+    (define/pubment (x:decode input-port [parent #f] . args)
+      (post-decode (inner (error 'xenomorph (format "decode not augmented in ~a" this)) x:decode input-port parent . args)))
     
-    (define/pubment (encode val output-port [parent #f] . args)
-      (match (inner (error 'xenomorph (format "encode not augmented in ~a" this)) encode (pre-encode val) output-port parent . args)
+    (define/pubment (x:encode val output-port [parent #f] . args)
+      (match (inner (error 'xenomorph (format "encode not augmented in ~a" this)) x:encode (pre-encode val) output-port parent . args)
         [(? bytes? encode-result) (write-bytes encode-result output-port)]
         [other other]))
     
-    (define/pubment (size [val #f] [parent #f] . args)
-      (match (inner 0 size val parent . args)
+    (define/pubment (x:size [val #f] [parent #f] . args)
+      (match (inner 0 x:size val parent . args)
         [(? exact-nonnegative-integer? size) size]
         [other (raise-argument-error 'size "nonnegative integer" other)]))
     
