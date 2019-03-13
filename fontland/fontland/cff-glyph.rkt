@@ -485,7 +485,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
              (push stack (+ (* (- op 247) 256) b1 108))]
             [(< op 255)
              (define b1 (read-byte stream))
-             (push stack (- (* (- op 251) 256) b1 108))]
+             (push stack (- (* (- 251 op) 256) b1 108))]
             [else
              (push stack (/ (decode int32be stream) 65536))])
           (loop)))))
