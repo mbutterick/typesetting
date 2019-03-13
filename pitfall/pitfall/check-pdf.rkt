@@ -164,9 +164,9 @@
       [else (equal? v1 v2)]))
 
   (define ibs1 (dict-ref (dict-ref (pdf->dict f1) 8) 'stream))
-  (define cfftop1 (dump (send CFFTop decode (open-input-bytes ibs1))))
+  (define cfftop1 (dump (send CFFTop x:decode (open-input-bytes ibs1))))
   (define ibs2 (dict-ref (dict-ref (pdf->dict f2) 8) 'stream))
-  (define cfftop2 (dump (send CFFTop decode (open-input-bytes ibs2))))
+  (define cfftop2 (dump (send CFFTop x:decode (open-input-bytes ibs2))))
 
   (cmp cfftop1 cfftop2)
   (check-true (null? misses)))
