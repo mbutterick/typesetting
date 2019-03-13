@@ -1,5 +1,10 @@
-#lang debug racket/base
-(require racket/class racket/match racket/list racket/dict xenomorph sugar/unstable/dict
+#lang racket/base
+(require racket/class
+         racket/match
+         racket/list
+         racket/dict
+         xenomorph
+         sugar/unstable/dict
          "cff-operand.rkt")
 (provide CFFDict)
 
@@ -7,13 +12,11 @@
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 |#
+
 (define (op->key op)
   (match (car op)
     [(list* 0th 1st _) (bitwise-ior (arithmetic-shift 0th 8) 1st)]
     [val val]))
-
-(define (key->op key)
-  (list (list (bitwise-and (arithmetic-shift key -8) 255) (bitwise-and key 255))))
 
 (define CFFDict%
   (class x:base%
@@ -22,35 +25,36 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
     (field [(@fields fields)
             (for/hash ([field (in-list @ops)])
-              (define key (op->key field))
-              (values key field))])
+              (values (op->key field) field))])
     
-    (define (decodeOperands type stream ret operands)
+    (define (decode-operands type stream ret operands)
       (match type
         [(? list?)
-         (for/list ([(op i) (in-indexed operands)])
-           (decodeOperands (list-ref type i) stream ret (list op)))]
-        [(? xenomorphic?) (send type decode stream ret operands)]
+         (for/list ([op (in-list operands)]
+                    [subtype (in-list type)])
+           (decode-operands subtype stream ret (list op)))]
+        [(? xenomorphic?) (send type x:decode stream ret operands)]
         [(or 'number 'offset 'sid) (car operands)]
         ['boolean (if (car operands) #t #f)]
         [_  operands]))
 
-    (define (encodeOperands type stream ctx operands)
-      (cond
-        [(list? type)
-         (for/list ([(op i) (in-indexed operands)])
-           (car (encodeOperands (list-ref type i) stream ctx op)))]
-        [(xenomorphic? type) type (send type encode operands stream ctx)]
-        [(number? operands) (list operands)]
-        [(boolean? operands) (list (if operands 1 0))]
-        [(list? operands) operands]
-        [else (list operands)]))
+    (define (encode-operands type stream ctx operands)
+      (match type
+        [(? list?)
+         (for/list ([op (in-list operands)]
+                    [subtype (in-list type)])
+           (car (encode-operands subtype stream ctx op)))]
+        [(? xenomorphic?) type (send type x:encode operands stream ctx)]
+        [_ (match operands
+             [(? number?) (list operands)]
+             [(? boolean?) (list (if operands 1 0))]
+             [(? list?) operands]
+             [_ (list operands)])]))
 
     (define/override (post-decode val)
       (dict->mutable-hash val))
     
-    (augment [@decode decode])
-    (define (@decode stream parent)
+    (define/augment (x:decode stream parent)
       (define end (+ (pos stream) (hash-ref parent 'length)))
       (define ret (make-hash))
       (define operands null)
@@ -74,7 +78,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
              (unless field
                (error 'cff-dict-decode (format "unknown operator: ~a" b)))
 
-             (define val (decodeOperands (third field) stream ret operands))
+             (define val (decode-operands (third field) stream ret operands))
 
              (unless (void? val)
                ;; ignoring PropertyDescriptor nonsense
@@ -86,8 +90,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
       ret)
 
-    (augment [@size size])
-    (define (@size dict parent [includePointers #true])
+    (define/augment (x:size dict parent [includePointers #true])
       
       (define ctx
         (mhasheq x:parent-key parent
@@ -103,7 +106,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
              #:unless (let ([ res (or (not val) (equal? val (list-ref field 3)))])
                         res))
         
-        (define operands (encodeOperands (list-ref field 2) #f ctx val))
+        (define operands (encode-operands (list-ref field 2) #f ctx val))
         (set! len (+ len
                      (for/sum ([op (in-list operands)])
                        (size CFFOperand op))))
@@ -118,8 +121,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
       len)
 
-    (augment [@encode encode])
-    (define (@encode dict stream parent)
+    (define/augment (x:encode dict stream parent)
       (define ctx (mhasheq
                    x:pointers-key null
                    x:start-offset-key (pos stream)
@@ -127,7 +129,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                    x:val-key dict
                    x:pointer-size-key 0))
 
-      (hash-set! ctx x:pointer-offset-key (+ (pos stream) (@size dict ctx #false)))
+      (hash-set! ctx x:pointer-offset-key (+ (pos stream) (x:size dict ctx #false)))
 
       (for ([field (in-list @ops)])
         #;(pos stream)
@@ -136,9 +138,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         (cond
           [(or (not val) (equal? val (list-ref field 3)))]
           [else
-           (define operands (encodeOperands (list-ref field 2) stream ctx val))
+           (define operands (encode-operands (list-ref field 2) stream ctx val))
            (for ([op (in-list operands)])
-             (send CFFOperand encode op stream))
+             (send CFFOperand x:encode op stream))
 
            (define key (if (list? (list-ref field 0))
                            (list-ref field 0)
@@ -150,7 +152,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
       (let loop ()
         (when (< i (length (hash-ref ctx x:pointers-key)))
           (match (list-ref (hash-ref ctx x:pointers-key) i)
-            [(x:ptr type val parent) (send type encode val stream parent)])
+            [(x:ptr type val parent) (send type x:encode val stream parent)])
           (set! i (add1 i))
           (loop))))))
 

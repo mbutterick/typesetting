@@ -20,39 +20,37 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
           [(and ctx (hash-ref ctx 'x:version #f))]
           [else -1])))
 
-    (augride [@decode decode])
-    (define (@decode stream parent)
+    (define/augride (x:decode stream parent)
       (match (decode (if (>= (getCFFVersion parent) 2) uint32be uint16be) stream)
         [0 null]
         [count  (define offSize (decode uint8 stream))
-               (define offsetType (match offSize
-                                    [1 uint8]
-                                    [2 uint16be]
-                                    [3 uint24be]
-                                    [4 uint32be]
-                                    [_ (error (format "bad-offset-size-in-CFFIndex ~a" offSize))]))
-               (define startPos (+ (pos stream) (* (add1 count) offSize) -1))
-               (for/fold ([vals null]
-                          [start (send offsetType decode stream)]
-                          #:result (begin0 (reverse vals) (pos stream (+ startPos start))))
-                         ([i (in-range count)])
-                 (define end (send offsetType decode stream))
-                 (define val
-                   (cond
-                     [@type
-                      (define apos (pos stream))
-                      (pos stream (+ startPos start))
-                      (hash-set! parent 'length (- end start))
-                      (begin0
-                        (send @type decode stream parent)
-                        (pos stream apos))]
-                     [else
-                      (hasheq 'offset (+ startPos start)
-                              'length (- end start))]))
-                 (values (cons val vals) end))]))
+                (define offsetType (match offSize
+                                     [1 uint8]
+                                     [2 uint16be]
+                                     [3 uint24be]
+                                     [4 uint32be]
+                                     [_ (error (format "bad-offset-size-in-CFFIndex ~a" offSize))]))
+                (define startPos (+ (pos stream) (* (add1 count) offSize) -1))
+                (for/fold ([vals null]
+                           [start (send offsetType x:decode stream)]
+                           #:result (begin0 (reverse vals) (pos stream (+ startPos start))))
+                          ([i (in-range count)])
+                  (define end (send offsetType x:decode stream))
+                  (define val
+                    (cond
+                      [@type
+                       (define apos (pos stream))
+                       (pos stream (+ startPos start))
+                       (hash-set! parent 'length (- end start))
+                       (begin0
+                         (send @type x:decode stream parent)
+                         (pos stream apos))]
+                      [else
+                       (hasheq 'offset (+ startPos start)
+                               'length (- end start))]))
+                  (values (cons val vals) end))]))
 
-    (augride [@size size])
-    (define (@size arr parent)
+    (define/augride (x:size arr parent)
       (define size 2)
       (cond
         [(zero? (length arr)) size]
@@ -62,7 +60,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
          ;; find maximum offset to determinine offset type
          (define offset 1)
          (for ([(item i) (in-indexed arr)])
-           (set! offset (+ offset (send type size item parent))))
+           (set! offset (+ offset (send type x:size item parent))))
 
          (define offsetType
            (cond
@@ -72,14 +70,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
              [(<= offset #xffffffff) uint32be]
              [else (error 'CFFIndex-size (format "bad offset: ~a" offset))]))
 
-         (set! size (+ size 1 (* (send offsetType size) (add1 (length arr)))))
+         (set! size (+ size 1 (* (send offsetType x:size) (add1 (length arr)))))
          (set! size (+ size (sub1 offset)))
 
          size]))
 
-    (augride [@encode encode])
-    (define (@encode arr stream parent)
-      (send uint16be encode (length arr) stream)
+    (define/augride (x:encode arr stream parent)
+      (send uint16be x:encode (length arr) stream)
       (cond
         [(zero? (length arr))]
         [else
@@ -89,7 +86,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
          (define sizes null)
          (define offset 1)
          (for ([item (in-list arr)])
-           (define s (send type size item parent))
+           (define s (send type x:size item parent))
            (set! sizes (append sizes (list s)))
            (set! offset (+ offset s)))
 
@@ -107,18 +104,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
               (error 'cff-index-encode-bad-offset!)]))
 
          ;; write offset size
-         (send uint8 encode (size offsetType) stream)
+         (send uint8 x:encode (size offsetType) stream)
 
          ;; write elements
          (set! offset 1)
-         (send offsetType encode offset stream)
+         (send offsetType x:encode offset stream)
 
          (for ([size (in-list sizes)])
            (set! offset (+ offset size))
-           (send offsetType encode offset stream))
+           (send offsetType x:encode offset stream))
 
          (for ([item (in-list arr)])
-           (send type encode item stream parent))]))))
+           (send type x:encode item stream parent))]))))
 
 (define (CFFIndex [type #f])
   (new CFFIndex% [type type]))

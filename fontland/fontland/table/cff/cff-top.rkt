@@ -25,20 +25,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
         (hash-set! val 'x:version (hash-ref val 'version))
         val))
 
-    (augment [@decode decode])
-    (define (@decode stream parent operands)
+    (define/augment (x:decode stream parent operands)
       (define idx (car operands))
       (cond
         [(and (< idx (length @predefinedOps)) (list-ref @predefinedOps idx))]
         [else (decode @type stream #:parent parent operands)]))
 
-    (define/augment (size value ctx)
+    (define/augment (x:size value ctx)
       (error 'predefined-op-size-not-finished))
 
-    (augment [@encode encode])
-    (define (@encode value stream ctx)
+    (define/augment (x:encode value stream ctx)
       (or (index-of @predefinedOps value)
-          (send @type encode value stream ctx)))))
+          (send @type x:encode value stream ctx)))))
 
 (define (PredefinedOp predefinedOps type) (make-object PredefinedOp% predefinedOps type))
 
@@ -76,7 +74,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (class x:array%
     (super-new)
     (inherit-field [@len len] [@type type])
-    (define/override (decode stream parent)
+    (define/override (x:decode stream parent)
       (define length (resolve-length @len stream parent))
       (for/fold ([res null]
                  [count 0]
@@ -134,18 +132,17 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (class x:base%
     (super-new)
     
-    (augment [@decode decode])
-    (define (@decode stream parent operands)
+    (define/augment (x:decode stream parent operands)
       (hash-set! parent 'length (list-ref operands 0))
-      (send ptr decode stream parent (list (list-ref operands 1))))
+      (send ptr x:decode stream parent (list (list-ref operands 1))))
 
-    (define/augment (size dict ctx)
-      (list (send CFFPrivateDict size dict ctx #false)
-            (car (send ptr size dict ctx))))
+    (define/augment (x:size dict ctx)
+      (list (send CFFPrivateDict x:size dict ctx #false)
+            (car (send ptr x:size dict ctx))))
 
-    (define/augment (encode dict stream ctx)
-      (list (send CFFPrivateDict size dict ctx #false)
-            (car (send ptr encode dict stream ctx))))))
+    (define/augment (x:encode dict stream ctx)
+      (list (send CFFPrivateDict x:size dict ctx #false)
+            (car (send ptr x:encode dict stream ctx))))))
 
 (define (CFFPrivateOp)
   (make-object CFFPrivateOp%))

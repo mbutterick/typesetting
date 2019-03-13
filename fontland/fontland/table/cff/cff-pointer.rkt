@@ -20,33 +20,31 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
   (class x:pointer%
     (super-new)
 
-    (inherit/super [%encode encode])
     (inherit-field type offset-type)
     
-    (define/override (decode stream parent operands)
+    (define/override (x:decode stream parent operands)
       (set! offset-type (make-object
                             (class x:base%
                               (super-new)
-                              (define/augment (decode . args) (first operands)))))
-      (super decode stream parent))
+                              (define/augment (x:decode . args) (first operands)))))
+      (super x:decode stream parent))
 
-    (override [@encode encode])
-    (define (@encode value stream ctx)
+    (define/override (x:encode value stream ctx)
       (cond
         [(not stream)
          ;; compute the size (so ctx.pointerSize is correct)
          (set! offset-type (make-object
                                (class x:base%
                                  (super-new)
-                                 (define/augment (size . args) 0))))
-         (send this size value ctx)
+                                 (define/augment (x:size . args) 0))))
+         (send this x:size value ctx)
          (list (Ptr 0))]
         [else
          (define ptr #false)
          (set! offset-type (make-object
                                (class x:base%
                                  (super-new)
-                                 (define/augment (encode val stream . _) (set! ptr val)))))
-         (super @encode value stream ctx)
+                                 (define/augment (x:encode val stream . _) (set! ptr val)))))
+         (super x:encode value stream ctx)
          (list (Ptr ptr))]))))
 

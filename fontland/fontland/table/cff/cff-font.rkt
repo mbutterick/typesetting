@@ -16,8 +16,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
   (class x:base%
     (super-new)
 
-    (augride [@decode decode])
-    (define (@decode stream parent . _)
+    (define/augride (x:decode stream parent . _)
       (define cff-font (make-hasheq))
       (hash-set! cff-font 'stream stream)
           

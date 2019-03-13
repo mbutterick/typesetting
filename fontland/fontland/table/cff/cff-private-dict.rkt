@@ -12,7 +12,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPrivateDict.js
 
 (define CFFBlendOp
   (class x:base%
-    (define/augment (decode stream parent operands)
+    (define/augment (x:decode stream parent operands)
       (match (reverse operands)
         [(cons numBlends operands)
          ;; TODO: actually blend. For now just consume the deltas
