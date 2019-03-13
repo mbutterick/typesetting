@@ -13,8 +13,7 @@
          "unsafe/harfbuzz.rkt"
          "glyph-position.rkt"
          sugar/list
-         racket/promise
-         crc32c)
+         racket/promise)
 (provide (all-defined-out))
 
 #|
@@ -31,7 +30,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
                    [ft-face (delay (and src (FT_New_Face (force ft-library) src)))]
                    [hb-font (delay (and src (hb_ft_font_create (force ft-face))))]
                    [hb-buf (delay (hb_buffer_create))]
-                   [crc (begin0 (crc32c-input-port port) (pos port 0))]
+                   [crc (equal-hash-code port)]
                    [get-head-table-proc #f])
   (unless (input-port? port)
     (raise-argument-error '+ttf-font "input port" port))
