@@ -22,6 +22,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/Path.js
 (define (Path [commands null] [_bbox #false] [_cbox #false])
   (Path$ commands _bbox _cbox))
 
+(define SVG_COMMANDS (hasheq 'moveTo "M"
+                           'lineTo "L"
+                           'quadraticCurveTo "Q"
+                           'bezierCurveTo "C"
+                           'closePath "Z"))
+
+(define (toSVG this)
+  (define cmds (for/list ([c (in-list (Path$-commands this))])
+                         (define args (for/list ([arg (in-list (dict-ref c 'args))])
+                                                (round (/ (* arg 100) 100))))
+                         (format "~a~a" (hash-ref SVG_COMMANDS (dict-ref c 'command))
+                                 (string-join (map ~a args) " "))))
+  (string-join cmds ""))
+
 (define-syntax (define-command stx)
   (syntax-case stx ()
     [(_ COMMAND)
