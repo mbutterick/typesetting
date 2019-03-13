@@ -1,3 +1,18 @@
+#lang racket
+(require rackunit racket/runtime-path fontland)
+
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/test/glyph_mapping.js
+|#
+
+(define-runtime-path open-sans-ttf "data/OpenSans/OpenSans-Regular.ttf")
+(define-runtime-path source-sans-otf "data/SourceSansPro/SourceSansPro-Regular.otf")
+(define-runtime-path mada-ttf "data/Mada/Mada-Regular.subset1.ttf")
+
+ (define font (open-font open-sans-ttf))
+
+#|
 import fontkit from '../src';
 import assert from 'assert';
 
@@ -130,3 +145,5 @@ describe('character to glyph mapping', function() {
     });
   });
 });
+
+|#

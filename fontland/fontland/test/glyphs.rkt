@@ -1,3 +1,28 @@
+#lang racket
+(require rackunit racket/runtime-path fontland fontland/cff-glyph fontland/path)
+
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/test/glyphs.js
+|#
+
+(define-runtime-path open-sans-ttf "data/OpenSans/OpenSans-Regular.ttf")
+(define-runtime-path mada-ttf "data/Mada/Mada-Regular.subset1.ttf")
+(define-runtime-path source-otf "data/SourceSansPro/SourceSansPro-Regular.otf")
+
+(define font (open-font source-otf))
+(define glyph (get-glyph font 5))
+
+(test-case
+ "should get a TTFGlyph"
+ (check-true (cff-glyph? glyph)))
+
+(test-case
+ "should get a path for the glyph"
+ (check-equal? (toSVG (getPath glyph))
+               "M90 0L258 0C456 0 564 122 564 331C564 539 456 656 254 656L90 656ZM173 68L173 588L248 588C401 588 478 496 478 331C478 165 401 68 248 68Z"))
+
+#|
 import fontkit from '../src';
 import assert from 'assert';
 import BBox from '../src/glyph/BBox';
@@ -208,3 +233,4 @@ describe('glyphs', function() {
     });
   });
 });
+|#

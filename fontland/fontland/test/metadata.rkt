@@ -1,3 +1,12 @@
+#lang racket
+(require rackunit racket/runtime-path fontland)
+
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/test/metadata.js
+|#
+
+#|
 import fontkit from '../src';
 import assert from 'assert';
 import BBox from '../src/glyph/BBox';
@@ -36,3 +45,4 @@ describe('metadata', function() {
     }
   });
 });
+|#

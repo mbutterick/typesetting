@@ -19,8 +19,10 @@ https://github.com/mbutterick/fontkit/blob/master/test/subset.js
  "should produce a subset"
  (define subset (create-subset font))
  (for ([glyph (in-vector (vector-map glyph-id (glyphrun-glyphs (layout font "hello"))))])
-   (subset-add-glyph! subset glyph)))
- 
+   (subset-add-glyph! subset glyph))
+ (define f (encode-to-port subset))
+ f
+ (void))
 
 #|
 
