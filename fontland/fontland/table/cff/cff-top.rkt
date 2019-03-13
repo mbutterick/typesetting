@@ -1,5 +1,11 @@
 #lang debug racket/base
-(require xenomorph racket/list sugar/unstable/dict racket/class racket/dict
+(require xenomorph
+         racket/list
+         racket/vector
+         racket/match
+         sugar/unstable/dict
+         racket/class
+         racket/dict
          "cff-index.rkt"
          "cff-dict.rkt"
          "cff-charsets.rkt"
@@ -18,6 +24,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
     (super-new)
     (init-field [(@predefinedOps predefinedOps)]
                 [(@type type) #f])
+    (field [op-vec (list->vector @predefinedOps)])
 
     (define/override (pre-encode val)
       ;; because fontkit depends on overloading 'version key, and we don't
@@ -28,14 +35,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
     (define/augment (x:decode stream parent operands)
       (define idx (car operands))
       (cond
-        [(and (< idx (length @predefinedOps)) (list-ref @predefinedOps idx))]
+        [(and (< idx (vector-length op-vec)) (vector-ref op-vec idx))]
         [else (decode @type stream #:parent parent operands)]))
 
     (define/augment (x:size value ctx)
       (error 'predefined-op-size-not-finished))
 
     (define/augment (x:encode value stream ctx)
-      (or (index-of @predefinedOps value)
+      (or (vector-member value op-vec)
           (send @type x:encode value stream ctx)))))
 
 (define (PredefinedOp predefinedOps type) (make-object PredefinedOp% predefinedOps type))
@@ -90,9 +97,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 (define (base-tproc t) (length (hash-ref (hash-ref t 'parent) 'CharStrings)))
 
 (define CFFCustomCharset
-  (let ([tproc (λ (t) (sub1 (base-tproc t)))])
-    (x:versioned-struct
-     uint8
+  (x:versioned-struct
+   uint8
+   (let ([tproc (λ (t) (sub1 (base-tproc t)))])
      (dictify
       0 (dictify 'glyphs (x:array uint16be tproc))
       1 (dictify 'ranges (RangeArray Range1 tproc))
@@ -114,9 +121,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
   (x:versioned-struct
    uint8
    #:pre-encode
-   (λ (val)
-     ;; because fontkit depends on overloading 'version key, and we don't
-     (dict-set val 'x:version (dict-ref val 'version)))
+   ;; because fontkit depends on overloading 'version key, and we don't
+   (λ (val) (dict-set val 'x:version (dict-ref val 'version)))
    (dictify
     0 (dictify 'fds (x:array uint8 base-tproc))
     3 (dictify 'nRanges uint16be
@@ -133,8 +139,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
     (super-new)
     
     (define/augment (x:decode stream parent operands)
-      (hash-set! parent 'length (list-ref operands 0))
-      (send ptr x:decode stream parent (list (list-ref operands 1))))
+      (match operands
+        [(list op1 op2)
+         (hash-set! parent 'length op1)
+         (send ptr x:decode stream parent (list op2))]))
 
     (define/augment (x:size dict ctx)
       (list (send CFFPrivateDict x:size dict ctx #false)
@@ -198,10 +206,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 (define CFFTop
   (x:versioned-struct
    #:pre-encode
-   (λ (val)
-     ;; because fontkit depends on overloading 'version key, and we don't
-     (hash-set! val 'x:version (hash-ref val 'version))
-     val)
+   ;; because fontkit depends on overloading 'version key, and we don't
+   (λ (val) (hash-set! val 'x:version (hash-ref val 'version)) val)
    fixed16be
    (dictify
     1 (dictify 'hdrSize uint8
@@ -209,8 +215,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
                'nameIndex (CFFIndex (x:string #:length 'length))
                'topDictIndex (CFFIndex CFFTopDict)
                'stringIndex (CFFIndex (x:string #:length 'length))
-               'globalSubrIndex (CFFIndex)
-               )
+               'globalSubrIndex (CFFIndex))
     
     #|
 2 (dictify 'hdrSize uint8

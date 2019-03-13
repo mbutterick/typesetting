@@ -51,29 +51,25 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
                   (values (cons val vals) end))]))
 
     (define/augride (x:size arr parent)
-      (define size 2)
-      (cond
-        [(zero? (length arr)) size]
-        [else
-         (define type (or @type (x:buffer)))
+      (+ 2
+         (cond
+           [(zero? (length arr)) 0]
+           [else (define type (or @type (x:buffer)))
 
-         ;; find maximum offset to determinine offset type
-         (define offset 1)
-         (for ([(item i) (in-indexed arr)])
-           (set! offset (+ offset (send type x:size item parent))))
+                 ;; find maximum offset to determinine offset type
+                 (define offset
+                   (add1 (for/sum ([item (in-list arr)])
+                                  (send type x:size item parent))))
 
-         (define offsetType
-           (cond
-             [(<= offset #xff) uint8]
-             [(<= offset #xffff) uint16be]
-             [(<= offset #xffffff) uint24be]
-             [(<= offset #xffffffff) uint32be]
-             [else (error 'CFFIndex-size (format "bad offset: ~a" offset))]))
+                 (define offset-type
+                   (cond
+                     [(<= offset #xff) uint8]
+                     [(<= offset #xffff) uint16be]
+                     [(<= offset #xffffff) uint24be]
+                     [(<= offset #xffffffff) uint32be]
+                     [else (error 'CFFIndex-size (format "bad offset: ~a" offset))]))
 
-         (set! size (+ size 1 (* (send offsetType x:size) (add1 (length arr)))))
-         (set! size (+ size (sub1 offset)))
-
-         size]))
+                 (+ (* (send offset-type x:size) (add1 (length arr))) offset)])))
 
     (define/augride (x:encode arr stream parent)
       (send uint16be x:encode (length arr) stream)
@@ -83,39 +79,34 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
          (define type (or @type (x:buffer)))
 
          ;; find maximum offset to detminine offset type
-         (define sizes null)
-         (define offset 1)
-         (for ([item (in-list arr)])
-           (define s (send type x:size item parent))
-           (set! sizes (append sizes (list s)))
-           (set! offset (+ offset s)))
+         (define-values (sizes offset)
+           (for/fold ([sizes null]
+                      [offset 1]
+                      #:result (values (reverse sizes) offset))
+                     ([item (in-list arr)])
+             (define s (send type x:size item parent))
+             (values (cons s sizes) (+ offset s))))
 
          (define offsetType
            (cond
-             [(<= offset #xff)
-              uint8]
-             [(<= offset #xffff)
-              uint16be]
-             [(<= offset #xffffff)
-              uint24be]
-             [(<= offset #xffffffff)
-              uint32be]
-             [else
-              (error 'cff-index-encode-bad-offset!)]))
+             [(<= offset #xff) uint8]
+             [(<= offset #xffff) uint16be]
+             [(<= offset #xffffff) uint24be]
+             [(<= offset #xffffffff) uint32be]
+             [else (error 'cff-index-encode-bad-offset!)]))
 
          ;; write offset size
          (send uint8 x:encode (size offsetType) stream)
 
          ;; write elements
-         (set! offset 1)
-         (send offsetType x:encode offset stream)
-
-         (for ([size (in-list sizes)])
-           (set! offset (+ offset size))
-           (send offsetType x:encode offset stream))
+         (for/fold ([offset 1])
+                   ([size (in-list (cons 0 sizes))])
+           (define next-offset (+ offset size))
+           (send offsetType x:encode next-offset stream)
+           next-offset)
 
          (for ([item (in-list arr)])
-           (send type x:encode item stream parent))]))))
+              (send type x:encode item stream parent))]))))
 
 (define (CFFIndex [type #f])
   (new CFFIndex% [type type]))

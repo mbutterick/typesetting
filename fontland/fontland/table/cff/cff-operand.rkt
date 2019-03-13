@@ -13,9 +13,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
 
 (define FLOAT_ENCODE_LOOKUP
   (hash "." 10
-          "E" 11
-          "E-" 12
-          "-" 14))
+        "E" 11
+        "E-" 12
+        "-" 14))
 
 (define CFFOperand%
   (class x:base%
@@ -25,7 +25,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
       (cond
         [(<= 32 value 246) (- value 139)]
         [(<= 247 value 250) (+ (* (- value 247) 256) (read-byte stream) 108)]
-        [(<= 251 value 254) (- (* (- (- value 251)) 256) (read-byte stream) 108)]
+        [(<= 251 value 254) (- (* (- 251 value) 256) (read-byte stream) 108)]
         [(= value 28) (decode int16be stream)]
         [(= value 29) (decode int32be stream)]
         [(= value 30)
@@ -35,7 +35,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
                    ([i (in-naturals)]
                     #:break break?)
            (define b (read-byte stream))
-
            (define n1 (arithmetic-shift b -4))
            
            (cond
@@ -53,10 +52,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
       ;; if the value needs to be forced to the largest size (32 bit)
       ;; e.g. for unknown pointers, set to 32768
       (define value (cond
-                      [(or (and (hash? value-arg) (hash-ref value-arg 'forceLarge #f))
-                           (and (Ptr? value-arg) (Ptr-forceLarge value-arg)))
-                       32768]
-                      [(Ptr? value-arg) (Ptr-val value-arg)]
+                      [(Ptr? value-arg) (if (Ptr-forceLarge value-arg) 32768 (Ptr-val value-arg))]
                       [else value-arg]))
 
       (cond
@@ -81,30 +77,28 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
         [(not (integer? val)) ;; floating point
          (encode uint8 30 stream)
          (define str (list->vector (regexp-match* #rx"." (number->string val))))
-         (define n2 'nothing)
-         (for ([i (in-range 0 (vector-length str) 2)])
-           (define c1 (vector-ref str i))
-           (define n1 (hash-ref FLOAT_ENCODE_LOOKUP c1 (string->number c1)))
-
-           (cond
-             [(= i (sub1 (vector-length str)))
-              (set! n2 FLOAT_EOF)]
-             [else
-              (define c2 (vector-ref str (add1 i)))
-              (set! n2 (hash-ref FLOAT_ENCODE_LOOKUP c2 (string->number c2)))])
-
-           (encode uint8 (bitwise-ior (arithmetic-shift n1 4) (bitwise-and n2 15)) stream))
-                    
+         (define n2
+           (for/last ([i (in-range 0 (vector-length str) 2)])
+                     (define c1 (vector-ref str i))
+                     (define n1 (hash-ref FLOAT_ENCODE_LOOKUP c1 (string->number c1)))
+                     (define n2
+                       (cond
+                         [(= i (sub1 (vector-length str))) FLOAT_EOF]
+                         [else
+                          (define c2 (vector-ref str (add1 i)))
+                          (hash-ref FLOAT_ENCODE_LOOKUP c2 (string->number c2))]))
+                     (encode uint8 (bitwise-ior (arithmetic-shift n1 4) (bitwise-and n2 15)) stream)
+                     n2))                    
          (unless (= n2 FLOAT_EOF)
            (encode uint8 (arithmetic-shift FLOAT_EOF 4) stream))]
         [(<= -107 value 107)
          (encode uint8 (+ val 139) stream)]
         [(<= 108 value 1131)
          (let ([val (- val 108)])
-         (encode uint8 (+ (arithmetic-shift val -8) 247) stream)
-         (encode uint8 (bitwise-and val #xff) stream))]
+           (encode uint8 (+ (arithmetic-shift val -8) 247) stream)
+           (encode uint8 (bitwise-and val #xff) stream))]
         [(<= -1131 value -108)
-         (let ([val (- (- val) 108)])
+         (let ([val (- (+ val 108))])
            (encode uint8 (+ (arithmetic-shift val -8) 251) stream)
            (encode uint8 (bitwise-and val #xff) stream))]
         [(<= -32768 value 32767)

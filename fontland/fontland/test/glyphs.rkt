@@ -11,7 +11,7 @@ https://github.com/mbutterick/fontkit/blob/master/test/glyphs.js
 (define-runtime-path source-otf "data/SourceSansPro/SourceSansPro-Regular.otf")
 
 (define font (open-font source-otf))
-(define glyph (get-glyph font 5))
+ (define glyph (get-glyph font 5))
 
 (test-case
  "should get a TTFGlyph"
