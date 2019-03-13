@@ -14,12 +14,11 @@
          racket/dict
          fontland/table/cff/cff-font
          fontland/table/cff/cff-top
-         racket/class
          fontland/table/cff/cff-standard-strings)
 
 (provide subset +subset
-         ttf-subset +ttf-subset
-         cff-subset +cff-subset
+         ttf-subset +ttf-subset ttf-subset?
+         cff-subset +cff-subset cff-subset?
          subset-add-glyph! encode-to-port create-subset)
 
 #|
