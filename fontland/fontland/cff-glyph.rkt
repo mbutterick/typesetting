@@ -4,7 +4,8 @@
          fontland/struct
          fontland/table-stream
          fontland/table/cff/cff-font
-         fontland/path)
+         fontland/path
+         "deque.rkt")
 (provide (all-defined-out))
 
 #|
@@ -17,23 +18,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
     [(< (length s) 1240) 107]
     [(< (length s) 33900) 1131]
     [else 32768]))
-
-(define-syntax-rule (shift ID)
-  (begin0
-    (car ID)
-    (set! ID (cdr ID))))
-
-(define-syntax-rule (push ID VAL ...)
-  (begin
-    (set! ID (append ID (list VAL ...)))
-    ID))
-
-(define-syntax-rule (pop ID)
-  (cond
-    [(> (length ID) 0)
-     (define-values (head last) (split-at-right ID 1))
-     (set! ID head)
-     (car last)]))
 
 (define-syntax-rule (case= ID [(NUMS ...) . BODY] ... [else . ELSEBODY])
   (cond
@@ -50,7 +34,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (pos stream (hash-ref str 'offset))
 
   (define path (Path))
-  (define stack null)
+
+  (define (shift deque) (pop-start! deque))
+  (define (push deque . vals) (apply push-end! deque vals))
+  (define (pop deque) (pop-end! deque))
+  (define initialize-stack make-deque)
+  (define stack-length deque-length)
+  
+  (define stack (initialize-stack))
   (define trans null)
 
   (define width #false)
@@ -79,9 +70,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
       (set! width (+ (shift stack) (hash-ref privateDict 'nominalWidthX)))))
 
   (define (parse-stems)
-    (when (odd? (length stack)) (check-width))
-    (set! nStems (+ nStems (arithmetic-shift (length stack) -1)))
-    (set! stack null))
+    (when (odd? (stack-length stack)) (check-width))
+    (set! nStems (+ nStems (arithmetic-shift (stack-length stack) -1)))
+    (set! stack (initialize-stack)))
 
   (define (moveTo x y)
     (when open (path-closePath path))
@@ -102,13 +93,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                       23) ;; vstemhm
                      (parse-stems)]
                     [(4) ;; vmoveto
-                     (when (> (length stack) 1)
+                     (when (> (stack-length stack) 1)
                        (check-width))
                      (set! y (+ y (shift stack)))
                      (moveTo x y)]
                     [(5) ;; rlineto
                      (let loop ()
-                       (when (>= (length stack) 2)
+                       (when (>= (stack-length stack) 2)
                          (set! x (+ x (shift stack)))
                          (set! y (+ y (shift stack)))
                          (path-lineTo path x y)
@@ -117,7 +108,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                       7) ;; vlineto
                      (define phase (= op 6))
                      (let loop ()
-                       (when (>= (length stack) 1)
+                       (when (>= (stack-length stack) 1)
                          (if phase
                              (set! x (+ x (shift stack)))
                              (set! y (+ y (shift stack))))
@@ -126,7 +117,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                          (loop)))]
                     [(8) ;; rrcurveto
                      (let loop ()
-                       (when (> (length stack) 0)
+                       (when (> (stack-length stack) 0)
                          (define c1x (+ x (shift stack)))
                          (define c1y (+ y (shift stack)))
                          (define c2x (+ c1x (shift stack)))
@@ -153,7 +144,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                      (cond
                        [(>= (hash-ref cff 'version) 2) (void)]
                        [else
-                        (when (> (length stack) 0)
+                        (when (> (stack-length stack) 0)
                           (check-width))
                         (when open
                           (path-closePath path)
@@ -171,7 +162,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                      (pos stream (+ (pos stream) (arithmetic-shift (+ nStems 7) -3)))]
 
                     [(21) ;; rmoveto
-                     (when (> (length stack) 2)
+                     (when (> (stack-length stack) 2)
                        (check-width))
 
                      (set! x (+ x (shift stack)))
@@ -179,7 +170,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                      (moveTo x y)]
 
                     [(22) ;; hmoveto
-                     (when (> (length stack) 1)
+                     (when (> (stack-length stack) 1)
                        (check-width))
 
                      (set! x (+ x (shift stack)))
@@ -187,7 +178,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
                     [(24) ;; rcurveline
                      (let loop ()
-                       (when (>= (length stack) 8)
+                       (when (>= (stack-length stack) 8)
                          (define c1x (+ x (shift stack)))
                          (define c1y (+ y (shift stack)))
                          (define c2x (+ c1x (shift stack)))
@@ -203,7 +194,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
                     [(25) ;; rlinecurve
                      (let loop ()
-                       (when (>= (length stack) 8)
+                       (when (>= (stack-length stack) 8)
                          (set! x (+ x (shift stack)))
                          (set! y (+ y (shift stack)))
                          (path-lineTo path x y)
@@ -218,11 +209,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                      (path-bezierCurveTo path c1x c1y c2x c2y x y)]
 
                     [(26) ;; vvcurveto
-                     (when (odd? (length stack))
+                     (when (odd? (stack-length stack))
                        (set! x (+ x (shift stack))))
 
                      (let loop ()
-                       (when (>= (length stack) 4)
+                       (when (>= (stack-length stack) 4)
                          (define c1x x)
                          (define c1y (+ y (shift stack)))
                          (define c2x (+ c1x (shift stack)))
@@ -233,11 +224,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                          (loop)))]
 
                     [(27) ;; hhcurveto
-                     (when (odd? (length stack))
+                     (when (odd? (stack-length stack))
                        (set! y (+ y (shift stack))))
 
                      (let loop ()
-                       (when (>= (length stack) 4)
+                       (when (>= (stack-length stack) 4)
                          (define c1x (+ x (shift stack)))
                          (define c1y y)
                          (define c2x (+ c1x (shift stack)))
@@ -267,7 +258,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                       31) ;; hvcurveto
                      (define phase (= op 31))
                      (let loop ()
-                       (when (>= (length stack) 4)
+                       (when (>= (stack-length stack) 4)
                          (cond
                            [phase
                             (define c1x (+ x (shift stack)))
@@ -275,7 +266,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                             (define c2x (+ c1x (shift stack)))
                             (define c2y (+ c1y (shift stack)))
                             (set! y (+ c2y (shift stack)))
-                            (set! x (+ c2x (if (= (length stack) 1) (shift stack) 0)))
+                            (set! x (+ c2x (if (= (stack-length stack) 1) (shift stack) 0)))
                             (path-bezierCurveTo path c1x c1y c2x c2y x y)
                             (set! phase (not phase))]
                            [else
@@ -284,7 +275,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                             (define c2x (+ c1x (shift stack)))
                             (define c2y (+ c1y (shift stack)))
                             (set! x (+ c2x (shift stack)))
-                            (set! y (+ c2y (if (= (length stack) 1) (shift stack) 0)))
+                            (set! y (+ c2y (if (= (stack-length stack) 1) (shift stack) 0)))
                             (path-bezierCurveTo path c1x c1y c2x c2y x y)
                             (set! phase (not phase))])
                          (loop)))]
@@ -356,7 +347,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
                             [(29) ;; index
                              (define idx
-                               (min (max 0 (pop stack)) (- (length stack) 1)))
+                               (min (max 0 (pop stack)) (- (stack-length stack) 1)))
                              (push stack (list-ref stack idx))]
 
                             [(30) ;; roll
@@ -368,7 +359,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                                   (when (> j 0)
                                     (define t (list-ref stack (- n 1)))
                                     (for [(i (in-range (- n 2) (sub1 0) -1))]
-                                         (set! stack (list-set stack (+ i 1) (list-ref stack i))))
+                                      (set! stack (list-set stack (+ i 1) (list-ref stack i))))
                                     (set! stack (list-set stack 0 t))
                                     (loop (sub1 j))))]
                                [else
@@ -376,7 +367,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                                   (when (< j 0)
                                     (define t (list-ref stack 0))
                                     (for ([i (in-range (add1 n))])
-                                         (set! stack (list-set stack i (list-ref stack (+ i 1)))))
+                                      (set! stack (list-set stack i (list-ref stack (+ i 1)))))
                                     (set! stack (list-set stack (- n 1) t))
                                     (loop (add1 j))))])]
                             [(34) ;; hflex
@@ -400,9 +391,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                             [(35) ;; flex
                              (define pts null)
                              (for ([i (in-range (add1 5))])
-                                  (set! x (+ x (shift stack)))
-                                  (set! y (+ y (shift stack)))
-                                  (push pts x y))
+                               (set! x (+ x (shift stack)))
+                               (set! y (+ y (shift stack)))
+                               (push pts x y))
 
                              (apply path-bezierCurveTo path (take pts 6))
                              (apply path-bezierCurveTo path (drop pts 6))
@@ -434,9 +425,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
                              (define pts null)
                              (for ([i (in-range 0 (add1 4))])
-                                  (set! x (+ x (shift stack)))
-                                  (set! y (+ y (shift stack)))
-                                  (push pts x y))
+                               (set! x (+ x (shift stack)))
+                               (set! y (+ y (shift stack)))
+                               (push pts x y))
 
                              (cond
                                [(> (abs (- x startx)) (abs (- y starty))) ;; horzontal
@@ -451,7 +442,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                              (apply path-bezierCurveTo path (drop pts 6))]
                             [else (error (format "unknown op: 12 ~a" op))])]
                     [else (error (format "unknown op: ~a" op))])]
-            [(< op 247) (push stack (- op 139))]
+            [(< op 247) (push stack (- op 139)) stack]
             [(< op 251)
              (push stack (+ (* (- op 247) 256) (read-byte stream) 108))]
             [(< op 255)
