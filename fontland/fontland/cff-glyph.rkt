@@ -14,7 +14,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
 (define (bias this s)
   (cond
-    [(< (length s) 1240) 107]
+    [(< (length s) 1240) 107]
     [(< (length s) 33900) 1131]
     [else 32768]))
 
@@ -268,22 +268,30 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                      (define phase (= op 31))
                      (let loop ()
                        (when (>= (length stack) 4)
-                         (match-define (list c1x c1y)
-                           (if phase
-                               (list (+ x (shift stack)) y)
-                               (list x (+ y (shift stack)))))
-                         (define c2x (+ c1x (shift stack)))
-                         (define c2y (+ c1y (shift stack)))
-                         (set! y (+ c2y (shift stack)))
-                         (set! x (+ c2x (if (= (length stack) 1) (shift stack) 0)))
-                         (path-bezierCurveTo path c1x c1y c2x c2y x y)
-                         (set! phase (not phase))
+                         (cond
+                           [phase
+                            (define c1x (+ x (shift stack)))
+                            (define c1y y)
+                            (define c2x (+ c1x (shift stack)))
+                            (define c2y (+ c1y (shift stack)))
+                            (set! y (+ c2y (shift stack)))
+                            (set! x (+ c2x (if (= (length stack) 1) (shift stack) 0)))
+                            (path-bezierCurveTo path c1x c1y c2x c2y x y)
+                            (set! phase (not phase))]
+                           [else
+                            (define c1x x)
+                            (define c1y (+ y (shift stack)))
+                            (define c2x (+ c1x (shift stack)))
+                            (define c2y (+ c1y (shift stack)))
+                            (set! x (+ c2x (shift stack)))
+                            (set! y (+ c2y (if (= (length stack) 1) (shift stack) 0)))
+                            (path-bezierCurveTo path c1x c1y c2x c2y x y)
+                            (set! phase (not phase))])
                          (loop)))]
 
                     [(12)
-                     (define op (read-byte stream))
                      (println "warning: check truthiness")
-                     (case= op
+                     (case= (read-byte stream)
                             [(3) ;; and
                              (push stack (if (and (pop stack) (pop stack)) 1 0))]
                             [(4) ;; or
