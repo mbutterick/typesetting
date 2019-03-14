@@ -35,11 +35,32 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
   (define path (Path))
 
+  #|
   (define (shift deque) (pop-start! deque))
   (define (push deque . vals) (apply push-end! deque vals))
   (define (pop deque) (pop-end! deque))
   (define initialize-stack make-deque)
   (define stack-length deque-length)
+|#
+  (define-syntax-rule (shift ID)
+    (begin0
+      (car ID)
+      (set! ID (cdr ID))))
+
+  (define-syntax-rule (push ID VAL ...)
+    (begin
+      (set! ID (append ID (list VAL ...)))
+      ID))
+
+  (define-syntax-rule (pop ID)
+    (cond
+      [(> (length ID) 0)
+       (define-values (head last) (split-at-right ID 1))
+       (set! ID head)
+       (car last)]))
+
+  (define (initialize-stack) null)
+  (define stack-length length)
   
   (define stack (initialize-stack))
   (define trans null)
