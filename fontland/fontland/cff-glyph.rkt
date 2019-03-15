@@ -30,8 +30,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
   (define cff (get-table (glyph-font this) 'CFF_))
   (define str (vector-ref (hash-ref (hash-ref cff 'topDict) 'CharStrings) (glyph-id this)))
-  (define end (+ (hash-ref str 'offset) (hash-ref str 'length)))
-  (pos stream (hash-ref str 'offset))
+  (define end (+ (index-item-offset str) (index-item-length str)))
+  (pos stream (index-item-offset str))
 
   (define path (Path))
 
@@ -156,8 +156,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                        (hash-set! usedSubrs index #true)
                        (define p (pos stream))
                        (define e end)
-                       (pos stream (hash-ref subr 'offset))
-                       (set! end (+ (hash-ref subr 'offset) (hash-ref subr 'length)))
+                       (pos stream (index-item-offset subr))
+                       (set! end (+ (index-item-offset subr) (index-item-length subr)))
                        (parse)
                        (pos stream p)
                        (set! end e))]
@@ -273,8 +273,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                        (hash-set! usedGsubrs index #true)
                        (define p (pos stream))
                        (define e end)
-                       (pos stream (hash-ref subr 'offset))
-                       (set! end (+ (hash-ref subr 'offset) (hash-ref subr 'length)))
+                       (pos stream (index-item-offset subr))
+                       (set! end (+ (index-item-offset subr) (index-item-length subr)))
                        (parse)
                        (pos stream p)
                        (set! end e))]

@@ -32,3 +32,5 @@
 
 (define (make-cff-glyph . args)
   (apply cff-glyph (append args (list #f (make-hash) (make-hash)))))
+
+(struct index-item (offset length) #:transparent #:mutable)

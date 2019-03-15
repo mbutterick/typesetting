@@ -1,5 +1,5 @@
 #lang debug racket
-(require racket/class racket/match xenomorph sugar/unstable/dict)
+(require racket/class racket/match xenomorph sugar/unstable/dict fontland/struct)
 (provide CFFIndex)
 
 #|
@@ -46,8 +46,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
                          (send @type x:decode stream parent)
                          (pos stream apos))]
                       [else
-                       (hasheq 'offset (+ startPos start)
-                               'length (- end start))]))
+                       (index-item (+ startPos start) (- end start))]))
                   (values (cons val vals) end))]))
 
     (define/augride (x:size arr-arg parent)

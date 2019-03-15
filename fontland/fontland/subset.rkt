@@ -103,8 +103,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
   (for/vector ([(subr i) (in-indexed subrs)])
     (cond
       [(hash-ref used i #false)
-       (pos (hash-ref (cff-subset-cff this) 'stream) (hash-ref subr 'offset))
-       (read-bytes (hash-ref subr 'length) (hash-ref (cff-subset-cff this) 'stream))]
+       (pos (hash-ref (cff-subset-cff this) 'stream) (index-item-offset subr))
+       (read-bytes (index-item-length subr) (hash-ref (cff-subset-cff this) 'stream))]
       [else (bytes 11)])))
 
 
