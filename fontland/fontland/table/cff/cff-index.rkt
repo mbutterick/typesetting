@@ -33,7 +33,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
                 (define startPos (+ (pos stream) (* (add1 count) offSize) -1))
                 (for/fold ([vals null]
                            [start (send offsetType x:decode stream)]
-                           #:result (begin0 (list->vector vals) (pos stream (+ startPos start))))
+                           #:result (begin0 (reverse vals) (pos stream (+ startPos start))))
                           ([i (in-range count)])
                   (define end (send offsetType x:decode stream))
                   (define val
@@ -50,8 +50,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
                                'length (- end start))]))
                   (values (cons val vals) end))]))
 
-    (define/augride (x:size arr-arg parent)
-      (define arr (if (vector? arr-arg) (vector->list arr-arg) arr-arg))
+    (define/augride (x:size arr parent)
       (+ 2
          (cond
            [(zero? (length arr)) 0]

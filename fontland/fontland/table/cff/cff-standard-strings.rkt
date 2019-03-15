@@ -7,7 +7,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFStandardStrings.js
 |#
 
 (define standardStrings
-  '#(".notdef" "space" "exclam" "quotedbl" "numbersign" "dollar"
+  '(".notdef" "space" "exclam" "quotedbl" "numbersign" "dollar"
               "percent" "ampersand" "quoteright" "parenleft" "parenright"
               "asterisk" "plus" "comma" "hyphen" "period" "slash" "zero" "one"
               "two" "three" "four" "five" "six" "seven" "eight" "nine" "colon"

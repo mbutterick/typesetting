@@ -15,8 +15,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
 (define (bias this s)
   (cond
-    [(< (vector-length s) 1240) 107]
-    [(< (vector-length s) 33900) 1131]
+    [(< (length s) 1240) 107]
+    [(< (length s) 33900) 1131]
     [else 32768]))
 
 (define-syntax-rule (case= ID [(NUMS ...) . BODY] ... [else . ELSEBODY])
@@ -29,7 +29,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   ;;;(define pos (pos stream))
 
   (define cff (get-table (glyph-font this) 'CFF_))
-  (define str (vector-ref (hash-ref (hash-ref cff 'topDict) 'CharStrings) (glyph-id this)))
+  (define str (list-ref (hash-ref (hash-ref cff 'topDict) 'CharStrings) (glyph-id this)))
   (define end (+ (hash-ref str 'offset) (hash-ref str 'length)))
   (pos stream (hash-ref str 'offset))
 
@@ -73,15 +73,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (define usedSubrs (make-hash))
   (define open #false)
 
-  (define gsubrs (hash-ref cff 'globalSubrIndex (vector)))
+  (define gsubrs (hash-ref cff 'globalSubrIndex null))
   (define gsubrsBias (bias this gsubrs))
 
   (define privateDict (or (privateDictForGlyph cff (glyph-id this)) (make-hash)))
-  (define subrs (hash-ref privateDict 'Subrs (vector)))
+  (define subrs (hash-ref privateDict 'Subrs null))
   (define subrsBias (bias this subrs))
-
-  #R (vector? gsubrs)
-  #R (vector? subrs)
 
   ;; skip variations shit
   #;(define vstore (and (hash-ref* cff 'topDict 'vstore)
@@ -108,7 +105,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
       (let loop ()
         (when  (< (pos stream) end)
           (define op (read-byte stream))
-          #R (list op x y)
           (cond
             [(< op 32)
              (case= op
@@ -151,7 +147,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
                     [(10) ;; callsubr
                      (define index (+ (pop stack) subrsBias))
-                     (define subr (vector-ref subrs index))
+                     (define subr (list-ref subrs index))
                      (when subr
                        (hash-set! usedSubrs index #true)
                        (define p (pos stream))
@@ -268,7 +264,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
 
                     [(29) ;; callgsubr
                      (define index (+ (pop stack) gsubrsBias))
-                     (define subr (vector-ref gsubrs index))
+                     (define subr (list-ref gsubrs index))
                      (when subr
                        (hash-set! usedGsubrs index #true)
                        (define p (pos stream))
