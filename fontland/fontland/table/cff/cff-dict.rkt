@@ -55,7 +55,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
     
     (define/augment (x:decode stream parent)
       (define end (+ (pos stream) (hash-ref parent 'length)))
-      (define ret (make-hash))
+      (define ret (make-hasheq))
 
       ;; define hidden properties
       (hash-set! ret x:parent-key parent)

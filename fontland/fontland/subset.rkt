@@ -81,7 +81,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 
 (define (subsetCharstrings this)
   (set-cff-subset-charstrings! this null)
-  (define gsubrs (make-hash))
+  (define gsubrs (make-hasheq))
   (for ([gid (in-list (subset-glyphs this))])
     (set-cff-subset-charstrings!
      this
@@ -113,7 +113,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 
 
 (define (createCIDFontdict this topDict)
-  (define used_subrs (make-hash))
+  (define used_subrs (make-hasheq))
   (for ([gid (in-list (subset-glyphs this))])
     (define glyph (get-glyph (subset-font this) gid))
     (unless (cff-glyph-path glyph) (getPath glyph)) ;; this causes the glyph to be parsed
@@ -122,7 +122,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
       (hash-set! used_subrs subr #true)))
 
   (define cff-topDict (hash-ref (cff-subset-cff this) 'topDict))
-  (define privateDict (hash-copy (hash-ref cff-topDict 'Private (make-hash))))
+  (define privateDict (hash-copy (hash-ref cff-topDict 'Private (make-hasheq))))
   (when (and (hash-has-key? cff-topDict 'Private) (hash-has-key? (hash-ref cff-topDict 'Private) 'Subrs))
     (hash-set! privateDict 'Subrs (subsetSubrs this
                                                (hash-ref (hash-ref cff-topDict 'Private) 'Subrs)

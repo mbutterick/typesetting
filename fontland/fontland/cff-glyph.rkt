@@ -69,8 +69,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (define nStems 0)
   (define x 0)
   (define y 0)
-  (define usedGsubrs (make-hash))
-  (define usedSubrs (make-hash))
+  (define usedGsubrs (make-hasheq))
+  (define usedSubrs (make-hasheq))
   (define open #false)
 
   (define gsubrs (match (hash-ref cff 'globalSubrIndex (vector))
@@ -78,7 +78,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                    [vec vec]))
   (define gsubrsBias (bias this gsubrs))
 
-  (define privateDict (or (privateDictForGlyph cff (glyph-id this)) (make-hash)))
+  (define privateDict (or (privateDictForGlyph cff (glyph-id this)) (make-hasheq)))
   (define subrs (match (hash-ref privateDict 'Subrs (vector))
                   [(list) (vector)]
                   [vec vec]))
