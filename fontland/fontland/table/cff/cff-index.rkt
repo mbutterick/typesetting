@@ -33,7 +33,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
                 (define startPos (+ (pos stream) (* (add1 count) offSize) -1))
                 (for/fold ([vals null]
                            [start (send offsetType x:decode stream)]
-                           #:result (begin0 (reverse vals) (pos stream (+ startPos start))))
+                           #:result (begin0 (list->vector (reverse vals)) (pos stream (+ startPos start))))
                           ([i (in-range count)])
                   (define end (send offsetType x:decode stream))
                   (define val
@@ -50,15 +50,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
                                'length (- end start))]))
                   (values (cons val vals) end))]))
 
-    (define/augride (x:size arr parent)
+    (define/augride (x:size arr-arg parent)
+      (define arr (match arr-arg
+                [(? list? xs) (list->vector xs)]
+                [vec vec]))
       (+ 2
          (cond
-           [(zero? (length arr)) 0]
+           [(zero? (vector-length arr)) 0]
            [else (define type (or @type (x:buffer)))
 
                  ;; find maximum offset to determinine offset type
                  (define offset
-                   (add1 (for/sum ([item (in-list arr)])
+                   (add1 (for/sum ([item (in-vector arr)])
                                   (send type x:size item parent))))
 
                  (define offset-type
@@ -69,12 +72,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
                      [(<= offset #xffffffff) uint32be]
                      [else (error 'CFFIndex-size (format "bad offset: ~a" offset))]))
 
-                 (+ (* (send offset-type x:size) (add1 (length arr))) offset)])))
+                 (+ (* (send offset-type x:size) (add1 (vector-length arr))) offset)])))
 
-    (define/augride (x:encode arr stream parent)
-      (send uint16be x:encode (length arr) stream)
+    (define/augride (x:encode arr-arg stream parent)
+      (define arr (match arr-arg
+                [(? list? xs) (list->vector xs)]
+                [vec vec]))
+      (send uint16be x:encode (vector-length arr) stream)
       (cond
-        [(zero? (length arr))]
+        [(zero? (vector-length arr))]
         [else
          (define type (or @type (x:buffer)))
 
@@ -83,7 +89,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
            (for/fold ([sizes null]
                       [offset 1]
                       #:result (values (reverse sizes) offset))
-                     ([item (in-list arr)])
+                     ([item (in-vector arr)])
              (define s (send type x:size item parent))
              (values (cons s sizes) (+ offset s))))
 
@@ -105,7 +111,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
            (send offsetType x:encode next-offset stream)
            next-offset)
 
-         (for ([item (in-list arr)])
+         (for ([item (in-vector arr)])
               (send type x:encode item stream parent))]))))
 
 (define (CFFIndex [type #f])

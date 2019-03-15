@@ -28,7 +28,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
 
       (when (and (hash-has-key? cff-font 'version) (< (hash-ref cff-font 'version) 2))
         (match (hash-ref cff-font 'topDictIndex)
-          [(list dict) (hash-set! cff-font 'topDict dict)]
+          [(vector dict) (hash-set! cff-font 'topDict dict)]
           [_ (error 'only-single-font-allowed-in-cff)]))
 
       (hash-set! cff-font 'isCIDFont (hash-ref (hash-ref cff-font 'topDict) 'ROS))
@@ -38,16 +38,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
   (cond
     [(not sid) #false]
     [(>= (hash-ref this 'version) 2) #false]
-    [(< sid (length standardStrings)) (list-ref standardStrings sid)]
-    [else (list-ref (hash-ref this 'stringIndex) (- sid (length standardStrings)))]))
+    [(< sid (vector-length standardStrings)) (vector-ref standardStrings sid)]
+    [else (vector-ref (hash-ref this 'stringIndex) (- sid (vector-length standardStrings)))]))
 
 (define (CFFFont-postscriptName this)
-  (and (< (hash-ref this 'version) 2) (car (hash-ref this 'nameIndex))))
+  (and (< (hash-ref this 'version) 2) (vector-ref (hash-ref this 'nameIndex) 0)))
 
 (define CFFFont (make-object CFFFont%))
 
 (define (getCharString cff-font glyph-id)
-  (define glyph-record (list-ref (hash-ref (hash-ref cff-font 'topDict) 'CharStrings) glyph-id))
+  (define glyph-record (vector-ref (hash-ref (hash-ref cff-font 'topDict) 'CharStrings) glyph-id))
   (pos (hash-ref cff-font 'stream) (hash-ref glyph-record 'offset))
   (read-bytes (hash-ref glyph-record 'length) (hash-ref cff-font 'stream)))
 

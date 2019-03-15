@@ -144,7 +144,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 
      (set-cff-subset-strings! this
                               (append (cff-subset-strings this) (list string)))
-     (+ (length standardStrings) (sub1 (length (cff-subset-strings this))))]))
+     (+ (vector-length standardStrings) (sub1 (length (cff-subset-strings this))))]))
    
 
 (define (cff-subset-encode this stream)
