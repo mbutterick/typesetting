@@ -100,7 +100,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
                                 gsubrs)))
 
 (define (subsetSubrs this subrs used)
-  (for/list ([(subr i) (in-indexed subrs)])
+  (for/vector ([(subr i) (in-indexed subrs)])
     (cond
       [(hash-ref used i #false)
        (pos (hash-ref (cff-subset-cff this) 'stream) (hash-ref subr 'offset))
