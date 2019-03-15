@@ -74,14 +74,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                (let ([b (if (= b 12)
                             (bitwise-ior (arithmetic-shift b 8) (read-byte stream))
                             b)])
-                 (define field (hash-ref @fields b #false))
-                 (unless field
-                   (error 'cff-dict-decode (format "unknown operator: ~a" b)))
-
-                 (define val (decode-operands (third field) stream ret operands))
-                 (unless (void? val)
-                   (hash-set! ret (second field) val))
-                 (loop null))]
+                 (match (hash-ref @fields b #false)
+                   [#false (error 'cff-dict-decode (format "unknown operator: ~a" b))]
+                   [field
+                    (define val (decode-operands (third field) stream ret operands))
+                    (unless (void? val)
+                      (hash-set! ret (second field) val))
+                    (loop null)]))]
               [else
                (loop (append operands (list (decode CFFOperand stream b))))]))))
       
@@ -96,12 +95,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
       (+ (for*/sum ([k (in-list (sort (dict-keys @fields) <))]
                     [field (in-value (dict-ref @fields k))]
-                    [val (in-value (dict-ref dict (list-ref field 1) #false))]
-                    #:unless (or (not val) (equal? val (list-ref field 3))))
-           (define operands (encode-operands (list-ref field 2) #false ctx val))
+                    [val (in-value (dict-ref dict (second field) #false))]
+                    #:when (and val (not (equal? val (fourth field)))))
+           (define operands (encode-operands (third field) #false ctx val))
            (define operand-size (for/sum ([op (in-list operands)])
                                   (size CFFOperand op)))
-           (define key (if (list? (car field)) (car field) (list (car field))))
+           (define key (if (list? (first field)) (first field) (list (first field))))
            (+ operand-size (length key)))
          (if include-pointers (hash-ref ctx x:pointer-size-key) 0)))
 

@@ -10,16 +10,6 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPrivateDict.js
 |#
 
-(define CFFBlendOp
-  (class x:base%
-    (define/augment (x:decode stream parent operands)
-      (match (reverse operands)
-        [(cons numBlends operands)
-         ;; TODO: actually blend. For now just consume the deltas
-         ;; since we don't use any of the values anyway.
-         (let loop ([operands operands])
-           (when (> (length operands) numBlends)
-             (loop (cdr operands))))]))))
 
 (define CFFPrivateDict
   (CFFDict
@@ -43,5 +33,5 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPrivateDict.js
      (20        defaultWidthX        number                                      0)
      (21        nominalWidthX        number                                      0)
      (22        vsindex              number                                      0)
-     (23        blend               ,CFFBlendOp                                  #false)
+     #;(23        blend               boolean                                  #false)
      (19        Subrs               ,(CFFPointer (CFFIndex) #:relative-to 'local)         ,(vector)))))

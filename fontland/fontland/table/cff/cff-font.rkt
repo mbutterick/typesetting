@@ -39,20 +39,20 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
   (cond
     [(not sid) #false]
     [(>= (hash-ref this 'version) 2) #false]
-    [(< sid (vector-length standardStrings)) (vector-ref standardStrings sid)]
-    [else (vector-ref (hash-ref this 'stringIndex) (- sid (vector-length standardStrings)))]))
+    [(< sid (vector-length standard-strings)) (vector-ref standard-strings sid)]
+    [else (vector-ref (hash-ref this 'stringIndex) (- sid (vector-length standard-strings)))]))
 
 (define (CFFFont-postscriptName this)
   (and (< (hash-ref this 'version) 2) (vector-ref (hash-ref this 'nameIndex) 0)))
 
 (define CFFFont (make-object CFFFont%))
 
-(define (getCharString cff-font glyph-id)
+(define (get-char-string cff-font glyph-id)
   (define glyph-record (vector-ref (hash-ref (hash-ref cff-font 'topDict) 'CharStrings) glyph-id))
   (pos (hash-ref cff-font 'stream) (index-item-offset glyph-record))
   (read-bytes (index-item-length glyph-record) (hash-ref cff-font 'stream)))
 
-(define (fdForGlyph this gid)
+(define (fd-for-glyph this gid)
   (cond
     [(not (hash-has-key? (hash-ref this 'topDict) 'FDSelect)) #false]
     [else
@@ -71,12 +71,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFFont.js
               [else (hash-ref (list-ref ranges mid) 'fd)])))]
        [default (error 'unknown-select-version)])]))
 
-(define (privateDictForGlyph this gid)
+(define (private-dict-for-glyph this gid)
   (cond
     [(and (hash-has-key? this 'topDict)
           (hash-has-key? (hash-ref this 'topDict) 'FDSelect)
           (hash-ref* this 'topDict 'FDSelect))
-     (define fd (fdForGlyph this gid))
+     (define fd (fd-for-glyph this gid))
      (if (list-ref (hash-ref* this 'topDict 'FDArray) fd)
          (hash-ref (list-ref (hash-ref* 'topDict 'FDArray) fd) 'Private)
          #false)]

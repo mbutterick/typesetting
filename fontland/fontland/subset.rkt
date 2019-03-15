@@ -79,14 +79,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
    (for/list ([b (in-bytes bs)])
      (~r #:base 16 b #:min-width 2 #:pad-string "0"))  " "))
 
-(define (subsetCharstrings this)
+(define (subset-charstrings this)
   (set-cff-subset-charstrings! this null)
   (define gsubrs (make-hasheq))
   (for ([gid (in-list (subset-glyphs this))])
     (set-cff-subset-charstrings!
      this
      (append (cff-subset-charstrings this)
-             (list (getCharString (cff-subset-cff this) gid))))
+             (list (get-char-string (cff-subset-cff this) gid))))
 
     (define glyph (get-glyph (subset-font this) gid))
     (unless (cff-glyph-path glyph) (getPath glyph)) ;; this causes the glyph to be parsed
@@ -94,12 +94,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
     (for ([subr (in-hash-keys (cff-glyph-_usedGsubrs glyph))])
       (hash-set! gsubrs subr #true)))
 
-  (set-cff-subset-gsubrs! this (subsetSubrs
+  (set-cff-subset-gsubrs! this (subset-subrs
                                 this
                                 (hash-ref (cff-subset-cff this) 'globalSubrIndex)
                                 gsubrs)))
 
-(define (subsetSubrs this subrs used)
+(define (subset-subrs this subrs used)
   (for/vector ([(subr i) (in-indexed subrs)])
     (cond
       [(hash-ref used i #false)
@@ -108,34 +108,34 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
       [else (bytes 11)])))
 
 
-(define (subsetFontdict this topDict)
+(define (subset-font-dict this topDict)
   (error 'subsetFontdict-unimplemented))
 
 
-(define (createCIDFontdict this topDict)
-  (define used_subrs (make-hasheq))
+(define (create-cid-fontdict this top-dict)
+  (define used-subrs (make-hasheq))
   (for ([gid (in-list (subset-glyphs this))])
     (define glyph (get-glyph (subset-font this) gid))
     (unless (cff-glyph-path glyph) (getPath glyph)) ;; this causes the glyph to be parsed
        
     (for ([subr (in-hash-keys (cff-glyph-_usedSubrs glyph))])
-      (hash-set! used_subrs subr #true)))
+      (hash-set! used-subrs subr #true)))
 
   (define cff-topDict (hash-ref (cff-subset-cff this) 'topDict))
-  (define privateDict (hash-copy (hash-ref cff-topDict 'Private (make-hasheq))))
+  (define private-dict (hash-copy (hash-ref cff-topDict 'Private (make-hasheq))))
   (when (and (hash-has-key? cff-topDict 'Private) (hash-has-key? (hash-ref cff-topDict 'Private) 'Subrs))
-    (hash-set! privateDict 'Subrs (subsetSubrs this
-                                               (hash-ref (hash-ref cff-topDict 'Private) 'Subrs)
-                                               used_subrs)))
+    (hash-set! private-dict 'Subrs (subset-subrs this
+                                                 (hash-ref (hash-ref cff-topDict 'Private) 'Subrs)
+                                                 used-subrs)))
 
-  (hash-set! topDict 'FDArray (list (dictify 'Private privateDict)))
-  (hash-set! topDict 'FDSelect (dictify 'version 3
-                                        'nRanges 1
-                                        'ranges (list (dictify 'first 0 'fd 0))
-                                        'sentinel (length (cff-subset-charstrings this))))
-  (hash-ref topDict 'FDSelect))
+  (hash-set! top-dict 'FDArray (list (dictify 'Private private-dict)))
+  (hash-set! top-dict 'FDSelect (dictify 'version 3
+                                         'nRanges 1
+                                         'ranges (list (dictify 'first 0 'fd 0))
+                                         'sentinel (length (cff-subset-charstrings this))))
+  (hash-ref top-dict 'FDSelect))
            
-(define (addString this [string #f])
+(define (add-string this [string #f])
   (cond
     [(not string) #false]
     [else
@@ -144,39 +144,34 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
 
      (set-cff-subset-strings! this
                               (append (cff-subset-strings this) (list string)))
-     (+ (vector-length standardStrings) (sub1 (length (cff-subset-strings this))))]))
+     (+ (vector-length standard-strings) (sub1 (length (cff-subset-strings this))))]))
    
 
 (define (cff-subset-encode this stream)
-  (subsetCharstrings this)
+  (subset-charstrings this)
 
   (define charset
-    (dictify 'version (if (> (length (cff-subset-charstrings this)) 255)
-                          2
-                          1)
+    (dictify 'version (if (> (length (cff-subset-charstrings this)) 255) 2 1)
              'ranges (list (dictify 'first 1 'nLeft (- (length (cff-subset-charstrings this)) 2)))))
-
-  (define topDict (hash-copy (hash-ref (cff-subset-cff this) 'topDict)))
-  (hash-set*! topDict
+  
+  (define top-dict (hash-copy (hash-ref (cff-subset-cff this) 'topDict)))
+  (hash-set*! top-dict
               'Private #false
               'charset charset
               'Encoding #false
               'CharStrings (cff-subset-charstrings this))
-
+  
   (for ([key (in-list '(version Notice Copyright FullName
                                 FamilyName Weight PostScript
                                 BaseFontName FontName))])
-    (hash-update! topDict key
-                  (λ (tdk-val) (addString this (CFFont-string (cff-subset-cff this) tdk-val)))))
-
-  (hash-set! topDict 'ROS (list (addString this "Adobe")
-                                (addString this "Identity")
-                                0))
-  (hash-set! topDict 'CIDCount (length (cff-subset-charstrings this)))
+    (hash-update! top-dict key
+                  (λ (tdk-val) (add-string this (CFFont-string (cff-subset-cff this) tdk-val)))))
+  (hash-set! top-dict 'ROS (list (add-string this "Adobe") (add-string this "Identity") 0))
+  (hash-set! top-dict 'CIDCount (length (cff-subset-charstrings this)))
 
   (if (hash-ref (cff-subset-cff this) 'isCIDFont)
-      (subsetFontdict this topDict)
-      (createCIDFontdict this topDict))
+      (subset-font-dict this top-dict)
+      (create-cid-fontdict this top-dict))
 
   (define top
     (mhasheq 'version 1
@@ -184,15 +179,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/CFFSubset.js
              'offSize 4
              'header (hash-ref (cff-subset-cff this) 'header #f)
              'nameIndex (list (CFFFont-postscriptName (cff-subset-cff this)))
-             'topDictIndex (list topDict)
+             'topDictIndex (list top-dict)
              'stringIndex (cff-subset-strings this)
              'globalSubrIndex (cff-subset-gsubrs this)))
 
-  (for ([k (sort (dict-keys topDict) symbol<?)])
-    (define val (dict-ref topDict k))
-    (unless (or (list? val) (dict? val))
-      k
-      val))
+  (for ([k (in-list (sort (dict-keys top-dict) symbol<?))])
+    (match (dict-ref top-dict k)
+      [(or (? list? (? dict?))) k]
+      [val val]))
   
   (encode CFFTop top stream))
 
