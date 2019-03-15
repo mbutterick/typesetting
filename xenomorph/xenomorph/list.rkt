@@ -11,7 +11,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 |#
 
-(define x:array%
+(define x:list%
   (class x:base%
     (super-new)
     (init-field [(@type type)] [(@len len)] [(@count-bytes? count-bytes?)])
@@ -86,22 +86,26 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
               (define size (send @type x:size #f parent))
               (* size count)]))))
 
-(define (x:array [type-arg #f] [len-arg #f] [length-type-arg 'count]
+(define (x:list [type-arg #f] [len-arg #f] [length-type-arg 'count]
                  #:type [type-kwarg #f]
                  #:length [len-kwarg #f]
                  #:count-bytes [count-bytes? #f]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f]
-                 #:base-class [base-class x:array%])
+                 #:base-class [base-class x:list%])
   (new (generate-subclass base-class pre-proc post-proc) [type (or type-arg type-kwarg)]
        [len (or len-arg len-kwarg)]
        [count-bytes? count-bytes?]))
 
-(define (x:array? x) (is-a? x x:array%))
+(define (x:list? x) (is-a? x x:list%))
+
+(define x:array% x:list%)
+(define x:array x:list)
+(define x:array? x:list?)
   
 (module+ test
   (require rackunit "base.rkt")
-  (check-equal? (decode (x:array uint16be 3) #"ABCDEF") '(16706 17220 17734))
-  (check-equal? (encode (x:array uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
-  (check-equal? (size (x:array uint16be) '(1 2 3)) 6)
-  (check-equal? (size (x:array doublebe) '(1 2 3 4 5)) 40))
+  (check-equal? (decode (x:list uint16be 3) #"ABCDEF") '(16706 17220 17734))
+  (check-equal? (encode (x:list uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
+  (check-equal? (size (x:list uint16be) '(1 2 3)) 6)
+  (check-equal? (size (x:list doublebe) '(1 2 3 4 5)) 40))

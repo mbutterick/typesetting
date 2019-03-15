@@ -4,17 +4,19 @@
 (define-syntax-rule (r+p ID ...)
   (begin (require ID ...) (provide (all-from-out ID ...))))
 
-(r+p "array.rkt"
-     "bitfield.rkt"
-     "buffer.rkt"
+(r+p "bitfield.rkt"
+     "bytes.rkt"
      "enum.rkt"
      "base.rkt"
-     "lazy-array.rkt"
+     "list.rkt"
      "number.rkt"
      "optional.rkt"
      "pointer.rkt"
      "reserved.rkt"
      "string.rkt"
+     "stream.rkt"
      "struct.rkt"
+     "symbol.rkt"
+     "vector.rkt"
      "versioned-struct.rkt"
      "util.rkt")

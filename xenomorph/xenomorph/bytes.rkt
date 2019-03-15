@@ -7,7 +7,7 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
 |#
 
-(define x:buffer%
+(define x:bytes%
   (class x:base%
     (super-new)
     (init-field [(@len len)])
@@ -30,10 +30,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Buffer.coffee
         [#false (resolve-length @len val parent)]
         [_ (raise-argument-error 'x:buffer-size "bytes or #f" val)]))))
 
-(define (x:buffer [len-arg #f]
+(define (x:bytes [len-arg #f]
                   #:length [len-kwarg #f]
                   #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f]
-                  #:base-class [base-class x:buffer%])
+                  #:base-class [base-class x:bytes%])
   (define len (or len-arg len-kwarg #xffff))
   (new (generate-subclass base-class pre-proc post-proc) [len len]))
+
+(define x:buffer% x:bytes%)
+(define x:buffer x:bytes)
