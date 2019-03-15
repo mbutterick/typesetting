@@ -22,7 +22,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFIndex.js
 
     (define/augride (x:decode stream parent)
       (match (decode (if (>= (getCFFVersion parent) 2) uint32be uint16be) stream)
-        [0 null]
+        [0 (vector)]
         [count  (define offSize (decode uint8 stream))
                 (define offsetType (match offSize
                                      [1 uint8]
