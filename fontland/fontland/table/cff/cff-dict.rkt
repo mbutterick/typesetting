@@ -1,4 +1,4 @@
-#lang racket/base
+#lang debug racket/base
 (require racket/class
          racket/match
          racket/list
@@ -25,13 +25,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
     (field [(@fields fields)
             (for/hash ([field (in-list @ops)])
-                      (values (op->key field) field))])
+              (values (op->key field) field))])
     
     (define (decode-operands type stream ret operands)
       (match type
         [(? list?) (for/list ([op (in-list operands)]
                               [subtype (in-list type)])
-                             (decode-operands subtype stream ret (list op)))]
+                     (decode-operands subtype stream ret (list op)))]
         [(? xenomorphic?) (send type x:decode stream ret operands)]
         [(or 'number 'offset 'sid) (car operands)]
         ['boolean (if (car operands) #t #f)]
@@ -42,7 +42,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
         [(? list?)
          (for/list ([op (in-list operands)]
                     [subtype (in-list type)])
-                   (car (encode-operands subtype stream ctx op)))]
+           (car (encode-operands subtype stream ctx op)))]
         [(? xenomorphic?) type (send type x:encode operands stream ctx)]
         [_ (match operands
              [(? number?) (list operands)]
@@ -63,7 +63,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
 
       ;; fill in defaults
       (for ([(key field) (in-hash @fields)])
-           (hash-set! ret (second field) (fourth field)))
+        (hash-set! ret (second field) (fourth field)))
 
       (let loop ([operands null])
         (when (< (pos stream) end)
@@ -98,11 +98,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                     [field (in-value (dict-ref @fields k))]
                     [val (in-value (dict-ref dict (list-ref field 1) #false))]
                     #:unless (or (not val) (equal? val (list-ref field 3))))
-                   (define operands (encode-operands (list-ref field 2) #false ctx val))
-                   (define operand-size (for/sum ([op (in-list operands)])
-                                                 (size CFFOperand op)))
-                   (define key (if (list? (car field)) (car field) (list (car field))))
-                   (+ operand-size (length key)))
+           (define operands (encode-operands (list-ref field 2) #false ctx val))
+           (define operand-size (for/sum ([op (in-list operands)])
+                                  (size CFFOperand op)))
+           (define key (if (list? (car field)) (car field) (list (car field))))
+           (+ operand-size (length key)))
          (if include-pointers (hash-ref ctx x:pointer-size-key) 0)))
 
     (define/augment (x:encode dict stream parent)
@@ -116,16 +116,16 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
       (hash-set! ctx x:pointer-offset-key (+ (pos stream) (x:size dict ctx #false)))
 
       (for ([field (in-list @ops)])
-           (define val (dict-ref dict (list-ref field 1) #false))
-           (cond
-             [(or (not val) (equal? val (list-ref field 3)))]
-             [else
-              (define operands (encode-operands (list-ref field 2) stream ctx val))
-              (for ([op (in-list operands)])
-                   (send CFFOperand x:encode op stream))
-              (define key (if (list? (car field)) (car field) (list (car field))))
-              (for ([op (in-list key)])
-                   (encode uint8 op stream))]))
+        (match-define (list f0 f1 f2 f3) field)
+        (match (dict-ref dict f1 #false)
+          [(or #false (== f3)) (void)]
+          [val
+           (define operands (encode-operands f2 stream ctx val))
+           (for ([op (in-list operands)])
+             (send CFFOperand x:encode op stream))
+           (define key (if (list? f0) f0 (list f0)))
+           (for ([op (in-list key)])
+             (encode uint8 op stream))]))
 
       (let loop ([i 0])
         (when (< i (length (hash-ref ctx x:pointers-key)))

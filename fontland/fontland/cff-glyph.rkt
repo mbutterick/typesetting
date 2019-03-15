@@ -74,13 +74,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
   (define open #false)
 
   (define gsubrs (match (hash-ref cff 'globalSubrIndex (vector))
-                   [(? list? vals) (list->vector vals)]
+                   [(list) (vector)]
                    [vec vec]))
   (define gsubrsBias (bias this gsubrs))
 
   (define privateDict (or (privateDictForGlyph cff (glyph-id this)) (make-hash)))
   (define subrs (match (hash-ref privateDict 'Subrs (vector))
-                  [(? list? vals) (list->vector vals)]
+                  [(list) (vector)]
                   [vec vec]))
   (define subrsBias (bias this subrs))
 

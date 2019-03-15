@@ -45,3 +45,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPrivateDict.js
      (22        vsindex              number                                      0)
      (23        blend               ,CFFBlendOp                                  #false)
      (19        Subrs               ,(CFFPointer (CFFIndex) #:relative-to 'local)         ,null))))
+;; todo: why can't the subrs default value be `(vector)`?
