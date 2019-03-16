@@ -146,6 +146,7 @@
   (define (dump val)
     (cond
       [(promise? val) 'promise-omitted]
+      [(vector? val) (dump (vector->list val))]
       [(dict? val)
        (for/list ([(k v) (in-dict (sort (dict->list val) #:key car symbol<?))])
                  (list k (dump v)))]
