@@ -34,9 +34,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 
     (define/augment (x:decode stream parent operands)
       (define idx (car operands))
-      (cond
-        [(and (< idx (vector-length op-vec)) (vector-ref op-vec idx))]
-        [else (decode @type stream #:parent parent operands)]))
+      (if (< idx (vector-length op-vec))
+          (vector-ref op-vec idx)
+          (decode @type stream #:parent parent operands)))
 
     (define/augment (x:size value ctx)
       (error 'predefined-op-size-not-finished))
