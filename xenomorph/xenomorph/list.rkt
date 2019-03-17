@@ -1,7 +1,7 @@
 #lang debug racket/base
 (require racket/class
          "base.rkt"
-         "number.rkt"
+         "int.rkt"
          "util.rkt"
          sugar/unstable/dict)
 (provide (all-defined-out))
@@ -107,5 +107,4 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   (require rackunit "base.rkt")
   (check-equal? (decode (x:list uint16be 3) #"ABCDEF") '(16706 17220 17734))
   (check-equal? (encode (x:list uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
-  (check-equal? (size (x:list uint16be) '(1 2 3)) 6)
-  (check-equal? (size (x:list doublebe) '(1 2 3 4 5)) 40))
+  (check-equal? (size (x:list uint16be) '(1 2 3)) 6))

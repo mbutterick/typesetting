@@ -1,154 +1,13 @@
-#lang racket/base
-(require "base.rkt" racket/class)
-(provide (all-defined-out))
+#lang debug racket/base
+(require "base.rkt" "int.rkt" "list.rkt" racket/class)
+(provide (all-defined-out) (all-from-out "int.rkt"))
 
 #|
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 |#
 
-(define (unsigned->signed uint bits)
-  (define most-significant-bit-mask (arithmetic-shift 1 (sub1 bits)))
-  (- (bitwise-xor uint most-significant-bit-mask) most-significant-bit-mask))
 
-(define (signed->unsigned sint bits)
-  (bitwise-and sint (arithmetic-shift 1 bits)))
-
-(define (reverse-bytes bstr)
-  (apply bytes
-         (for/list ([b (in-bytes bstr (sub1 (bytes-length bstr)) -1 -1)])
-                   b)))
-
-(define (exact-if-possible x) (if (integer? x) (inexact->exact x) x))
-
-(define system-endian (if (system-big-endian?) 'be 'le))
-
-(define x:number%
-  (class x:base%
-    (super-new)
-    (init-field [(@size size)] [(@endian endian)])
-    
-    (unless (exact-positive-integer? @size)
-      (raise-argument-error 'xenomorph "exact positive integer" @size))
-    (unless (memq @endian '(le be))
-      (raise-argument-error 'xenomorph "'le or 'be" @endian))
-    
-    (field [@bits (* @size 8)])
-    
-    (define/augment (x:size . _) @size)))
-
-(define (x:int? x) (is-a? x x:int%))
-
-(define x:int%
-  (class x:number%
-    (super-new)
-    (init-field signed)
-    (inherit-field (@endian endian) (@size size) @bits)
-    
-    ;; if a signed integer has n bits, it can contain a number
-    ;; between - (expt 2 (sub1 n)) and (sub1 (expt 2 (sub1 n)).
-    (define signed-max (sub1 (arithmetic-shift 1 (sub1 @bits))))
-    (define signed-min (sub1 (- signed-max)))
-    (define delta (if signed 0 signed-min))
-    (field [bound-min (- signed-min delta)]
-           [bound-max (- signed-max delta)])
-                
-    (define/augment (x:decode port . _)
-      (define bs ((if (eq? @endian system-endian) values reverse-bytes) (read-bytes @size port)))
-      (define uint (for/sum ([b (in-bytes bs)]
-                             [i (in-naturals)])
-                            (arithmetic-shift b (* 8 i))))
-      (if signed (unsigned->signed uint @bits) uint))
-                
-    (define/augment (x:encode val . _)
-      (unless (<= bound-min val bound-max)
-        (raise-argument-error 'encode
-                              (format "value that fits within ~a ~a-byte int (~a to ~a)" (if signed "signed" "unsigned") @size bound-min bound-max) val))
-      (for/fold ([bs null]
-                 [val (exact-if-possible val)]
-                 #:result (apply bytes ((if (eq? @endian 'be) values reverse) bs)))
-                ([i (in-range @size)])
-        (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))))
-
-(define (x:int [size-arg #f]
-               #:size [size-kwarg 2]
-               #:signed [signed #true]
-               #:endian [endian system-endian]
-               #:pre-encode [pre-proc #f]
-               #:post-decode [post-proc #f]
-               #:base-class [base-class x:int%])
-  (new (generate-subclass base-class pre-proc post-proc)
-       [size (or size-arg size-kwarg)]
-       [signed signed]
-       [endian endian]))
-
-(define int8 (x:int 1))
-(define int16 (x:int 2))
-(define int24 (x:int 3))
-(define int32 (x:int 4))
-(define uint8 (x:int 1 #:signed #f))
-(define uint16 (x:int 2 #:signed #f))
-(define uint24 (x:int 3 #:signed #f))
-(define uint32 (x:int 4 #:signed #f))
-(define int8be (x:int 1 #:endian 'be))
-(define int16be (x:int 2 #:endian 'be))
-(define int24be (x:int 3 #:endian 'be))
-(define int32be (x:int 4 #:endian 'be))
-(define uint8be (x:int 1 #:signed #f #:endian 'be))
-(define uint16be (x:int 2 #:signed #f #:endian 'be))
-(define uint24be (x:int 3 #:signed #f #:endian 'be))
-(define uint32be (x:int 4 #:signed #f #:endian 'be))
-(define int8le (x:int 1 #:endian 'le))
-(define int16le (x:int 2 #:endian 'le))
-(define int24le (x:int 3 #:endian 'le))
-(define int32le (x:int 4 #:endian 'le))
-(define uint8le (x:int 1 #:signed #f #:endian 'le))
-(define uint16le (x:int 2 #:signed #f #:endian 'le))
-(define uint24le (x:int 3 #:signed #f #:endian 'le))
-(define uint32le (x:int 4 #:signed #f #:endian 'le))
-
-(module+ test
-  (require rackunit "base.rkt")
-  (check-exn exn:fail:contract? (λ () (x:int 'not-a-valid-type)))
-  (check-exn exn:fail:contract? (λ () (encode uint8 256 #f)))
-  (check-not-exn (λ () (encode uint8 255 #f)))
-  (check-exn exn:fail:contract? (λ () (encode int8 256 #f)))
-  (check-exn exn:fail:contract? (λ () (encode int8 255 #f)))
-  (check-not-exn (λ () (encode int8 127 #f)))
-  (check-not-exn (λ () (encode int8 -128 #f)))
-  (check-exn exn:fail:contract? (λ () (encode int8 -129 #f)))
-  (check-exn exn:fail:contract? (λ () (encode uint16 (add1 #xffff)  #f)))
-  (check-not-exn (λ () (encode uint16 #xffff #f)))
-
-  (let ([i (x:int 2 #:signed #f #:endian 'le)]
-        [ip (open-input-bytes (bytes 1 2 3 4))]
-        [op (open-output-bytes)])
-    (check-equal? (decode i ip) 513)  ;; 1000 0000 0100 0000
-    (check-equal? (decode i ip) 1027) ;; 1100 0000 0010 0000
-    (encode i 513 op)
-    (check-equal? (get-output-bytes op) (bytes 1 2))
-    (encode i 1027 op)
-    (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
-
-  (let ([i (x:int 2 #:signed #f #:endian 'be)]
-        [ip (open-input-bytes (bytes 1 2 3 4))]
-        [op (open-output-bytes)])
-    (check-equal? (decode i ip) 258) ;; 0100 0000 1000 0000 
-    (check-equal? (decode i ip) 772) ;; 0010 0000 1100 0000
-    (encode i 258 op)
-    (check-equal? (get-output-bytes op) (bytes 1 2))
-    (encode i 772 op)
-    (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
-
-  (check-equal? (size (x:int 1)) 1)
-  (check-equal? (size (x:int)) 2)
-  (check-equal? (size (x:int 4)) 4)
-  (check-equal? (size (x:int 8)) 8)
-
-  (check-equal? (decode int8 (bytes 127)) 127)
-  (check-equal? (decode int8 (bytes 255)) -1)
-  (check-equal? (encode int8 -1 #f) (bytes 255))
-  (check-equal? (encode int8 127 #f) (bytes 127)))
 
 (define x:float%
   (class x:number%
@@ -207,6 +66,54 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 (define fixed32le (x:fixed 4 #:endian 'le))
 
 (module+ test
+  (require rackunit)
   (define bs (encode fixed16be 123.45 #f))
   (check-equal? bs #"{s")
   (check-equal? (ceiling (* (decode fixed16be bs) 100)) 12345.0))
+
+
+(define x:bigint
+  (x:list
+   #:type uint8
+   #:length uint64
+   #:pre-encode (λ (int) (for/fold ([int8s null]
+                                    [int int]
+                                    #:result int8s)
+                                   ([i (in-naturals)]
+                                    #:final (< int 256))
+                           (values (cons (bitwise-and int 255) int8s)
+                                   (arithmetic-shift int -8))))
+   #:post-decode (λ (ints) (bytes->uint (apply bytes (reverse ints))))))
+
+(module+ test
+  (define (bigint) (string->number (list->string (for/list ([i (in-range (random 10 30))])
+                                                           (integer->char (+ 48 (random 10)))))))
+  (for ([i (in-range 100)])
+       (define int (bigint))
+       (check-= int (decode x:bigint (encode x:bigint int #f)) 0))) 
+
+(define x:exact
+  (x:list
+   x:bigint
+   #:length 2
+   #:pre-encode (λ (exact) (list (numerator exact) (denominator exact)))
+   #:post-decode (λ (nd) (apply / nd))))
+
+(module+ test
+  (define (exact) (/ (bigint) (bigint)))
+  (for ([i (in-range 100)])
+       (define ex (exact))
+       (check-= ex (decode x:exact (encode x:exact ex #f)) 0)))
+
+(define x:complex
+  (x:list
+   double
+   #:length 2
+   #:pre-encode (λ (num) (list (real-part num) (imag-part num)))
+   #:post-decode (λ (ri) (+ (car ri) (* +i (cadr ri))))))
+
+(module+ test
+  (define (complex) (+ (exact) (* +i (exact) 1.0) 1.0))
+  (for ([i (in-range 100)])
+       (define c (complex))
+       (check-= c (decode x:complex (encode x:complex c #f)) 0.1)))
