@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/match racket/dict "int.rkt" "base.rkt")
+(require racket/match racket/dict racket/format racket/string racket/sequence "int.rkt" "base.rkt")
 (provide (all-defined-out))
 
 (define (length-resolvable? x)
@@ -14,25 +14,32 @@
     [(? x:int?) #:when port (decode x port)]
     [_ (raise-argument-error 'resolve-length "fixed-size argument" x)]))
 
-(define-values (PropertyDescriptor-prop PropertyDescriptor? _)
-  (make-impersonator-property 'PropertyDescriptor))
-
-(define (PropertyDescriptor [opts (make-hash)])
-  (define mh (make-hash))
-  (for ([(k v) (in-hash opts)])
-    (hash-set! mh k v))
-  (impersonate-hash mh
-                    (λ (h k) (values k (λ (h k v) v)))
-                    (λ (h k v) (values k v))
-                    (λ (h k) k)
-                    (λ (h k) k)
-                    PropertyDescriptor-prop
-                    #true))
-
-(module+ test
-  (require rackunit)
-  (define pd (PropertyDescriptor))
-  (hash-set! pd 'k 42)
-  (check-equal? (hash-ref pd 'k) 42)
-  (check-true (PropertyDescriptor? pd))
-  (check-true (hash? pd)))
+(define (pretty-print-bytes bstr
+                            #:radix [radix 16]
+                            #:offset-min-width [offset-min-width 4]
+                            #:row-length [bytes-per-row 16]
+                            #:max-value [max-value 256])
+  (define bs (bytes->list bstr))
+  (define offset-str-length
+    (max offset-min-width
+    (string-length (let ([lbs (length bs)])
+                     (~r (- lbs (remainder lbs bytes-per-row)))))))
+  (display
+   (string-join
+    (for/list ([row-bs (in-slice bytes-per-row bs)]
+               [ridx (in-naturals)])
+      (string-append
+       (let ([idxstr (~r (* ridx bytes-per-row))])
+         (string-append idxstr
+                        (make-string (- offset-str-length (string-length idxstr)) #\space)))
+       "  "
+       (string-join
+        (let* ([max-digit-width (string-length (~r (sub1 max-value) #:base radix))]
+               [strs (for/list ([b (in-list row-bs)])
+                       (~r b #:base radix #:min-width max-digit-width #:pad-string "0"))])
+          (for/list ([2strs (in-slice 2 strs)])
+            (string-join 2strs "·"))) " ")
+       (let ([shortfall (* (- bytes-per-row (length row-bs)) 3)])
+         (make-string shortfall #\space))
+       "  "
+       (format "~a" (bytes->string/utf-8 (apply bytes row-bs))))) "\n")))
