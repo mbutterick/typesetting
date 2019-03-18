@@ -21,3 +21,4 @@ xenomorph/scribblings/*.html
 pdfkit/
 ptest/test*rkt.pdf
 pitfall/data/*.rktd
+ptest/out.bin
