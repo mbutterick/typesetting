@@ -98,7 +98,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
               #:features [features (pdf-current-font-features doc)]
               #:fill [fill? #t]
               #:stroke [stroke? #f]
-              #:spacing [character-spacing 0]
+              #:tracking [character-tracking 0]
               #:underline [underline? #f]
               #:link [link-url #f]
               #:strike [strike? #f]
@@ -115,9 +115,9 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     ;; wrap this in delay so it's only calculated if needed
     (delay
       (+ (string-width doc str
-                       #:spacing character-spacing
+                       #:spacing character-tracking
                        #:features features)
-         (* character-spacing (sub1 (string-length str))))))
+         (* character-tracking (sub1 (string-length str))))))
 
   ;; create link annotations if the link option is given
   (when link-url
@@ -140,24 +140,35 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   ;; add current font to page if necessary
   (define current-font-id (pdf-font-id (pdf-current-font doc)))
   (hash-ref! (page-fonts (current-page doc)) current-font-id  (λ () (make-font-ref (pdf-current-font doc))))
-  
-  (add-content doc "BT") ; begin the text object
-  (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer next-y))) ; text position
-  (add-content doc (format "/~a ~a Tf" current-font-id
-                           (numberizer (pdf-current-font-size doc)))) ; font and font size
 
+  ;; begin the text object
+  (add-content doc "BT") 
+
+  ;; text position
+  (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer next-y))) 
+
+  ;; font and font size
+  (add-content doc (format "/~a ~a Tf" current-font-id
+                           (numberizer (pdf-current-font-size doc)))) 
+
+  ;; rendering mode
   (when stroke?
     ;; default Tr mode (fill) is 0
     ;; stroke only = 1; fill + stroke = 2
     (add-content doc (format "~a Tr" (+ 1 (if fill? 1 0)))))
-  (unless (zero? character-spacing)
-    (add-content doc (format "~a Tc" character-spacing)))
+
+  ;; Character spacing
+  (unless (zero? character-tracking)
+    (add-content doc (format "~a Tc" character-tracking)))
 
   ;; Add the actual text
   (add-text doc x next-y str features)
 
-  (add-content doc "ET") ; end the text object
-  (restore doc) ; restore flipped coordinate system
+  ;; end the text object
+  (add-content doc "ET")
+
+  ;; restore flipped coordinate system
+  (restore doc) 
 
   ;; 181224 unsuppress size tracking in test mode to preserve test 04
   ;; otherwise we'll be doing our own line measurement
@@ -166,7 +177,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
 
 (define (string-width doc str
-                      #:spacing [character-spacing 0]
+                      #:tracking [character-tracking 0]
                       #:features [features (pdf-current-font-features doc)])
   (+ (measure-string (pdf-current-font doc) str (pdf-current-font-size doc) features)
-     (* character-spacing (sub1 (string-length str)))))
+     (* character-tracking (sub1 (string-length str)))))
