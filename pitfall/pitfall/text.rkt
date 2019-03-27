@@ -115,7 +115,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     ;; wrap this in delay so it's only calculated if needed
     (delay
       (+ (string-width doc str
-                       #:spacing character-tracking
+                       #:tracking character-tracking
                        #:features features)
          (* character-tracking (sub1 (string-length str))))))
 
