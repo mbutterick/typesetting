@@ -1,8 +1,9 @@
 #lang racket/base
-(require racket/match racket/port racket/dict)
+(require racket/match racket/port racket/dict racket/struct)
 (provide (all-defined-out))
 
 ;; structs
+(define verbose-pitfall-printing? (make-parameter #f))
 
 (struct pdf (width
              height
@@ -24,7 +25,16 @@
              x
              y
              image-registry
-             output-path) #:transparent #:mutable)
+             output-path) #:transparent #:mutable
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (obj) 'pitfall-pdf)
+      (λ (obj) (append
+                (list (pdf-output-path obj))
+                (if (verbose-pitfall-printing?)
+                    (list 'other-pdf-fields)
+                    null)))))])
 
 (struct pdf-font (name
                   id
@@ -36,7 +46,16 @@
                   embedded
                   embed
                   encode
-                  measure-string)  #:transparent #:mutable)
+                  measure-string) #:transparent #:mutable
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (obj) 'pitfall-font)
+      (λ (obj) (append
+                (list (pdf-font-name obj))
+                (if (verbose-pitfall-printing?)
+                    (list 'other-pdf-font-fields)
+                    null)))))])
 
 ;; for JPEG and PNG
 (struct $img (data label width height ref embed-proc) #:transparent #:mutable)
