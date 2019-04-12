@@ -84,9 +84,11 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
       (set! width (+ (shift stack) (hash-ref privateDict 'nominalWidthX)))))
 
   (define (parse-stems)
-    (when (odd? (stack-length stack)) (check-width))
+    (when (odd? (stack-length stack))
+      (check-width))
     (set! nStems (+ nStems (arithmetic-shift (stack-length stack) -1)))
-    (set! stack (initialize-stack)))
+    (set! stack (initialize-stack))
+    0)
 
   (define (moveTo x y)
     (when open (path-closePath path))
@@ -134,7 +136,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                        (define c1y (+ y (shift stack)))
                        (define c2x (+ c1x (shift stack)))
                        (define c2y (+ c1y (shift stack)))
-                       (path-bezierCurveTo path c1x c1y c2x c2y x y)))]
+                       (set! x (+ c2x (shift stack)))
+                       (set! y (+ c2y (shift stack)))
+                       (path-bezierCurveTo path c1x c1y c2x c2y x y)
+                       (loop)))]
                   [(10) ;; callsubr
                    (define index (+ (pop stack) subrs-bias))
                    (define subr (vector-ref subrs index))
@@ -404,11 +409,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
                           [else (error (format "unknown op: 12 ~a" op))])]
                   [else (error (format "unknown op: ~a" op))])]
           [else
+           
            (push stack (cond
                          [(< op 247) (- op 139)]
                          [(< op 251) (+ (* (- op 247) 256) (read-byte stream) 108)]
                          [(< op 255) (- (* (- 251 op) 256) (read-byte stream) 108)]
-                         [else (/ (decode int32be stream) 65536)]))]))))
+                         [else (/ (decode int32be stream) 65536.0)]))]))))
 
   (when open (path-closePath path))
   (set-cff-glyph-_usedSubrs! this used-subrs)
