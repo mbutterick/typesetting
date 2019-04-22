@@ -5,4 +5,5 @@
                "beautiful-racket-lib"
                "rackunit-lib"
                "sugar"))
-(define build-deps '("scribble-lib"))
+(define build-deps '("debug"
+                     "scribble-lib"))
