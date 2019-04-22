@@ -11,3 +11,4 @@
                "rackunit-lib"
                "sugar"
                "xenomorph"))
+(define update-implies '("xenomorph"))
