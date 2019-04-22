@@ -15,3 +15,5 @@
                "srfi-lite-lib"
                "sugar"))
 (define build-deps '("debug"))
+(define update-implies '("xenomorph"))
+
