@@ -7,7 +7,7 @@
 (provide (all-defined-out))
 
 (define-runtime-lib harfbuzz-lib
-  [(unix) (ffi-lib "libharfbuzz" '("1" ""))]
+  [(unix) (ffi-lib "libharfbuzz" '("0" ""))]
   [(macosx) (ffi-lib "libharfbuzz.0.dylib")]
   [(windows) (ffi-lib "libharfbuzz-0.dll")])
 
