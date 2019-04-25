@@ -8,7 +8,6 @@
                "base"
                "beautiful-racket-lib"
                "brag"
-               "describe"
                "fontland"
                "png-image"
                "rackunit-lib"
