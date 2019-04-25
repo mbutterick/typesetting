@@ -6,7 +6,6 @@
                "base"
                "beautiful-racket-lib"
                "debug"
-               "describe"
                "draw-lib"
                "rackunit-lib"
                "sugar"
