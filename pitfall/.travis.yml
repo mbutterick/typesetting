@@ -35,7 +35,7 @@ before_install:
 
 script:
  - cd ..   # Travis did a cd into the dir. Back up, for the next:
- - travis_retry raco pkg install --deps search-auto --link pitfall
+ - travis_retry raco pkg install --deps search-auto https://github.com/mbutterick/pitfall.git
  - raco test -p pitfall
  
  
