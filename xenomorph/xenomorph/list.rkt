@@ -114,10 +114,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
    x:list?)
   (define type (or type-arg type-kwarg))
   (unless (xenomorphic? type)
-    (raise-argument-error x:list "xenomorphic type" type))
+    (raise-argument-error 'x:list "xenomorphic type" type))
   (define len (or len-arg len-kwarg))
   (unless (length-resolvable? len)
-    (raise-argument-error x:list "resolvable length" len))
+    (raise-argument-error 'x:list "resolvable length" len))
   (new (generate-subclass base-class pre-proc post-proc)
        [type type]
        [len len]

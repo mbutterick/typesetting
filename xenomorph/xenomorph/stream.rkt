@@ -61,10 +61,10 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
    x:stream?)
   (define type (or type-arg type-kwarg))
     (unless (xenomorphic? type)
-    (raise-argument-error x:stream "xenomorphic type" type))
+    (raise-argument-error 'x:stream "xenomorphic type" type))
   (define len (or len-arg len-kwarg))
    (unless (length-resolvable? len)
-    (raise-argument-error x:stream "resolvable length" len))
+    (raise-argument-error 'x:stream "resolvable length" len))
   (new (generate-subclass base-class pre-proc post-proc) [type type]
        [len len]
        [count-bytes? #false]))
