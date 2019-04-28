@@ -1,5 +1,5 @@
 #lang racket/base
-(require "base.rkt" racket/class)
+(require "base.rkt" racket/class racket/contract)
 (provide (all-defined-out))
 
 #|
@@ -20,6 +20,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                    b)))
 
 (define (exact-if-possible x) (if (integer? x) (inexact->exact x) x))
+
+(define (endian-value? x)
+  (and (symbol? x) (memq x '(be le))))
 
 (define system-endian (if (system-big-endian?) 'be 'le))
 
@@ -73,15 +76,28 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                 ([i (in-range @size)])
         (values (cons (bitwise-and val #xff) bs) (arithmetic-shift val -8))))))
 
-(define (x:int [size-arg #f]
+(define/contract (x:int [size-arg #f]
                #:size [size-kwarg 2]
                #:signed [signed #true]
                #:endian [endian system-endian]
                #:pre-encode [pre-proc #f]
                #:post-decode [post-proc #f]
                #:base-class [base-class x:int%])
+  (()
+   ((or/c exact-positive-integer? #false)
+    #:size exact-positive-integer?
+    #:signed boolean?
+    #:endian endian-value?
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:int%)))
+   . ->* .
+   x:int?)
+  (define size (or size-arg size-kwarg))
+  (unless (exact-positive-integer? size)
+    (raise-argument-error 'x:int "exact positive integer" size))
   (new (generate-subclass base-class pre-proc post-proc)
-       [size (or size-arg size-kwarg)]
+       [size size]
        [signed signed]
        [endian endian]))
 
