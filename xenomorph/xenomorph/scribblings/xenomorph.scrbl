@@ -117,7 +117,7 @@ The key point: the @litchar{#"} prefix tells us we're looking at a byte string, 
 
 Back to files. Files are classified as being either @deftech{binary} or @deftech{text}. (A distinction observed by Racket functions such as @racket[write-to-file].) When we speak of binary vs. text, we're saying something about the internal structure of the byte sequence — what values those bytes represent. We'll call this internal structure the @deftech{binary format} of the file.
 
-@margin-note{This internal structure is also called an @tech{encoding}. Here, however, I avoid using that term as a synonym for @tech{binary format}, because I prefer to reserve it for when we talk about encoding and decoding as operations on data.}
+@margin-note{This internal structure is also called an @emph{encoding}. Here, however, I avoid using that term as a synonym for @tech{binary format}, because I prefer to reserve it for when we talk about encoding and decoding as operations on data.}
 
 @;{
 @subsubsection{Text encodings}
