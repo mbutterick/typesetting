@@ -174,7 +174,7 @@ For those familiar with programming-language lingo, an encoding somewhat resembl
 (xenomorphic?
 [x any/c])
 boolean?]{
-Predicate for whether @racket[x] is an object of type @racket[x:base%].
+Whether @racket[x] is an object of type @racket[x:base%].
 }
 
 @defproc[
@@ -308,7 +308,7 @@ Base class for integer formats. Use @racket[x:int] to conveniently instantiate n
 (x:int?
 [x any/c])
 boolean?]{
-Predicate for whether @racket[x] is an object of type @racket[x:int%].
+Whether @racket[x] is an object of type @racket[x:int%].
 }
 
 @defproc[
@@ -387,7 +387,7 @@ Base class for floating-point number formats. By convention, all floats are sign
 (x:float?
 [x any/c])
 boolean?]{
-Predicate for whether @racket[x] is an object of type @racket[x:float%].
+Whether @racket[x] is an object of type @racket[x:float%].
 }
 
 @defproc[
@@ -449,7 +449,7 @@ Create class instance that represents a fixed-point number format @racket[size] 
 (x:fixed?
 [x any/c])
 boolean?]{
-Predicate for whether @racket[x] is an object of type @racket[x:fixed%].
+Whether @racket[x] is an object of type @racket[x:fixed%].
 }
 
 @defproc[
@@ -498,6 +498,73 @@ The common 32-bit fixed-point number types with 4 bits of precision. They differ
 
 @defmodule[xenomorph/string]
 
+@defproc[
+(supported-encoding?
+[x any/c])
+boolean?]{
+Whether @racket[x] represents a supported encoding: either @racket['ascii] or @racket['utf8].
+}
+
+@defclass[x:string% x:base% ()]{
+Base class for string formats. Use @racket[x:string] to conveniently instantiate new string formats.
+
+@defconstructor[
+([len length-resolvable?]
+[encoding supported-encoding?])]{
+Create class instance that represents a string format of length @racket[len]. If @racket[len] is an integer,  the string is fixed at that length, otherwise it can be any length.
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+string?]{
+Returns a @tech{string}.
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[val any/c]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take a @racket[val], converts it to a string if needed, and encode it as a @tech{byte string}. If @racket[_len] is a @racket[xenomorphic?] object, the length is encoded at the beginning of the string using that object as the encoder.
+}
+
+}
+
+@defproc[
+(x:string?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:string%].
+}
+
+@defproc[
+(x:string
+[len-arg (or/c length-resolvable? #false) #false]
+[enc-arg (or/c supported-encoding? #false) #false]
+[#:length len-kw (or/c length-resolvable? #false) #false]
+[#:encoding enc-kw (or/c supported-encoding? #false) #false]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:string%)) x:string%]
+)
+x:string?]{
+Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%]) with certain optional attributes.
+
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the string. If this argument is an integer, the string is limited to that length. If it's another value, the string has variable length.
+
+@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-kw] takes precedence) determines the encoding of the string. See also @racket[supported-encoding?]
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
+
 
 @subsection{Lists}
 
@@ -510,15 +577,35 @@ Base class for list formats. Use @racket[x:list] to conveniently instantiate new
 ([type xenomorphic?]
 [len length-resolvable?]
 [count-bytes? boolean?])]{
-Create class instance that represents a list format with elements of type @racket[type]. If @racket[len] is @racket[#false], the list can be any length, otherwise it is fixed at the resolved value of @racket[len]. 
+Create class instance that represents a list format with elements of type @racket[type]. If @racket[len] is an integer,  the list is fixed at that length, otherwise it can be any length. 
 }
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+list?]{
+Returns a @tech{list} of values whose length is @racket[_len] and where each value is @racket[_type].
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[seq sequence?]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+}
+
 }
 
 @defproc[
 (x:list?
 [x any/c])
 boolean?]{
-Predicate for whether @racket[x] is an object of type @racket[x:list%].
+Whether @racket[x] is an object of type @racket[x:list%].
 }
 
 @defproc[
@@ -549,21 +636,41 @@ Generate an instance of @racket[x:list%] (or a subclass of @racket[x:list%]) wit
 @defmodule[xenomorph/stream]
 
 @defclass[x:stream% x:base% ()]{
-Base class for list formats. Use @racket[x:stream] to conveniently instantiate new list formats.
+Base class for stream formats. Use @racket[x:stream] to conveniently instantiate new stream formats.
 
 @defconstructor[
 ([type xenomorphic?]
 [len length-resolvable?]
 [count-bytes? boolean?])]{
-Create class instance that represents a list format with elements of type @racket[type]. If @racket[len] is @racket[#false], the list can be any length, otherwise it is fixed at the resolved value of @racket[len]. 
+Create class instance that represents a stream format with elements of type @racket[type]. If @racket[len] is an integer,  the stream is fixed at that length, otherwise it can be any length. 
 }
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+stream?]{
+Returns a @tech{stream} of values whose length is @racket[_len] and where each value is @racket[_type].
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[seq sequence?]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+}
+
 }
 
 @defproc[
 (x:stream?
 [x any/c])
 boolean?]{
-Predicate for whether @racket[x] is an object of type @racket[x:stream%].
+Whether @racket[x] is an object of type @racket[x:stream%].
 }
 
 @defproc[
@@ -591,6 +698,66 @@ Generate an instance of @racket[x:stream%] (or a subclass of @racket[x:stream%])
 @subsection{Vectors}
 
 @defmodule[xenomorph/vector]
+
+@defclass[x:vector% x:base% ()]{
+Base class for vector formats. Use @racket[x:vector] to conveniently instantiate new vector formats.
+
+@defconstructor[
+([type xenomorphic?]
+[len length-resolvable?]
+[count-bytes? boolean?])]{
+Create class instance that represents a vector format with elements of type @racket[type]. If @racket[len] is an integer,  the vector is fixed at that length, otherwise it can be any length. 
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+vector?]{
+Returns a @tech{vector} of values whose length is @racket[_len] and where each value is @racket[_type].
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[seq sequence?]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+}
+
+}
+
+@defproc[
+(x:vector?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:vector%].
+}
+
+@defproc[
+(x:vector
+[type-arg (or/c xenomorphic? #false) #false]
+[len-arg (or/c length-resolvable? #false) #false]
+[#:type type-kw (or/c xenomorphic? #false) #false]
+[#:length len-kw (or/c length-resolvable? #false) #false]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:vector%)) x:vector%]
+)
+x:vector?]{
+Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%]) with certain optional attributes.
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-kw] takes precedence) determines the type of the elements in the list.
+
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
 
 
 @subsection{Structs}

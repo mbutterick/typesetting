@@ -1,5 +1,10 @@
 #lang racket/base
-(require racket/class racket/match "base.rkt" "util.rkt" "number.rkt")
+(require racket/class
+         racket/match
+         racket/contract
+         "base.rkt"
+         "util.rkt"
+         "number.rkt")
 (provide (all-defined-out))
 
 #|
@@ -28,6 +33,9 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 (define (bytes-left-in-port? port)
   (not (eof-object? (peek-byte port))))
 
+(define (supported-encoding? x)
+  (and (symbol? x) (memq x supported-encodings)))
+
 (define x:string%
   (class x:base%
     (super-new)
@@ -35,8 +43,8 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
 
     (unless (length-resolvable? @len)
       (raise-argument-error 'xstring "length-resolvable?" @len))
-    (unless (or (procedure? @encoding) (memq @encoding supported-encodings))
-      (raise-argument-error 'xstring (format "procedure or member of ~v" supported-encodings) @encoding))
+    (unless (or (procedure? @encoding) (supported-encoding? @encoding))
+      (raise-argument-error 'x:string (format "procedure or member of ~v" supported-encodings) @encoding))
 
     (define/augment (x:decode port parent)
       (define len (or (resolve-length @len port parent) (count-nonzero-chars port)))
@@ -80,12 +88,33 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
         [else (resolve-length @len #f parent)]))))
 
 (define supported-encodings '(ascii utf8))
-(define (x:string [len-arg #f] [enc-arg #f]
+
+(define (x:string? x) (is-a? x x:string%))
+
+(define/contract (x:string
+                  [len-arg #f]
+                  [enc-arg #f]
                   #:length [len-kwarg #f]
                   #:encoding [enc-kwarg #f]
                   #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f]
                   #:base-class [base-class x:string%])
+  (()
+   ((or/c length-resolvable? #false)
+    (or/c supported-encoding? #false)
+    #:length (or/c length-resolvable? #false)
+    #:encoding (or/c supported-encoding? #false)
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:string%)))
+   . ->* .
+   x:string?)
   (define len (or len-arg len-kwarg))
+  (unless (length-resolvable? len)
+    (raise-argument-error 'x:string "resolvable length" len))
   (define encoding (or enc-arg enc-kwarg 'ascii))
-  (new (generate-subclass base-class pre-proc post-proc) [len len] [encoding encoding]))
+  (unless (supported-encoding? encoding)
+    (raise-argument-error 'x:string "valid encoding value" encoding))
+  (new (generate-subclass base-class pre-proc post-proc)
+       [len len]
+       [encoding encoding]))
