@@ -442,7 +442,6 @@ Base class for fixed-point number formats. Use @racket[x:fixed] to conveniently 
 Create class instance that represents a fixed-point number format @racket[size] bytes long, either @racket[signed?] or not, with @racket[endian] byte ordering and @racket[fracbits] of precision.
 }
 
-
 }
 
 @defproc[
@@ -763,6 +762,63 @@ Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%])
 @subsection{Structs}
 
 @defmodule[xenomorph/struct]
+
+
+@defclass[x:struct% x:base% ()]{
+Base class for struct formats. Use @racket[x:struct] to conveniently instantiate new struct formats.
+
+@defconstructor[
+([fields dict?])]{
+Create class instance that represents a struct format with @racket[fields] as a dictionary holding the key–value pairs that define the struct format. Each key must be a @racket[symbol?] and each value must be a @racket[xenomorphic?] type.
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+hash-eq?]{
+Returns a @tech{hash-eq?} whose keys are the same as the keys in @racket[_fields].
+
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[kvs dict?]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take the keys and values in @racket[kvs] and encode them as a @tech{byte string}.
+}
+
+}
+
+@defproc[
+(x:struct?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:struct%].
+}
+
+@defproc[
+(x:struct
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:struct%)) x:struct%]
+[dict (listof (pairof symbol? xenomorphic?))] ...
+[key symbol?] [val-type xenomorphic?] ... ...
+)
+x:struct?]{
+Generate an instance of @racket[x:struct%] (or a subclass of @racket[x:struct%]) with certain optional attributes.
+
+The rest arguments determine the keys and value types of the struct. These arguments can either be alternating keys and value-type arguments (similar to the calling pattern for @racket[hasheq]) or @tech{association lists}.
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
 
 
 @subsection{Versioned structs}

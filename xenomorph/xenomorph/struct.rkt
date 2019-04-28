@@ -4,6 +4,7 @@
          racket/sequence
          racket/match
          racket/list
+         racket/contract
          "base.rkt"
          "number.rkt"
          sugar/unstable/dict)
@@ -83,10 +84,17 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
 
 (define (x:struct? x) (is-a? x x:struct%))
 
-(define (x:struct #:pre-encode [pre-proc #f]
-                  #:post-decode [post-proc #f]
-                  #:base-class [base-class x:struct%]
-                  . dicts)
+(define/contract (x:struct #:pre-encode [pre-proc #f]
+                           #:post-decode [post-proc #f]
+                           #:base-class [base-class x:struct%]
+                           . dicts)
+  (()
+   (#:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:struct%)))
+    #:rest (listof any/c)
+   . ->* .
+   x:struct?)
   (define args (flatten dicts))
   (unless (even? (length args))
     (raise-argument-error 'x:struct "equal number of keys and values" dicts))
