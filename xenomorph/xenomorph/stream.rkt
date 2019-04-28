@@ -1,5 +1,6 @@
 #lang racket/base
 (require racket/class
+         racket/contract
          "base.rkt" "util.rkt" "number.rkt" "list.rkt" racket/stream sugar/unstable/dict)
 (provide (all-defined-out))
 
@@ -38,14 +39,32 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
     (define/override (x:size [val #f] [parent #f])
       (super x:size (if (stream? val) (stream->list val) val) parent))))
 
-(define (x:stream [type-arg #f] [len-arg #f]
-                      #:type [type-kwarg #f]
-                      #:length [len-kwarg #f]
-                      #:pre-encode [pre-proc #f]
-                      #:post-decode [post-proc #f]
-                      #:base-class [base-class x:stream%])
+(define (x:stream? x) (is-a? x x:stream%))
+
+(define/contract (x:stream
+                  [type-arg #f]
+                  [len-arg #f]
+                  #:type [type-kwarg #f]
+                  #:length [len-kwarg #f]
+                  #:pre-encode [pre-proc #f]
+                  #:post-decode [post-proc #f]
+                  #:base-class [base-class x:stream%])
+  (()
+   ((or/c xenomorphic? #false)
+    (or/c length-resolvable? #false)
+    #:type (or/c xenomorphic? #false)
+    #:length (or/c length-resolvable? #false)
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:stream%)))
+   . ->* .
+   x:stream?)
   (define type (or type-arg type-kwarg))
+    (unless (xenomorphic? type)
+    (raise-argument-error x:stream "xenomorphic type" type))
   (define len (or len-arg len-kwarg))
+   (unless (length-resolvable? len)
+    (raise-argument-error x:stream "resolvable length" len))
   (new (generate-subclass base-class pre-proc post-proc) [type type]
        [len len]
        [count-bytes? #false]))

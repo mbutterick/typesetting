@@ -98,7 +98,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (test-case 
  "vector: encode using array length"
- (check-equal? (encode (x:vector #:type uint8 #:length 10) '#(1 2 3 4) #f) (bytes 1 2 3 4)))
+ (check-equal? (encode (x:vector #:type uint8 #:length 4) '#(1 2 3 4) #f) (bytes 1 2 3 4)))
 
 (test-case 
  "vector: encode with pre-encode"

@@ -3,15 +3,19 @@
 (provide (all-defined-out))
 
 (define (length-resolvable? x)
-  (or (not x) (symbol? x) (xenomorphic? x) (procedure? x) (exact-nonnegative-integer? x)))
+  (or (not x)
+      (exact-nonnegative-integer? x)
+      (procedure? x)
+      (symbol? x)
+      (x:int? x)))
 
-(define (resolve-length x port [parent #f])
+(define (resolve-length x input-port [parent #f])
   (match x
     [#false #false]
     [(? exact-nonnegative-integer?) x]
     [(? procedure? proc) (proc parent)]
     [(? symbol? key) #:when parent (dict-ref parent key)]
-    [(? x:int?) #:when port (decode x port)]
+    [(? x:int?) #:when input-port (decode x input-port)]
     [_ (raise-argument-error 'resolve-length "fixed-size argument" x)]))
 
 (define (pretty-print-bytes bstr
