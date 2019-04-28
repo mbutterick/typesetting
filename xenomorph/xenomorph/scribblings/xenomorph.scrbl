@@ -301,7 +301,7 @@ Create class instance that represents a binary number format @racket[size] bytes
 @subsubsection{Integers}
 
 @defclass[x:int% x:number% ()]{
-Base class for integer objects. Use @racket[x:int] to conveniently instantiate new integer objects.
+Base class for integer formats. Use @racket[x:int] to conveniently instantiate new integer formats.
 }
 
 @defproc[
@@ -380,7 +380,7 @@ Little-endian versions of the common integer types. The @racket[u] prefix indica
 @subsubsection{Floats}
 
 @defclass[x:float% x:number% ()]{
-Base class for floating-point number objects. By convention, all floats are signed. Use @racket[x:float] to conveniently instantiate new floating-point number objects.
+Base class for floating-point number formats. By convention, all floats are signed. Use @racket[x:float] to conveniently instantiate new floating-point number formats.
 }
 
 @defproc[
@@ -432,7 +432,7 @@ The common 64-bit floating-point types. They differ in byte-ordering convention:
 
 
 @defclass[x:fixed% x:int% ()]{
-Base class for fixed-point number objects. Use @racket[x:fixed] to conveniently instantiate new fixed-point number objects.
+Base class for fixed-point number formats. Use @racket[x:fixed] to conveniently instantiate new fixed-point number formats.
 
 @defconstructor[
 ([size exact-positive-integer?]
@@ -498,51 +498,148 @@ The common 32-bit fixed-point number types with 4 bits of precision. They differ
 
 @defmodule[xenomorph/string]
 
+
 @subsection{Lists}
 
 @defmodule[xenomorph/list]
+
+@defclass[x:list% x:base% ()]{
+Base class for list formats. Use @racket[x:list] to conveniently instantiate new list formats.
+
+@defconstructor[
+([type xenomorphic?]
+[len length-resolvable?]
+[count-bytes? boolean?])]{
+Create class instance that represents a list format with elements of type @racket[type]. If @racket[len] is @racket[#false], the list can be any length, otherwise it is fixed at the resolved value of @racket[len]. 
+}
+}
+
+@defproc[
+(x:list?
+[x any/c])
+boolean?]{
+Predicate for whether @racket[x] is an object of type @racket[x:list%].
+}
+
+@defproc[
+(x:list
+[type-arg (or/c xenomorphic? #false) #false]
+[len-arg (or/c length-resolvable? #false) #false]
+[#:type type-kw (or/c xenomorphic? #false) #false]
+[#:length len-kw (or/c length-resolvable? #false) #false]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:list%)) x:list%]
+)
+x:list?]{
+Generate an instance of @racket[x:list%] (or a subclass of @racket[x:list%]) with certain optional attributes.
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-kw] takes precedence) determines the type of the elements in the list.
+
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
 
 @subsection{Streams}
 
 @defmodule[xenomorph/stream]
 
+@defclass[x:stream% x:base% ()]{
+Base class for list formats. Use @racket[x:stream] to conveniently instantiate new list formats.
+
+@defconstructor[
+([type xenomorphic?]
+[len length-resolvable?]
+[count-bytes? boolean?])]{
+Create class instance that represents a list format with elements of type @racket[type]. If @racket[len] is @racket[#false], the list can be any length, otherwise it is fixed at the resolved value of @racket[len]. 
+}
+}
+
+@defproc[
+(x:stream?
+[x any/c])
+boolean?]{
+Predicate for whether @racket[x] is an object of type @racket[x:stream%].
+}
+
+@defproc[
+(x:stream
+[type-arg (or/c xenomorphic? #false) #false]
+[len-arg (or/c length-resolvable? #false) #false]
+[#:type type-kw (or/c xenomorphic? #false) #false]
+[#:length len-kw (or/c length-resolvable? #false) #false]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:stream%)) x:stream%]
+)
+x:stream?]{
+Generate an instance of @racket[x:stream%] (or a subclass of @racket[x:stream%]) with certain optional attributes.
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-kw] takes precedence) determines the type of the elements in the list.
+
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
+@subsection{Vectors}
+
+@defmodule[xenomorph/vector]
+
+
 @subsection{Structs}
 
 @defmodule[xenomorph/struct]
+
 
 @subsection{Versioned structs}
 
 @defmodule[xenomorph/versioned-struct]
 
+
 @subsection{Pointers}
 
 @defmodule[xenomorph/pointer]
+
 
 @subsection{Bitfields}
 
 @defmodule[xenomorph/bitfield]
 
+
 @subsection{Enumerations}
 
 @defmodule[xenomorph/enum]
 
+
 @subsection{Optional}
 
 @defmodule[xenomorph/optional]
+
 
 @subsection{Reserved}
 
 @defmodule[xenomorph/reserved]
 
 
+@subsection{Utilities}
+
+@defmodule[xenomorph/util]
 
 @defproc[
-(array?
-[type any/c])
-void?]{
-TK
-}
+(length-resolvable?
+[x any/c])
+boolean?]{
+Whether @racket[x] is something that can be used as a length argument with @racket[xenomorphic?] objects that have length. For instance, an @racket[x:list] or @racket[x:stream].
 
+The following values are deemed to be resolvable: any @racket[exact-nonnegative-integer?], any @racket[procedure?] that returns a @racket[exact-nonnegative-integer?], or an @racket[x:int?]. 
+}
 
 @section{License & source code}
 
