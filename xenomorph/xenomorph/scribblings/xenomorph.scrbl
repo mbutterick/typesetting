@@ -291,8 +291,9 @@ Use this value carefully, however, as most binary formats are defined using one 
   
 @defconstructor[
 ([size exact-positive-integer?]
+[signed? boolean?]
 [endian endian-value?])]{
-Create class instance that represents a binary number format @racket[size] bytes long with @racket[endian] byte ordering. The endian arugment can be @racket[system-endian].
+Create class instance that represents a binary number format @racket[size] bytes long, either @racket[signed?] or not, with @racket[endian] byte ordering. The endian arugment can be @racket[system-endian].
 }
 
 }
@@ -427,7 +428,70 @@ The common 64-bit floating-point types. They differ in byte-ordering convention:
 }
 
 
-@subsubsection{Fixed-points}
+@subsubsection{Fixed-point numbers}
+
+
+@defclass[x:fixed% x:int% ()]{
+Base class for fixed-point number objects. Use @racket[x:fixed] to conveniently instantiate new fixed-point number objects.
+
+@defconstructor[
+([size exact-positive-integer?]
+[signed? boolean?]
+[endian endian-value?]
+[fracbits exact-positive-integer?])]{
+Create class instance that represents a fixed-point number format @racket[size] bytes long, either @racket[signed?] or not, with @racket[endian] byte ordering and @racket[fracbits] of precision.
+}
+
+
+}
+
+@defproc[
+(x:fixed?
+[x any/c])
+boolean?]{
+Predicate for whether @racket[x] is an object of type @racket[x:fixed%].
+}
+
+@defproc[
+(x:fixed
+[size-arg (or/c exact-positive-integer? #false) #false]
+[#:size size-kw exact-positive-integer? 2]
+[#:endian endian endian-value? system-endian]
+[#:fracbits fracbits (or/c exact-positive-integer? #false) #false]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:fixed%)) x:fixed%]
+)
+x:int?]{
+Generate an instance of @racket[x:fixed%] (or a subclass of @racket[x:fixed%]) with certain optional attributes.
+
+@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-kw] takes precedence) controls the encoded size.
+
+@racket[endian] controls the byte-ordering convention.
+
+@racket[fracbits] controls the number of bits of precision. If no value or @racket[#false] is passed, defaults to @racket[(/ (* _size 8) 2)].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
+@deftogether[
+(@defthing[fixed16 x:fixed?]
+@defthing[fixed16be x:fixed?]
+@defthing[fixed16le x:fixed?])
+]{
+The common 16-bit fixed-point number types with 2 bits of precision. They differ in byte-ordering convention: @racket[fixed16be] uses big endian, @racket[fixed16le] uses little endian, @racket[fixed16] uses @racket[system-endian].
+}
+
+@deftogether[
+(@defthing[fixed32 x:fixed?]
+@defthing[fixed32be x:fixed?]
+@defthing[fixed32le x:fixed?])
+]{
+The common 32-bit fixed-point number types with 4 bits of precision. They differ in byte-ordering convention: @racket[fixed32be] uses big endian, @racket[fixed32le] uses little endian, @racket[fixed32] uses @racket[system-endian].
+}
+
 
 
 @subsection{Strings}
