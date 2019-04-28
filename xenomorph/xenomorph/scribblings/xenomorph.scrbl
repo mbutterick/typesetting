@@ -378,6 +378,55 @@ Little-endian versions of the common integer types. The @racket[u] prefix indica
 
 @subsubsection{Floats}
 
+@defclass[x:float% x:number% ()]{
+Base class for floating-point number objects. By convention, all floats are signed. Use @racket[x:float] to conveniently instantiate new floating-point number objects.
+}
+
+@defproc[
+(x:float?
+[x any/c])
+boolean?]{
+Predicate for whether @racket[x] is an object of type @racket[x:float%].
+}
+
+@defproc[
+(x:float
+[size-arg (or/c exact-positive-integer? #false) #false]
+[#:size size-kw exact-positive-integer? 2]
+[#:endian endian endian-value? system-endian]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:float%)) x:float%]
+)
+x:int?]{
+Generate an instance of @racket[x:float%] (or a subclass of @racket[x:float%]) with certain optional attributes.
+
+@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-kw] takes precedence) controls the encoded size.
+
+@racket[endian] controls the byte-ordering convention.
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
+@deftogether[
+(@defthing[float x:float?]
+@defthing[floatbe x:float?]
+@defthing[floatle x:float?])
+]{
+The common 32-bit floating-point types. They differ in byte-ordering convention: @racket[floatbe] uses big endian, @racket[floatle] uses little endian, @racket[float] uses @racket[system-endian].
+}
+
+@deftogether[
+(@defthing[double x:float?]
+@defthing[doublebe x:float?]
+@defthing[doublele x:float?])
+]{
+The common 64-bit floating-point types. They differ in byte-ordering convention: @racket[doublebe] uses big endian, @racket[doublele] uses little endian, @racket[double] uses @racket[system-endian].
+}
+
+
 @subsubsection{Fixed-points}
 
 

@@ -1,5 +1,5 @@
 #lang debug racket/base
-(require "base.rkt" "int.rkt" "list.rkt" racket/class)
+(require "base.rkt" "int.rkt" "list.rkt" racket/class racket/contract)
 (provide (all-defined-out) (all-from-out "int.rkt"))
 
 #|
@@ -8,6 +8,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
 |#
 
 
+(define (x:float? x) (is-a? x x:float%))
 
 (define x:float%
   (class x:number%
@@ -20,10 +21,22 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (define/augment (x:encode val . _)
       (real->floating-point-bytes val @size (eq? @endian 'be)))))
 
-(define (x:float [size 4] #:endian [endian system-endian]
+(define/contract (x:float [size-arg #f]
+                 #:size [size-kwarg 4]
+                 #:endian [endian system-endian]
                  #:pre-encode [pre-proc #f]
                  #:post-decode [post-proc #f]
                  #:base-class [base-class x:float%])
+  (()
+   ((or/c exact-positive-integer? #false)
+    #:size exact-positive-integer?
+    #:endian endian-value?
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:float?)))
+   . ->* .
+   x:float?)
+  (define size (or size-arg size-kwarg))
   (new (generate-subclass base-class pre-proc post-proc) [size size] [endian endian]))
 
 (define float (x:float 4))
