@@ -324,7 +324,7 @@ Whether @racket[x] is an object of type @racket[x:int%].
 x:int?]{
 Generate an instance of @racket[x:int%] (or a subclass of @racket[x:int%]) with certain optional attributes.
 
-@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-kw] takes precedence) controls the encoded size.
+@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-arg] takes precedence) controls the encoded size.
 
 @racket[signed] controls whether the integer is signed or unsigned.
 
@@ -402,7 +402,7 @@ Whether @racket[x] is an object of type @racket[x:float%].
 x:int?]{
 Generate an instance of @racket[x:float%] (or a subclass of @racket[x:float%]) with certain optional attributes.
 
-@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-kw] takes precedence) controls the encoded size.
+@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-arg] takes precedence) controls the encoded size.
 
 @racket[endian] controls the byte-ordering convention.
 
@@ -464,7 +464,7 @@ Whether @racket[x] is an object of type @racket[x:fixed%].
 x:int?]{
 Generate an instance of @racket[x:fixed%] (or a subclass of @racket[x:fixed%]) with certain optional attributes.
 
-@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-kw] takes precedence) controls the encoded size.
+@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-arg] takes precedence) controls the encoded size.
 
 @racket[endian] controls the byte-ordering convention.
 
@@ -554,9 +554,9 @@ Whether @racket[x] is an object of type @racket[x:string%].
 x:string?]{
 Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%]) with certain optional attributes.
 
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the string. If this argument is an integer, the string is limited to that length. If it's another value, the string has variable length.
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the string. If this argument is an integer, the string is limited to that length. If it's another value, the string has variable length.
 
-@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-kw] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
+@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-arg] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
 
@@ -619,9 +619,9 @@ Whether @racket[x] is an object of type @racket[x:symbol%].
 x:symbol?]{
 Generate an instance of @racket[x:symbol%] (or a subclass of @racket[x:symbol%]) with certain optional attributes.
 
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the symbol. If this argument is an integer, the symbol is limited to that length. If it's another value, the symbol has variable length.
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the symbol. If this argument is an integer, the symbol is limited to that length. If it's another value, the symbol has variable length.
 
-@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-kw] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
+@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-arg] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
 
@@ -684,9 +684,9 @@ Whether @racket[x] is an object of type @racket[x:list%].
 x:list?]{
 Generate an instance of @racket[x:list%] (or a subclass of @racket[x:list%]) with certain optional attributes.
 
-@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-kw] takes precedence) determines the type of the elements in the list.
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) determines the type of the elements in the list.
 
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
 
@@ -749,9 +749,9 @@ Whether @racket[x] is an object of type @racket[x:stream%].
 x:stream?]{
 Generate an instance of @racket[x:stream%] (or a subclass of @racket[x:stream%]) with certain optional attributes.
 
-@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-kw] takes precedence) determines the type of the elements in the list.
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) determines the type of the elements in the list.
 
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
 
@@ -813,9 +813,9 @@ Whether @racket[x] is an object of type @racket[x:vector%].
 x:vector?]{
 Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%]) with certain optional attributes.
 
-@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-kw] takes precedence) determines the type of the elements in the list.
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) determines the type of the elements in the list.
 
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
 
