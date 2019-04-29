@@ -1051,9 +1051,9 @@ Whether @racket[x] is an object of type @racket[x:pointer%].
 @defproc[
 (x:pointer
 [offset-arg (or/c xenomorphic? #false) #false]
-[type-arg (or/c x:int? #false) #false]
+[type-arg (or/c x:int? 'void #false) #false]
 [#:offset-type offset-kw (or/c xenomorphic? #false) uint8]
-[#:type type-kw (or/c xenomorphic? #false) uint32]
+[#:type type-kw (or/c x:int? 'void #false) uint32]
 [#:relative-to pointer-relative-to pointer-relative-value? 'local]
 [#:allow-null allow-null? boolean? #true]
 [#:null null-value any/c 0]
@@ -1067,7 +1067,7 @@ Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%
 
 @racket[offset-arg] or @racket[offset-kw] (whichever is provided, though @racket[offset-arg] takes precedence)  controls the type of the thing being pointed at. Default is @racket[uint8].
 
-@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type of the pointer value itself (which must be @racket[x:int?]). Default is @racket[uint32].
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type of the pointer value itself, which must be either an @racket[x:int?] or the symbol @racket['void] to indicate a void pointer). Default is @racket[uint32].
 
 @racket[pointer-relative-to] controls the style of pointer, which must be one of @racket['(local immediate parent global)]. Default is @racket['local].
 

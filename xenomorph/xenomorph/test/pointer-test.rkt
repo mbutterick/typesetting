@@ -61,25 +61,25 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "pointer: size"
  (let ([parent (mhash x:pointer-size-key 0)])
-   (check-equal? (size (x:pointer) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer #:type uint8) 10 #:parent parent) 1)
    (check-equal? (hash-ref parent x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to immediate pointerSize"
  (let ([parent (mhash x:pointer-size-key 0)])
-   (check-equal? (size (x:pointer #:relative-to 'immediate) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer #:relative-to 'immediate #:type uint8) 10 #:parent parent) 1)
    (check-equal? (hash-ref parent x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to parent pointerSize"
  (let ([parent (mhash x:parent-key (mhash x:pointer-size-key 0))])
-   (check-equal? (size (x:pointer #:relative-to 'parent) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer #:relative-to 'parent #:type uint8) 10 #:parent parent) 1)
    (check-equal? (hash-ref* parent x:parent-key x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to global pointerSize"
  (let ([parent (mhash x:parent-key (mhash x:parent-key (mhash x:parent-key (mhash x:pointer-size-key 0))))])
-   (check-equal? (size (x:pointer #:relative-to 'global) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer #:relative-to 'global #:type uint8) 10 #:parent parent) 1)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointer-size-key) 1)))
 
 (test-case
@@ -115,7 +115,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       x:start-offset-key 0
                       x:pointer-offset-key 1
                       x:pointers-key null))
-   (encode (x:pointer) 10 #:parent parent)
+   (encode (x:pointer #:type uint8) 10 #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
    (check-equal? (hash-ref parent x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
@@ -127,7 +127,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       x:start-offset-key 0
                       x:pointer-offset-key 1
                       x:pointers-key null))
-   (encode (x:pointer #:relative-to 'immediate) 10 #:parent parent)
+   (encode (x:pointer #:relative-to 'immediate #:type uint8) 10 #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
    (check-equal? (hash-ref parent x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
@@ -139,7 +139,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                      x:start-offset-key 3
                                      x:pointer-offset-key 5
                                      x:pointers-key null)))
-   (encode (x:pointer #:relative-to 'parent) 10 #:parent parent)
+   (encode (x:pointer #:relative-to 'parent #:type uint8) 10 #:parent parent)
    (check-equal? (hash-ref* parent x:parent-key x:pointer-offset-key) 6)
    (check-equal? (hash-ref* parent x:parent-key x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
@@ -153,7 +153,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                                    x:start-offset-key 3
                                                    x:pointer-offset-key 5
                                                    x:pointers-key null)))))
-   (encode (x:pointer #:relative-to 'global) 10 #:parent parent)
+   (encode (x:pointer #:relative-to 'global #:type uint8) 10 #:parent parent)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointer-offset-key) 6)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointers-key)
                  (list (x:ptr uint8 10 parent)))

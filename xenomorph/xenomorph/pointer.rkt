@@ -117,7 +117,7 @@ This allows the pointer to be calculated relative to a property on the parent. I
 (define/contract (x:pointer
                   [offset-arg #f]
                   [type-arg #f]
-                   #:offset-type [offset-kwarg #f]
+                   #:offset-type [offset-kwarg uint8]
                    #:type [type-kwarg uint32]
                    #:relative-to [pointer-relative-to 'local]
                    #:lazy [pointer-lazy? #f]
@@ -128,9 +128,13 @@ This allows the pointer to be calculated relative to a property on the parent. I
                    #:base-class [base-class x:pointer%])
   (()
    ((or/c xenomorphic? #false)
-    (or/c x:int? #false)
+    (or/c x:int? 'void #false)
     #:offset-type (or/c xenomorphic? #false)
-    #:type (or/c x:int? #false)
+    #:type (or/c x:int? 'void #false)
+    #:relative-to pointer-relative-value?
+    #:lazy boolean?
+    #:allow-null boolean?
+    #:null any/c
     #:pre-encode (or/c (any/c . -> . any/c) #false)
     #:post-decode (or/c (any/c . -> . any/c) #false)
     #:base-class (λ (c) (subclass? c x:pointer%)))
@@ -138,9 +142,9 @@ This allows the pointer to be calculated relative to a property on the parent. I
    x:pointer?)
   (unless (pointer-relative-value? pointer-relative-to)
     (raise-argument-error 'x:pointer (format "~v" valid-pointer-relatives) pointer-relative-to))
-  (define type-in (or type-arg type-kwarg uint8))
+  (define type-in (or type-arg type-kwarg))
   (new (generate-subclass base-class pre-proc post-proc)
-       [offset-type (or offset-arg offset-kwarg uint8)]
+       [offset-type (or offset-arg offset-kwarg)]
        [type (case type-in [(void) #f][else type-in])]
        [pointer-relative-to pointer-relative-to]
        [pointer-lazy? pointer-lazy?]
