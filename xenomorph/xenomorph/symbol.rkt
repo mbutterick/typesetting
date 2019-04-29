@@ -1,5 +1,10 @@
 #lang racket/base
-(require racket/class "base.rkt" "number.rkt" "string.rkt")
+(require racket/class
+         racket/contract
+         "base.rkt"
+         "number.rkt"
+         "string.rkt"
+         "util.rkt")
 (provide (all-defined-out))
 
 (define x:symbol%
@@ -13,15 +18,35 @@
     
     (define/override (post-decode val) (string->symbol val))))
 
-(define (x:symbol [len-arg #f] [enc-arg #f]
+(define (x:symbol? x) (is-a? x x:symbol%))
+
+(define/contract (x:symbol
+                  [len-arg #f]
+                  [enc-arg #f]
                   #:length [len-kwarg #f]
                   #:encoding [enc-kwarg #f]
                   #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f]
                   #:base-class [base-class x:symbol%])
+  (()
+   ((or/c length-resolvable? #false)
+    (or/c supported-encoding? #false)
+    #:length (or/c length-resolvable? #false)
+    #:encoding (or/c supported-encoding? #false)
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:symbol%)))
+   . ->* .
+   x:symbol?)
   (define len (or len-arg len-kwarg))
+  (unless (length-resolvable? len)
+    (raise-argument-error 'x:symbol "resolvable length" len))
   (define encoding (or enc-arg enc-kwarg 'utf8))
-  (new (generate-subclass base-class pre-proc post-proc) [len len] [encoding encoding]))
+  (unless (supported-encoding? encoding)
+    (raise-argument-error 'x:symbol "valid encoding value" encoding))
+  (new (generate-subclass base-class pre-proc post-proc)
+       [len len]
+       [encoding encoding]))
 
 (module+ test
   (require rackunit "base.rkt")

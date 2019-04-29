@@ -556,13 +556,77 @@ Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%])
 
 @racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the string. If this argument is an integer, the string is limited to that length. If it's another value, the string has variable length.
 
-@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-kw] takes precedence) determines the encoding of the string. See also @racket[supported-encoding?]
+@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-kw] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
 
+@subsection{Symbols}
+
+@defmodule[xenomorph/symbol]
+
+Under the hood, just a wrapper around the @racket[x:string%] class.
+
+@defclass[x:symbol% x:string% ()]{
+Base class for symbol formats. Use @racket[x:symbol] to conveniently instantiate new symbol formats.
+
+@defconstructor[
+([len length-resolvable?]
+[encoding supported-encoding?])]{
+Create class instance that represents a symbol format of length @racket[len]. If @racket[len] is an integer,  the symbol is fixed at that length, otherwise it can be any length.
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+symbol?]{
+Returns a @tech{symbol}.
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[val any/c]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take a @racket[val], converts it to a symbol if needed, and encode it as a @tech{byte string}. If @racket[_len] is a @racket[xenomorphic?] object, the length is encoded at the beginning of the symbol using that object as the encoder.
+}
+
+}
+
+@defproc[
+(x:symbol?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:symbol%].
+}
+
+@defproc[
+(x:symbol
+[len-arg (or/c length-resolvable? #false) #false]
+[enc-arg (or/c supported-encoding? #false) #false]
+[#:length len-kw (or/c length-resolvable? #false) #false]
+[#:encoding enc-kw (or/c supported-encoding? #false) #false]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:symbol%)) x:symbol%]
+)
+x:symbol?]{
+Generate an instance of @racket[x:symbol%] (or a subclass of @racket[x:symbol%]) with certain optional attributes.
+
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-kw] takes precedence) determines the length of the symbol. If this argument is an integer, the symbol is limited to that length. If it's another value, the symbol has variable length.
+
+@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-kw] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
 
 
 @subsection{Lists}
