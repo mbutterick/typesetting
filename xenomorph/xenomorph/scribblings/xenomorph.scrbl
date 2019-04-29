@@ -509,7 +509,7 @@ Base class for string formats. Use @racket[x:string] to conveniently instantiate
 
 @defconstructor[
 ([len length-resolvable?]
-[encoding supported-encoding?])]{
+[encoding (or/c procedure? supported-encoding?)])]{
 Create class instance that represents a string format of length @racket[len]. If @racket[len] is an integer,  the string is fixed at that length, otherwise it can be any length.
 }
 
@@ -544,9 +544,9 @@ Whether @racket[x] is an object of type @racket[x:string%].
 @defproc[
 (x:string
 [len-arg (or/c length-resolvable? #false) #false]
-[enc-arg (or/c supported-encoding? #false) #false]
+[enc-arg (or/c procedure? supported-encoding? #false) #false]
 [#:length len-kw (or/c length-resolvable? #false) #false]
-[#:encoding enc-kw (or/c supported-encoding? #false) #false]
+[#:encoding enc-kw (or/c procedure? supported-encoding? #false) #false]
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:base-class base-class (λ (c) (subclass? c x:string%)) x:string%]
@@ -574,7 +574,7 @@ Base class for symbol formats. Use @racket[x:symbol] to conveniently instantiate
 
 @defconstructor[
 ([len length-resolvable?]
-[encoding supported-encoding?])]{
+[encoding (or/c procedure? supported-encoding?)])]{
 Create class instance that represents a symbol format of length @racket[len]. If @racket[len] is an integer,  the symbol is fixed at that length, otherwise it can be any length.
 }
 
@@ -609,9 +609,9 @@ Whether @racket[x] is an object of type @racket[x:symbol%].
 @defproc[
 (x:symbol
 [len-arg (or/c length-resolvable? #false) #false]
-[enc-arg (or/c supported-encoding? #false) #false]
+[enc-arg (or/c procedure? supported-encoding? #false) #false]
 [#:length len-kw (or/c length-resolvable? #false) #false]
-[#:encoding enc-kw (or/c supported-encoding? #false) #false]
+[#:encoding enc-kw (or/c procedure? supported-encoding? #false) #false]
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:base-class base-class (λ (c) (subclass? c x:symbol%)) x:symbol%]
