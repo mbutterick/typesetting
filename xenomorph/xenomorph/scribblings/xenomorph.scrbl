@@ -21,7 +21,7 @@ OK, just a few of you, in the back. You're free to go.
 As for everyone else: Xenomorph eases the pain of working with binary formats. Instead of laboriously counting bytes —
 
 @itemlist[#:style 'ordered
-@item{You describe a binary format declaratively by using smaller ingredients — e.g., integers, strings, lists, pointers, structs, and perhaps other nested encodings. This is known as a @deftech{xenomorphic object}.}
+@item{You describe a binary format declaratively by using smaller ingredients — e.g., integers, strings, lists, pointers, dicts, and perhaps other nested encodings. This is known as a @deftech{xenomorphic object}.}
 
 @item{This xenomorphic object can then be used as a binary encoder, allowing you to convert Racket values to binary and write them out to a file.}
 
@@ -823,13 +823,13 @@ Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%])
 }
 
 
-@subsection{Structs}
+@subsection{Dicts}
 
-@defmodule[xenomorph/struct]
+@defmodule[xenomorph/dict]
 
 
-@defclass[x:struct% x:base% ()]{
-Base class for struct formats. Use @racket[x:struct] to conveniently instantiate new struct formats.
+@defclass[x:dict% x:base% ()]{
+Base class for struct formats. Use @racket[x:dict] to conveniently instantiate new struct formats.
 
 @defconstructor[
 ([fields dict?])]{
@@ -859,22 +859,22 @@ Take the keys and values in @racket[kvs] and encode them as a @tech{byte string}
 }
 
 @defproc[
-(x:struct?
+(x:dict?
 [x any/c])
 boolean?]{
-Whether @racket[x] is an object of type @racket[x:struct%].
+Whether @racket[x] is an object of type @racket[x:dict%].
 }
 
 @defproc[
-(x:struct
+(x:dict
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
-[#:base-class base-class (λ (c) (subclass? c x:struct%)) x:struct%]
+[#:base-class base-class (λ (c) (subclass? c x:dict%)) x:dict%]
 [dict (listof (pairof symbol? xenomorphic?))] ...
 [key symbol?] [val-type xenomorphic?] ... ...
 )
-x:struct?]{
-Generate an instance of @racket[x:struct%] (or a subclass of @racket[x:struct%]) with certain optional attributes.
+x:dict?]{
+Generate an instance of @racket[x:dict%] (or a subclass of @racket[x:dict%]) with certain optional attributes.
 
 The rest arguments determine the keys and value types of the struct. These arguments can either be alternating keys and value-type arguments (similar to the calling pattern for @racket[hasheq]) or @tech{association lists}.
 
@@ -885,9 +885,9 @@ The rest arguments determine the keys and value types of the struct. These argum
 
 
 
-@subsection{Versioned structs}
+@subsection{Versioned dicts}
 
-@defmodule[xenomorph/versioned-struct]
+@defmodule[xenomorph/versioned-dict]
 
 
 @subsection{Pointers}

@@ -6,6 +6,7 @@
 
 (r+p "bitfield.rkt"
      "bytes.rkt"
+     "dict.rkt"
      "enum.rkt"
      "base.rkt"
      "list.rkt"
@@ -15,8 +16,7 @@
      "reserved.rkt"
      "string.rkt"
      "stream.rkt"
-     "struct.rkt"
      "symbol.rkt"
      "vector.rkt"
-     "versioned-struct.rkt"
+     "versioned-dict.rkt"
      "util.rkt")

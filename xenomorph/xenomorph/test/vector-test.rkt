@@ -3,7 +3,7 @@
          racket/class
          racket/vector
          "../vector.rkt"
-         "../struct.rkt"
+         "../dict.rkt"
          "../number.rkt"
          "../pointer.rkt"
          "../base.rkt"
@@ -22,7 +22,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "vector: decode nested"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (decode (x:vector #:type (x:struct 'foo uint8) #:length 4))
+   (check-equal? (decode (x:vector #:type (x:dict 'foo uint8) #:length 4))
                  (vector (mhasheq 'foo 1)
                        (mhasheq 'foo 2)
                        (mhasheq 'foo 3)

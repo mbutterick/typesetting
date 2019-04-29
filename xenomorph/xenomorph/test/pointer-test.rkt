@@ -5,7 +5,7 @@
          "../base.rkt"
          "../pointer.rkt"
          "../number.rkt"
-         "../struct.rkt"
+         "../dict.rkt"
          "../base.rkt"
          racket/promise
          sugar/unstable/dict)
@@ -54,7 +54,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "pointer: decode should support decoding pointers lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (define res (decode (x:struct 'ptr (x:pointer #:lazy #t))))
+   (define res (decode (x:dict 'ptr (x:pointer #:lazy #t))))
    (check-true (promise? (hash-ref res 'ptr)))
    (check-equal? (force (hash-ref res 'ptr)) 53)))
 

@@ -2,6 +2,7 @@
 
 (require "bitfield-test.rkt"
          "bytes-test.rkt"
+         "dict-test.rkt"
          "enum-test.rkt"
          "list-test.rkt"
          "number-test.rkt"
@@ -11,6 +12,5 @@
          "stream-test.rkt"
          "string-test.rkt"
          "symbol-test.rkt"
-         "struct-test.rkt"
          "vector-test.rkt"
-         "versioned-struct-test.rkt")
+         "versioned-dict-test.rkt")
