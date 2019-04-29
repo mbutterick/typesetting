@@ -177,8 +177,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8)
                                      1 (x:dict 'name (x:string #:length uint8 #:encoding 'utf8)
                                                 'age uint8
-                                                'ptr (x:pointer #:offset-type uint8
-                                                                #:type (x:string uint8)))))])
+                                                'ptr (x:pointer uint8 #:dest-type (x:string uint8)))))])
    (check-equal? (size vstruct (mhasheq 'name "roxyb"
                                         'age 21
                                         x:version-key 1
@@ -243,8 +242,7 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                                 'age uint8)
                                      1 (x:dict 'name (x:string #:length uint8 #:encoding 'utf8)
                                                 'age uint8
-                                                'ptr (x:pointer #:offset-type uint8
-                                                                #:type (x:string uint8)))))]
+                                                'ptr (x:pointer uint8 #:dest-type (x:string uint8)))))]
        [op (open-output-bytes)])
    (encode vstruct (mhasheq x:version-key 1 'name "roxyb" 'age 21 'ptr "hello") op)
 

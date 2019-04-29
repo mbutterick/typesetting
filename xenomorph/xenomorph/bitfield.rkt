@@ -1,5 +1,10 @@
 #lang racket/base
-(require "base.rkt" racket/class racket/dict sugar/unstable/dict)
+(require "base.rkt"
+         "int.rkt"
+         racket/class
+         racket/dict
+         racket/contract
+         sugar/unstable/dict)
 (provide (all-defined-out))
 
 #|
@@ -10,9 +15,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 (define x:bitfield%
   (class x:base%
     (super-new)
-    (init-field [(@type type)][(@flags flags)])
-    (unless (andmap (λ (f) (or (symbol? f) (not f))) @flags)
-      (raise-argument-error '+xbitfield "list of symbols" @flags))
+    (init-field [(@type type)]
+                [(@flags flags)])
 
     (define/augment (x:decode port parent)
       (define val (send @type x:decode port))
@@ -30,16 +34,34 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     
     (define/augment (x:size [val #f] [parent #f])
       (send @type x:size))))
+
+(define (x:bitfield? x) (is-a? x x:bitfield%))
   
-(define (x:bitfield [type-arg #f] [flag-arg #f]
-                    #:type [type-kwarg #f]
-                    #:flags [flag-kwarg #f]
-                    #:pre-encode [pre-proc #f]
-                    #:post-decode [post-proc #f]
-                    #:base-class [base-class x:bitfield%])
+(define/contract (x:bitfield
+                  [type-arg #f]
+                  [flag-arg #f]
+                  #:type [type-kwarg uint8]
+                  #:flags [flag-kwarg null]
+                  #:pre-encode [pre-proc #f]
+                  #:post-decode [post-proc #f]
+                  #:base-class [base-class x:bitfield%])
+  (()
+   ((or/c x:int? #false)
+    (listof (or/c symbol? #false))
+    #:type (or/c x:int? #false)
+    #:flags (listof (or/c symbol? #false))
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:bitfield%)))
+   . ->* .
+   x:bitfield?)
   (define type (or type-arg type-kwarg))
-  (define flags (or flag-arg flag-kwarg null))
-  (new (generate-subclass base-class pre-proc post-proc) [type type] [flags flags]))
+  (define flags (or flag-arg flag-kwarg))
+  (unless (andmap (λ (f) (or (symbol? f) (not f))) flags)
+    (raise-argument-error 'x:bitfield "list of symbols" flags))
+  (new (generate-subclass base-class pre-proc post-proc)
+       [type type]
+       [flags flags]))
 
 (module+ test
   (require rackunit "number.rkt" "base.rkt")

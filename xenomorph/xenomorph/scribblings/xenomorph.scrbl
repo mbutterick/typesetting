@@ -1008,8 +1008,8 @@ Whether @racket[x] can be used as a value for the @racket[_pointer-relative-to] 
 }
 
 @defconstructor[
-([offset-type xenomorphic?]
-[type x:int?]
+([ptr-type x:int?]
+[dest-type (or/c xenomorphic? 'void)]
 [pointer-relative-to pointer-relative-value?]
 [allow-null? boolean?]
 [null-value any/c]
@@ -1050,10 +1050,10 @@ Whether @racket[x] is an object of type @racket[x:pointer%].
 
 @defproc[
 (x:pointer
-[offset-arg (or/c xenomorphic? #false) #false]
-[type-arg (or/c x:int? 'void #false) #false]
-[#:offset-type offset-kw (or/c xenomorphic? #false) uint8]
-[#:type type-kw (or/c x:int? 'void #false) uint32]
+[ptr-type-arg (or/c x:int? #false) #false]
+[dest-type-arg (or/c xenomorphic? 'void #false) #false]
+[#:type ptr-type-kw (or/c x:int? #false) uint32]
+[#:dest-type dest-type-kw (or/c xenomorphic? 'void #false) uint8]
 [#:relative-to pointer-relative-to pointer-relative-value? 'local]
 [#:allow-null allow-null? boolean? #true]
 [#:null null-value any/c 0]
@@ -1065,20 +1065,16 @@ Whether @racket[x] is an object of type @racket[x:pointer%].
 x:pointer?]{
 Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%]) with certain optional attributes.
 
-@racket[offset-arg] or @racket[offset-kw] (whichever is provided, though @racket[offset-arg] takes precedence)  controls the type of the thing being pointed at. Default is @racket[uint8].
+@racket[ptr-dest-type-arg] or @racket[ptr-type-kw] (whichever is provided, though @racket[ptr-dest-type-arg] takes precedence) controls the type of the pointer value itself, which must be an @racket[x:int?]). Default is @racket[uint32].
 
-@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type of the pointer value itself, which must be either an @racket[x:int?] or the symbol @racket['void] to indicate a void pointer). Default is @racket[uint32].
+@racket[dest-type-arg] or @racket[dest-type-kw] (whichever is provided, though @racket[dest-type-arg] takes precedence)  controls the type of the thing being pointed at, which must be a @racket[xenomorphic?] object  or the symbol @racket['void] to indicate a void pointer. Default is @racket[uint8].
+
 
 @racket[pointer-relative-to] controls the style of pointer, which must be one of @racket['(local immediate parent global)]. Default is @racket['local].
 
 @racket[allow-null?] controls whether the pointer can take on null values, and @racket[null-value] controls what that value is. Defaults are @racket[#true] and @racket[0], respectively.
 
 @racket[pointer-lazy?] controls whether the pointer is decoded immediately. If @racket[pointer-lazy?] is @racket[#true], then the decoding of the pointer is wrapped in a @tech{promise} that can later be evaluated with @racket[force]. Default is @racket[#false].
-
-
-
-
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the pointer. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
 
@@ -1090,6 +1086,91 @@ Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%
 @subsection{Bitfields}
 
 @defmodule[xenomorph/bitfield]
+
+A @deftech{bitfield} is a compact encoding for Boolean values, where each bit of an integer indicates @racket[#true] or @racket[#false] (depending on whether its value is @racket[1] or @racket[0]).
+
+@defclass[x:bitfield% x:base% ()]{
+Base class for bitfield formats. Use @racket[x:bitfield] to conveniently instantiate new bitfield formats.
+
+@defproc[
+(bitfield-relative-value?
+[x any/c])
+boolean?]{
+Whether @racket[x] can be used as a value for the @racket[_bitfield-relative-to] field of @racket[x:bitfield%]. Valid choices are @racket['(local immediate parent global)].
+}
+
+@defconstructor[
+([offset-type xenomorphic?]
+[type x:int?]
+[bitfield-relative-to bitfield-relative-value?]
+[allow-null? boolean?]
+[null-value any/c]
+[bitfield-lazy? boolean?])]{
+Create class instance that represents a bitfield format. See @racket[x:bitfield] for a description of the fields.
+
+
+
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bitfield?]{
+Returns a @tech{bitfield} of values whose length is @racket[_len] and where each value is @racket[_type].
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[seq sequence?]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+}
+
+}
+
+@defproc[
+(x:bitfield?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:bitfield%].
+}
+
+@defproc[
+(x:bitfield
+[ptr-type-arg (or/c xenomorphic? #false) #false]
+[type-arg (or/c x:int? 'void #false) #false]
+[#:type ptr-type-kw (or/c xenomorphic? #false) uint8]
+[#:type type-kw (or/c x:int? 'void #false) uint32]
+[#:relative-to bitfield-relative-to bitfield-relative-value? 'local]
+[#:allow-null allow-null? boolean? #true]
+[#:null null-value any/c 0]
+[#:lazy bitfield-lazy? boolean? #false]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:bitfield%)) x:bitfield%]
+)
+x:bitfield?]{
+Generate an instance of @racket[x:bitfield%] (or a subclass of @racket[x:bitfield%]) with certain optional attributes.
+
+@racket[ptr-type-arg] or @racket[ptr-type-kw] (whichever is provided, though @racket[ptr-type-arg] takes precedence)  controls the type of the thing being pointed at. Default is @racket[uint8].
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type of the bitfield value itself, which must be either an @racket[x:int?] or the symbol @racket['void] to indicate a void bitfield). Default is @racket[uint32].
+
+@racket[bitfield-relative-to] controls the style of bitfield, which must be one of @racket['(local immediate parent global)]. Default is @racket['local].
+
+@racket[allow-null?] controls whether the bitfield can take on null values, and @racket[null-value] controls what that value is. Defaults are @racket[#true] and @racket[0], respectively.
+
+@racket[bitfield-lazy?] controls whether the bitfield is decoded immediately. If @racket[bitfield-lazy?] is @racket[#true], then the decoding of the bitfield is wrapped in a @tech{promise} that can later be evaluated with @racket[force]. Default is @racket[#false].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
 
 
 @subsection{Enumerations}

@@ -23,18 +23,18 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "pointer: decode should use local offsets from start of parent by default"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (check-equal? (decode (x:pointer) #:parent (mhash x:start-offset-key 0)) 53)))
+   (check-equal? (decode (x:pointer uint8) #:parent (mhash x:start-offset-key 0)) 53)))
 
 (test-case
  "pointer: decode should support immediate offsets"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (check-equal? (decode (x:pointer #:relative-to 'immediate)) 53)))
+   (check-equal? (decode (x:pointer uint8 #:relative-to 'immediate)) 53)))
 
 (test-case
  "pointer: decode should support offsets relative to the parent"
  (parameterize ([current-input-port (open-input-bytes (bytes 0 0 1 53))])
    (pos (current-input-port) 2)
-   (check-equal? (decode (x:pointer #:relative-to 'parent) #:parent (mhash x:parent-key (mhash x:start-offset-key 2))) 53)))
+   (check-equal? (decode (x:pointer uint8 #:relative-to 'parent) #:parent (mhash x:parent-key (mhash x:start-offset-key 2))) 53)))
 
 (test-case
  "pointer: decode should support global offsets"
@@ -54,32 +54,32 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "pointer: decode should support decoding pointers lazily"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 53))])
-   (define res (decode (x:dict 'ptr (x:pointer #:lazy #t))))
+   (define res (decode (x:dict 'ptr (x:pointer uint8 #:lazy #t))))
    (check-true (promise? (hash-ref res 'ptr)))
    (check-equal? (force (hash-ref res 'ptr)) 53)))
 
 (test-case
  "pointer: size"
  (let ([parent (mhash x:pointer-size-key 0)])
-   (check-equal? (size (x:pointer #:type uint8) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer uint8) 10 #:parent parent) 1)
    (check-equal? (hash-ref parent x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to immediate pointerSize"
  (let ([parent (mhash x:pointer-size-key 0)])
-   (check-equal? (size (x:pointer #:relative-to 'immediate #:type uint8) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer uint8 #:relative-to 'immediate) 10 #:parent parent) 1)
    (check-equal? (hash-ref parent x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to parent pointerSize"
  (let ([parent (mhash x:parent-key (mhash x:pointer-size-key 0))])
-   (check-equal? (size (x:pointer #:relative-to 'parent #:type uint8) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer uint8 #:relative-to 'parent) 10 #:parent parent) 1)
    (check-equal? (hash-ref* parent x:parent-key x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to global pointerSize"
  (let ([parent (mhash x:parent-key (mhash x:parent-key (mhash x:parent-key (mhash x:pointer-size-key 0))))])
-   (check-equal? (size (x:pointer #:relative-to 'global #:type uint8) 10 #:parent parent) 1)
+   (check-equal? (size (x:pointer uint8 #:relative-to 'global) 10 #:parent parent) 1)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointer-size-key) 1)))
 
 (test-case
@@ -95,7 +95,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 
 (test-case
  "pointer: size should return a fixed size without a value"
- (check-equal? (size (x:pointer)) 1))
+ (check-equal? (size (x:pointer uint8)) 1))
 
 (test-case
  "pointer: encode should handle null pointers"
@@ -104,7 +104,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       x:start-offset-key 0
                       x:pointer-offset-key 0
                       x:pointers-key null))
-   (encode (x:pointer) #f #:parent parent)
+   (encode (x:pointer uint8) #f #:parent parent)
    (check-equal? (hash-ref parent x:pointer-size-key) 0)
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
 
@@ -115,7 +115,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       x:start-offset-key 0
                       x:pointer-offset-key 1
                       x:pointers-key null))
-   (encode (x:pointer #:type uint8) 10 #:parent parent)
+   (encode (x:pointer  uint8) 10 #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
    (check-equal? (hash-ref parent x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 1))))
@@ -127,7 +127,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                       x:start-offset-key 0
                       x:pointer-offset-key 1
                       x:pointers-key null))
-   (encode (x:pointer #:relative-to 'immediate #:type uint8) 10 #:parent parent)
+   (encode (x:pointer uint8 #:relative-to 'immediate) 10 #:parent parent)
    (check-equal? (hash-ref parent x:pointer-offset-key) 2)
    (check-equal? (hash-ref parent x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 0))))
@@ -139,7 +139,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                      x:start-offset-key 3
                                      x:pointer-offset-key 5
                                      x:pointers-key null)))
-   (encode (x:pointer #:relative-to 'parent #:type uint8) 10 #:parent parent)
+   (encode (x:pointer uint8 #:relative-to 'parent) 10 #:parent parent)
    (check-equal? (hash-ref* parent x:parent-key x:pointer-offset-key) 6)
    (check-equal? (hash-ref* parent x:parent-key x:pointers-key) (list (x:ptr uint8 10 parent)))
    (check-equal? (get-output-bytes (current-output-port)) (bytes 2))))
@@ -153,7 +153,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
                                                    x:start-offset-key 3
                                                    x:pointer-offset-key 5
                                                    x:pointers-key null)))))
-   (encode (x:pointer #:relative-to 'global #:type uint8) 10 #:parent parent)
+   (encode (x:pointer uint8 #:relative-to 'global) 10 #:parent parent)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointer-offset-key) 6)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointers-key)
                  (list (x:ptr uint8 10 parent)))

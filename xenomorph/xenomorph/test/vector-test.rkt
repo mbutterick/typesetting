@@ -112,6 +112,5 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (test-case 
    "vector: add pointers after array if length is encoded at start"
-   (check-equal? (encode (x:vector #:type (x:pointer #:offset-type uint8
-                                             #:type uint8)
+   (check-equal? (encode (x:vector #:type (x:pointer uint8 #:dest-type uint8)
                                   #:length uint8) '#(1 2 3 4) #f) (bytes 4 5 6 7 8 1 2 3 4)))

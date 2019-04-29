@@ -110,7 +110,6 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
  (check-equal? (encode (x:list #:type uint8 #:length uint8) '(1 2 3 4) #f) (bytes 4 1 2 3 4)))
 
 (test-case 
-   "list: add pointers after array if length is encoded at start"
-   (check-equal? (encode (x:list #:type (x:pointer #:offset-type uint8
-                                             #:type uint8)
-                                  #:length uint8) '(1 2 3 4) #f) (bytes 4 5 6 7 8 1 2 3 4)))
+ "list: add pointers after array if length is encoded at start"
+ (check-equal? (encode (x:list #:type (x:pointer uint8 uint8)
+                               #:length uint8) '(1 2 3 4) #f) (bytes 4 5 6 7 8 1 2 3 4)))

@@ -4,6 +4,7 @@
          racket/dict
          racket/class
          racket/promise
+         racket/match
          racket/contract
          sugar/unstable/dict)
 (provide (all-defined-out))
@@ -32,31 +33,31 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 (define x:pointer%
   (class x:base%
     (super-new)
-    (init-field [(@offset-type offset-type)]
-                [(@type type)]
+    (init-field [(@ptr-val-type ptr-type)]
+                [(@dest-type dest-type)]
                 [(@pointer-relative-to pointer-relative-to)]
                 [(@allow-null? allow-null?)]
                 [(@null-value null-value)]
                 [(@pointer-lazy? pointer-lazy?)])
 
     (define/augride (x:decode port parent)
-      (define offset (send @offset-type x:decode port parent))
+      (define offset (send @ptr-val-type x:decode port parent))
       (cond
         [(and @allow-null? (= offset @null-value)) #false] ; handle null pointers
         [else
          (define relative (+ (case @pointer-relative-to
                                [(local) (hash-ref parent x:start-offset-key)]
-                               [(immediate) (- (pos port) (send @offset-type x:size))]
+                               [(immediate) (- (pos port) (send @ptr-val-type x:size))]
                                [(parent) (hash-ref (hash-ref parent x:parent-key) x:start-offset-key)]
                                [(global) (or (hash-ref (find-top-parent parent) x:start-offset-key) 0)]
                                [else (error 'unknown-pointer-style)])))
          (define ptr (+ offset relative))
          (cond
-           [@type (define (decode-value)
+           [@dest-type (define (decode-value)
                     (define orig-pos (pos port))
                     (pos port ptr)
                     (begin0
-                      (send @type x:decode port parent)
+                      (send @dest-type x:decode port parent)
                       (pos port orig-pos)))
                   (if @pointer-lazy? (delay (decode-value)) (decode-value))]
            [else ptr])]))
@@ -73,15 +74,15 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                               [else (error 'unknown-pointer-style)]))
          (define relative (+ (case @pointer-relative-to
                                [(local parent) (hash-ref new-parent x:start-offset-key)]
-                               [(immediate) (+ (pos port) (send @offset-type x:size val-in parent))]
+                               [(immediate) (+ (pos port) (send @ptr-val-type x:size val-in parent))]
                                [(global) 0])))
-         (send @offset-type x:encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
-         (define-values (type val) (resolve-pointer @type val-in))
+         (send @ptr-val-type x:encode (- (hash-ref new-parent x:pointer-offset-key) relative) port)
+         (define-values (type val) (resolve-pointer @dest-type val-in))
          (hash-update! new-parent x:pointers-key
                        (λ (ptrs) (append ptrs (list (x:ptr type val parent)))))
          (hash-set! new-parent x:pointer-offset-key
                     (+ (hash-ref new-parent x:pointer-offset-key) (send type x:size val parent)))]
-        [else (send @offset-type x:encode @null-value port)]))
+        [else (send @ptr-val-type x:encode @null-value port)]))
 
     (define/augride (x:size [val-in #f] [parent #f])
       (define new-parent (case @pointer-relative-to
@@ -89,12 +90,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
                            [(parent) (hash-ref parent x:parent-key)]
                            [(global) (find-top-parent parent)]
                            [else (error 'unknown-pointer-style)]))
-      (define-values (type val) (resolve-pointer @type val-in))
+      (define-values (type val) (resolve-pointer @dest-type val-in))
       (when (and val new-parent)
         (hash-set! new-parent x:pointer-size-key
                    (and (hash-ref new-parent x:pointer-size-key #f)
                         (+ (hash-ref new-parent x:pointer-size-key) (send type x:size val new-parent)))))
-      (send @offset-type x:size))))
+      (send @ptr-val-type x:size))))
 
 #|
 The arguments here are renamed slightly compared to the original.
@@ -115,10 +116,10 @@ This allows the pointer to be calculated relative to a property on the parent. I
 (define (x:pointer? x) (is-a? x x:pointer%))
 
 (define/contract (x:pointer
-                  [offset-arg #f]
-                  [type-arg #f]
-                   #:offset-type [offset-kwarg uint8]
-                   #:type [type-kwarg uint32]
+                  [ptr-type-arg #f]
+                  [dest-type-arg #f]
+                   #:type [ptr-type-kwarg uint32]
+                   #:dest-type [dest-type-kwarg uint8]
                    #:relative-to [pointer-relative-to 'local]
                    #:lazy [pointer-lazy? #f]
                    #:allow-null [allow-null? #t]
@@ -127,10 +128,11 @@ This allows the pointer to be calculated relative to a property on the parent. I
                    #:post-decode [post-proc #f]
                    #:base-class [base-class x:pointer%])
   (()
-   ((or/c xenomorphic? #false)
-    (or/c x:int? 'void #false)
-    #:offset-type (or/c xenomorphic? #false)
-    #:type (or/c x:int? 'void #false)
+   (
+    (or/c x:int?  #false)
+    (or/c xenomorphic? 'void  #false)
+    #:type (or/c x:int? #false)
+    #:dest-type (or/c xenomorphic? 'void #false)
     #:relative-to pointer-relative-value?
     #:lazy boolean?
     #:allow-null boolean?
@@ -142,10 +144,11 @@ This allows the pointer to be calculated relative to a property on the parent. I
    x:pointer?)
   (unless (pointer-relative-value? pointer-relative-to)
     (raise-argument-error 'x:pointer (format "~v" valid-pointer-relatives) pointer-relative-to))
-  (define type-in (or type-arg type-kwarg))
   (new (generate-subclass base-class pre-proc post-proc)
-       [offset-type (or offset-arg offset-kwarg)]
-       [type (case type-in [(void) #f][else type-in])]
+       [ptr-type (or ptr-type-arg ptr-type-kwarg)]
+       [dest-type (match (or dest-type-arg dest-type-kwarg)
+                   ['void #false]
+                   [type-in type-in])]
        [pointer-relative-to pointer-relative-to]
        [pointer-lazy? pointer-lazy?]
        [allow-null? allow-null?]
