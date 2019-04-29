@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@(require scribble/eval (for-label racket/base racket/class racket/file racket/dict xenomorph))
+@(require scribble/eval (for-label racket/base racket/class racket/file racket/dict racket/promise xenomorph))
 
 @(define my-eval (make-base-eval))
 @(my-eval `(require xenomorph))
@@ -497,6 +497,8 @@ The common 32-bit fixed-point number types with 4 bits of precision. They differ
 
 @defmodule[xenomorph/string]
 
+Good old strings. 
+
 @defproc[
 (supported-encoding?
 [x any/c])
@@ -633,6 +635,10 @@ Generate an instance of @racket[x:symbol%] (or a subclass of @racket[x:symbol%])
 
 @defmodule[xenomorph/list]
 
+Lists in Xenomorph have a @emph{type} and maybe a @emph{length}. Every element in the list must have the same type. The list can have a specific length, but it doesn't need to (in which case the length is encoded as part of the data).
+
+If you want to store heterogeneous item types in a single Xenomorph list, you can wrap them in @secref{Pointers} so they have a uniform type.
+
 @defclass[x:list% x:base% ()]{
 Base class for list formats. Use @racket[x:list] to conveniently instantiate new list formats.
 
@@ -698,7 +704,11 @@ Generate an instance of @racket[x:list%] (or a subclass of @racket[x:list%]) wit
 
 @defmodule[xenomorph/stream]
 
-@defclass[x:stream% x:base% ()]{
+Under the hood, just a wrapper around the @racket[x:list%] class that produces a stream rather than a list. 
+
+The distinguishing feature of a @tech{stream} is that the evaluation is lazy: elements are only decoded as they are requested (and then they are cached for subsequent use). Therefore, a Xenomorph stream is a good choice when you don't want to incur the costs of decoding every element immediately (as you will when you use @secref{Lists}). 
+
+@defclass[x:stream% x:list% ()]{
 Base class for stream formats. Use @racket[x:stream] to conveniently instantiate new stream formats.
 
 @defconstructor[
@@ -762,7 +772,10 @@ Generate an instance of @racket[x:stream%] (or a subclass of @racket[x:stream%])
 
 @defmodule[xenomorph/vector]
 
-@defclass[x:vector% x:base% ()]{
+Under the hood, just a wrapper around the @racket[x:list%] class that decodes to a vector rather than a list.
+
+
+@defclass[x:vector% x:list% ()]{
 Base class for vector formats. Use @racket[x:vector] to conveniently instantiate new vector formats.
 
 @defconstructor[
@@ -826,6 +839,8 @@ Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%])
 @subsection{Dicts}
 
 @defmodule[xenomorph/dict]
+
+A @deftech{dict} is a store of keys and values. The analogy to a Racket @racket[dict?] is intentional, but in Xenomorph a dict must also be @emph{ordered}, because a binary encoding doesn't make sense if it happens in a different order every time. The more precise analogy would be to an @tech{association list} — a thing that has both dict-like and list-like qualities — but this would be a laborious name. 
 
 @defclass[x:dict% x:base% ()]{
 Base class for dict formats. Use @racket[x:dict] to conveniently instantiate new dict formats.
@@ -967,6 +982,109 @@ Generate an instance of @racket[x:versioned-dict%] (or a subclass of @racket[x:v
 @subsection{Pointers}
 
 @defmodule[xenomorph/pointer]
+
+A pointer can be thought of as a meta-object that can wrap any of the other binary formats here. It doesn't change how they work: they still take the same inputs (on @racket[encode]) and produce the same values (on @racket[decode]).
+
+What it does change is the underlying housekeeping, by creating a layer of indirection around the data.
+
+On @racket[encode], instead of storing the raw data at a certain point in the byte stream, it creates a reference — that is, a @deftech{pointer} — to that data at another location, and then puts the data at that location. 
+
+On @racket[decode], the process is reversed: the pointer is dereferenced to discover the true location of the data, the data is read from that location, and then the decode proceeds as usual.
+
+Under the hood, this housekeeping is fiddly and annoying. But good news! It's already been done. Please do something worthwhile with the hours of your life that have been returned to you.
+
+Pointers can be useful for making data types of different sizes behave as if they were the same size. For instance, @secref{Lists} require all elements to have the same encoded size. What if you want to put different data types in the list? Wrap each item in a pointer, and you can make a list of pointers (because they have consistent size) that reference different kinds of data.
+
+
+
+@defclass[x:pointer% x:base% ()]{
+Base class for pointer formats. Use @racket[x:pointer] to conveniently instantiate new pointer formats.
+
+@defproc[
+(pointer-relative-value?
+[x any/c])
+boolean?]{
+Whether @racket[x] can be used as a value for the @racket[_pointer-relative-to] field of @racket[x:pointer%]. Valid choices are @racket['(local immediate parent global)].
+}
+
+@defconstructor[
+([offset-type xenomorphic?]
+[type x:int?]
+[pointer-relative-to pointer-relative-value?]
+[allow-null? boolean?]
+[null-value any/c]
+[pointer-lazy? boolean?])]{
+Create class instance that represents a pointer format. See @racket[x:pointer] for a description of the fields.
+
+
+
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+pointer?]{
+Returns a @tech{pointer} of values whose length is @racket[_len] and where each value is @racket[_type].
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[seq sequence?]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+}
+
+}
+
+@defproc[
+(x:pointer?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:pointer%].
+}
+
+@defproc[
+(x:pointer
+[offset-arg (or/c xenomorphic? #false) #false]
+[type-arg (or/c x:int? #false) #false]
+[#:offset-type offset-kw (or/c xenomorphic? #false) uint8]
+[#:type type-kw (or/c xenomorphic? #false) uint32]
+[#:relative-to pointer-relative-to pointer-relative-value? 'local]
+[#:allow-null allow-null? boolean? #true]
+[#:null null-value any/c 0]
+[#:lazy pointer-lazy? boolean? #false]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:pointer%)) x:pointer%]
+)
+x:pointer?]{
+Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%]) with certain optional attributes.
+
+@racket[offset-arg] or @racket[offset-kw] (whichever is provided, though @racket[offset-arg] takes precedence)  controls the type of the thing being pointed at. Default is @racket[uint8].
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type of the pointer value itself (which must be @racket[x:int?]). Default is @racket[uint32].
+
+@racket[pointer-relative-to] controls the style of pointer, which must be one of @racket['(local immediate parent global)]. Default is @racket['local].
+
+@racket[allow-null?] controls whether the pointer can take on null values, and @racket[null-value] controls what that value is. Defaults are @racket[#true] and @racket[0], respectively.
+
+@racket[pointer-lazy?] controls whether the pointer is decoded immediately. If @racket[pointer-lazy?] is @racket[#true], then the decoding of the pointer is wrapped in a @tech{promise} that can later be evaluated with @racket[force]. Default is @racket[#false].
+
+
+
+
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the pointer. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
 
 
 @subsection{Bitfields}

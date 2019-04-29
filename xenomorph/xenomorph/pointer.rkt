@@ -4,6 +4,7 @@
          racket/dict
          racket/class
          racket/promise
+         racket/contract
          sugar/unstable/dict)
 (provide (all-defined-out))
 
@@ -11,6 +12,11 @@
 approximates
 https://github.com/mbutterick/restructure/blob/master/src/Pointer.coffee
 |#
+
+(define valid-pointer-relatives '(local immediate parent global))
+
+(define (pointer-relative-value? x)
+  (and (symbol? x) (memq x valid-pointer-relatives)))
 
 (define (find-top-parent parent)
   (cond
@@ -106,9 +112,13 @@ relativeTo => [not supported]
 This allows the pointer to be calculated relative to a property on the parent. I saw no use for this, so I dropped it.
 |#
 
-(define (x:pointer [offset-arg #f] [type-arg #f]
+(define (x:pointer? x) (is-a? x x:pointer%))
+
+(define/contract (x:pointer
+                  [offset-arg #f]
+                  [type-arg #f]
                    #:offset-type [offset-kwarg #f]
-                   #:type [type-kwarg #f]
+                   #:type [type-kwarg uint32]
                    #:relative-to [pointer-relative-to 'local]
                    #:lazy [pointer-lazy? #f]
                    #:allow-null [allow-null? #t]
@@ -116,9 +126,18 @@ This allows the pointer to be calculated relative to a property on the parent. I
                    #:pre-encode [pre-proc #f]
                    #:post-decode [post-proc #f]
                    #:base-class [base-class x:pointer%])
-  (define valid-pointer-relatives '(local immediate parent global))
-  (unless (memq pointer-relative-to valid-pointer-relatives)
-    (raise-argument-error '+xpointer (format "~v" valid-pointer-relatives) pointer-relative-to))
+  (()
+   ((or/c xenomorphic? #false)
+    (or/c x:int? #false)
+    #:offset-type (or/c xenomorphic? #false)
+    #:type (or/c x:int? #false)
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:pointer%)))
+   . ->* .
+   x:pointer?)
+  (unless (pointer-relative-value? pointer-relative-to)
+    (raise-argument-error 'x:pointer (format "~v" valid-pointer-relatives) pointer-relative-to))
   (define type-in (or type-arg type-kwarg uint8))
   (new (generate-subclass base-class pre-proc post-proc)
        [offset-type (or offset-arg offset-kwarg uint8)]
