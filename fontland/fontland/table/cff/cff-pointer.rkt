@@ -11,7 +11,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
 (define (CFFPointer type
                     #:relative-to [relative-to 'global]
                     #:lazy [lazy #false])
-  (x:pointer #:type type
+  (x:pointer #:dest-type type
              #:base-class CFFPointer%
              #:relative-to relative-to
              #:lazy lazy))
@@ -20,10 +20,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
   (class x:pointer%
     (super-new)
 
-    (inherit-field type offset-type)
+    (inherit-field ptr-type)
     
     (define/override (x:decode stream parent operands)
-      (set! offset-type (make-object
+      (set! ptr-type (make-object
                             (class x:base%
                               (super-new)
                               (define/augment (x:decode . args) (first operands)))))
@@ -33,7 +33,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
       (cond
         [(not stream)
          ;; compute the size (so ctx.pointerSize is correct)
-         (set! offset-type (make-object
+         (set! ptr-type (make-object
                                (class x:base%
                                  (super-new)
                                  (define/augment (x:size . args) 0))))
@@ -41,7 +41,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFPointer.js
          (list (Ptr 0))]
         [else
          (define ptr #false)
-         (set! offset-type (make-object
+         (set! ptr-type (make-object
                                (class x:base%
                                  (super-new)
                                  (define/augment (x:encode val stream . _) (set! ptr val)))))

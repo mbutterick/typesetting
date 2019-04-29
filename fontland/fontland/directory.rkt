@@ -14,8 +14,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
 (define table-entry (x:struct
                     'tag (x:symbol #:length 4)
                     'checkSum uint32be
-                    'offset (x:pointer #:offset-type uint32be
-                                       #:type 'void
+                    'offset (x:pointer #:type uint32be
+                                       #:dest-type 'void
                                        #:relative-to 'global)
                     'length uint32be))
 
