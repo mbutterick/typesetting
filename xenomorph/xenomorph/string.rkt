@@ -95,7 +95,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                   [len-arg #f]
                   [enc-arg #f]
                   #:length [len-kwarg #f]
-                  #:encoding [enc-kwarg #f]
+                  #:encoding [enc-kwarg 'utf8]
                   #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f]
                   #:base-class [base-class x:string%])
@@ -112,7 +112,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
   (define len (or len-arg len-kwarg))
   (unless (length-resolvable? len)
     (raise-argument-error 'x:string "resolvable length" len))
-  (define encoding (or enc-arg enc-kwarg 'ascii))
+  (define encoding (or enc-arg enc-kwarg))
   (unless (or (supported-encoding? encoding) (procedure? encoding))
     (raise-argument-error 'x:string "valid encoding value" encoding))
   (new (generate-subclass base-class pre-proc post-proc)
