@@ -1065,7 +1065,7 @@ Whether @racket[x] is an object of type @racket[x:pointer%].
 x:pointer?]{
 Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%]) with certain optional attributes.
 
-@racket[ptr-type-arg] or @racket[ptr-type-kw] (whichever is provided, though @racket[ptr-type-arg] takes precedence) controls the type of the pointer value itself, which must be an @racket[x:int?]). Default is @racket[uint32].
+@racket[ptr-type-arg] or @racket[ptr-type-kw] (whichever is provided, though @racket[ptr-type-arg] takes precedence) controls the type of the pointer value itself, which must be an @racket[x:int?]. Default is @racket[uint32].
 
 @racket[dest-type-arg] or @racket[dest-type-kw] (whichever is provided, though @racket[dest-type-arg] takes precedence)  controls the type of the thing being pointed at, which must be a @racket[xenomorphic?] object  or the symbol @racket['void] to indicate a void pointer. Default is @racket[uint8].
 
