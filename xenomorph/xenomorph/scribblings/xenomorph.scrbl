@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@(require scribble/eval (for-label racket/base racket/class racket/file xenomorph))
+@(require scribble/eval (for-label racket/base racket/class racket/file racket/dict xenomorph))
 
 @(define my-eval (make-base-eval))
 @(my-eval `(require xenomorph))
@@ -456,7 +456,7 @@ Whether @racket[x] is an object of type @racket[x:fixed%].
 [size-arg (or/c exact-positive-integer? #false) #false]
 [#:size size-kw exact-positive-integer? 2]
 [#:endian endian endian-value? system-endian]
-[#:fracbits fracbits (or/c exact-positive-integer? #false) #false]
+[#:fracbits fracbits (or/c exact-positive-integer? #false) (/ (* _size 8) 2)]
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:base-class base-class (λ (c) (subclass? c x:fixed%)) x:fixed%]
@@ -464,7 +464,7 @@ Whether @racket[x] is an object of type @racket[x:fixed%].
 x:int?]{
 Generate an instance of @racket[x:fixed%] (or a subclass of @racket[x:fixed%]) with certain optional attributes.
 
-@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-arg] takes precedence) controls the encoded size.
+@racket[size-arg] or @racket[size-kw] (whichever is provided, though @racket[size-arg] takes precedence) controls the encoded size. Defaults to @racket[2].
 
 @racket[endian] controls the byte-ordering convention.
 
@@ -546,7 +546,7 @@ Whether @racket[x] is an object of type @racket[x:string%].
 [len-arg (or/c length-resolvable? #false) #false]
 [enc-arg (or/c procedure? supported-encoding? #false) #false]
 [#:length len-kw (or/c length-resolvable? #false) #false]
-[#:encoding enc-kw (or/c procedure? supported-encoding? #false) #false]
+[#:encoding enc-kw (or/c procedure? supported-encoding? #false) 'utf8]
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:base-class base-class (λ (c) (subclass? c x:string%)) x:string%]
@@ -611,7 +611,7 @@ Whether @racket[x] is an object of type @racket[x:symbol%].
 [len-arg (or/c length-resolvable? #false) #false]
 [enc-arg (or/c procedure? supported-encoding? #false) #false]
 [#:length len-kw (or/c length-resolvable? #false) #false]
-[#:encoding enc-kw (or/c procedure? supported-encoding? #false) #false]
+[#:encoding enc-kw (or/c procedure? supported-encoding? #false) 'utf8]
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:base-class base-class (λ (c) (subclass? c x:symbol%)) x:symbol%]
@@ -827,13 +827,12 @@ Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%])
 
 @defmodule[xenomorph/dict]
 
-
 @defclass[x:dict% x:base% ()]{
-Base class for struct formats. Use @racket[x:dict] to conveniently instantiate new struct formats.
+Base class for dict formats. Use @racket[x:dict] to conveniently instantiate new dict formats.
 
 @defconstructor[
 ([fields dict?])]{
-Create class instance that represents a struct format with @racket[fields] as a dictionary holding the key–value pairs that define the struct format. Each key must be a @racket[symbol?] and each value must be a @racket[xenomorphic?] type.
+Create class instance that represents a dict format with @racket[fields] as a dictionary holding the key–value pairs that define the dict format. Each key must be a @racket[symbol?] and each value must be a @racket[xenomorphic?] type.
 }
 
 @defmethod[
@@ -842,7 +841,7 @@ Create class instance that represents a struct format with @racket[fields] as a 
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 hash-eq?]{
-Returns a @tech{hash-eq?} whose keys are the same as the keys in @racket[_fields].
+Returns a @racket[hasheq] whose keys are the same as the keys in @racket[_fields].
 
 }
 
@@ -876,7 +875,7 @@ Whether @racket[x] is an object of type @racket[x:dict%].
 x:dict?]{
 Generate an instance of @racket[x:dict%] (or a subclass of @racket[x:dict%]) with certain optional attributes.
 
-The rest arguments determine the keys and value types of the struct. These arguments can either be alternating keys and value-type arguments (similar to the calling pattern for @racket[hasheq]) or @tech{association lists}.
+The rest arguments determine the keys and value types of the dict. These arguments can either be alternating keys and value-type arguments (similar to the calling pattern for @racket[hasheq]) or @tech{association lists}.
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
 
@@ -888,6 +887,81 @@ The rest arguments determine the keys and value types of the struct. These argum
 @subsection{Versioned dicts}
 
 @defmodule[xenomorph/versioned-dict]
+
+
+The versioned dict is a format derived from @racket[x:dict%] that contains multiple possible dict encodings. It also carries a version field to select among them. This version is stored with the encoded data, of course, so on decode, the correct version will be chosen.
+
+
+@defproc[
+(version-type?
+[x any/c])
+boolean?]{
+Whether @racket[x] can be used as the version type of a versioned dict. Valid types are @racket[integer?], @racket[procedure?], @racket[xenomorphic?], or @racket[symbol?].
+}
+
+
+@defclass[x:versioned-dict% x:dict% ()]{
+Base class for versioned dict formats. Use @racket[x:versioned-dict] to conveniently instantiate new dict formats.
+
+@defconstructor[
+([type version-type?]
+[versions dict?]
+[fields #false])]{
+Create class instance that represents a versioned dict format with @racket[type] as the encoded type of the version value, and @racket[versions] as a dictionary holding the key–value pairs that define the versioned dict. Each key of @racket[versions] must be a value consistent with @racket[type], and each value must either be a @racket[dict?] or @racket[x:dict?].
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+hash-eq?]{
+Returns a @racket[hasheq] whose keys are the same as the keys in @racket[_fields].
+
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[kvs dict?]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take the keys and values in @racket[kvs] and encode them as a @tech{byte string}.
+}
+
+}
+
+@defproc[
+(x:versioned-dict?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:versioned-dict%].
+}
+
+@defproc[
+(x:versioned-dict
+[type-arg (or/c version-type? #false)]
+[versions-arg (or/c dict? #false)]
+[#:type type-kw (or/c version-type? #false)]
+[#:versions versions-kw (or/c dict? #false)]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:versioned-dict%)) x:versioned-dict%]
+)
+x:versioned-dict?]{
+Generate an instance of @racket[x:versioned-dict%] (or a subclass of @racket[x:versioned-dict%]) with certain optional attributes.
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) determines the type of the version value that is used to select from among available dicts.
+
+@racket[versions-arg] or @racket[versions-kw] (whichever is provided, though @racket[versions-arg] takes precedence) is a  dictionary holding the key–value pairs that define the versioned dict. Each key of @racket[versions] must be a value consistent with @racket[type], and each value must either be a @racket[dict?] or @racket[x:dict?].
+
+
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
 
 
 @subsection{Pointers}

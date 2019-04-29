@@ -1,8 +1,10 @@
 #lang debug racket/base
-(require "base.rkt" "dict.rkt"
+(require "base.rkt"
+         "dict.rkt"
          racket/dict
          racket/match
          racket/class
+         racket/contract
          sugar/unstable/dict)
 (provide (all-defined-out))
 
@@ -11,13 +13,16 @@ approximates
 https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
+(define (version-type? x)
+  (for/or ([proc (list integer? procedure? xenomorphic? symbol?)])
+    (proc x)))
+
 (define x:versioned-dict%
   (class x:dict%
     (super-new)
     (init-field [(@type type)] [(@versions versions)])
 
-    (unless (for/or ([proc (list integer? procedure? xenomorphic-type? symbol?)])
-                    (proc @type))
+    (unless (version-type? @type)
       (raise-argument-error 'x:versioned-dict "integer, procedure, symbol, or xenomorphic" @type))
     (unless (and (dict? @versions) (andmap (λ (v) (or (dict? v) (x:dict? v))) (dict-values @versions)))
       (raise-argument-error 'x:versioned-dict "dict of dicts or structish" @versions))
@@ -66,13 +71,13 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (unless (or (symbol? @type) (procedure? @type))
         (send @type x:encode (dict-ref field-data x:version-key #f) port parent))
       (for ([(key type) (in-dict (dict-ref @versions 'header null))])
-           (send type x:encode (dict-ref field-data key) port parent))
+        (send type x:encode (dict-ref field-data key) port parent))
 
       (define fields (select-field-set field-data))
       (unless (andmap (λ (key) (member key (dict-keys field-data))) (dict-keys fields))
         (raise-argument-error 'x:versioned-dict-encode (format "hash that contains superset of xversioned-dict keys: ~a" (dict-keys fields)) (dict-keys field-data)))
       (for ([(key type) (in-dict fields)])
-           (send type x:encode (dict-ref field-data key) port parent))
+        (send type x:encode (dict-ref field-data key) port parent))
       (let loop ([i 0])
         (when (< i (length (dict-ref parent x:pointers-key)))
           (define ptr (list-ref (dict-ref parent x:pointers-key) i))
@@ -94,20 +99,39 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       
       (define header-size
         (for/sum ([(key type) (in-dict (dict-ref @versions 'header null))])
-                 (send type x:size (and val (dict-ref val key)) parent)))
+          (send type x:size (and val (dict-ref val key)) parent)))
       (define fields-size
         (for/sum ([(key type) (in-dict (select-field-set val))])
-                 (send type x:size (and val (dict-ref val key)) parent)))
+          (send type x:size (and val (dict-ref val key)) parent)))
       (define pointer-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
       (+ version-size header-size fields-size pointer-size))))
 
 (define (x:versioned-dict? x) (is-a? x x:versioned-dict%))
 
-(define (x:versioned-dict type
-                            [versions (dictify)]
-                            #:pre-encode [pre-proc #f]
-                            #:post-decode [post-proc #f]
-                            #:base-class [base-class x:versioned-dict%])
+(define/contract (x:versioned-dict
+                  [type-arg #false]
+                  [versions-arg #false]
+                  #:type [type-kw #false]
+                  #:versions [versions-kw #false]
+                  #:pre-encode [pre-proc #f]
+                  #:post-decode [post-proc #f]
+                  #:base-class [base-class x:versioned-dict%])
+  (()
+   ((or/c version-type? #false)
+    (or/c dict? #false)
+    #:type (or/c version-type? #false)
+    #:versions (or/c dict? #false)
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:versioned-dict%)))
+   . ->* .
+   x:versioned-dict?)
+  (define type (or type-arg type-kw))
+  (unless (version-type? type)
+    (raise-argument-error 'x:versioned-dict "version-type?" type))
+  (define versions (or versions-arg versions-kw))
+  (unless (dict? versions)
+    (raise-argument-error 'x:versioned-dict "dict" versions))
   (new (generate-subclass base-class pre-proc post-proc)
        [type type]
        [versions versions]
