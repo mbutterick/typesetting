@@ -6,4 +6,5 @@
                "rackunit-lib"
                "sugar"))
 (define build-deps '("debug"
+                     "racket-doc"
                      "scribble-lib"))
