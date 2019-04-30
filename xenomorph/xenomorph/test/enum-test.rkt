@@ -11,7 +11,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 |#
 
 (define e (x:enum #:type uint8
-                  #:values '("foo" "bar" "baz")))
+                  #:values '("foo" "bar" "baz" #f)))
 
 (test-case
  "enum: should error with invalid type"
@@ -27,10 +27,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 
 (test-case
  "enum: decode should decode"
- (parameterize ([current-input-port (open-input-bytes (bytes 1 2 0))])
+ (parameterize ([current-input-port (open-input-bytes (bytes 1 2 0 3 4))])
    (check-equal? (decode e) "bar")
    (check-equal? (decode e) "baz")
-   (check-equal? (decode e) "foo")))
+   (check-equal? (decode e) "foo")
+   (check-equal? (decode e) 3)
+   (check-equal? (decode e) 4)))
 
 (test-case
  "enum: decode should decode with post-decode"

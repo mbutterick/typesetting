@@ -1155,6 +1155,68 @@ Generate an instance of @racket[x:bitfield%] (or a subclass of @racket[x:bitfiel
 
 @defmodule[xenomorph/enum]
 
+An @deftech{enumeration} is a mapping of values to sequential integers.
+
+
+@defclass[x:enum% x:base% ()]{
+Base class for list formats. Use @racket[x:enum] to conveniently instantiate new list formats.
+
+@defconstructor[
+([type x:int?]
+[values (listof any/c)])]{
+Create class instance that represents an enumeration format of type @racket[type], sequentially mapped to @racket[values]. 
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+any/c]{
+Returns either the value associated with a certain integer, or if the value is @racket[#false] or doesn't exist, then the integer itself.
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[val any/c]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Take value listed in the @racket[_values] field and encode it as a @tech{byte string}.
+}
+
+}
+
+@defproc[
+(x:enum?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:enum%].
+}
+
+@defproc[
+(x:enum
+[type-arg (or/c x:int? #false) #false]
+[values-arg (listof any/c) #false]
+[#:type type-kw (or/c x:int? #false) uint8]
+[#:values values-kw (listof any/c) null]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:enum%)) x:enum%]
+)
+x:enum?]{
+Generate an instance of @racket[x:enum%] (or a subclass of @racket[x:enum%]) with certain optional attributes.
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) determines the integer type for the enumeration. Default is @racket[uint8].
+
+@racket[values-arg] or @racket[values-kw] (whichever is provided, though @racket[values-arg] takes precedence) determines the mapping of values to integers, where each value corresponds to its index in the list. @racket[#false] indicates skipped values. Default is @racket[null].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
 
 @subsection{Optional}
 
