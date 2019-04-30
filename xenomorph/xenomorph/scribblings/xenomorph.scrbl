@@ -1292,6 +1292,68 @@ Generate an instance of @racket[x:optional%] (or a subclass of @racket[x:optiona
 
 @defmodule[xenomorph/reserved]
 
+The reserved object simply skips data. The advantage of using a reserved object rather than the type itself is a) it clearly signals that the data is being ignored, and b) it prevents writing to that part of the data structure.
+
+@defclass[x:reserved% x:base% ()]{
+Base class for reserved formats. Use @racket[x:reserved] to conveniently instantiate new reserved formats.
+
+
+@defconstructor[
+([type xenomorphic?]
+[count exact-positive-integer?])]{
+Create class instance that represents an reserved format. See @racket[x:reserved] for a description of the fields.
+
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+void?]{
+Returns @racket[(void)].
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[val any/c]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Encodes zeroes as a @tech{byte string} that is the length of @racket[_type].
+}
+
+}
+
+@defproc[
+(x:reserved?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:reserved%].
+}
+
+@defproc[
+(x:reserved
+[type-arg (or/c xenomorphic? #false) #false]
+[count-arg (or/c exact-positive-integer? #false)]
+[#:type type-kw (or/c xenomorphic? #false)]
+[#:count count-kw exact-positive-integer? 1]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:reserved%)) x:reserved%]
+)
+x:reserved?]{
+Generate an instance of @racket[x:reserved%] (or a subclass of @racket[x:reserved%]) with certain optional attributes.
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type wrapped by the reserved object, which must be @racket[xenomorphic?].
+
+@racket[count-arg] or @racket[count-kw] (whichever is provided, though @racket[count-arg] takes precedence) is the number of items of @racket[_type] that should be skipped.
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
 
 @subsection{Utilities}
 

@@ -15,8 +15,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
     (super-new)
     (init-field [(@type type)] [(@condition condition)])
 
-    (unless (xenomorphic-type? @type)
-      (raise-argument-error 'x:optional"xenomorphic type" @type))
+    (unless (xenomorphic? @type)
+      (raise-argument-error 'x:optional "xenomorphic type" @type))
     
     (define (resolve-condition parent)
       (match @condition

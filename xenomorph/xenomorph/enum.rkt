@@ -41,8 +41,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Enum.coffee
 
 (define/contract (x:enum [type-arg #f]
                          [values-arg #f]
-                         #:type [type-kwarg #f]
-                         #:values [values-kwarg #f]
+                         #:type [type-kwarg uint8]
+                         #:values [values-kwarg null]
                          #:pre-encode [pre-proc #f]
                          #:post-decode [post-proc #f]
                          #:base-class [base-class x:enum%])
