@@ -1105,7 +1105,7 @@ Create class instance that represents a bitfield format. See @racket[x:bitfield]
 (x:decode
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
-hash-eq?]{
+hash?]{
 Returns a hash whose keys are the names of the flags, and whose values are Booleans.
 }
 
@@ -1131,9 +1131,9 @@ Whether @racket[x] is an object of type @racket[x:bitfield%].
 @defproc[
 (x:bitfield
 [type-arg (or/c x:int? #false) #false]
-[flags-arg (listof (or/c symbol? #false))]
+[flags-arg (listof any/c)]
 [#:type type-kw (or/c x:int? #false) uint8]
-[#:flags flags-kw (listof (or/c symbol? #false)) null]
+[#:flags flags-kw (listof any/c) null]
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:base-class base-class (λ (c) (subclass? c x:bitfield%)) x:bitfield%]
@@ -1143,7 +1143,7 @@ Generate an instance of @racket[x:bitfield%] (or a subclass of @racket[x:bitfiel
 
 @racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type of the bitfield value itself, which must be an @racket[x:int?]. Default is @racket[uint8].
 
-@racket[flags-arg] or @racket[flags-kw] (whichever is provided, though @racket[flags-arg] takes precedence) is a list of flag names corresponding to each bit. The number of names must be fewer than the number of bits in @racket[_type]. No name can be duplicated. Each name must be either a symbol or @racket[#false] (to indicate a skipped bit). Default is @racket[null].
+@racket[flags-arg] or @racket[flags-kw] (whichever is provided, though @racket[flags-arg] takes precedence) is a list of flag names corresponding to each bit. The number of names must be fewer than the number of bits in @racket[_type]. No name can be duplicated. Each flag name can be any value, but @racket[#false] indicates a skipped bit. Default is @racket[null].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 

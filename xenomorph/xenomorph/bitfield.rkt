@@ -28,7 +28,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
 
     (define/augment (x:decode port parent)
       (define val (send @type x:decode port))
-      (define flag-hash (mhasheq))
+      (define flag-hash (mhash))
       (for ([(flag idx) (in-indexed @flags)]
             #:when flag)
         (hash-set! flag-hash flag (bitwise-bit-set? val idx)))
@@ -55,9 +55,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
                   #:base-class [base-class x:bitfield%])
   (()
    ((or/c x:int? #false)
-    (listof (or/c symbol? #false))
+    (listof any/c)
     #:type (or/c x:int? #false)
-    #:flags (listof (or/c symbol? #false))
+    #:flags (listof any/c)
     #:pre-encode (or/c (any/c . -> . any/c) #false)
     #:post-decode (or/c (any/c . -> . any/c) #false)
     #:base-class (λ (c) (subclass? c x:bitfield%)))
@@ -65,8 +65,6 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
    x:bitfield?)
   (define type (or type-arg type-kwarg))
   (define flags (or flag-arg flag-kwarg))
-  (unless (andmap (λ (f) (or (symbol? f) (not f))) flags)
-    (raise-argument-error 'x:bitfield "list containing symbols or #false values" flags))
   (new (generate-subclass base-class pre-proc post-proc)
        [type type]
        [flags flags]))
