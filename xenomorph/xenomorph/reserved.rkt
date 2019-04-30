@@ -15,8 +15,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Reserved.coffee
     (super-new)
     (init-field [(@type type)] [(@count count)])
 
-    (unless (xenomorphic-type? @type)
-      (raise-argument-error '+xoptional "xenomorphic type" @type))
+    (unless (xenomorphic? @type)
+      (raise-argument-error 'x:reserved "xenomorphic type" @type))
 
     (define/augment (x:decode port parent)
       (pos port (+ (pos port) (x:size #f parent)))
