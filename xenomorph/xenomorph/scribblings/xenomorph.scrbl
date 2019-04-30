@@ -1222,6 +1222,71 @@ Generate an instance of @racket[x:enum%] (or a subclass of @racket[x:enum%]) wit
 
 @defmodule[xenomorph/optional]
 
+A wrapper format that decodes or encodes only if the embedded condition evaluates to true.
+
+
+@defclass[x:optional% x:base% ()]{
+Base class for optional formats. Use @racket[x:optional] to conveniently instantiate new optional formats.
+
+
+@defconstructor[
+([type xenomorphic?]
+[condition any/c])]{
+Create class instance that represents an optional format. See @racket[x:optional] for a description of the fields.
+
+}
+
+@defmethod[
+#:mode extend
+(x:decode
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+hash?]{
+Returns a value if the condition is met, otherwise returns @racket[(void)].
+}
+
+@defmethod[
+#:mode extend
+(x:encode
+[val any/c]
+[input-port input-port?]
+[parent (or/c xenomorphic? #false)])
+bytes?]{
+Encodes @racket[val] as a @tech{byte string}, but only if the embedded condition is met. 
+}
+
+}
+
+@defproc[
+(x:optional?
+[x any/c])
+boolean?]{
+Whether @racket[x] is an object of type @racket[x:optional%].
+}
+
+@defproc[
+(x:optional
+[type-arg (or/c xenomorphic? #false) #false]
+[cond-arg any/c]
+[#:type type-kw (or/c xenomorphic? #false)]
+[#:condition cond-kw any/c #true]
+[#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
+[#:base-class base-class (λ (c) (subclass? c x:optional%)) x:optional%]
+)
+x:optional?]{
+Generate an instance of @racket[x:optional%] (or a subclass of @racket[x:optional%]) with certain optional attributes.
+
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type wrapped by the optional object, which must be @racket[xenomorphic?].
+
+@racket[cond-arg] or @racket[cond-kw] (whichever is provided, though @racket[cond-arg] takes precedence) is the condition that is evaluated to determine if the optional object should encode or decode. If the condition is a procedure, the procedure is evaluated for its result. Default is @racket[#true].
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
+
+@racket[base-class] controls the class used for instantiation of the new object.   
+}
+
+
 
 @subsection{Reserved}
 

@@ -1,5 +1,8 @@
 #lang racket/base
-(require "base.rkt" racket/class racket/match)
+(require "base.rkt"
+         racket/class
+         racket/match
+         racket/contract)
 (provide (all-defined-out))
 
 #|
@@ -32,13 +35,30 @@ https://github.com/mbutterick/restructure/blob/master/src/Optional.coffee
       (if (resolve-condition parent) (send @type x:size val parent) 0))))
 
 (define no-val (gensym))
-(define (x:optional [type-arg #f] [cond-arg no-val]
+
+(define (x:optional? x) (is-a? x x:optional%))
+
+(define/contract (x:optional
+                  [type-arg #f]
+                  [cond-arg no-val]
                     #:type [type-kwarg #f]
                     #:condition [cond-kwarg no-val]
                     #:pre-encode [pre-proc #f]
                     #:post-decode [post-proc #f]
                     #:base-class [base-class x:optional%])
+  (()
+   ((or/c xenomorphic? #false)
+    any/c
+    #:type (or/c xenomorphic? #false)
+    #:condition any/c
+    #:pre-encode (or/c (any/c . -> . any/c) #false)
+    #:post-decode (or/c (any/c . -> . any/c) #false)
+    #:base-class (λ (c) (subclass? c x:optional%)))
+   . ->* .
+   x:optional?)
   (define type (or type-arg type-kwarg))
+  (unless (xenomorphic? type)
+    (raise-argument-error 'x:optional "xenomorphic type" type))
   (define condition (cond
                       [(and (eq? cond-arg no-val) (eq? cond-kwarg no-val)) #true]
                       [(not (eq? cond-arg no-val)) cond-arg]
