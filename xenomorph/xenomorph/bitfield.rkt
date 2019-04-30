@@ -3,6 +3,7 @@
          "int.rkt"
          racket/class
          racket/dict
+         racket/list
          racket/contract
          sugar/unstable/dict)
 (provide (all-defined-out))
@@ -17,6 +18,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     (super-new)
     (init-field [(@type type)]
                 [(@flags flags)])
+
+    (let ([named-flags (filter values @flags)])
+    (unless (= (length named-flags) (length (remove-duplicates named-flags)))
+      (raise-argument-error 'x:bitfield% "no duplicates among flag names" named-flags)))
+
+    (when (> (length @flags) (* 8 (size @type)))
+      (raise-argument-error 'x:bitfield% (format "~a flags or fewer (~a-byte bitfield)"  (* 8 (size @type)) (size @type)) (length @flags)))
 
     (define/augment (x:decode port parent)
       (define val (send @type x:decode port))
@@ -58,7 +66,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
   (define type (or type-arg type-kwarg))
   (define flags (or flag-arg flag-kwarg))
   (unless (andmap (λ (f) (or (symbol? f) (not f))) flags)
-    (raise-argument-error 'x:bitfield "list of symbols" flags))
+    (raise-argument-error 'x:bitfield "list containing symbols or #false values" flags))
   (new (generate-subclass base-class pre-proc post-proc)
        [type type]
        [flags flags]))

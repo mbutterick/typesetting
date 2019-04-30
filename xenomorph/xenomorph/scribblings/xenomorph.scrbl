@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@(require scribble/eval (for-label racket/base racket/class racket/file racket/dict racket/promise xenomorph))
+@(require scribble/eval (for-label racket/base racket/class racket/file racket/dict racket/stream racket/promise xenomorph))
 
 @(define my-eval (make-base-eval))
 @(my-eval `(require xenomorph))
@@ -330,7 +330,7 @@ Generate an instance of @racket[x:int%] (or a subclass of @racket[x:int%]) with 
 
 @racket[endian] controls the byte-ordering convention.
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -406,7 +406,7 @@ Generate an instance of @racket[x:float%] (or a subclass of @racket[x:float%]) w
 
 @racket[endian] controls the byte-ordering convention.
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -470,7 +470,7 @@ Generate an instance of @racket[x:fixed%] (or a subclass of @racket[x:fixed%]) w
 
 @racket[fracbits] controls the number of bits of precision. If no value or @racket[#false] is passed, defaults to @racket[(/ (* _size 8) 2)].
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -531,7 +531,7 @@ Returns a @tech{string}.
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @racket[val], converts it to a string if needed, and encode it as a @tech{byte string}. If @racket[_len] is a @racket[xenomorphic?] object, the length is encoded at the beginning of the string using that object as the encoder.
+Take a @racket[val], convert it to a string if needed, and encode it as a @tech{byte string}. If @racket[_len] is a @racket[xenomorphic?] object, the length is encoded at the beginning of the string using that object as the encoder.
 }
 
 }
@@ -560,7 +560,7 @@ Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%])
 
 @racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-arg] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -596,7 +596,7 @@ Returns a @tech{symbol}.
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @racket[val], converts it to a symbol if needed, and encode it as a @tech{byte string}. If @racket[_len] is a @racket[xenomorphic?] object, the length is encoded at the beginning of the symbol using that object as the encoder.
+Take a @tech{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
 }
 
 }
@@ -625,7 +625,7 @@ Generate an instance of @racket[x:symbol%] (or a subclass of @racket[x:symbol%])
 
 @racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-arg] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -665,7 +665,7 @@ Returns a @tech{list} of values whose length is @racket[_len] and where each val
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+Take a @tech{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
 }
 
 }
@@ -694,7 +694,7 @@ Generate an instance of @racket[x:list%] (or a subclass of @racket[x:list%]) wit
 
 @racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -734,7 +734,7 @@ Returns a @tech{stream} of values whose length is @racket[_len] and where each v
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+Take a @tech{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
 }
 
 }
@@ -763,7 +763,7 @@ Generate an instance of @racket[x:stream%] (or a subclass of @racket[x:stream%])
 
 @racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -801,7 +801,7 @@ Returns a @tech{vector} of values whose length is @racket[_len] and where each v
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+Take a @tech{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
 }
 
 }
@@ -830,7 +830,7 @@ Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%])
 
 @racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -892,7 +892,7 @@ Generate an instance of @racket[x:dict%] (or a subclass of @racket[x:dict%]) wit
 
 The rest arguments determine the keys and value types of the dict. These arguments can either be alternating keys and value-type arguments (similar to the calling pattern for @racket[hasheq]) or @tech{association lists}.
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -973,7 +973,7 @@ Generate an instance of @racket[x:versioned-dict%] (or a subclass of @racket[x:v
 
 
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -1025,18 +1025,18 @@ Create class instance that represents a pointer format. See @racket[x:pointer] f
 (x:decode
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
-pointer?]{
-Returns a @tech{pointer} of values whose length is @racket[_len] and where each value is @racket[_type].
+any/c]{
+Returns the dereferenced value of the pointer whose type is controlled by @racket[_dest-type].
 }
 
 @defmethod[
 #:mode extend
 (x:encode
-[seq sequence?]
+[val any/c]
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+Take a value of type @racket[_dest-type], wrap it in a pointer, and encode it as a @tech{byte string}.
 }
 
 }
@@ -1070,13 +1070,13 @@ Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%
 @racket[dest-type-arg] or @racket[dest-type-kw] (whichever is provided, though @racket[dest-type-arg] takes precedence)  controls the type of the thing being pointed at, which must be a @racket[xenomorphic?] object  or the symbol @racket['void] to indicate a void pointer. Default is @racket[uint8].
 
 
-@racket[pointer-relative-to] controls the style of pointer, which must be one of @racket['(local immediate parent global)]. Default is @racket['local].
+@racket[pointer-relative-to] controls how the byte-offset value stored in the pointer is calculated. It must be one of @racket['(local immediate parent global)]. Default is @racket['local].
 
 @racket[allow-null?] controls whether the pointer can take on null values, and @racket[null-value] controls what that value is. Defaults are @racket[#true] and @racket[0], respectively.
 
 @racket[pointer-lazy?] controls whether the pointer is decoded immediately. If @racket[pointer-lazy?] is @racket[#true], then the decoding of the pointer is wrapped in a @tech{promise} that can later be evaluated with @racket[force]. Default is @racket[#false].
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
@@ -1087,28 +1087,16 @@ Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%
 
 @defmodule[xenomorph/bitfield]
 
-A @deftech{bitfield} is a compact encoding for Boolean values, where each bit of an integer indicates @racket[#true] or @racket[#false] (depending on whether its value is @racket[1] or @racket[0]).
+A @deftech{bitfield} is a compact encoding for Boolean values using an integer, where each bit of the integer indicates @racket[#true] or @racket[#false] (corresponding to a value of @racket[1] or @racket[0]). The bitfield object creates a mapping between the keys of the bitfield (called @deftech{flags}) and the integer bits.
 
 @defclass[x:bitfield% x:base% ()]{
 Base class for bitfield formats. Use @racket[x:bitfield] to conveniently instantiate new bitfield formats.
 
-@defproc[
-(bitfield-relative-value?
-[x any/c])
-boolean?]{
-Whether @racket[x] can be used as a value for the @racket[_bitfield-relative-to] field of @racket[x:bitfield%]. Valid choices are @racket['(local immediate parent global)].
-}
 
 @defconstructor[
-([offset-type xenomorphic?]
-[type x:int?]
-[bitfield-relative-to bitfield-relative-value?]
-[allow-null? boolean?]
-[null-value any/c]
-[bitfield-lazy? boolean?])]{
+([type x:int?]
+[flags (listof (or/c symbol? #false))])]{
 Create class instance that represents a bitfield format. See @racket[x:bitfield] for a description of the fields.
-
-
 
 }
 
@@ -1117,18 +1105,18 @@ Create class instance that represents a bitfield format. See @racket[x:bitfield]
 (x:decode
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
-bitfield?]{
-Returns a @tech{bitfield} of values whose length is @racket[_len] and where each value is @racket[_type].
+hash-eq?]{
+Returns a hash whose keys are the names of the flags, and whose values are Booleans.
 }
 
 @defmethod[
 #:mode extend
 (x:encode
-[seq sequence?]
+[flag-hash hash?]
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] and encode it as a @tech{byte string}.
+Take a hash — where hash keys are the names of the flags, hash values are Booleans — and encode it as a @tech{byte string}. 
 }
 
 }
@@ -1142,14 +1130,10 @@ Whether @racket[x] is an object of type @racket[x:bitfield%].
 
 @defproc[
 (x:bitfield
-[ptr-type-arg (or/c xenomorphic? #false) #false]
-[type-arg (or/c x:int? 'void #false) #false]
-[#:type ptr-type-kw (or/c xenomorphic? #false) uint8]
-[#:type type-kw (or/c x:int? 'void #false) uint32]
-[#:relative-to bitfield-relative-to bitfield-relative-value? 'local]
-[#:allow-null allow-null? boolean? #true]
-[#:null null-value any/c 0]
-[#:lazy bitfield-lazy? boolean? #false]
+[type-arg (or/c x:int? #false) #false]
+[flags-arg (listof (or/c symbol? #false))]
+[#:type type-kw (or/c x:int? #false) uint8]
+[#:flags flags-kw (listof (or/c symbol? #false)) null]
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:base-class base-class (λ (c) (subclass? c x:bitfield%)) x:bitfield%]
@@ -1157,17 +1141,11 @@ Whether @racket[x] is an object of type @racket[x:bitfield%].
 x:bitfield?]{
 Generate an instance of @racket[x:bitfield%] (or a subclass of @racket[x:bitfield%]) with certain optional attributes.
 
-@racket[ptr-type-arg] or @racket[ptr-type-kw] (whichever is provided, though @racket[ptr-type-arg] takes precedence)  controls the type of the thing being pointed at. Default is @racket[uint8].
+@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type of the bitfield value itself, which must be an @racket[x:int?]. Default is @racket[uint8].
 
-@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type of the bitfield value itself, which must be either an @racket[x:int?] or the symbol @racket['void] to indicate a void bitfield). Default is @racket[uint32].
+@racket[flags-arg] or @racket[flags-kw] (whichever is provided, though @racket[flags-arg] takes precedence) is a list of flag names corresponding to each bit. The number of names must be fewer than the number of bits in @racket[_type]. No name can be duplicated. Each name must be either a symbol or @racket[#false] (to indicate a skipped bit). Default is @racket[null].
 
-@racket[bitfield-relative-to] controls the style of bitfield, which must be one of @racket['(local immediate parent global)]. Default is @racket['local].
-
-@racket[allow-null?] controls whether the bitfield can take on null values, and @racket[null-value] controls what that value is. Defaults are @racket[#true] and @racket[0], respectively.
-
-@racket[bitfield-lazy?] controls whether the bitfield is decoded immediately. If @racket[bitfield-lazy?] is @racket[#true], then the decoding of the bitfield is wrapped in a @tech{promise} that can later be evaluated with @racket[force]. Default is @racket[#false].
-
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decodeing procedures, respectively.
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
