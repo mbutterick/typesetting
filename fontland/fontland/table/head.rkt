@@ -47,7 +47,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
  (check-equal? (hash-ref table-data 'yMax) 980)
  (check-equal? (hash-ref table-data 'xMax) 1174)
  (check-equal? (hash-ref table-data 'xMin) -226)
- (check-equal? (hash-ref table-data 'macStyle) (make-hasheq '((shadow . #f)
+ (check-equal? (hash-ref table-data 'macStyle) (make-hash '((shadow . #f)
                                                       (extended . #f)
                                                       (condensed . #f)
                                                       (underline . #f)
