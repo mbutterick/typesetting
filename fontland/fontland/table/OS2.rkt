@@ -35,7 +35,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/OS2.js
                                   'usWidthClass           uint16be  ;; relative change from the normal aspect ratio (width to height ratio)
                                   ;; Indicates font embedding licensing rights
                                   'fsType                 (x:bitfield #:type uint16be
-                                                                      #:flags '(null noEmbedding viewOnly editable null  null null null noSubsetting bitmapOnly))
+                                                                      #:flags '(#f noEmbedding viewOnly editable #f #f #f #f noSubsetting bitmapOnly))
                                   'ySubscriptXSize        int16be   ;; recommended horizontal size in pixels for subscripts
                                   'ySubscriptYSize        int16be   ;; recommended vertical size in pixels for subscripts
                                   'ySubscriptXOffset      int16be   ;; recommended horizontal offset for subscripts
