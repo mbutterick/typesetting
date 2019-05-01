@@ -19,9 +19,9 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     (init-field [(@type type)]
                 [(@flags flags)])
 
-    (let ([named-flags (filter values @flags)])
-    (unless (= (length named-flags) (length (remove-duplicates named-flags)))
-      (raise-argument-error 'x:bitfield% "no duplicates among flag names" named-flags)))
+    #;(let ([named-flags (filter values @flags)])
+      (unless (= (length named-flags) (length (remove-duplicates named-flags)))
+        (raise-argument-error 'x:bitfield% "no duplicates among flag names" named-flags)))
 
     (when (> (length @flags) (* 8 (size @type)))
       (raise-argument-error 'x:bitfield% (format "~a flags or fewer (~a-byte bitfield)"  (* 8 (size @type)) (size @type)) (length @flags)))
@@ -31,13 +31,13 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
       (define flag-hash (mhash))
       (for ([(flag idx) (in-indexed @flags)]
             #:when flag)
-        (hash-set! flag-hash flag (bitwise-bit-set? val idx)))
+           (hash-set! flag-hash flag (bitwise-bit-set? val idx)))
       flag-hash)
 
     (define/augment (x:encode flag-hash port [parent #f])
       (define bit-int (for/sum ([(flag idx) (in-indexed @flags)]
                                 #:when (and flag (hash-ref flag-hash flag #f)))
-                        (arithmetic-shift 1 idx)))
+                               (arithmetic-shift 1 idx)))
       (send @type x:encode bit-int port))
     
     (define/augment (x:size [val #f] [parent #f])
