@@ -25,7 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
  "bitfield: should reject too many flags"
  (check-exn exn:fail? (λ () (x:bitfield uint8 '(Jack Kack Lack Mack Nack Oack Pack Quack Zack Wack)))))
 
-#;(test-case
+(test-case
  "bitfield: should reject duplicate flags"
  (check-exn exn:fail? (λ () (x:bitfield uint8 '(Jack Jack Jack Jack Jack)))))
 

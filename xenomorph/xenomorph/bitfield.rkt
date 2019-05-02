@@ -19,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
     (init-field [(@type type)]
                 [(@flags flags)])
 
-    #;(let ([named-flags (filter values @flags)])
+    (let ([named-flags (filter values @flags)])
       (unless (= (length named-flags) (length (remove-duplicates named-flags)))
         (raise-argument-error 'x:bitfield% "no duplicates among flag names" named-flags)))
 
