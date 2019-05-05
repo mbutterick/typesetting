@@ -11,7 +11,7 @@
 (define (current-page doc)
   (match (pdf-pages doc)
     [(? pair? ps) (car ps)]
-    [_ (raise-argument-error 'current-page "no pages in pdf" doc)]))
+    [_ (raise-argument-error 'current-page "pdf with pages in it" doc)]))
 
 (define (add-content doc data)
   (page-write (current-page doc) data))
