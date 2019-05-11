@@ -6,4 +6,6 @@ Racket library for messing with fonts. Based on [`fontkit`](https://github.com/f
 License
 -
 
-MIT
+MIT (code)
+
+Fonts in `assets` folder are under separate licenses included there.
