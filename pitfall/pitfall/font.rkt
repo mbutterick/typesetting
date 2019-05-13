@@ -32,7 +32,7 @@
 
 (define (line-height f size [include-gap #f])
   (define gap (if include-gap (pdf-font-line-gap f) 0))
-  (* (/ (+ (pdf-font-ascender f) gap (- (pdf-font-descender f))) 1000.0) size))
+  (* (/ (+ (pdf-font-ascender f) gap (- (pdf-font-descender f))) (pdf-font-upm f)) size))
 
 (define (open-pdf-font name id)
   ((if (standard-font-name? name) make-standard-font make-embedded-font) name id))

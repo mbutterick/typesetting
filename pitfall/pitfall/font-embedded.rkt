@@ -52,8 +52,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (efont
    name id ascender descender upm line-gap bbox #f #f efont-embedded efont-encode efont-measure-string
     font subset unicode widths scale encoding-cache))
-  
-
 
 (define (efont-measure-string ef str size [features null])
   ; #f disables features ; null enables default features ; list adds features
@@ -65,7 +63,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (match-define (list _ posns) (efont-encode ef str features)) 
   (define width (for/sum ([p (in-vector posns)]) (glyph-position-x-advance p)))
   (* width scale))
-
 
 (define (efont-encode ef str [features-in null])
   (define features (sort (remove-duplicates features-in) bytes<? #:key car))
@@ -85,7 +82,8 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                  (vector-set! subset-idxs idx subset-idx)
                         
                  (set-glyph-position-advance-width! posn (glyph-advance-width glyph))
-                 (scale-glyph-position! posn (efont-scale ef))
+                 ;; next line commented out to make 2048 em work
+                 #;(scale-glyph-position! posn (efont-scale ef))
                  (vector-set! new-positions idx posn)
                         
                  (hash-ref! (efont-widths ef) gid (λ () (glyph-position-advance-width posn)))
