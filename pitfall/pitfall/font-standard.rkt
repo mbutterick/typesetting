@@ -24,11 +24,12 @@
   (define kern-pairs (make-hash kps))
   (define ascender (string->number (hash-ref attributes 'Ascender "0")))
   (define descender (string->number (hash-ref attributes 'Descender "0")))
+  (define upm 1000)
   (define bbox (for/list ([attr (in-list (string-split (hash-ref attributes 'FontBBox)))])
                  (or (string->number attr) 0)))
   (define line-gap (- (third bbox) (first bbox) ascender descender))
   (sfont
-   name id ascender descender line-gap bbox #f #f sfont-embed sfont-encode sfont-measure-string
+   name id ascender descender upm line-gap bbox #f #f sfont-embed sfont-encode sfont-measure-string
    attributes glyph-widths kern-pairs))
 
 (define (sfont-embed sf)

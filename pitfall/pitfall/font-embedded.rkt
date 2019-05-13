@@ -42,6 +42,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define unicode (mhasheq 0 '(0))) ; always include the missing glyph (gid = 0)
   (define widths (mhasheq 0 (glyph-advance-width (get-glyph font 0))))
   (define name (font-postscript-name font))
+  (define upm (font-units-per-em font))
   (define scale (/ 1000 (font-units-per-em font)))
   (define ascender (* (font-ascent font) scale))
   (define descender (* (font-descent font) scale))
@@ -49,14 +50,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define line-gap (* (font-linegap font) scale))
   (define encoding-cache (make-hash)) ; needs to be per font, not in top level of module
   (efont
-   name id ascender descender line-gap bbox #f #f efont-embedded efont-encode efont-measure-string
+   name id ascender descender upm line-gap bbox #f #f efont-embedded efont-encode efont-measure-string
     font subset unicode widths scale encoding-cache))
   
 
 
 (define (efont-measure-string ef str size [features null])
   ; #f disables features ; null enables default features ; list adds features
-  (define scale (/ size (+ (font-units-per-em (efont-font ef)) 0.0)))
+  (define scale (/ size (pdf-font-upm ef) 1.0))
   ;; use `encode` because it's cached.
   ;; we assume that the side effects of `encode`
   ;; (e.g., appending to `widths` and `unicode`)
