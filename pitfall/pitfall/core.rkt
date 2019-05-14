@@ -40,7 +40,6 @@
                   id
                   ascender
                   descender
-                  upm
                   line-gap
                   bbox
                   ref

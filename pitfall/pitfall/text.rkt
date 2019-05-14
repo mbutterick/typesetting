@@ -48,7 +48,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 (define (add-text doc x y str features)
   (match-define (list encoded-char-strs positions) (encode (pdf-current-font doc) str features))
   
-  (define scale (/ (pdf-current-font-size doc) #;(pdf-font-upm (pdf-current-font doc)) 1000.0))
+  (define scale (/ (pdf-current-font-size doc) 1000.0))
   (define commands empty)
   
   ;; Adds a segment of text to the TJ command buffer
