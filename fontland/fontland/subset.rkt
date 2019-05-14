@@ -283,28 +283,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
   (dict-set! new-hhea-table 'numberOfMetrics (length (dict-ref (ttf-subset-hmtx ss) 'metrics)))
 
   (define new-tables
-    (let ()
-      ;; unhinted ttfs don't have `cvt_` `prep` or `fpgm`;
-      ;; so fill in dummy data
-      (define kvs (dictify 'head new-head-table
-                           'hhea new-hhea-table
-                           'loca (ttf-subset-loca ss)
-                           'maxp new-maxp-table
-                           'cvt_ (if (has-table? (subset-font ss) 'cvt_)
-                                     (get-cvt_-table (subset-font ss))
-                                     (hash 'controlValues (list 0)))
-                           'prep (if (has-table? (subset-font ss) 'prep)
-                                     (get-prep-table (subset-font ss))
-                                     (hash 'controlValueProgram (list 0)))
-                           'glyf (ttf-subset-glyf ss)
-                           'hmtx (ttf-subset-hmtx ss)
-                           'fpgm (if (has-table? (subset-font ss) 'fpgm)
-                                     (get-fpgm-table (subset-font ss))
-                                     (hash 'instructions (list 0)))))
-      (for ([(k v) (in-dict kvs)]
-            #:unless v)
-        (error 'encode (format "missing value for ~a" k)))
-      (make-hasheq kvs)))
+    (filter cdr (dictify 'head new-head-table
+                         'hhea new-hhea-table
+                         'loca (ttf-subset-loca ss)
+                         'maxp new-maxp-table
+                         'cvt_ (and (has-table? (subset-font ss) 'cvt_)
+                                    (get-cvt_-table (subset-font ss)))
+                         'prep (and (has-table? (subset-font ss) 'prep)
+                                    (get-prep-table (subset-font ss)))
+                         'glyf (ttf-subset-glyf ss)
+                         'hmtx (ttf-subset-hmtx ss)
+                         'fpgm (and (has-table? (subset-font ss) 'fpgm)
+                                    (get-fpgm-table (subset-font ss))))))
   
   (encode Directory (mhash 'tables new-tables) port)
   (void))

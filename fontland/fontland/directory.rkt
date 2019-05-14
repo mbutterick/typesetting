@@ -2,6 +2,7 @@
 (require xenomorph
          "tables.rkt"
          racket/dict
+         racket/match
          sugar/unstable/dict
          racket/string)
 
@@ -33,7 +34,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
   this-res)
 
 (define (directory-pre-encode this-val)
-  (define tables (for/list ([(tag table) (in-hash (hash-ref this-val 'tables))])
+  (define tables (for/list ([tag-table-pair (in-list (hash-ref this-val 'tables))])
+                   (match-define (cons tag table) tag-table-pair)
                    (define table-codec (hash-ref table-codecs tag))
                    (mhash 'tag (unescape-tag tag)
                           'checkSum 0
