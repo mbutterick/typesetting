@@ -51,7 +51,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define encoding-cache (make-hash)) ; needs to be per font, not in top level of module
   (efont
    name id ascender descender upm line-gap bbox #f #f efont-embedded efont-encode efont-measure-string
-    font subset unicode widths scale encoding-cache))
+   font subset unicode widths scale encoding-cache))
 
 (define (efont-measure-string ef str size [features null])
   ; #f disables features ; null enables default features ; list adds features
@@ -82,8 +82,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                  (vector-set! subset-idxs idx subset-idx)
                         
                  (set-glyph-position-advance-width! posn (glyph-advance-width glyph))
-                 ;; next line commented out to make 2048 em work
-                 #;(scale-glyph-position! posn (efont-scale ef))
+                 (scale-glyph-position! posn (efont-scale ef))
                  (vector-set! new-positions idx posn)
                         
                  (hash-ref! (efont-widths ef) gid (λ () (glyph-position-advance-width posn)))
@@ -167,10 +166,18 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define entries
     (for/list ([idx (in-range (length (hash-keys (efont-unicode ef))))])
       (define codepoints (hash-ref (efont-unicode ef) idx))
-      (define encoded ; encode codePoints to utf16
-        ;; todo: full utf16 support. for now just utf8
-        (for/list ([value (in-list codepoints)])
-          (to-hex value)))
+      (define encoded
+        ; encode codePoints to utf16
+        (for/fold ([hexes null]
+                   #:result (reverse hexes))
+                  ([value (in-list codepoints)])
+          (cond
+            [(> value #xffff)
+             (let ([value (- value #x10000)])
+               (define b1 (bitwise-ior (bitwise-and (arithmetic-shift value -10) #x3ff) #xd800))
+               (define b2 (bitwise-ior (bitwise-and value #x3ff) #xdc00))
+               (list* (to-hex b2) (to-hex b1) hexes))]
+            [else (cons (to-hex value) hexes)])))
       (format "<~a>" (string-join encoded " "))))
 
   (define unicode-cmap-str #<<HERE
