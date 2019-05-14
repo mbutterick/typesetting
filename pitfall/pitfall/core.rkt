@@ -87,10 +87,20 @@
 
 ;; helpers
 
+(define (round-js-style n)
+  ;; always round up on 0.5
+  ;; contra racket, which rounds toward even on 0.5
+  (let* ([n (* n 1e6)]
+         [r (round n)])
+    (/ (if (= .5 (- n r))
+           (add1 r)
+           r)
+       1e6)))
+
 (define (numberizer x #:round [round? #true])
   (unless (and (number? x) (< -1e21 x 1e21))
     (raise-argument-error 'number "valid number" x))
-  (let ([x (if round? (/ (round (* x 1e6)) 1e6) x)])
+  (let ([x (if round? (round-js-style x) x)])
     (number->string (if (integer? x)
                         (inexact->exact x)
                         x))))
