@@ -69,12 +69,16 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                  (define subset-idx (to-hex gid))
                  (vector-set! subset-idxs idx subset-idx)
 
-                 (hash-ref! (efont-widths ef) gid (λ () (* (glyph-advance-width glyph) (efont-scale ef))))
-                 (hash-ref! (efont-unicode ef) gid (λ () (glyph-codepoints glyph)))
-                 
+                 ;; set the advance width of the posn
+                 (set-glyph-position-advance-width! posn (glyph-advance-width glyph))
+                 ;; scale all values in posn (incl advance width)
                  (scale-glyph-position! posn (efont-scale ef))
-                 (set-glyph-position-advance-width! posn (* (glyph-advance-width glyph) (efont-scale ef)))
-                 (vector-set! new-positions idx posn))
+                 ;; update the return value
+                 (vector-set! new-positions idx posn)
+
+                 ;; put the scaled width in the width cache (by fetching it out of posn)
+                 (hash-ref! (efont-widths ef) gid (λ () (glyph-position-advance-width posn)))
+                 (hash-ref! (efont-unicode ef) gid (λ () (glyph-codepoints glyph))))
                
                (list subset-idxs new-positions))))
 
@@ -83,9 +87,12 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   ;; use `encode` because it's cached.
   ;; we assume that the side effects of `encode`
   ;; (e.g., appending to `widths` and `unicode`)
-  ;; are ok because every string that gets measured is going to be encoded eventually 
-  (define width (for/sum ([p (in-vector (glyphrun-positions (layout (efont-font ef) str #:features features)))]) (glyph-position-x-advance p)))
-  (define scale (/ size (+ (font-units-per-em (efont-font ef)) 0.0)))
+  ;; are ok because every string that gets measured is going to be encoded eventually
+  (match-define (list _ posns) (efont-encode ef str features))
+  (define width (for/sum ([p (in-vector posns)]) (glyph-position-x-advance p)))
+  ;; however, encode cache is already normalized to 1000 em
+  ;; so here, instead of scaling to font's upm, we scale to 1000
+  (define scale (/ size 1000.0))
   (* width scale))
 
 (define (efont-embedded ef)
