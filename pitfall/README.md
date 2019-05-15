@@ -7,3 +7,5 @@ License
 -
 
 MIT
+
+Fonts in `ptest` folder are under separate licenses included there.
