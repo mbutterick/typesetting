@@ -42,7 +42,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define unicode (mhasheq 0 '(0))) ; always include the missing glyph (gid = 0)
   (define widths (mhasheq 0 (glyph-advance-width (get-glyph font 0))))
   (define name (font-postscript-name font))
-  (define scale (/ 1000 (font-units-per-em font)))
+  (define scale (/ 1000.0 (font-units-per-em font)))
   (define ascender (* (font-ascent font) scale))
   (define descender (* (font-descent font) scale))
   (define bbox (font-bbox font))
@@ -68,13 +68,14 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                  (define gid (subset-add-glyph! (efont-subset ef) (glyph-id glyph)))
                  (define subset-idx (to-hex gid))
                  (vector-set! subset-idxs idx subset-idx)
-                        
-                 (set-glyph-position-advance-width! posn (glyph-advance-width glyph))
+
+                 (hash-ref! (efont-widths ef) gid (λ () (* (glyph-advance-width glyph) (efont-scale ef))))
+                 (hash-ref! (efont-unicode ef) gid (λ () (glyph-codepoints glyph)))
+                 
                  (scale-glyph-position! posn (efont-scale ef))
-                 (vector-set! new-positions idx posn)
-                        
-                 (hash-ref! (efont-widths ef) gid (λ () (glyph-position-advance-width posn)))
-                 (hash-ref! (efont-unicode ef) gid (λ () (glyph-codepoints glyph))))
+                 (set-glyph-position-advance-width! posn (* (glyph-advance-width glyph) (efont-scale ef)))
+                 (vector-set! new-positions idx posn))
+               
                (list subset-idxs new-positions))))
 
 (define (efont-measure-string ef str size [features null])
