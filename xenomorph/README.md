@@ -2,6 +2,11 @@
 
 Racket library for binary encoding & decoding. Based on [`restructure`](https://github.com/foliojs/restructure).
 
+Docs
+-
+
+https://docs.racket-lang.org/xenomorph/
+
 
 License
 -
