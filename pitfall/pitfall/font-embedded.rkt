@@ -23,14 +23,19 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (for/sum ([c (in-list (list COND ...))]
             [v (in-list (list VAL ...))]
             #:when c)
-    v))
+           v))
 
 (define (to-hex . codepoints)
   (string-append*
    (for/list ([code (in-list codepoints)])
-     (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
+             (~r code #:base 16 #:min-width 4 #:pad-string "0"))))
 
 (struct efont pdf-font (font subset unicode widths scale encoding-cache) #:mutable)
+
+(define (exactify x)
+  (if (and (integer? x) (inexact? x))
+      (inexact->exact x)
+      x))
 
 (define (make-embedded-font name-arg [id #f])
   (define font (cond
@@ -43,10 +48,10 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define widths (mhasheq 0 (glyph-advance-width (get-glyph font 0))))
   (define name (font-postscript-name font))
   (define scale (/ 1000.0 (font-units-per-em font)))
-  (define ascender (* (font-ascent font) scale))
-  (define descender (* (font-descent font) scale))
+  (define ascender (exactify (* (font-ascent font) scale)))
+  (define descender (exactify (* (font-descent font) scale)))
   (define bbox (font-bbox font))
-  (define line-gap (* (font-linegap font) scale))
+  (define line-gap (exactify (* (font-linegap font) scale)))
   (define encoding-cache (make-hash)) ; needs to be per font, not in top level of module
   (efont
    name id ascender descender line-gap bbox #f #f efont-embedded efont-encode efont-measure-string
@@ -65,20 +70,20 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                (for ([glyph (in-vector glyphs)]
                      [posn (in-vector positions)]
                      [idx (in-range len)])
-                 (define gid (subset-add-glyph! (efont-subset ef) (glyph-id glyph)))
-                 (define subset-idx (to-hex gid))
-                 (vector-set! subset-idxs idx subset-idx)
+                    (define gid (subset-add-glyph! (efont-subset ef) (glyph-id glyph)))
+                    (define subset-idx (to-hex gid))
+                    (vector-set! subset-idxs idx subset-idx)
 
-                 ;; set the advance width of the posn
-                 (set-glyph-position-advance-width! posn (glyph-advance-width glyph))
-                 ;; scale all values in posn (incl advance width)
-                 (scale-glyph-position! posn (efont-scale ef))
-                 ;; update the return value
-                 (vector-set! new-positions idx posn)
+                    ;; set the advance width of the posn
+                    (set-glyph-position-advance-width! posn (glyph-advance-width glyph))
+                    ;; scale all values in posn (incl advance width)
+                    (scale-glyph-position! posn (efont-scale ef))
+                    ;; update the return value
+                    (vector-set! new-positions idx posn)
 
-                 ;; put the scaled width in the width cache (by fetching it out of posn)
-                 (hash-ref! (efont-widths ef) gid (λ () (glyph-position-advance-width posn)))
-                 (hash-ref! (efont-unicode ef) gid (λ () (glyph-codepoints glyph))))
+                    ;; put the scaled width in the width cache (by fetching it out of posn)
+                    (hash-ref! (efont-widths ef) gid (λ () (glyph-position-advance-width posn)))
+                    (hash-ref! (efont-unicode ef) gid (λ () (glyph-codepoints glyph))))
                
                (list subset-idxs new-positions))))
 
@@ -124,7 +129,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   ;; generate a random tag (6 uppercase letters. 65 is the char code for 'A')
   (when (test-mode) (random-seed 0))
   (define tag (list->string (for/list ([i (in-range 6)])
-                              (integer->char (random 65 (+ 65 26))))))
+                                      (integer->char (random 65 (+ 65 26))))))
   (define name (string->symbol (string-append tag "+" (font-postscript-name (efont-font ef)))))
   (define descriptor (make-ref
                       (mhasheq
@@ -154,7 +159,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
                              'Supplement 0)
                             'FontDescriptor descriptor
                             'W (list 0 (for/list ([idx (in-range (length (hash-keys (efont-widths ef))))])
-                                         (hash-ref (efont-widths ef) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
+                                                 (hash-ref (efont-widths ef) idx (λ () (error 'embed (format "hash key ~a not found" idx)))))))))
   (ref-end descendant-font)
       
   (dict-set*! (pdf-font-ref ef)
@@ -171,20 +176,20 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/font/embedded.coffee
   (define cmap-ref (make-ref))
   (define entries
     (for/list ([idx (in-range (length (hash-keys (efont-unicode ef))))])
-      (define codepoints (hash-ref (efont-unicode ef) idx))
-      (define encoded
-        ; encode codePoints to utf16
-        (for/fold ([hexes null]
-                   #:result (reverse hexes))
-                  ([value (in-list codepoints)])
-          (cond
-            [(> value #xffff)
-             (let ([value (- value #x10000)])
-               (define b1 (bitwise-ior (bitwise-and (arithmetic-shift value -10) #x3ff) #xd800))
-               (define b2 (bitwise-ior (bitwise-and value #x3ff) #xdc00))
-               (list* (to-hex b2) (to-hex b1) hexes))]
-            [else (cons (to-hex value) hexes)])))
-      (format "<~a>" (string-join encoded " "))))
+              (define codepoints (hash-ref (efont-unicode ef) idx))
+              (define encoded
+                ; encode codePoints to utf16
+                (for/fold ([hexes null]
+                           #:result (reverse hexes))
+                          ([value (in-list codepoints)])
+                  (cond
+                    [(> value #xffff)
+                     (let ([value (- value #x10000)])
+                       (define b1 (bitwise-ior (bitwise-and (arithmetic-shift value -10) #x3ff) #xd800))
+                       (define b2 (bitwise-ior (bitwise-and value #x3ff) #xdc00))
+                       (list* (to-hex b2) (to-hex b1) hexes))]
+                    [else (cons (to-hex value) hexes)])))
+              (format "<~a>" (string-join encoded " "))))
 
   (define unicode-cmap-str #<<HERE
 /CIDInit /ProcSet findresource begin

@@ -1,4 +1,4 @@
-#lang debug racket/base
+#lang racket/base
 (require pitfall/pdftest)
 
 ;; subset OTF font
@@ -24,4 +24,5 @@
 (define-runtime-path that "test21crkt.pdf")
 (make-doc that #t proc)
 
-(check-font-subsets-equal? "test21rkt.pdf" "test21.pdf")
+(define-runtime-path the-other "test21.pdf")
+(check-font-subsets-equal? this the-other)
