@@ -9,6 +9,7 @@
          "table-stream.rkt"
          xenomorph
          racket/match
+         racket/list
          sugar/unstable/dict
          "unsafe/harfbuzz.rkt"
          "glyph-position.rkt"
@@ -92,7 +93,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
      (hb_shape (hb-font font) buf (map (λ (fpr) (tag->hb-feature (car fpr) (cdr fpr))) features))
      (define gis (hb_buffer_get_glyph_infos buf))
      (define hb-gids (map hb_glyph_info_t-codepoint gis))
-     (define hb-clusters (break-at codepoints (map hb_glyph_info_t-cluster gis)))
+     ;; `remove-duplicates` in case we get a funny codepoint that expands into multiple glyphs (rare but possible)
+     (define hb-clusters (break-at codepoints (remove-duplicates (map hb_glyph_info_t-cluster gis) eq?)))
      (define hb-positions (map hb_glyph_position_t->list (hb_buffer_get_glyph_positions buf)))
      (define glyphs (for/vector ([gidx (in-list hb-gids)]
                                  [cluster (in-list hb-clusters)])
