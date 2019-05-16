@@ -236,8 +236,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
       (define gid (subset-add-glyph! ss (ttf-glyph-component-glyph-id ttf-glyph-component)))
       ;; note: this (ttf-glyph-component-pos component) is correct. It's a field of a Component object, not a port
       (bytes-copy! glyf-bytes (ttf-glyph-component-pos ttf-glyph-component) (encode uint16be gid #f))))
+
+  ;; `loca` table v0 stores offsets as half of actual value
+  ;; so we need an even number of bytes to encode
+  (define glyf-bytes-even (if (odd? (bytes-length glyf-bytes))
+                              (bytes-append glyf-bytes #"0")
+                              glyf-bytes))
   
-  (set-ttf-subset-glyf! ss (append (ttf-subset-glyf ss) (list glyf-bytes)))
+  (set-ttf-subset-glyf! ss (append (ttf-subset-glyf ss) (list glyf-bytes-even)))
   (hash-update! (ttf-subset-loca ss) 'offsets
                 (λ (os)
                   (append os (list (ttf-subset-offset ss)))))
@@ -245,7 +251,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                 (λ (ms) (append ms
                                 (list (mhash 'advance (glyph-advance-width glyph)
                                              'bearing (hash-ref (get-glyph-metrics glyph) 'leftBearing))))))
-  (set-ttf-subset-offset! ss (+ (ttf-subset-offset ss) (bytes-length glyf-bytes)))
+  (set-ttf-subset-offset! ss (+ (ttf-subset-offset ss) (bytes-length glyf-bytes-even)))
   (sub1 (length (ttf-subset-glyf ss))))
 
 ;; tables required by PDF spec:
