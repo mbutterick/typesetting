@@ -42,13 +42,15 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                           'offset (x:void-pointer table-codec table)
                           'length (size table-codec table))))
   (define numTables (length tables))
-  (define searchRange (* (floor (log numTables 2)) 16))
+  ;; patch from https://github.com/foliojs/fontkit/pull/178
+  (define max-exponent-for-2 (floor (log numTables 2)))
+  (define searchRange (* (expt 2 max-exponent-for-2) 16))
   (hash-set*! this-val
               'tag 'true
               'numTables numTables
               'tables tables
               'searchRange searchRange
-              'entrySelector (floor (/ searchRange (log 2)))
+              'entrySelector max-exponent-for-2
               'rangeShift (- (* numTables 16) searchRange))
   this-val)
 
