@@ -8,7 +8,7 @@
 
 (define 16bit-style 0)
 (define 32bit-style 1)
-(define max-32-bit-value #xffff)
+(define max-16-bit-value #xffff)
 
 #|
 approximates
@@ -17,7 +17,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/loca.js
 
 (define (loca-pre-encode val)
   (unless (hash-has-key? val x:version-key)
-    (hash-set! val x:version-key (if (> (last (hash-ref val 'offsets)) max-32-bit-value)
+    (hash-set! val x:version-key (if (> (last (hash-ref val 'offsets)) max-16-bit-value)
                                 32bit-style
                                 16bit-style))
     (when (= 16bit-style (hash-ref val x:version-key))
