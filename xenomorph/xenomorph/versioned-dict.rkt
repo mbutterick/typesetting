@@ -88,7 +88,12 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (define/override (x:size [val-arg #f] [parent-arg #f] [include-pointers #t])
       (unless val-arg
         (raise-argument-error 'x:versioned-dict-size "value" val-arg))
+      
+      ;; unlike fontkit we don't overload the 'version key
+      ;; so unlike fontkit, we call `pre-encode` here to possibly set up the version key
+      ;; which is needed in the next section.
       (define val (pre-encode val-arg))
+      
       (define parent (mhasheq x:parent-key parent-arg
                               x:val-key val
                               x:pointer-size-key 0))
