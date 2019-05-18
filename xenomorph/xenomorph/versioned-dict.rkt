@@ -20,7 +20,9 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 (define x:versioned-dict%
   (class x:dict%
     (super-new)
-    (init-field [(@type type)] [(@versions versions)])
+    (init-field [(@type type)]
+                [(@versions versions)]
+                [(@version-key version-key)])
 
     (unless (version-type? @type)
       (raise-argument-error 'x:versioned-dict "integer, procedure, symbol, or xenomorphic" @type))
@@ -29,8 +31,8 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
     (define (select-field-set val)
       (define version-key
-        (or (dict-ref val x:version-key #f)
-            (raise-argument-error 'x:versioned-dict-encode "value for version key" x:version-key)))
+        (or (dict-ref val @version-key #f)
+            (raise-argument-error 'x:versioned-dict-encode "value for version key" @version-key)))
       (define field-object
         (or (dict-ref @versions version-key #f)
             (raise-argument-error 'x:versioned-dict-encode (format "valid field version: ~v" (dict-keys @versions)) version-key)))
@@ -45,7 +47,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                               [(or (? symbol?) (? procedure?))
                                (raise-argument-error 'x:versioned-dict-decode "valid parent" parent)]
                               [_ (send @type x:decode port parent)]))
-      (dict-set! res x:version-key which-version)
+      (dict-set! res @version-key which-version)
 
       (match (dict-ref @versions 'header #f)
         [#false (void)]
@@ -69,7 +71,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                               x:pointer-size-key 0))
       (hash-set! parent x:pointer-offset-key (+ (pos port) (x:size field-data parent #f)))
       (unless (or (symbol? @type) (procedure? @type))
-        (send @type x:encode (dict-ref field-data x:version-key #f) port parent))
+        (send @type x:encode (dict-ref field-data @version-key #f) port parent))
       (for ([(key type) (in-dict (dict-ref @versions 'header null))])
         (send type x:encode (dict-ref field-data key) port parent))
 
@@ -85,14 +87,9 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
             [(x:ptr type val parent) i (send type x:encode val port parent)])
           (loop (add1 i)))))
     
-    (define/override (x:size [val-arg #f] [parent-arg #f] [include-pointers #t])
-      (unless val-arg
-        (raise-argument-error 'x:versioned-dict-size "value" val-arg))
-      
-      ;; unlike fontkit we don't overload the 'version key
-      ;; so unlike fontkit, we call `pre-encode` here to possibly set up the version key
-      ;; which is needed in the next section.
-      (define val (pre-encode val-arg))
+    (define/override (x:size [val #f] [parent-arg #f] [include-pointers #t])
+      (unless val
+        (raise-argument-error 'x:versioned-dict-size "value" val))
       
       (define parent (mhasheq x:parent-key parent-arg
                               x:val-key val
@@ -100,7 +97,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define version-size
         (match @type
           [(or (? symbol?) (? procedure?)) 0]
-          [_ (send @type x:size (dict-ref val x:version-key) parent)]))
+          [_ (send @type x:size (dict-ref val @version-key) parent)]))
       
       (define header-size
         (for/sum ([(key type) (in-dict (dict-ref @versions 'header null))])
@@ -118,6 +115,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                   [versions-arg #false]
                   #:type [type-kw #false]
                   #:versions [versions-kw #false]
+                  #:version-key [version-key x:version-key]
                   #:pre-encode [pre-proc #f]
                   #:post-decode [post-proc #f]
                   #:base-class [base-class x:versioned-dict%])
@@ -126,6 +124,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     (or/c dict? #false)
     #:type (or/c version-type? #false)
     #:versions (or/c dict? #false)
+    #:version-key (or/c symbol? #false)
     #:pre-encode (or/c (any/c . -> . any/c) #false)
     #:post-decode (or/c (any/c . -> . any/c) #false)
     #:base-class (λ (c) (subclass? c x:versioned-dict%)))
@@ -140,6 +139,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
   (new (generate-subclass base-class pre-proc post-proc)
        [type type]
        [versions versions]
+       [version-key version-key]
        [fields #f]))
 
 
