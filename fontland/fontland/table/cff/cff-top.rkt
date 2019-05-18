@@ -120,9 +120,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 (define FDSelect
   (x:versioned-struct
    uint8
-   #:pre-encode
-   ;; because fontkit depends on overloading 'version key, and we don't
-   (λ (val) (dict-set val 'x:version (dict-ref val 'version)))
+   #:version-key 'version
    (dictify
     0 (dictify 'fds (x:array uint8 base-tproc))
     3 (dictify 'nRanges uint16be
@@ -205,9 +203,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 
 (define CFFTop
   (x:versioned-struct
-   #:pre-encode
-   ;; because fontkit depends on overloading 'version key, and we don't
-   (λ (val) (hash-set! val 'x:version (hash-ref val 'version)) val)
+   #:version-key 'version
    fixed16be
    (dictify
     1 (dictify 'hdrSize uint8
