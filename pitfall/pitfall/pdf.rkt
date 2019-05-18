@@ -26,7 +26,7 @@
                   #:height [height-arg #f])
   (match-define (list parsed-width parsed-height)
     (sort
-     (hash-ref page-sizes (string-upcase size) "letter")
+     (hash-ref page-sizes (string-upcase size) (λ () (hash-ref page-sizes "LETTER")))
      ;; for portrait, shorter edge is width
      (if (member orientation '("portrait" "tall")) < >)))
   (define width (or width-arg parsed-width))
