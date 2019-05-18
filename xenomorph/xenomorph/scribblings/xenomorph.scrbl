@@ -921,6 +921,7 @@ Base class for versioned dict formats. Use @racket[x:versioned-dict] to convenie
 @defconstructor[
 ([type version-type?]
 [versions dict?]
+[version-key symbol?]
 [fields #false])]{
 Create class instance that represents a versioned dict format with @racket[type] as the encoded type of the version value, and @racket[versions] as a dictionary holding the key–value pairs that define the versioned dict. Each key of @racket[versions] must be a value consistent with @racket[type], and each value must either be a @racket[dict?] or @racket[x:dict?].
 }
@@ -960,6 +961,7 @@ Whether @racket[x] is an object of type @racket[x:versioned-dict%].
 [versions-arg (or/c dict? #false)]
 [#:type type-kw (or/c version-type? #false)]
 [#:versions versions-kw (or/c dict? #false)]
+[#:version-key version-key (or/c symbol? #false) x:version-key]
 [#:pre-encode pre-encode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:post-decode post-decode-proc (or/c (any/c . -> . any/c) #false) #false]
 [#:base-class base-class (λ (c) (subclass? c x:versioned-dict%)) x:versioned-dict%]
@@ -971,7 +973,7 @@ Generate an instance of @racket[x:versioned-dict%] (or a subclass of @racket[x:v
 
 @racket[versions-arg] or @racket[versions-kw] (whichever is provided, though @racket[versions-arg] takes precedence) is a  dictionary holding the key–value pairs that define the versioned dict. Each key of @racket[versions] must be a value consistent with @racket[type], and each value must either be a @racket[dict?] or @racket[x:dict?].
 
-
+@racket[version-key] identifies the key that should be treated as the version selector. By default, it's a separate private key called @racket[x:version-key] that exists independently of the data fields. But if one of the existing data fields should be treated as the version key, you can pass it as the @racket[version-key] argument. 
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
