@@ -48,17 +48,19 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
            (send @type x:decode port new-parent))]
         ;; we have len, which is treated as count of items
         [else (for/list ([i (in-range len)])
+                (when (eof-object? (peek-byte port))
+                  (raise-argument-error 'decode (format "bytes for ~a items" len) i))
                 (send @type x:decode port new-parent))]))
 
     (define/augride (x:encode val-arg port [parent #f])
       (unless (sequence? val-arg)
-        (raise-argument-error 'x:list-encode "sequence" val-arg))
+        (raise-argument-error 'encode "sequence" val-arg))
       (define vals (if (list? val-arg) val-arg (sequence->list val-arg)))
       ;; if @len is not an integer, we have variable length
       (define maybe-fixed-len (and (integer? @len) @len))
       (when maybe-fixed-len
-        (unless (= (length vals) maybe-fixed-len)
-          (raise-argument-error 'x:list-encode "vals equal to length" maybe-fixed-len)))
+        (unless (eq? (length vals) maybe-fixed-len)
+          (raise-argument-error 'encode (format "sequence of ~a values" maybe-fixed-len) (length vals))))
       (define (encode-items parent)
         (for ([item (in-list vals)]
               [idx (in-range (or maybe-fixed-len +inf.0))])

@@ -1,6 +1,8 @@
 #lang debug racket/base
 (require racket/class
          racket/contract
+         racket/match
+         racket/sequence
          "base.rkt"
          "number.rkt"
          "util.rkt"
@@ -13,8 +15,8 @@
     (super-new)
 
     (define/override (pre-encode val)
-      (unless (or (vector? val) (list? val))
-        (raise-argument-error 'x:vector-encode "vector or list" val))
+      (unless (or (vector? val) (sequence? val))
+        (raise-argument-error 'encode "vector or sequence" val))
       (if (vector? val) (vector->list val) val))
     
     (define/override (post-decode val) (list->vector val))))
