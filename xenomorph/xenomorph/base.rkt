@@ -95,7 +95,7 @@ We don't make port-arg the last arg (similar to other Racket port funcs) because
     (define/pubment (x:size [val #f] [parent #f] . args)
       (match (inner 0 x:size val parent . args)
         [(? exact-nonnegative-integer? size) size]
-        [other (raise-argument-error 'size "nonnegative integer" other)]))
+        [other (raise-result-error 'size "nonnegative integer" other)]))
     
     (define/public (post-decode val) val)
     (define/public (pre-encode val) val)))
