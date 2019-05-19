@@ -1,9 +1,9 @@
 #lang scribble/manual
 
-@(require scribble/eval (for-label racket/base racket/class racket/file racket/dict racket/stream racket/promise xenomorph))
+@(require scribble/eval (for-label racket/base racket/class racket/file racket/dict racket/list racket/stream racket/promise racket/vector xenomorph))
 
 @(define my-eval (make-base-eval))
-@(my-eval '(require xenomorph))
+@(my-eval '(require xenomorph racket/list racket/stream racket/vector))
 
 
 @title{Xenomorph: binary encoding & decoding}
@@ -695,8 +695,7 @@ Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%])
 @racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the maximum length in bytes of the encoded string. 
 
 @itemlist[
-@item{If this argument is an integer, the string is limited to that length. The length is not directly encoded.
-.}
+@item{If this argument is an integer, the string is limited to that length. The length is not directly encoded.}
 
 @item{If it's a @racket[xenomorphic?] type, the length is variable, but limited to the size that can be represented by that type. For instance, if @racket[len-arg] is @racket[uint8], then the string can be a maximum of 255 bytes. The length is encoded at the beginning of the byte string.}
 
@@ -705,9 +704,6 @@ Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%])
 
 @racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-arg] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
 
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
-
-@racket[base-class] controls the class used for instantiation of the new object. 
 
 @examples[#:eval my-eval 
 (define any-ascii (x:string #f 'ascii))
@@ -727,6 +723,14 @@ Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%])
 (encode 256-utf8 "ABCD" #f)
 (encode 256-utf8 "ABÜ" #f) 
 (encode 256-utf8 (make-string 256 #\A) #f) 
+] 
+
+@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
+
+@racket[base-class] controls the class used for instantiation of the new object. 
+
+
+@examples[#:eval my-eval 
 (define (doubler str) (string-append str str))
 (define quad-str (x:string uint32be 
 #:pre-encode doubler
@@ -734,6 +738,7 @@ Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%])
 (encode quad-str "ABC" #f)
 (decode quad-str #"\0\0\0\6ABCABC")
 ] 
+
 }
 
 @subsection{Symbols}
@@ -790,15 +795,35 @@ Whether @racket[x] is an object of type @racket[x:symbol%].
 [#:base-class base-class (λ (c) (subclass? c x:symbol%)) x:symbol%]
 )
 x:symbol?]{
-Generate an instance of @racket[x:symbol%] (or a subclass of @racket[x:symbol%]) with certain optional attributes.
+Generate an instance of @racket[x:symbol%] (or a subclass of @racket[x:symbol%]) with certain optional attributes, which are the same as @racket[x:string].
 
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the symbol. If this argument is an integer, the symbol is limited to that length. If it's another value, the symbol has variable length.
+@examples[#:eval my-eval 
+(define any-ascii (x:symbol #f 'ascii))
+(encode any-ascii 'ABC #f)
+(decode any-ascii #"ABC\0")
+(decode any-ascii #"ABC\0DEF")
+(decode any-ascii #"AB")
+(define three-ascii (x:symbol 3 'ascii))
+(encode three-ascii 'ABC #f)
+(encode three-ascii 'ABCD #f)
+(encode three-ascii 'ABÜ #f)
+(decode three-ascii #"ABC")
+(decode three-ascii #"ABCD")
+(decode three-ascii (string->bytes/utf-8 "ABÜ"))
+(define 256-utf8 (x:symbol uint8 'utf8)) 
+(encode 256-utf8 'ABC #f)
+(encode 256-utf8 'ABCD #f)
+(encode 256-utf8 'ABÜ #f) 
+(encode 256-utf8 (make-string 256 #\A) #f) 
+(define (doubler sym)
+(string->symbol (format "~a~a" sym sym)))
+(define quad-str (x:symbol uint32be 
+#:pre-encode doubler
+#:post-decode doubler))
+(encode quad-str "ABC" #f)
+(decode quad-str #"\0\0\0\6ABCABC")
+] 
 
-@racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-arg] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
-
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
-
-@racket[base-class] controls the class used for instantiation of the new object.   
 }
 
 
@@ -808,7 +833,7 @@ Generate an instance of @racket[x:symbol%] (or a subclass of @racket[x:symbol%])
 
 Lists in Xenomorph have a @emph{type} and maybe a @emph{length}. Every element in the list must have the same type. The list can have a specific length, but it doesn't need to (in which case the length is encoded as part of the data).
 
-If you want to store heterogeneous item types in a single Xenomorph list, you can wrap them in @secref{Pointers} so they have a uniform type.
+If you want to store items of different types in a single Xenomorph list, wrap them in @secref{Pointers} so they have a uniform type.
 
 @defclass[x:list% x:base% ()]{
 Base class for list formats. Use @racket[x:list] to conveniently instantiate new list formats.
@@ -865,9 +890,40 @@ Generate an instance of @racket[x:list%] (or a subclass of @racket[x:list%]) wit
 
 @racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
 
+@examples[#:eval my-eval 
+(define three-uint8s (x:list uint8 3)) 
+(encode three-uint8s '(1 2 3) #f)
+(encode three-uint8s (string->bytes/utf-8 "ABC") #f)
+(encode three-uint8s '(1 2 3 4) #f)
+(encode three-uint8s '(1000 2000 3000) #f)
+(encode three-uint8s '(A B C) #f)
+(decode three-uint8s #"\1\2\3")
+(decode three-uint8s #"\1\2\3\4")
+(decode three-uint8s #"\1\2")
+(define <256-uint8s (x:list #:type uint8 #:length uint8))
+(encode <256-uint8s '(1 2 3) #f)
+(encode <256-uint8s (make-list 500 1) #f)
+(decode <256-uint8s #"\3\1\2\3")
+(decode <256-uint8s #"\3\1\2\3\4")
+(decode <256-uint8s #"\3\1\2")
+(define nested (x:list #:type <256-uint8s #:length uint8))
+(encode nested '((65) (66 66) (67 67 67)) #f)
+(decode nested #"\3\1A\2BB\3CCC")
+] 
+
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
-@racket[base-class] controls the class used for instantiation of the new object.   
+@racket[base-class] controls the class used for instantiation of the new object.  
+
+
+@examples[#:eval my-eval 
+(define (doubler xs) (append xs xs))
+(define quad-list (x:list uint16be 
+#:pre-encode doubler
+#:post-decode doubler))
+(encode quad-list '(1 2 3) #f)
+(decode quad-list #"\0\1\0\2\0\3\0\1\0\2\0\3")
+]    
 }
 
 
@@ -928,15 +984,32 @@ Whether @racket[x] is an object of type @racket[x:stream%].
 [#:base-class base-class (λ (c) (subclass? c x:stream%)) x:stream%]
 )
 x:stream?]{
-Generate an instance of @racket[x:stream%] (or a subclass of @racket[x:stream%]) with certain optional attributes.
+Generate an instance of @racket[x:stream%] (or a subclass of @racket[x:stream%]) with certain optional attributes, which are the same as @racket[x:list].
 
-@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) determines the type of the elements in the list.
-
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
-
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
-
-@racket[base-class] controls the class used for instantiation of the new object.   
+@examples[#:eval my-eval 
+(define three-uint8s (x:stream uint8 3)) 
+(encode three-uint8s '(1 2 3) #f)
+(encode three-uint8s (string->bytes/utf-8 "ABC") #f)
+(encode three-uint8s '(1 2 3 4) #f)
+(encode three-uint8s '(1000 2000 3000) #f)
+(encode three-uint8s '(A B C) #f)
+(decode three-uint8s #"\1\2\3")
+(decode three-uint8s #"\1\2\3\4")
+(decode three-uint8s #"\1\2")
+(define <256-uint8s (x:stream #:type uint8 #:length uint8))
+(encode <256-uint8s '(1 2 3) #f)
+(encode <256-uint8s (make-list 500 1) #f)
+(stream->list (decode <256-uint8s #"\3\1\2\3"))
+(for/list ([val (in-stream (decode <256-uint8s #"\3\1\2\3\4"))])
+val)
+(stream->list (decode <256-uint8s #"\3\1\2"))
+(define (doubler xs) (append (stream->list xs) (stream->list xs)))
+(define quad-stream (x:stream uint16be 
+#:pre-encode doubler
+#:post-decode doubler))
+(encode quad-stream '(1 2 3) #f)
+(decode quad-stream #"\0\1\0\2\0\3\0\1\0\2\0\3")
+] 
 }
 
 @subsection{Vectors}
@@ -995,15 +1068,32 @@ Whether @racket[x] is an object of type @racket[x:vector%].
 [#:base-class base-class (λ (c) (subclass? c x:vector%)) x:vector%]
 )
 x:vector?]{
-Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%]) with certain optional attributes.
+Generate an instance of @racket[x:vector%] (or a subclass of @racket[x:vector%]) with certain optional attributes, which are the same as @racket[x:list].
 
-@racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) determines the type of the elements in the list.
-
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the list. This can be an ordinary integer, but it can also be any value that is @racket[length-resolvable?].
-
-@racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
-
-@racket[base-class] controls the class used for instantiation of the new object.   
+@examples[#:eval my-eval 
+(define three-uint8s (x:vector uint8 3)) 
+(encode three-uint8s '#(1 2 3) #f)
+(encode three-uint8s (string->bytes/utf-8 "ABC") #f)
+(encode three-uint8s '(1 2 3 4) #f)
+(encode three-uint8s '(1000 2000 3000) #f)
+(encode three-uint8s '(A B C) #f)
+(decode three-uint8s #"\1\2\3")
+(decode three-uint8s #"\1\2\3\4")
+(decode three-uint8s #"\1\2")
+(define <256-uint8s (x:vector #:type uint8 #:length uint8))
+(encode <256-uint8s '(1 2 3) #f)
+(encode <256-uint8s (make-list 500 1) #f)
+(vector->list (decode <256-uint8s #"\3\1\2\3"))
+(for/list ([val (in-vector (decode <256-uint8s #"\3\1\2\3\4"))])
+val)
+(vector->list (decode <256-uint8s #"\3\1\2"))
+(define (doubler vec) (vector-append vec vec))
+(define quad-vec (x:vector uint16be 
+#:pre-encode doubler
+#:post-decode doubler))
+(encode quad-vec '#(1 2 3) #f)
+(decode quad-vec #"\0\1\0\2\0\3\0\1\0\2\0\3")
+]   
 }
 
 
