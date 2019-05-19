@@ -1,6 +1,8 @@
-#lang racket/base
+#lang debug racket/base
 (require racket/class
          racket/contract
+         racket/match
+         racket/sequence
          "base.rkt" "util.rkt" "number.rkt" "list.rkt" racket/stream sugar/unstable/dict)
 (provide (all-defined-out))
 
@@ -16,7 +18,7 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
 
     (define/override (x:decode port parent)
       (define starting-pos (pos port)) ; ! placement matters. `resolve-length` will change `pos`
-      (define len (resolve-length @len port parent))
+      (define maybe-len (resolve-length @len port parent))
       (define new-parent (if (x:int? @len)
                              (mhasheq x:parent-key parent
                                       x:start-offset-key starting-pos
@@ -24,17 +26,35 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
                                       x:length-key @len)
                              parent))
       (define stream-starting-pos (pos port))
+      (define item-size (send @type x:size #f new-parent))
+      ;; have to be able to retreive nth item of stream, random access
+      (define item-indexes-retrieved null)
       (begin0
-        (for/stream ([index (in-range len)])
-          (define orig-pos (pos port))
-          (pos port (+ stream-starting-pos (* (send @type x:size #f new-parent) index)))
+        (for*/stream ([index (in-range (or maybe-len +inf.0))]
+                      [orig-pos (in-value (pos port))]
+                      [index-pos (in-value (pos port (+ stream-starting-pos (* item-size index))))]
+                      [_ (in-value (begin (pos port index-pos) void))]
+                      ;; for streams of indefinite length, stop gathering when we're at eof
+                      #:break (and (not maybe-len) (eof-object? (peek-byte port))))
+          (when (eof-object? (peek-byte port))
+            (raise-argument-error 'decode (format "bytes for ~a items" index) (pos port)))
           (begin0
             (send @type x:decode port new-parent)
+            (set! item-indexes-retrieved (cons index item-indexes-retrieved))
             (pos port orig-pos)))
-        (pos port (+ (pos port) (* len (send @type x:size #f new-parent))))))
+        (let ([items-to-skip (or maybe-len (if (pair? item-indexes-retrieved)
+                                               (add1 (apply max item-indexes-retrieved))
+                                               0))])
+          (pos port (+ (pos port) (* items-to-skip item-size))))))
 
-    (define/override (x:encode val port [parent #f])
-      (super x:encode (if (stream? val) (stream->list val) val) port parent))
+    (define/override (x:encode val-arg port [parent #f])
+      (unless (or (stream? val-arg) (sequence? val-arg))
+        (raise-argument-error 'encode "sequence or stream" val-arg))
+      (define vals (match val-arg
+                     [(? list?) val-arg]
+                     [(? stream?) (stream->list val-arg)]
+                     [_ (sequence->list val-arg)]))
+      (super x:encode vals port parent))
     
     (define/override (x:size [val #f] [parent #f])
       (super x:size (if (stream? val) (stream->list val) val) parent))))
@@ -60,10 +80,10 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
    . ->* .
    x:stream?)
   (define type (or type-arg type-kwarg))
-    (unless (xenomorphic? type)
+  (unless (xenomorphic? type)
     (raise-argument-error 'x:stream "xenomorphic type" type))
   (define len (or len-arg len-kwarg))
-   (unless (length-resolvable? len)
+  (unless (length-resolvable? len)
     (raise-argument-error 'x:stream "resolvable length" len))
   (new (generate-subclass base-class pre-proc post-proc) [type type]
        [len len]
