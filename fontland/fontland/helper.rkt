@@ -8,6 +8,7 @@
 (define index? (λ (x) (and (number? x) (integer? x) (not (negative? x)))))
 
 (define-runtime-path charter-path "assets/charter.ttf")
+(define-runtime-path charter-woff-path "assets/charter.woff")
 (define-runtime-path charter-italic-path "assets/charter-italic.ttf")
 (define-runtime-path fira-path "assets/fira.ttf")
 (define-runtime-path fira-otf-path "assets/fira.otf")
