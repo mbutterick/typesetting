@@ -1651,7 +1651,7 @@ Generate an instance of @racket[x:reserved%] (or a subclass of @racket[x:reserve
 boolean?]{
 Whether @racket[x] is something that can be used as a length argument with @racket[xenomorphic?] objects that have length. For instance, an @racket[x:list] or @racket[x:stream].
 
-The following values are deemed to be resolvable: any @racket[exact-nonnegative-integer?], any @racket[procedure?] that returns a @racket[exact-nonnegative-integer?], or an @racket[x:int?]. 
+The following values are deemed to be resolvable: any @racket[exact-nonnegative-integer?], an @racket[x:int?], or any @racket[procedure?] that takes one argument (= the parent object) returns a @racket[exact-nonnegative-integer?].
 }
 
 @section{License & source code}

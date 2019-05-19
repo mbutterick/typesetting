@@ -14,7 +14,6 @@
     [#false #false]
     [(? exact-nonnegative-integer?) x]
     [(? procedure? proc) (proc parent)]
-    [(? symbol? key) #:when parent (dict-ref parent key)]
     [(? x:int?) #:when input-port (decode x input-port)]
     [_ (raise-argument-error 'resolve-length "fixed-size argument" x)]))
 

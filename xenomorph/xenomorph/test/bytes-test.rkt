@@ -31,7 +31,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 (test-case
  "bytes: should decode with parent key length"
  (parameterize ([current-input-port (open-input-bytes (bytes #xab #xff #x1f #xb6))])
-   (define buf (x:bytes #:length 'len))
+   (define buf (x:bytes #:length (λ (p) (hash-ref p 'len))))
    (check-equal? (decode buf #:parent (hash 'len 3)) (bytes #xab #xff #x1f))
    (check-equal? (decode buf #:parent (hash 'len 1)) (bytes #xb6))))
 

@@ -26,7 +26,7 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 (test-case
  "string: decode length from parent key"
  (parameterize ([current-input-port (open-input-bytes #"testing")])
-   (check-equal? (decode (x:string 'len) (current-input-port) #:parent (mhash 'len 7)) "testing")))
+   (check-equal? (decode (x:string (λ (p) (hash-ref p 'len))) (current-input-port) #:parent (mhash 'len 7)) "testing")))
 
 (test-case
  "string: decode length as number before string"

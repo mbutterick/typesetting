@@ -41,12 +41,12 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 (test-case 
  "list: decode length from parent key"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (decode (x:list #:type uint8 #:length 'len) (current-input-port) #:parent (mhash 'len 4)) '(1 2 3 4))))
+   (check-equal? (decode (x:list #:type uint8 #:length (λ (p) (hash-ref p 'len))) (current-input-port) #:parent (mhash 'len 4)) '(1 2 3 4))))
 
 (test-case 
  "list: decode byte count from parent key"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
-   (check-equal? (decode (x:list #:type uint16be #:length 'len #:count-bytes #t) (current-input-port) #:parent (mhash 'len 4)) '(258 772))))
+   (check-equal? (decode (x:list #:type uint16be #:length (λ (p) (hash-ref p 'len)) #:count-bytes #t) (current-input-port) #:parent (mhash 'len 4)) '(258 772))))
 
 (test-case 
  "list: decode length as number before array"

@@ -22,7 +22,7 @@
 (test-case
  "symbol: decode length from parent key"
  (parameterize ([current-input-port (open-input-bytes #"testing")])
-   (check-equal? (decode (x:symbol 'len) (current-input-port) #:parent (mhash 'len 7)) 'testing)))
+   (check-equal? (decode (x:symbol (λ (p) (hash-ref p 'len))) (current-input-port) #:parent (mhash 'len 7)) 'testing)))
 
 (test-case
  "symbol: decode length as number before symbol"
