@@ -20,7 +20,14 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                     [else values]))
   (decoder (read-bytes len port)))
 
+(define (string-ascii? string)
+  (for/and ([c (in-string string)])
+              (<= 0 (char->integer c) 127)))
+
 (define (encode-string string [encoding 'ascii])
+  (when (eq? encoding 'ascii)
+    (unless (string-ascii? string)
+      (raise-argument-error 'encode "ascii string" string)))
   (define encoder (case encoding
                     [(ucs2 utf8 ascii) string->bytes/utf-8]
                     [(utf16le) (error 'swap-bytes-unimplemented)]
@@ -42,7 +49,7 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
     (init-field [(@len len)] [(@encoding encoding)])
 
     (unless (length-resolvable? @len)
-      (raise-argument-error 'xstring "length-resolvable?" @len))
+      (raise-argument-error 'x:string "length-resolvable?" @len))
     (unless (or (procedure? @encoding) (supported-encoding? @encoding))
       (raise-argument-error 'x:string (format "procedure or member of ~v" supported-encodings) @encoding))
 
@@ -52,19 +59,22 @@ https://github.com/mbutterick/restructure/blob/master/src/String.coffee
                          [(? procedure? proc) (or (proc parent) 'ascii)]
                          [enc enc]))
       (define adjustment (if (and (not @len) (bytes-left-in-port? port)) 1 0))
-      (begin0
-        (decode-string len port encoding)
-        (pos port (+ (pos port) adjustment))))
+              (define result (decode-string len port encoding))
+        (pos port (+ (pos port) adjustment))
+      (when (eq? @encoding 'ascii)
+        (unless (string-ascii? result)
+          (raise-result-error 'decode "ascii string" result)))
+      result)
 
     (define/augment (x:encode val-arg port [parent #f])
       (define val (if (string? val-arg) val-arg (format "~a" val-arg)))
       (define encoding (match @encoding
-                         [(? procedure?) (@encoding (and parent (hash-ref parent val)) 'ascii)]
+                         [(? procedure?) (@encoding (and parent (hash-ref parent val)) 'ascii)] ; when does this happen?
                          [enc enc]))
       (define encoded-str (encode-string val encoding))
       (define encoded-length (bytes-length encoded-str))
       (when (and (exact-nonnegative-integer? @len) (> encoded-length @len))
-        (raise-argument-error 'xstring-encode (format "string no longer than ~a" @len) val)) 
+        (raise-argument-error 'encode (format "string no longer than ~a" @len) val)) 
       (when (x:int? @len)
         (send @len x:encode encoded-length port parent))
       (define string-terminator (if @len (bytes) (bytes 0))) ; null terminated when no len

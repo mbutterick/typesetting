@@ -68,10 +68,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
                 
     (define/augment (x:encode val . _)
       (unless (integer? val)
-        (raise-argument-error 'x:encode "integer" val))
+        (raise-argument-error 'encode "integer" val))
                              
       (unless (<= bound-min val bound-max)
-        (raise-argument-error 'x:encode
+        (raise-argument-error 'encode
                               (format "value that fits within ~a ~a-byte int (~a to ~a)" (if signed "signed" "unsigned") @size bound-min bound-max) val))
       (for/fold ([bs null]
                  [val (exact-if-possible val)]
