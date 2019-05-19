@@ -22,7 +22,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/post.js
                           
                 1 null
                 2 (dictify 'numberOfGlyphs uint16be
-                                                 'glyphNameIndex (x:array #:type uint16be #:length 'numberOfGlyphs)
+                                                 'glyphNameIndex (x:array #:type uint16be #:length (λ (p) (hash-ref p 'numberOfGlyphs)))
                                                  'names (x:array (x:string #:length uint8))
                                                  )
                 2.5 (dictify 'numberOfGlyphs uint16be

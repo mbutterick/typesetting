@@ -67,9 +67,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
    CFFEncodingVersion
    (dictify
     0 (dictify 'nCodes uint8
-               'codes (x:array uint8 'nCodes))
+               'codes (x:list #:type uint8 #:length (λ (p) (hash-ref p 'nCodes))))
     1 (dictify 'nRanges uint8
-               'ranges (x:array Range1 'nRanges)))))
+               'ranges (x:list #:type Range1 #:length (λ (p) (hash-ref p 'nRanges)))))))
 
 (define CFFEncoding (PredefinedOp (list StandardEncoding ExpertEncoding)
                                   (CFFPointer CFFCustomEncoding #:lazy #true)))
@@ -78,7 +78,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
 ;; length is equal to the provided length.
 
 (define RangeArray%
-  (class x:array%
+  (class x:list%
     (super-new)
     (inherit-field [@len len] [@type type])
     (define/override (x:decode stream parent)
@@ -92,7 +92,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
         (hash-set! range 'offset count)
         (values (cons range res) (+ count (hash-ref range 'nLeft) 1))))))
 
-(define (RangeArray . args) (apply x:array #:base-class RangeArray% args))
+(define (RangeArray . args) (apply x:list #:base-class RangeArray% args))
 
 (define (base-tproc t) (length (hash-ref (hash-ref t 'parent) 'CharStrings)))
 
@@ -101,7 +101,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
    uint8
    (let ([tproc (λ (t) (sub1 (base-tproc t)))])
      (dictify
-      0 (dictify 'glyphs (x:array uint16be tproc))
+      0 (dictify 'glyphs (x:list uint16be tproc))
       1 (dictify 'ranges (RangeArray Range1 tproc))
       2 (dictify 'ranges (RangeArray Range2 tproc))))))
 
@@ -122,12 +122,12 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
    uint8
    #:version-key 'version
    (dictify
-    0 (dictify 'fds (x:array uint8 base-tproc))
+    0 (dictify 'fds (x:list uint8 base-tproc))
     3 (dictify 'nRanges uint16be
-               'ranges (x:array FDRange3 'nRanges)
+               'ranges (x:list #:type FDRange3 #:length (λ (p) (hash-ref p 'nRanges)))
                'sentinel uint16be)
     4 (dictify 'nRanges uint32be
-               'ranges (x:array FDRange4 'nRanges)
+               'ranges (x:list #:type FDRange4 #:length (λ (p) (hash-ref p 'nRanges)))
                'sentinel uint32be))))
 
 (define ptr (CFFPointer CFFPrivateDict))
@@ -208,9 +208,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFTop.js
    (dictify
     1 (dictify 'hdrSize uint8
                'offSize uint8
-               'nameIndex (CFFIndex (x:string #:length 'length))
+               'nameIndex (CFFIndex (x:string #:length (λ (p) (hash-ref p 'length))))
                'topDictIndex (CFFIndex CFFTopDict)
-               'stringIndex (CFFIndex (x:string #:length 'length))
+               'stringIndex (CFFIndex (x:string #:length (λ (p) (hash-ref p 'length))))
                'globalSubrIndex (CFFIndex))
     
     #|

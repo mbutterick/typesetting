@@ -61,7 +61,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                             'searchRange uint16be
                             'entrySelector uint16be
                             'rangeShift uint16be
-                            'tables (x:array #:type table-entry #:length 'numTables)))
+                            'tables (x:array #:type table-entry #:length (λ (p) (hash-ref p 'numTables)))))
 
 (define (directory-decode ip [options (mhash)])
   (decode Directory ip))
