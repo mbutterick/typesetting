@@ -291,6 +291,14 @@ Whether @racket[val] is either @racket['be] (representing big endian) or @racket
 The endian value of the current system. Big endian is represented as @racket['be] and little endian as @racket['le]. This can be used as an argument for classes that inherit from @racket[x:number%]. 
 
 Use this value carefully, however. Binary formats are usually defined using one endian convention or the other (so that data can be exchanged among machines regardless of the endianness of the underlying system).
+
+@margin-note{When an integer is more than one byte long, one has to consider how the bytes are ordered. If the byte representing the lowest 8 bits appears first, it's known as @emph{little endian} byte ordering. If this byte appears last, it's called @emph{big endian} byte ordering. 
+
+For example, the integer 1 in 32-bit occupies four bytes. In little endian, it would be encoded as @racket[#"\1\0\0\0"]. In big endian, as @racket[#"\0\0\0\1"].
+
+When encoding and decoding binary formats, one has to be consistent about endianness, because it will change the meaning of the binary value. For instance, if we inadvertently treated the big-endian byte stream @racket[#"\0\0\0\1"] as little endian, we'd get the result @racket[16777216] instead of the expected @racket[1].
+}
+
 }
 
 @defclass[x:number% x:base% ()]{
@@ -400,7 +408,7 @@ Use these carefully, however. Binary formats are usually defined using one endia
 @defthing[uint24be x:int?]
 @defthing[uint32be x:int?])
 ]{
-Big-endian versions of the common integer types. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length.
+Big-endian versions of the common integer types. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length. @racket[int8be] and @racket[uint8be] are included for consistency, but as one-byte types, they are not affected by endianness.
 
 
 @examples[#:eval my-eval 
@@ -442,7 +450,7 @@ Big-endian versions of the common integer types. The @racket[u] prefix indicates
 @defthing[uint24le x:int?]
 @defthing[uint32le x:int?])
 ]{
-Little-endian versions of the common integer types. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length.
+Little-endian versions of the common integer types. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length. @racket[int8le] and @racket[uint8le] are included for consistency, but as one-byte types, they are not affected by endianness.
 
 @examples[#:eval my-eval 
 (encode int8le 1 #f)
