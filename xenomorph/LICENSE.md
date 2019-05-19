@@ -1,6 +1,6 @@
 MIT License
 
-Xenomorph is © 2017–2018 Matthew Butterick
+Xenomorph is © 2017–2019 Matthew Butterick
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
