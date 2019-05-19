@@ -57,4 +57,4 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/WOFFDirectory.js
   (define name-table (decode head ip))
   (check-equal? (hash-ref name-table 'magicNumber) #x5F0F3CF5)
   (check-equal? (hash-ref name-table 'unitsPerEm) 1000)
-  (check-equal? (hash-ref name-table 'created) (date* 52 12 5 10 7 2013 3 190 #t -25200 0 "PDT")))
+  (check-equal? (hash-ref name-table 'created) (date* 52 12 12 10 7 2013 3 190 #f 0 0 "UTC")))

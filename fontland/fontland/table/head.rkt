@@ -16,7 +16,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
 (define hfs-seconds (x:int #:size 8
                            #:signed #f
                            #:endian 'be
-                           #:post-decode (λ (int) (seconds->date (- int mac-to-posix-delta)))
+                           #:post-decode (λ (int) (seconds->date (- int mac-to-posix-delta) #f))
                            #:pre-encode (λ (dt) (+ (date->seconds dt) mac-to-posix-delta))))
 
 (define head (x:struct
