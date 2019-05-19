@@ -692,13 +692,48 @@ Whether @racket[x] is an object of type @racket[x:string%].
 x:string?]{
 Generate an instance of @racket[x:string%] (or a subclass of @racket[x:string%]) with certain optional attributes.
 
-@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the length of the string. If this argument is an integer, the string is limited to that length. If it's another value, the string has variable length.
+@racket[len-arg] or @racket[len-kw] (whichever is provided, though @racket[len-arg] takes precedence) determines the maximum length in bytes of the encoded string. 
+
+@itemlist[
+@item{If this argument is an integer, the string is limited to that length. The length is not directly encoded.
+.}
+
+@item{If it's a @racket[xenomorphic?] type, the length is variable, but limited to the size that can be represented by that type. For instance, if @racket[len-arg] is @racket[uint8], then the string can be a maximum of 255 bytes. The length is encoded at the beginning of the byte string.}
+
+@item{If it's another value, like @racket[#f], the string has variable length, and is null-terminated.}
+]
 
 @racket[enc-arg] or @racket[enc-kw] (whichever is provided, though @racket[enc-arg] takes precedence) determines the encoding of the string. Default is @racket['utf8]. See also @racket[supported-encoding?].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
-@racket[base-class] controls the class used for instantiation of the new object.   
+@racket[base-class] controls the class used for instantiation of the new object. 
+
+@examples[#:eval my-eval 
+(define any-ascii (x:string #f 'ascii))
+(encode any-ascii "ABC" #f)
+(decode any-ascii #"ABC\0")
+(decode any-ascii #"ABC\0DEF")
+(decode any-ascii #"AB")
+(define three-ascii (x:string 3 'ascii))
+(encode three-ascii "ABC" #f)
+(encode three-ascii "ABCD" #f)
+(encode three-ascii "ABÜ" #f)
+(decode three-ascii #"ABC")
+(decode three-ascii #"ABCD")
+(decode three-ascii (string->bytes/utf-8 "ABÜ"))
+(define 256-utf8 (x:string uint8 'utf8)) 
+(encode 256-utf8 "ABC" #f)
+(encode 256-utf8 "ABCD" #f)
+(encode 256-utf8 "ABÜ" #f) 
+(encode 256-utf8 (make-string 256 #\A) #f) 
+(define (doubler str) (string-append str str))
+(define quad-str (x:string uint32be 
+#:pre-encode doubler
+#:post-decode doubler))
+(encode quad-str "ABC" #f)
+(decode quad-str #"\0\0\0\6ABCABC")
+] 
 }
 
 @subsection{Symbols}
