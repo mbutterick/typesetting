@@ -3,7 +3,7 @@
 @(require scribble/eval (for-label racket/base racket/class racket/file racket/dict racket/stream racket/promise xenomorph))
 
 @(define my-eval (make-base-eval))
-@(my-eval `(require xenomorph))
+@(my-eval '(require xenomorph))
 
 
 @title{Xenomorph: binary encoding & decoding}
@@ -85,7 +85,7 @@ Or octal like so:
 
 @(racketvalfont "#\"\\101\\102\\103\"")
 
-Both of these mean the same thing. (If you like, confirm this by trying them on the REPL.)
+All three mean the same thing. (If you like, confirm this by trying them on the REPL.)
 
 We can also make an equivalent byte string with @racket[bytes]. As above, Racket doesn't care how we notate the values, as long as they're between 0 and 255:
 
@@ -110,7 +110,7 @@ If we prefer to deal with lists of integers, we can always use @racket[bytes->li
 (list->bytes '(65 66 67 154 206 255))
 ]
 
-The key point: the @litchar{#"} prefix tells us we're looking at a byte string, not an ordinary string.
+The key point: the @litchar{#} prefix tells us we're looking at a byte string, not an ordinary string.
 
 
 @subsection{Binary formats}
@@ -185,6 +185,8 @@ Whether @racket[x] is an object of type @racket[x:base%].
 [arg any/c] ...)
 any/c]{
 Read bytes from @racket[byte-source] and convert them to a Racket value using @racket[xenomorphic-obj] as the decoder.
+
+If @racket[byte-source] contains more bytes than @racket[xenomorphic-obj] needs to decode a value, it reads as many bytes as necessary and leaves the rest.
 }
 
 @defproc[
@@ -199,6 +201,8 @@ Read bytes from @racket[byte-source] and convert them to a Racket value using @r
 Convert @racket[val] to bytes using @racket[xenomorphic-obj] as the encoder. 
 
 If @racket[byte-dest] is an @racket[output-port?], the bytes are written there and the return value is @racket[(void)]. If @racket[byte-dest] is @racket[#false], the encoded byte string is the return value.
+
+If @racket[val] does not match the @racket[xenomorphic-obj] type appropriately — for instance, you try to @racket[encode] a negative integer using an unsigned integer type like @racket[uint8] — then an error will arise.
 }
 
 @defproc[
@@ -269,6 +273,8 @@ The length of the @tech{byte string} that @racket[val] would produce if it were 
 
 }
 
+
+
 @subsection{Numbers}
 
 @defmodule[xenomorph/number]
@@ -282,9 +288,9 @@ Whether @racket[val] is either @racket['be] (representing big endian) or @racket
 
 
 @defthing[system-endian endian-value?]{
-The endian value of the current system. Big endian is represented as @racket['be] and little endian as @racket['le]. This can be used as an argument for the @racket[x:number%] constructor. 
+The endian value of the current system. Big endian is represented as @racket['be] and little endian as @racket['le]. This can be used as an argument for classes that inherit from @racket[x:number%]. 
 
-Use this value carefully, however, as most binary formats are defined using one endian convention or the other (so that they can be exchanged among systems regardless of endianness).
+Use this value carefully, however. Binary formats are usually defined using one endian convention or the other (so that data can be exchanged among machines regardless of the endianness of the underlying system).
 }
 
 @defclass[x:number% x:base% ()]{
@@ -347,8 +353,42 @@ Generate an instance of @racket[x:int%] (or a subclass of @racket[x:int%]) with 
 ]{
 The common integer types, using @racket[system-endian] endianness. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length.
 
-Use these carefully, however, as most binary formats are defined using one endian convention or the other (so that they can be exchanged among systems regardless of endianness).
+Use these carefully, however. Binary formats are usually defined using one endian convention or the other (so that data can be exchanged among machines regardless of the endianness of the underlying system).
+
+@examples[#:eval my-eval 
+(encode int8 1 #f)
+(encode int16 1 #f)
+(encode int24 1 #f)
+(encode int32 1 #f)
+(encode int8 -128 #f)
+(encode int16 -128 #f)
+(encode int24 -128 #f)
+(encode int32 -128 #f)
+(encode uint8 1 #f)
+(encode uint16 1 #f)
+(encode uint24 1 #f)
+(encode uint32 1 #f)
+(code:comment @#,t{negative numbers cannot be encoded as unsigned ints, of course})
+(encode uint8 -128 #f)
+(encode uint16 -128 #f)
+(encode uint24 -128 #f)
+(encode uint32 -128 #f)
+(decode int8 #"1" #f)
+(decode int16 #"10" #f)
+(decode int24 #"100" #f)
+(decode int32 #"1000" #f)
+(decode int8 #"1" #f)
+(decode int16 #"10" #f)
+(decode int24 #"100" #f)
+(decode int32 #"1000" #f)
+(decode uint8 #"1" #f)
+(decode uint16 #"10" #f)
+(decode uint24 #"100" #f)
+(decode uint32 #"1000" #f)
+]
+
 }
+
 
 @deftogether[
 (@defthing[int8be x:int?]
@@ -361,6 +401,35 @@ Use these carefully, however, as most binary formats are defined using one endia
 @defthing[uint32be x:int?])
 ]{
 Big-endian versions of the common integer types. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length.
+
+
+@examples[#:eval my-eval 
+(encode int8be 1 #f)
+(encode int16be 1 #f)
+(encode int24be 1 #f)
+(encode int32be 1 #f)
+(encode int8be -128 #f)
+(encode int16be -128 #f)
+(encode int24be -128 #f)
+(encode int32be -128 #f)
+(encode uint8be 1 #f)
+(encode uint16be 1 #f)
+(encode uint24be 1 #f)
+(encode uint32be 1 #f)
+(decode int8be #"1" #f)
+(decode int16be #"10" #f)
+(decode int24be #"100" #f)
+(decode int32be #"1000" #f)
+(decode int8be #"1" #f)
+(decode int16be #"10" #f)
+(decode int24be #"100" #f)
+(decode int32be #"1000" #f)
+(decode uint8be #"1" #f)
+(decode uint16be #"10" #f)
+(decode uint24be #"100" #f)
+(decode uint32be #"1000" #f)
+]
+
 }
 
 @deftogether[
@@ -374,6 +443,33 @@ Big-endian versions of the common integer types. The @racket[u] prefix indicates
 @defthing[uint32le x:int?])
 ]{
 Little-endian versions of the common integer types. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length.
+
+@examples[#:eval my-eval 
+(encode int8le 1 #f)
+(encode int16le 1 #f)
+(encode int24le 1 #f)
+(encode int32le 1 #f)
+(encode int8le -128 #f)
+(encode int16le -128 #f)
+(encode int24le -128 #f)
+(encode int32le -128 #f)
+(encode uint8le 1 #f)
+(encode uint16le 1 #f)
+(encode uint24le 1 #f)
+(encode uint32le 1 #f)
+(decode int8le #"1" #f)
+(decode int16le #"10" #f)
+(decode int24le #"100" #f)
+(decode int32le #"1000" #f)
+(decode int8le #"1" #f)
+(decode int16le #"10" #f)
+(decode int24le #"100" #f)
+(decode int32le #"1000" #f)
+(decode uint8le #"1" #f)
+(decode uint16le #"10" #f)
+(decode uint24le #"100" #f)
+(decode uint32le #"1000" #f)
+]
 }
 
 
@@ -417,6 +513,15 @@ Generate an instance of @racket[x:float%] (or a subclass of @racket[x:float%]) w
 @defthing[floatle x:float?])
 ]{
 The common 32-bit floating-point types. They differ in byte-ordering convention: @racket[floatbe] uses big endian, @racket[floatle] uses little endian, @racket[float] uses @racket[system-endian].
+
+@examples[#:eval my-eval 
+(encode float 123.456 #f)
+(encode floatbe 123.456 #f)
+(encode floatle 123.456 #f)
+(decode float #"y\351\366B" #f)
+(decode floatbe #"y\351\366B" #f)
+(decode floatle #"y\351\366B" #f)
+]
 }
 
 @deftogether[
@@ -425,6 +530,15 @@ The common 32-bit floating-point types. They differ in byte-ordering convention:
 @defthing[doublele x:float?])
 ]{
 The common 64-bit floating-point types. They differ in byte-ordering convention: @racket[doublebe] uses big endian, @racket[doublele] uses little endian, @racket[double] uses @racket[system-endian].
+
+@examples[#:eval my-eval 
+(encode double 123.456 #f)
+(encode doublebe 123.456 #f)
+(encode doublele 123.456 #f)
+(decode double #"w\276\237\32/\335^@" #f)
+(decode doublebe #"w\276\237\32/\335^@" #f)
+(decode doublele #"w\276\237\32/\335^@" #f)
+]
 }
 
 
@@ -481,6 +595,17 @@ Generate an instance of @racket[x:fixed%] (or a subclass of @racket[x:fixed%]) w
 @defthing[fixed16le x:fixed?])
 ]{
 The common 16-bit fixed-point number types with 2 bits of precision. They differ in byte-ordering convention: @racket[fixed16be] uses big endian, @racket[fixed16le] uses little endian, @racket[fixed16] uses @racket[system-endian].
+
+Note that because of the limited precision, the byte encoding is possibly lossy (meaning, if you @racket[encode] and then @racket[decode], you may not get exactly the same number back).
+
+@examples[#:eval my-eval 
+(encode fixed16 123.45 #f)
+(encode fixed16be 123.45 #f)
+(encode fixed16le 123.45 #f)
+(decode fixed16 #"s{" #f)
+(decode fixed16be #"s{" #f)
+(decode fixed16le #"s{" #f)
+]
 }
 
 @deftogether[
@@ -489,6 +614,17 @@ The common 16-bit fixed-point number types with 2 bits of precision. They differ
 @defthing[fixed32le x:fixed?])
 ]{
 The common 32-bit fixed-point number types with 4 bits of precision. They differ in byte-ordering convention: @racket[fixed32be] uses big endian, @racket[fixed32le] uses little endian, @racket[fixed32] uses @racket[system-endian].
+
+Note that because of the limited precision, the byte encoding is possibly lossy (meaning, if you @racket[encode] and then @racket[decode], you may not get exactly the same number back).
+
+@examples[#:eval my-eval 
+(encode fixed32 123.45 #f)
+(encode fixed32be 123.45 #f)
+(encode fixed32le 123.45 #f)
+(decode fixed32 #"3s{\0" #f)
+(decode fixed32be #"3s{\0" #f)
+(decode fixed32le #"3s{\0" #f)
+]
 }
 
 
@@ -980,6 +1116,13 @@ Generate an instance of @racket[x:versioned-dict%] (or a subclass of @racket[x:v
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
 
+@subsubsection{Reserved values}
+
+@defthing[x:version-key symbol? #:value 'x:version]{
+Key used to store & look up the version-selector value within the fields of a versioned dict.
+}
+
+
 
 @subsection{Pointers}
 
@@ -1082,6 +1225,22 @@ Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%
 
 @racket[base-class] controls the class used for instantiation of the new object.   
 }
+
+@subsubsection{Private values}
+
+@deftogether[(@defthing[x:start-offset-key symbol? #:value 'x:start-offset]
+@defthing[x:current-offset-key symbol? #:value 'x:current-offset]
+@defthing[x:parent-key symbol? #:value 'x:parent]
+@defthing[x:pointer-size-key symbol? #:value 'x:ptr-size]
+@defthing[x:pointers-key symbol? #:value 'x:pointers]
+@defthing[x:pointer-offset-key symbol? #:value 'x:ptr-offset]
+@defthing[x:pointer-type-key symbol? #:value 'x:ptr-type]
+@defthing[x:length-key symbol? #:value 'x:length]
+@defthing[x:val-key symbol? #:value 'x:val])]{
+Housekeeping.
+}
+
+
 
 
 
