@@ -66,6 +66,106 @@ Invoke the library in a source file by importing it in the usual way:
 
 }
 
+@section{Tutorials}
+
+@subsection{A binary format for complex numbers}
+
+Racket natively supports @tech{complex numbers}. Suppose we want to encode these numbers in a binary format without losing precision. How would we do it?
+
+First, we need to understand Racket's recipe for a complex number:
+
+@itemlist[
+@item{A @tech{complex number} has a @tech{real part} and an @tech{imaginary part}. The coeffiecient of each part is a @tech{real number}.}
+
+@item{A @tech{real number} is either a @tech{floating-point} number or an @tech{exact} number.}
+
+@item{An @tech{exact number} is a rational number, that is, a number with a @tech{numerator} and @tech{denominator}.}
+
+@item{The @tech{numerator} and @tech{denominator} can each be an arbitrarily large signed @tech{integer}.}
+
+]
+
+To make a binary format for complex numbers, we build the format by composing smaller ingredients into bigger ones. So we'll work the recipe from bottom to top, composing our ingredients as we go.
+
+@subsubsection{Big integers}
+
+Let's start with the big integers. We can't use an existing signed-integer type like @racket[int32] because our big integers won't necessarily fit. For that matter, this also rules out any type derived from @racket[x:int%], because all xenomorphic integers have a fixed size.
+
+Instead, we need to use a variable-length type. How about an @racket[x:string]? If we don't specify a @racket[#:length] argument, it can be arbitrarily long. All we need to do is convert our number to a string before encoding (with @racket[number->string]) and then convert string to number after decoding (with @racket[string->number]).
+
+
+@interaction[#:eval my-eval
+(define bigint (x:string #:pre-encode number->string
+                         #:post-decode string->number))
+
+(define abigint (- (expt 2 80)))
+abigint
+(encode bigint abigint #f)
+(decode bigint #"-1208925819614629174706176\0")
+]
+
+@subsubsection{Exact numbers}
+
+Next, we handle exact numbers. An exact number is a combination of two big integers representing a numerator and a denominator. So in this case, we need a xenomorphic type that can store two values. How about an @racket[x:list]? The length of the list will be two, and the type of the list will be our new @racket[bigint] type.
+
+Similar to before, we use pre-encoding to convert our Racket value into an encodable shape. This time, we convert an exact number into a list of its @racket[numerator] and @racket[denominator]. After decoding, we take that list and convert its values back into an exact number (by using @racket[/]):
+
+@interaction[#:eval my-eval
+(define exact (x:list #:type bigint 
+                      #:length 2
+                      #:pre-encode (λ (x) (list (numerator x) (denominator x)))
+                      #:post-decode (λ (nd) (apply / nd))))
+(encode exact -1234/5678 #f)
+(decode exact #"-617\0002839\0")
+]
+
+@subsubsection{Real numbers}
+
+A real number is either a floating-point number (for which we can use Xenomorph's built-in @racket[float] type) or an exact number (for which we can use the @racket[exact] type we just defined).
+
+This time, we need an encoder that allows us to choose from among two possibilities. How about an @racket[x:versioned-dict]? We'll assign our exact numbers to version 0, and our floats to version 1. (These version numbers are arbitrary — we could pick any two values, but a small integer will fit inside a @racket[uint8].)
+
+We specify a @racket[#:version-key] of @racket['version]. Then in our pre-encode function, we choose the version of the encoding based on whether the input value is @racket[exact?].
+
+@interaction[#:eval my-eval
+(define real (x:versioned-dict
+              #:type uint8
+              #:version-key 'version
+              #:versions
+              (list
+               (cons 0 (list (cons 'val exact)))
+               (cons 1 (list (cons 'val float))))
+              #:pre-encode (λ (num) (list (cons 'val num)
+                                          (cons 'version (if (exact? num)
+                                                             0
+                                                             1))))
+              #:post-decode (λ (h) (hash-ref h 'val))))
+(encode real 123.45 #f)
+(decode real #"\1f\346\366B")
+(encode real -1/16 #f)
+(decode real #"\0-1\00016\0")
+]
+
+Notice that the float loses some precision during the encoding & decoding process. This is a natural part of how floating-point numbers work — they are called @tech{inexact} for this reason — so this is a feature, not a bug.
+
+@subsubsection{Complex numbers}
+
+Now we put it all together. A complex number is a combination of a real part and an imaginary part, each of which has a real coefficient. Therefore, we can model a complex number in a binary format just like we did for exact numbers: as a list of two values.
+
+Once again, we use a pre-encoder and post-decoder to massage the data. On the way in, the pre-encoder turns the complex number into a list of real-number coefficients with @racket[real-part] and @racket[imag-part]. On the way out, these coefficients are reformed into a complex number through some easy addition and multiplication.
+
+
+@interaction[#:eval my-eval
+(define complex (x:list #:type real
+                        #:length 2
+                        #:pre-encode (λ (num) (list (real-part num) (imag-part num)))
+                        #:post-decode (λ (ri) (+ (first ri) (* +i (second ri))))))
+(encode complex 123.45-6.789i #f)
+(decode complex #"\1f\346\366B\1}?\331\300")
+(encode complex 1/234-5/678i #f)
+(decode complex #"\0001\000234\0\0-5\000678\0")
+]
+
 
 @section{The big picture}
 
