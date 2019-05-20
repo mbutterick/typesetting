@@ -78,7 +78,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                               x:pointer-size-key 0))
       (define fields-size (for/sum ([(key type) (in-dict @fields)]
                                     #:when (xenomorphic-type? type))
-                            (send type x:size (and val (dict-ref val key)) parent)))
+                            (send type x:size (and val (send type pre-encode (dict-ref val key))) parent)))
       (define pointers-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
       (+ fields-size pointers-size))))
 

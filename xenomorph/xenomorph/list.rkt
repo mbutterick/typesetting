@@ -79,7 +79,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
 
     (define/augride (x:size [val #f] [parent #f])
       (when val (unless (sequence? val)
-                  (raise-argument-error 'xarray-size "sequence" val)))
+                  (raise-argument-error 'size "sequence" val)))
       (cond
         [val (define-values (new-parent len-size)
                (if (x:int? @len)

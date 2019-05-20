@@ -26,16 +26,17 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
     (unless (version-type? @type)
       (raise-argument-error 'x:versioned-dict "integer, procedure, symbol, or xenomorphic" @type))
+    
     (unless (and (dict? @versions) (andmap (λ (v) (or (dict? v) (x:dict? v))) (dict-values @versions)))
       (raise-argument-error 'x:versioned-dict "dict of dicts or structish" @versions))
 
     (define (select-field-set val)
       (define version-key
         (or (dict-ref val @version-key #f)
-            (raise-argument-error 'x:versioned-dict-encode "value for version key" @version-key)))
+            (raise-argument-error 'encode "value for version key" @version-key)))
       (define field-object
         (or (dict-ref @versions version-key #f)
-            (raise-argument-error 'x:versioned-dict-encode (format "valid field version: ~v" (dict-keys @versions)) version-key)))
+            (raise-argument-error 'encode (format "valid field version: ~v" (dict-keys @versions)) version-key)))
       (if (x:dict? field-object) (get-field fields field-object) field-object))
 
     (define/override (x:decode port parent [length 0])
@@ -45,7 +46,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                               [(? symbol? key) #:when parent (dict-ref parent key)]
                               [(? procedure? proc) #:when parent (proc parent)]
                               [(or (? symbol?) (? procedure?))
-                               (raise-argument-error 'x:versioned-dict-decode "valid parent" parent)]
+                               (raise-argument-error 'decode "valid parent" parent)]
                               [_ (send @type x:decode port parent)]))
       (dict-set! res @version-key which-version)
 
@@ -54,7 +55,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         [header-val (parse-fields port res header-val)])
       
       (match (dict-ref @versions which-version #f)
-        [#false (raise-argument-error 'x:versioned-dict-decode
+        [#false (raise-argument-error 'decode
                                       (format "valid field version: ~v" (dict-keys @versions)) which-version)]
         [(? x:versioned-dict? vs) (send vs x:decode port parent)]
         [field-object (parse-fields port res field-object)]))
@@ -63,23 +64,28 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 
     (define/override (x:encode field-data port [parent-arg #f])
       (unless (dict? field-data)
-        (raise-argument-error 'x:versioned-dict-encode "dict" field-data))
+        (raise-argument-error 'encode "dict" field-data))
+      
       (define parent (mhasheq x:pointers-key null
                               x:start-offset-key (pos port)
                               x:parent-key parent-arg
                               x:val-key field-data
                               x:pointer-size-key 0))
       (hash-set! parent x:pointer-offset-key (+ (pos port) (x:size field-data parent #f)))
+      
       (unless (or (symbol? @type) (procedure? @type))
         (send @type x:encode (dict-ref field-data @version-key #f) port parent))
+
       (for ([(key type) (in-dict (dict-ref @versions 'header null))])
         (send type x:encode (dict-ref field-data key) port parent))
 
       (define fields (select-field-set field-data))
       (unless (andmap (λ (key) (member key (dict-keys field-data))) (dict-keys fields))
-        (raise-argument-error 'x:versioned-dict-encode (format "hash that contains superset of xversioned-dict keys: ~a" (dict-keys fields)) (dict-keys field-data)))
+        (raise-argument-error 'encode (format "hash that contains superset of xversioned-dict keys: ~a" (dict-keys fields)) (dict-keys field-data)))
+      
       (for ([(key type) (in-dict fields)])
         (send type x:encode (dict-ref field-data key) port parent))
+      
       (let loop ([i 0])
         (when (< i (length (dict-ref parent x:pointers-key)))
           (define ptr (list-ref (dict-ref parent x:pointers-key) i))
@@ -89,7 +95,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
     
     (define/override (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (unless val
-        (raise-argument-error 'x:versioned-dict-size "value" val))
+        (raise-argument-error 'size "value" val))
       
       (define parent (mhasheq x:parent-key parent-arg
                               x:val-key val
@@ -102,10 +108,13 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define header-size
         (for/sum ([(key type) (in-dict (dict-ref @versions 'header null))])
           (send type x:size (and val (dict-ref val key)) parent)))
+      
       (define fields-size
         (for/sum ([(key type) (in-dict (select-field-set val))])
-          (send type x:size (and val (dict-ref val key)) parent)))
+          (send type x:size (and val (send type pre-encode (dict-ref val key))) parent)))
+      
       (define pointer-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
+      
       (+ version-size header-size fields-size pointer-size))))
 
 (define (x:versioned-dict? x) (is-a? x x:versioned-dict%))
