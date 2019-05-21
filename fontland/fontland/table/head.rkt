@@ -17,7 +17,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/head.js
                            #:signed #f
                            #:endian 'be
                            #:post-decode (λ (int) (seconds->date (- int mac-to-posix-delta) #f))
-                           #:pre-encode (λ (dt) (+ (date->seconds dt) mac-to-posix-delta))))
+                           #:pre-encode (λ (dt) (+ (date->seconds dt #f) mac-to-posix-delta))))
 
 (define head (x:struct
               'version            int32be                   ;; 0x00010000 (version 1.0)
