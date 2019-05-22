@@ -58,7 +58,7 @@ We don't make port-arg the last arg (similar to other Racket port funcs) because
   (unless port-arg (get-output-bytes port)))
                                       
 (define (size xo [val #f] #:parent [parent #f] . args)
-  (send xo x:size val parent . args))
+  (send xo x:size (and val (send xo pre-encode val)) parent . args))
 
 (define (xenomorphic-type? x) (is-a? x x:base%))
 (define xenomorphic? xenomorphic-type?)
