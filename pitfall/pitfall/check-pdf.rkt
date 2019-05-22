@@ -1,5 +1,5 @@
 #lang debug racket
-(require rackunit (prefix-in zlib: pitfall/zlib) fontland/table/cff/cff-top)
+(require rackunit (prefix-in zlib: fontland/zlib) fontland/table/cff/cff-top)
 (provide (all-defined-out))
 
 (define (xref-offset bs)

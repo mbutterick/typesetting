@@ -5,5 +5,4 @@
   (dynamic-require which #f))
 
 (require
-  pitfall/page-test
-  (submod pitfall/zlib test))
+  pitfall/page-test)

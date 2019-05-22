@@ -3,6 +3,7 @@
   racket/class
   "reference.rkt"
   "core.rkt"
+  fontland/zlib
   racket/dict
   racket/list
     racket/file
@@ -12,7 +13,6 @@
 #|
 https://github.com/mbutterick/pdfkit/blob/master/lib/image/png.coffee
 |#
-(require "zlib.rkt")
 
 (provide (all-defined-out))
 

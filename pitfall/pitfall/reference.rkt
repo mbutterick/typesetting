@@ -1,7 +1,7 @@
 #lang debug racket/base
 (require "core.rkt"
          "object.rkt"
-         "zlib.rkt")
+         fontland/zlib)
 (provide (all-defined-out))
 
 (define ref-listeners null)
