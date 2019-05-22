@@ -454,10 +454,12 @@ Generate an instance of @racket[x:int%] (or a subclass of @racket[x:int%]) with 
 @defthing[int16 x:int?]
 @defthing[int24 x:int?]
 @defthing[int32 x:int?]
+@defthing[int64 x:int?]
 @defthing[uint8 x:int?]
 @defthing[uint16 x:int?]
 @defthing[uint24 x:int?]
-@defthing[uint32 x:int?])
+@defthing[uint32 x:int?]
+@defthing[uint64 x:int?])
 ]{
 The common integer types, using @racket[system-endian] endianness. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length.
 
@@ -468,31 +470,33 @@ Use these carefully, however. Binary formats are usually defined using one endia
 (encode int16 1 #f)
 (encode int24 1 #f)
 (encode int32 1 #f)
+(encode int64 1 #f)
 (encode int8 -128 #f)
 (encode int16 -128 #f)
 (encode int24 -128 #f)
 (encode int32 -128 #f)
+(encode int64 -128 #f)
 (encode uint8 1 #f)
 (encode uint16 1 #f)
 (encode uint24 1 #f)
 (encode uint32 1 #f)
+(encode uint64 1 #f)
 (code:comment @#,t{negative numbers cannot be encoded as unsigned ints, of course})
 (encode uint8 -128 #f)
 (encode uint16 -128 #f)
 (encode uint24 -128 #f)
 (encode uint32 -128 #f)
+(encode uint64 -128 #f)
 (decode int8 #"1" #f)
 (decode int16 #"10" #f)
 (decode int24 #"100" #f)
 (decode int32 #"1000" #f)
-(decode int8 #"1" #f)
-(decode int16 #"10" #f)
-(decode int24 #"100" #f)
-(decode int32 #"1000" #f)
+(decode int64 #"10000000" #f)
 (decode uint8 #"1" #f)
 (decode uint16 #"10" #f)
 (decode uint24 #"100" #f)
 (decode uint32 #"1000" #f)
+(decode uint64 #"10000000" #f)
 ]
 
 }
@@ -503,10 +507,12 @@ Use these carefully, however. Binary formats are usually defined using one endia
 @defthing[int16be x:int?]
 @defthing[int24be x:int?]
 @defthing[int32be x:int?]
+@defthing[int64be x:int?]
 @defthing[uint8be x:int?]
 @defthing[uint16be x:int?]
 @defthing[uint24be x:int?]
-@defthing[uint32be x:int?])
+@defthing[uint32be x:int?]
+@defthing[uint64be x:int?])
 ]{
 Big-endian versions of the common integer types. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length. @racket[int8be] and @racket[uint8be] are included for consistency, but as one-byte types, they are not affected by endianness.
 
@@ -516,26 +522,32 @@ Big-endian versions of the common integer types. The @racket[u] prefix indicates
 (encode int16be 1 #f)
 (encode int24be 1 #f)
 (encode int32be 1 #f)
+(encode int64be 1 #f)
 (encode int8be -128 #f)
 (encode int16be -128 #f)
 (encode int24be -128 #f)
 (encode int32be -128 #f)
+(encode int64be -128 #f)
 (encode uint8be 1 #f)
 (encode uint16be 1 #f)
 (encode uint24be 1 #f)
 (encode uint32be 1 #f)
+(encode uint64be 1 #f)
 (decode int8be #"1" #f)
 (decode int16be #"10" #f)
 (decode int24be #"100" #f)
 (decode int32be #"1000" #f)
+(decode int64be #"10000000" #f)
 (decode int8be #"1" #f)
 (decode int16be #"10" #f)
 (decode int24be #"100" #f)
 (decode int32be #"1000" #f)
+(decode int64be #"10000000" #f)
 (decode uint8be #"1" #f)
 (decode uint16be #"10" #f)
 (decode uint24be #"100" #f)
 (decode uint32be #"1000" #f)
+(decode uint64be #"10000000" #f)
 ]
 
 }
@@ -545,10 +557,12 @@ Big-endian versions of the common integer types. The @racket[u] prefix indicates
 @defthing[int16le x:int?]
 @defthing[int24le x:int?]
 @defthing[int32le x:int?]
+@defthing[int64le x:int?]
 @defthing[uint8le x:int?]
 @defthing[uint16le x:int?]
 @defthing[uint24le x:int?]
-@defthing[uint32le x:int?])
+@defthing[uint32le x:int?]
+@defthing[uint64le x:int?])
 ]{
 Little-endian versions of the common integer types. The @racket[u] prefix indicates unsigned. The numerical suffix indicates bit length. @racket[int8le] and @racket[uint8le] are included for consistency, but as one-byte types, they are not affected by endianness.
 
@@ -557,26 +571,27 @@ Little-endian versions of the common integer types. The @racket[u] prefix indica
 (encode int16le 1 #f)
 (encode int24le 1 #f)
 (encode int32le 1 #f)
+(encode int64le 1 #f)
 (encode int8le -128 #f)
 (encode int16le -128 #f)
 (encode int24le -128 #f)
 (encode int32le -128 #f)
+(encode int64le -128 #f)
 (encode uint8le 1 #f)
 (encode uint16le 1 #f)
 (encode uint24le 1 #f)
 (encode uint32le 1 #f)
+(encode uint64le 1 #f)
 (decode int8le #"1" #f)
 (decode int16le #"10" #f)
 (decode int24le #"100" #f)
 (decode int32le #"1000" #f)
-(decode int8le #"1" #f)
-(decode int16le #"10" #f)
-(decode int24le #"100" #f)
-(decode int32le #"1000" #f)
+(decode int64le #"10000000" #f)
 (decode uint8le #"1" #f)
 (decode uint16le #"10" #f)
 (decode uint24le #"100" #f)
 (decode uint32le #"1000" #f)
+(decode uint64le #"10000000" #f)
 ]
 }
 
