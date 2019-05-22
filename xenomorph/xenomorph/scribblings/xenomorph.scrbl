@@ -308,16 +308,6 @@ If @racket[byte-dest] is an @racket[output-port?], the bytes are written there a
 If @racket[val] does not match the @racket[xenomorphic-obj] type appropriately — for instance, you try to @racket[encode] a negative integer using an unsigned integer type like @racket[uint8] — then an error will arise.
 }
 
-@defproc[
-(size
-[xenomorphic-obj xenomorphic?]
-[val any/c #false]
-[#:parent parent (or/c xenomorphic? #false) #false]
-[arg any/c] ...)
-exact-nonnegative-integer?]{
-The length of the @tech{byte string} that @racket[val] would produce if it were encoded using @racket[encode].
-}
-
 
 @section{Core xenomorphic objects}
 

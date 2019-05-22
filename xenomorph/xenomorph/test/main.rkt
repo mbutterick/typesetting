@@ -13,4 +13,5 @@
          "string-test.rkt"
          "symbol-test.rkt"
          "vector-test.rkt"
-         "versioned-dict-test.rkt")
+         "versioned-dict-test.rkt"
+         "api-test.rkt")
