@@ -5,6 +5,7 @@
          "bbox.rkt"
          "glyphrun.rkt"
          "directory.rkt"
+         "woff-directory.rkt"
          "struct.rkt"
          "table-stream.rkt"
          xenomorph
@@ -17,12 +18,14 @@
          racket/promise)
 (provide (all-defined-out))
 
+
+
+(define ft-library (delay (FT_Init_FreeType)))
+
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 |#
-
-(define ft-library (delay (FT_Init_FreeType)))
 
 (define (+ttf-font port
                    [decoded-tables (mhash)]
@@ -68,6 +71,30 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
          (hash-ref head-table 'xMax) (hash-ref head-table 'yMax)))
 
 
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/WOFFFont.js
+|#
+
+(define (+woff-font port
+                    [decoded-tables (mhash)]
+                    [src (path->string (object-name port))]
+                    [directory (delay (decode woff-directory port #:parent (mhash x:start-offset-key 0)))]
+                    [ft-face (delay (and src (FT_New_Face (force ft-library) src)))]
+                    [hb-font (delay (and src (hb_ft_font_create (force ft-face))))]
+                    [hb-buf (delay (hb_buffer_create))]
+                    [crc (equal-hash-code port)]
+                    [get-head-table-proc #f])
+  (unless (input-port? port)
+    (raise-argument-error '+woff-font "input port" port))
+  (unless (member (peek-bytes 4 0 port) (list #"wOFF"))
+    (do-probe-fail!))
+  (define font
+    (ttf-font port decoded-tables src directory ft-face hb-font hb-buf crc get-head-table-proc))
+  ;; needed for `loca` table decoding cross-reference
+  (set-ttf-font-get-head-table-proc! font (delay  (get-head-table font)))
+  font)
+
 ;; 181228: disk-based caching (either with sqlite or `with-cache`) is a loser
 ;; reads & writes aren't worth it vs. recomputing
 ;; (though this is good news, as it avoids massive disk caches hanging around)
@@ -109,14 +136,6 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/index.js
 |#
 
-;; Register font formats
-(define font-formats (list +ttf-font))
-;;fontkit.registerFormat(WOFFFont); ;; todo
-;;fontkit.registerFormat(WOFF2Font); ;; todo
-;;fontkit.registerFormat(TrueTypeCollection); ;; todo
-;;fontkit.registerFormat(DFont); ;; todo
-
-
 #|
 approximates
 https://github.com/mbutterick/fontkit/blob/master/src/base.js
@@ -124,40 +143,39 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
 
 (define (open-font str-or-path)
   (define filename (if (path? str-or-path) (path->string str-or-path) str-or-path))
-  (create-font (open-input-file filename)))
+  (define port (open-input-file filename))
+  ;; rather than use a `probe` function,
+  ;; just try making a font with each format and see what happens
+  (or
+   (for/or ([font-constructor (in-list (list +ttf-font +woff-font))])
+     (with-handlers ([probe-fail? (λ (exn) #f)])
+       (font-constructor port)))
+   (error 'create-font "unknown font format")))
 
 (struct probe-fail exn ())
 (define (do-probe-fail!)
   (raise (probe-fail "fail" (current-continuation-marks))))
 
-(define (create-font port)
-  (or
-   ;; rather than use a `probe` function,
-   ;; just try making a font with each format and see what happens
-   (for/first ([font-format (in-list font-formats)])
-     (with-handlers ([probe-fail? (λ (exn) #f)])
-       (font-format port)))
-   (error 'create-font "unknown font format")))
-
 (module+ test
   (require rackunit racket/struct racket/vector)
   (define charter (open-font charter-path))
+  (define charter-woff (open-font charter-woff-path))
   (define fira (open-font (path->string fira-path)))
   (define otf (open-font (path->string fira-otf-path)))
-  (check-equal? (font-postscript-name charter) "Charter")
-  (check-equal? (font-units-per-em charter) 1000)
-  (check-equal? (font-ascent charter) 980)
-  (check-equal? (font-descent charter) -238)
-  (check-equal? (font-linegap charter) 0)
-  (check-equal? (font-underline-position charter) -178)
-  (check-equal? (font-underline-thickness charter) 58)
-  (check-equal? (font-italic-angle charter) 0)
-  (check-equal? (font-cap-height charter) 671)
-  (check-equal? (font-x-height charter) 481)
-  (check-equal? (bbox->list (font-bbox charter)) '(-161 -236 1193 963))
-  (check-equal? (glyph-position-x-advance (vector-ref (glyphrun-positions (layout charter "f")) 0)) 321)
-  (check-true (has-table? charter #"cmap"))
-  (check-exn exn:fail:contract? (λ () (get-table charter 'nonexistent-table-tag)))
+  (for ([charter (list charter charter-woff)])
+    (check-equal? (font-postscript-name charter) "Charter")
+    (check-equal? (font-units-per-em charter) 1000)
+    (check-equal? (font-ascent charter) 980)
+    (check-equal? (font-descent charter) -238)
+    (check-equal? (font-linegap charter) 0)
+    (check-equal? (font-underline-thickness charter) 58)
+    (check-equal? (font-italic-angle charter) 0)
+    (check-equal? (font-cap-height charter) 671)
+    (check-equal? (font-x-height charter) 481)
+    (check-equal? (bbox->list (font-bbox charter)) '(-161 -236 1193 963))
+    (check-equal? (glyph-position-x-advance (vector-ref (glyphrun-positions (layout charter "f")) 0)) 321)
+    (check-true (has-table? charter #"cmap"))
+    (check-exn exn:fail:contract? (λ () (get-table charter 'nonexistent-table-tag))))
   (check-true
    (let ([gr (layout fira "Rifle")])
      (and (equal? (vector-map glyph-id (glyphrun-glyphs gr)) '#(227 480 732 412))

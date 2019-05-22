@@ -12,4 +12,5 @@
      "glyph.rkt"
      "table-stream.rkt"
      "subset.rkt"
-     "struct.rkt")
+     "struct.rkt"
+     "zlib.rkt")

@@ -2,6 +2,7 @@
 (require xenomorph
          "tables.rkt"
          "struct.rkt"
+         "zlib.rkt"
          (for-syntax "tables.rkt"))
 (provide (all-defined-out))
 
@@ -34,7 +35,11 @@
 (define (get-table-stream this tag)
   (define directory (force (ttf-font-directory this)))
   (define table (hash-ref (hash-ref directory 'tables) tag))
-  (and table (pos (ttf-font-port this) (hash-ref table 'offset)) (ttf-font-port this)))
+  (and table
+       (pos (ttf-font-port this) (hash-ref table 'offset))
+       (if (< (hash-ref table 'compLength +inf.0) (hash-ref table 'length))
+           (open-input-bytes (inflate (peek-bytes (hash-ref table 'compLength) 0 (ttf-font-port this))))
+           (ttf-font-port this))))
   
 (define (decode-table this table-tag)
   (unless (hash-has-key? table-codecs table-tag)
