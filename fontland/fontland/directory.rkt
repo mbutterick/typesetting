@@ -2,6 +2,7 @@
 (require xenomorph
          "tables.rkt"
          racket/dict
+         racket/class
          racket/match
          sugar/unstable/dict
          racket/string)
@@ -40,7 +41,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                    (mhash 'tag (unescape-tag tag)
                           'checkSum 0
                           'offset (x:void-pointer table-codec table)
-                          'length (size table-codec table))))
+                          'length (send table-codec x:size table))))
   (define numTables (length tables))
   ;; patch from https://github.com/foliojs/fontkit/pull/178
   (define max-exponent-for-2 (floor (log numTables 2)))

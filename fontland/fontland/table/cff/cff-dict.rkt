@@ -99,7 +99,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFDict.js
                     #:when (and val (not (equal? val (fourth field)))))
            (define operands (encode-operands (third field) #false ctx val))
            (define operand-size (for/sum ([op (in-list operands)])
-                                  (size CFFOperand op)))
+                                  (send CFFOperand x:size op)))
            (define key (if (list? (first field)) (first field) (list (first field))))
            (+ operand-size (length key)))
          (if include-pointers (hash-ref ctx x:pointer-size-key) 0)))

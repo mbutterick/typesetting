@@ -16,7 +16,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
                                                                     (hash-ref (hash-ref (hash-ref arr 'parent) 'hhea) 'numberOfMetrics))))))
 
 (module+ test
-  (require rackunit racket/serialize racket/stream "../helper.rkt")
+  (require rackunit racket/serialize racket/stream racket/class "../helper.rkt")
   ;; same as hmtx but doesn't require resolution of function to get length
   (define hmtx-test (x:struct
                      'metrics (x:lazy-array hmtx-entry (λ (t) 229))
@@ -29,7 +29,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/hmtx.js
   (check-equal? hmtx-length 916)
   (define hmtx-bytes (peek-bytes hmtx-length hmtx-offset ip))
   (define hmtx-data (decode hmtx-test hmtx-bytes))
-  (check-equal? (size hmtx-test) (* 229 (size hmtx-entry)))
+  (check-equal? (send hmtx-test x:size) (* 229 (send hmtx-entry x:size)))
   (define H-gid 41) (define OE-gid 142)
   (check-equal? (stream-ref (hash-ref hmtx-data 'metrics) H-gid) (make-hasheq '((bearing . 33) (advance . 738))))
   (check-equal? (stream-ref (hash-ref hmtx-data 'metrics) OE-gid) (make-hasheq '((bearing . 43) (advance . 993)))))
