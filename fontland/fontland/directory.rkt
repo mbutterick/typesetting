@@ -55,7 +55,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
               'rangeShift (- (* numTables 16) searchRange))
   this-val)
 
-(define Directory (x:struct #:pre-encode directory-pre-encode
+(define directory (x:struct #:pre-encode directory-pre-encode
                             #:post-decode directory-post-decode
                             'tag (x:symbol #:length 4)
                             'numTables uint16be
@@ -65,7 +65,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/directory.js
                             'tables (x:array #:type table-entry #:length (λ (p) (hash-ref p 'numTables)))))
 
 (define (directory-decode ip [options (mhash)])
-  (decode Directory ip))
+  (decode directory ip))
 
 (define (file-directory-decode ps)
   (directory-decode (open-input-file ps)))

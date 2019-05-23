@@ -37,9 +37,10 @@
   (define table (hash-ref (hash-ref directory 'tables) tag))
   (and table
        (pos (ttf-font-port this) (hash-ref table 'offset))
-       (if (< (hash-ref table 'compLength +inf.0) (hash-ref table 'length))
-           (open-input-bytes (inflate (peek-bytes (hash-ref table 'compLength) 0 (ttf-font-port this))))
-           (ttf-font-port this))))
+       (let ([maybe-woff-compLength (hash-ref table 'compLength #f)])
+         (if (and maybe-woff-compLength (< maybe-woff-compLength (hash-ref table 'length)))
+             (open-input-bytes (inflate (peek-bytes maybe-woff-compLength 0 (ttf-font-port this))))
+             (ttf-font-port this)))))
   
 (define (decode-table this table-tag)
   (unless (hash-has-key? table-codecs table-tag)

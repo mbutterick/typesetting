@@ -27,23 +27,30 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 |#
 
+(struct probe-fail exn ())
+
 (define (+ttf-font port
-                   [decoded-tables (mhash)]
-                   [src (path->string (object-name port))]
-                   [directory (delay (decode Directory port #:parent (mhash x:start-offset-key 0)))]
-                   [ft-face (delay (and src (FT_New_Face (force ft-library) src)))]
-                   [hb-font (delay (and src (hb_ft_font_create (force ft-face))))]
-                   [hb-buf (delay (hb_buffer_create))]
-                   [crc (equal-hash-code port)]
-                   [get-head-table-proc #f])
+                   #:directory [directory-class directory]
+                   #:probe [probe-vals (list #"true" #"OTTO" (bytes 0 1 0 0))])
+  
   (unless (input-port? port)
     (raise-argument-error '+ttf-font "input port" port))
-  (unless (member (peek-bytes 4 0 port) (list #"true" #"OTTO" (bytes 0 1 0 0)))
-    (do-probe-fail!))
+  (unless (member (peek-bytes 4 0 port) probe-vals)
+    (raise (probe-fail "fail" (current-continuation-marks))))
+  
+  (define decoded-tables (mhash))
+  (define src (path->string (object-name port)))
+  (define directory (delay (decode directory-class port #:parent (mhash x:start-offset-key 0))))
+  (define ft-face (delay (and src (FT_New_Face (force ft-library) src))))
+  (define hb-font (delay (and src (hb_ft_font_create (force ft-face)))))
+  (define hb-buf (delay (hb_buffer_create)))
+  (define crc (equal-hash-code port))
+  (define get-head-table-proc #f)
+ 
   (define font
     (ttf-font port decoded-tables src directory ft-face hb-font hb-buf crc get-head-table-proc))
   ;; needed for `loca` table decoding cross-reference
-  (set-ttf-font-get-head-table-proc! font (delay  (get-head-table font)))
+  (set-ttf-font-get-head-table-proc! font (delay (get-head-table font)))
   font)
 
 (define (font-postscript-name font) (FT_Get_Postscript_Name (ft-face font)))
@@ -76,24 +83,10 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/WOFFFont.js
 |#
 
-(define (+woff-font port
-                    [decoded-tables (mhash)]
-                    [src (path->string (object-name port))]
-                    [directory (delay (decode woff-directory port #:parent (mhash x:start-offset-key 0)))]
-                    [ft-face (delay (and src (FT_New_Face (force ft-library) src)))]
-                    [hb-font (delay (and src (hb_ft_font_create (force ft-face))))]
-                    [hb-buf (delay (hb_buffer_create))]
-                    [crc (equal-hash-code port)]
-                    [get-head-table-proc #f])
-  (unless (input-port? port)
-    (raise-argument-error '+woff-font "input port" port))
-  (unless (member (peek-bytes 4 0 port) (list #"wOFF"))
-    (do-probe-fail!))
-  (define font
-    (ttf-font port decoded-tables src directory ft-face hb-font hb-buf crc get-head-table-proc))
-  ;; needed for `loca` table decoding cross-reference
-  (set-ttf-font-get-head-table-proc! font (delay  (get-head-table font)))
-  font)
+(define (+woff-font port)
+  (+ttf-font port
+             #:directory woff-directory
+             #:probe (list #"wOFF")))
 
 ;; 181228: disk-based caching (either with sqlite or `with-cache`) is a loser
 ;; reads & writes aren't worth it vs. recomputing
@@ -151,10 +144,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
      (with-handlers ([probe-fail? (λ (exn) #f)])
        (font-constructor port)))
    (error 'create-font "unknown font format")))
-
-(struct probe-fail exn ())
-(define (do-probe-fail!)
-  (raise (probe-fail "fail" (current-continuation-marks))))
 
 (module+ test
   (require rackunit racket/struct racket/vector)
