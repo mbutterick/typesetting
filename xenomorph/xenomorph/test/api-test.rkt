@@ -32,7 +32,7 @@
                                                              1))))
               #:post-decode (λ (h) (hash-ref h 'val))))
 
-(require math)
+(define pi 3.141592653589793)
 (check-xenomorphic real pi)
 
 (define complex (x:list #:type real
