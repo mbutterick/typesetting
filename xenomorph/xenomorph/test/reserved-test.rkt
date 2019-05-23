@@ -13,11 +13,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Reserved.coffee
 
 (test-case
  "reserved: size should have a default count of 1"
- (check-equal? (size (x:reserved uint8)) 1))
+ (check-equal? (send (x:reserved uint8) x:size) 1))
 
 (test-case
  "reserved: size should allow custom counts and types"
- (check-equal? (size (x:reserved uint16be 10)) 20))
+ (check-equal? (send (x:reserved uint16be 10) x:size) 20))
 
 (test-case
  "reserved: should decode"

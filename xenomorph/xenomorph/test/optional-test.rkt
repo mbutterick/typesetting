@@ -55,23 +55,23 @@ https://github.com/mbutterick/restructure/blob/master/test/Optional.coffee
 
 (test-case
  "optional: size"
- (check-equal? (size (x:optional uint8 #:condition #f)) 0))
+ (check-equal? (send (x:optional uint8 #:condition #f) x:size) 0))
 
 (test-case
  "optional: size should return 0 when condition is a function and falsy"
- (check-equal? (size (x:optional uint8 #:condition (λ _ #f))) 0))
+ (check-equal? (send (x:optional uint8 #:condition (λ _ #f)) x:size) 0))
 
 (test-case
  "optional: size should return given type size when condition is omitted"
- (check-equal? (size (x:optional uint8)) 1))
+ (check-equal? (send (x:optional uint8) x:size) 1))
 
 (test-case
  "optional: size should return given type size when condition is truthy"
- (check-equal? (size (x:optional uint8 #:condition #t)) 1))
+ (check-equal? (send (x:optional uint8 #:condition #t) x:size) 1))
 
 (test-case
  "optional: size should return given type size when condition is a function and truthy"
- (check-equal? (size (x:optional uint8 #:condition (λ _ #t))) 1))
+ (check-equal? (send (x:optional uint8 #:condition (λ _ #t)) x:size) 1))
 
 (test-case
  "optional: encode should not encode when condition is falsy"

@@ -134,4 +134,4 @@ https://github.com/mbutterick/restructure/blob/master/src/Array.coffee
   (require rackunit "base.rkt")
   (check-equal? (decode (x:list uint16be 3) #"ABCDEF") '(16706 17220 17734))
   (check-equal? (encode (x:list uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
-  (check-equal? (size (x:list uint16be) '(1 2 3)) 6))
+  (check-equal? (send (x:list uint16be) x:size '(1 2 3)) 6))

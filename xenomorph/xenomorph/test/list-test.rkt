@@ -85,15 +85,15 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (test-case 
  "list: use array length"
- (check-equal? (size (x:list #:type uint8 #:length 10) '(1 2 3 4)) 4))
+ (check-equal? (send (x:list #:type uint8 #:length 10) x:size '(1 2 3 4)) 4))
 
 (test-case 
  "list: add size of length field before string"
- (check-equal? (size (x:list #:type uint8 #:length uint8) '(1 2 3 4)) 5))
+ (check-equal? (send (x:list #:type uint8 #:length uint8) x:size '(1 2 3 4)) 5))
 
 (test-case 
  "list: use defined length if no value given"
- (check-equal? (size (x:list #:type uint8 #:length 10)) 10))
+ (check-equal? (send (x:list #:type uint8 #:length 10) x:size) 10))
 
 (test-case 
  "list: encode using array length"

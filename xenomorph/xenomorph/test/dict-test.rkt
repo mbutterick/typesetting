@@ -46,23 +46,24 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 
 (test-case
  "dict: compute the correct size"
- (check-equal? (size (x:dict 'name (x:string #:length uint8) 'age uint8)
-                     (hasheq 'name "roxyb" 'age 32)) 7))
+ (check-equal? (send (x:dict 'name (x:string #:length uint8) 'age uint8)
+                     x:size (hasheq 'name "roxyb" 'age 32)) 7))
 
 (test-case
  "dict: compute the correct size with pointers"
- (check-equal? (size (x:dict 'name (x:string #:length uint8)
+ (check-equal? (send (x:dict 'name (x:string #:length uint8)
                                'age uint8
                                'ptr (x:pointer #:type uint8 #:dest-type (x:string #:length uint8)))
+                                x:size
                      (mhash 'name "roxyb" 'age 21 'ptr "hello")) 14))
 
 (test-case
  "dict: get the correct size when no value is given"
- (check-equal? (size (x:dict 'name (x:string 4) 'age uint8)) 5))
+ (check-equal? (send (x:dict 'name (x:string 4) 'age uint8) x:size) 5))
 
 (test-case
  "dict: throw when getting non-fixed length size and no value is given"
- (check-exn exn:fail:contract? (λ () (size (x:dict 'name (x:string #:length uint8) 'age uint8)))))
+ (check-exn exn:fail:contract? (λ () (send (x:dict 'name (x:string #:length uint8) 'age uint8) x:size))))
 
 (test-case
  "dict: encode objects to buffers"

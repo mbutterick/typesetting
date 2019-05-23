@@ -168,10 +168,10 @@ https://github.com/mbutterick/restructure/blob/master/src/Number.coffee
     (encode i 772 op)
     (check-equal? (get-output-bytes op) (bytes 1 2 3 4)))
 
-  (check-equal? (size (x:int 1)) 1)
-  (check-equal? (size (x:int)) 2)
-  (check-equal? (size (x:int 4)) 4)
-  (check-equal? (size (x:int 8)) 8)
+  (check-equal? (send (x:int 1) x:size) 1)
+  (check-equal? (send (x:int) x:size) 2)
+  (check-equal? (send (x:int 4) x:size) 4)
+  (check-equal? (send (x:int 8) x:size) 8)
 
   (check-equal? (decode int8 (bytes 127)) 127)
   (check-equal? (decode int8 (bytes 255)) -1)

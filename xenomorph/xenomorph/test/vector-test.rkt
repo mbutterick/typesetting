@@ -86,15 +86,15 @@ https://github.com/mbutterick/restructure/blob/master/test/Array.coffee
 
 (test-case 
  "vector: use array length"
- (check-equal? (size (x:vector #:type uint8 #:length 10) '#(1 2 3 4)) 4))
+ (check-equal? (send (x:vector #:type uint8 #:length 10) x:size '#(1 2 3 4)) 4))
 
 (test-case 
  "vector: add size of length field before string"
- (check-equal? (size (x:vector #:type uint8 #:length uint8) '#(1 2 3 4)) 5))
+ (check-equal? (send (x:vector #:type uint8 #:length uint8) x:size '#(1 2 3 4)) 5))
 
 (test-case 
  "vector: use defined length if no value given"
- (check-equal? (size (x:vector #:type uint8 #:length 10)) 10))
+ (check-equal? (send (x:vector #:type uint8 #:length 10) x:size) 10))
 
 (test-case 
  "vector: encode using array length"

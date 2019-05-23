@@ -23,7 +23,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Enum.coffee
 
 (test-case
  "enum: should have the right size"
- (check-equal? (size e) 1))
+ (check-equal? (send e x:size) 1))
 
 (test-case
  "enum: decode should decode"

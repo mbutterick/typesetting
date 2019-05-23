@@ -56,29 +56,29 @@ https://github.com/mbutterick/restructure/blob/master/test/String.coffee
 
 (test-case
  "string: size should use string length"
- (check-equal? (size (x:string 7) "testing") 7))
+ (check-equal? (send (x:string 7) x:size "testing") 7))
 
 (test-case
  "string: size should use correct encoding"
- (check-equal? (size (x:string 10 'utf8) "🍻") 4))
+ (check-equal? (send (x:string 10 'utf8) x:size "🍻") 4))
 
 (test-case
  "string: size should use encoding from function"
- (check-equal? (size (x:string 10 (λ _ 'utf8)) "🍻") 4))
+ (check-equal? (send (x:string 10 (λ _ 'utf8)) x:size "🍻") 4))
 
 (test-case
  "string: should add size of length field before string"
- (check-equal? (size (x:string uint8 'utf8) "🍻") 5))
+ (check-equal? (send (x:string uint8 'utf8) x:size "🍻") 5))
 
 ; todo: it "should work with utf16be encoding"
 
 (test-case
  "string: size should take null-byte into account"
- (check-equal? (size (x:string #f 'utf8) "🍻") 5))
+ (check-equal? (send (x:string #f 'utf8) x:size "🍻") 5))
 
 (test-case
  "string: size should use defined length if no value given"
- (check-equal? (size (x:string 10)) 10))
+ (check-equal? (send (x:string 10) x:size) 10))
 
 (test-case
  "string: encode using string length"

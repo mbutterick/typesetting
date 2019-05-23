@@ -59,5 +59,5 @@
   (check-equal? (decode (x:vector uint16be 3) #"ABCDEF") '#(16706 17220 17734))
   (check-equal? (encode (x:vector uint16be 3) '(16706 17220 17734) #f) #"ABCDEF")
   (check-equal? (encode (x:vector uint16be 3) '#(16706 17220 17734) #f) #"ABCDEF")
-  (check-equal? (size (x:vector uint16be) '#(1 2 3)) 6)
-  (check-equal? (size (x:vector doublebe) '#(1 2 3 4 5)) 40))
+  (check-equal? (send (x:vector uint16be) x:size '#(1 2 3)) 6)
+  (check-equal? (send (x:vector doublebe) x:size '#(1 2 3 4 5)) 40))

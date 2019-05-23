@@ -19,7 +19,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Bitfield.coffee
 
 (test-case
  "bitfield: should have the right size"
- (check-equal? (size bitfield) 1))
+ (check-equal? (send bitfield x:size) 1))
 
 (test-case
  "bitfield: should reject too many flags"

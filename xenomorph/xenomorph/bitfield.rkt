@@ -23,8 +23,8 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
       (unless (= (length named-flags) (length (remove-duplicates named-flags)))
         (raise-argument-error 'x:bitfield% "no duplicates among flag names" named-flags)))
 
-    (when (> (length @flags) (* 8 (size @type)))
-      (raise-argument-error 'x:bitfield% (format "~a flags or fewer (~a-byte bitfield)"  (* 8 (size @type)) (size @type)) (length @flags)))
+    (when (> (length @flags) (* 8 (send @type x:size)))
+      (raise-argument-error 'x:bitfield% (format "~a flags or fewer (~a-byte bitfield)"  (* 8 (send @type x:size)) (send @type x:size)) (length @flags)))
 
     (define/augment (x:decode port parent)
       (define val (send @type x:decode port))

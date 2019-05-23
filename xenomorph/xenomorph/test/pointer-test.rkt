@@ -61,41 +61,41 @@ https://github.com/mbutterick/restructure/blob/master/test/Pointer.coffee
 (test-case
  "pointer: size"
  (let ([parent (mhash x:pointer-size-key 0)])
-   (check-equal? (size (x:pointer uint8) 10 #:parent parent) 1)
+   (check-equal? (send (x:pointer uint8) x:size 10 parent) 1)
    (check-equal? (hash-ref parent x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to immediate pointerSize"
  (let ([parent (mhash x:pointer-size-key 0)])
-   (check-equal? (size (x:pointer uint8 #:relative-to 'immediate) 10 #:parent parent) 1)
+   (check-equal? (send (x:pointer uint8 #:relative-to 'immediate) x:size 10 parent) 1)
    (check-equal? (hash-ref parent x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to parent pointerSize"
  (let ([parent (mhash x:parent-key (mhash x:pointer-size-key 0))])
-   (check-equal? (size (x:pointer uint8 #:relative-to 'parent) 10 #:parent parent) 1)
+   (check-equal? (send (x:pointer uint8 #:relative-to 'parent) x:size 10 parent) 1)
    (check-equal? (hash-ref* parent x:parent-key x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should add to global pointerSize"
  (let ([parent (mhash x:parent-key (mhash x:parent-key (mhash x:parent-key (mhash x:pointer-size-key 0))))])
-   (check-equal? (size (x:pointer uint8 #:relative-to 'global) 10 #:parent parent) 1)
+   (check-equal? (send (x:pointer uint8 #:relative-to 'global) x:size 10 parent) 1)
    (check-equal? (hash-ref* parent x:parent-key x:parent-key x:parent-key x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should handle void pointers"
  (let ([parent (mhash x:pointer-size-key 0)])
-   (check-equal? (size (x:pointer uint8 'void) (x:void-pointer uint8 50) #:parent parent) 1)
+   (check-equal? (send (x:pointer uint8 'void) x:size (x:void-pointer uint8 50) parent) 1)
    (check-equal? (hash-ref parent x:pointer-size-key) 1)))
 
 (test-case
  "pointer: size should throw if no type and not a void pointer"
  (let ([parent (mhash x:pointer-size-key 0)])
-   (check-exn exn:fail:contract? (λ () (size (x:pointer uint8 'void) 30 #:parent parent)))))
+   (check-exn exn:fail:contract? (λ () (send (x:pointer uint8 'void) x:size 30 parent)))))
 
 (test-case
  "pointer: size should return a fixed size without a value"
- (check-equal? (size (x:pointer uint8)) 1))
+ (check-equal? (send (x:pointer uint8) x:size) 1))
 
 (test-case
  "pointer: encode should handle null pointers"

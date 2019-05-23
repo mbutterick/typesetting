@@ -56,7 +56,7 @@
   (define S (x:string uint8 'utf8))
   (check-equal? (decode S #"\2BCDEF") "BC")
   (check-equal? (encode S "Mike" #f) #"\4Mike")
-  (check-equal? (size (x:string) "foobar") 7) ; null terminated when no len
+  (check-equal? (send (x:string) x:size "foobar") 7) ; null terminated when no len
   (check-equal? (decode (x:symbol 4) #"Mike") 'Mike)
   (check-equal? (encode (x:symbol 4) 'Mike #f) #"Mike")
   (check-equal? (encode (x:symbol 4) "Mike" #f) #"Mike")

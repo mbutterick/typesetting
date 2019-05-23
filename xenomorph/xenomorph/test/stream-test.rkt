@@ -57,7 +57,7 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (x:stream uint8 4))
    (define arr (decode xla))
-   (check-equal? (size xla arr) 4)))
+   (check-equal? (send xla x:size arr) 4)))
 
 (test-case
  "lazy-array: encode should work with xlazy-arrays"

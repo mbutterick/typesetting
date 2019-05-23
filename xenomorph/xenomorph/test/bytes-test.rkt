@@ -37,11 +37,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Buffer.coffee
 
 (test-case
  "bytes: hould return size"
- (check-equal? (size (x:bytes #:length 2) (bytes #xab #xff)) 2))
+ (check-equal? (send (x:bytes #:length 2) x:size (bytes #xab #xff)) 2))
 
 (test-case
  "bytes: hould use defined length if no value given"
- (check-equal? (size (x:bytes #:length 10)) 10))
+ (check-equal? (send (x:bytes #:length 10) x:size) 10))
 
 (test-case
  "bytes: should encode"

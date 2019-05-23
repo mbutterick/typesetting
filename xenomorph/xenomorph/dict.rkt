@@ -115,7 +115,7 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
         (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
     (define size-num-types
       (for/sum ([num-type (in-list field-types)])
-        (size num-type)))
+        (send num-type x:size)))
     (define xs (x:dict (for/list ([num-type (in-list field-types)])
                            (cons (gensym) num-type))))
     (define bs (apply bytes (for/list ([i (in-range size-num-types)])
