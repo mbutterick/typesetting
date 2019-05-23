@@ -9,7 +9,6 @@
                "beautiful-racket-lib"
                "brag"
                "fontland"
-               "png-image"
                "rackunit-lib"
                "srfi-lite-lib"
                "sugar"))
