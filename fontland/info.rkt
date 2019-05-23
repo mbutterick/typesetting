@@ -8,6 +8,7 @@
                "debug"
                "draw-lib"
                "rackunit-lib"
+               "png-image"
                "sugar"
                "xenomorph"))
 (define update-implies '("xenomorph"))
