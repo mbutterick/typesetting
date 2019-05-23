@@ -302,6 +302,6 @@ https://github.com/mbutterick/fontkit/blob/master/src/subset/TTFSubset.js
                          'fpgm (and (has-table? (subset-font ss) 'fpgm)
                                     (get-fpgm-table (subset-font ss))))))
   
-  (encode Directory (mhash 'tables new-tables) port)
+  (encode directory (mhash 'tables new-tables) port)
   (void))
 
