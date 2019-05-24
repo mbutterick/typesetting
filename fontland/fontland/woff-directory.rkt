@@ -1,6 +1,7 @@
 #lang racket/base
 (require xenomorph
          "tables.rkt"
+         "directory.rkt"
          sugar/unstable/dict)
 (provide woff-directory)
 
@@ -20,16 +21,9 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/WOFFDirectory.js
     'length uint32be
     'origChecksum uint32be)))
 
-(define (woff-directory-process dir)
-  (define tables (make-hasheq))
-  (for ([table (in-list (hash-ref dir 'tables))])
-    (hash-set! tables (hash-ref table 'tag) table))
-  (hash-set! dir 'tables tables)
-  dir)
-
 (define woff-directory
   (x:dict
-   #:post-decode woff-directory-process
+   #:post-decode directory-post-decode
    (dictify
     'tag (x:symbol #:length 4) ;should be 'wOFF
     'flavor uint32be
