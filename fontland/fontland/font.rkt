@@ -31,7 +31,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 
 (define (+ttf-font port
                    #:directory [directory-class directory]
-                   #:probe [probe-vals (list #"true" #"OTTO" (bytes 0 1 0 0))])
+                   #:probe [probe-vals (list #"true" #"OTTO" (bytes 0 1 0 0))]
+                   #:constructor [structor ttf-font])
   
   (unless (input-port? port)
     (raise-argument-error '+ttf-font "input port" port))
@@ -48,7 +49,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
   (define get-head-table-proc #f)
  
   (define font
-    (ttf-font port decoded-tables src directory ft-face hb-font hb-buf crc get-head-table-proc))
+    (structor port decoded-tables src directory ft-face hb-font hb-buf crc get-head-table-proc))
   ;; needed for `loca` table decoding cross-reference
   (set-ttf-font-get-head-table-proc! font (delay (get-head-table font)))
   font)
@@ -86,7 +87,8 @@ https://github.com/mbutterick/fontkit/blob/master/src/WOFFFont.js
 (define (+woff-font port)
   (+ttf-font port
              #:directory woff-directory
-             #:probe (list #"wOFF")))
+             #:probe (list #"wOFF")
+             #:constructor woff-font))
 
 ;; 181228: disk-based caching (either with sqlite or `with-cache`) is a loser
 ;; reads & writes aren't worth it vs. recomputing

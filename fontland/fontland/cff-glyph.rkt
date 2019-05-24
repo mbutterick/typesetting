@@ -25,11 +25,13 @@ https://github.com/mbutterick/fontkit/blob/master/src/glyph/CFFGlyph.js
     [else . ELSEBODY]))
 
 (define (getPath this)
-  (define stream (ttf-font-port (glyph-font this)))
-
+ 
   (define cff (get-table (glyph-font this) 'CFF_))
   (define str (vector-ref (hash-ref* cff 'topDict 'CharStrings) (glyph-id this)))
   (define end (+ (index-item-offset str) (index-item-length str)))
+  (define stream (if (woff-font? (glyph-font this))
+                     (get-table-stream (glyph-font this) 'CFF_)
+                     (ttf-font-port (glyph-font this))))
   (pos stream (index-item-offset str))
 
   (define path (Path))

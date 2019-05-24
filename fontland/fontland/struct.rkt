@@ -11,6 +11,8 @@
                        (let-values ([(dir name _) (split-path (ttf-font-src f))])
                          name)) p)))
 
+(struct woff-font ttf-font ())
+
 (define (ft-face this)
   (or (force (ttf-font-ft-face this)) (error 'ft-face-not-available)))
 
