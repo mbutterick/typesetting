@@ -1,2 +1,2 @@
 #lang racket
-(require ptest/alltest)
+(require ptest/all)
