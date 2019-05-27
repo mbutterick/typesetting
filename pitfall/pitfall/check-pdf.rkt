@@ -99,7 +99,7 @@
             tok))
 
 (define (pdf->dict pdf)
-  (define pdf-bs (file->bytes pdf))
+  (define pdf-bs (if (bytes? pdf) pdf (file->bytes pdf)))
   (define xoff (xref-offset pdf-bs))
   (define xref-ip (open-input-bytes (subbytes pdf-bs (+ xoff (bytes-length #"xref\n0")))))
   (define ref-count (read xref-ip))
