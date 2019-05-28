@@ -126,9 +126,9 @@
        (for/and ([(k1 v1) (in-dict d1)]
                  [(k2 v2) (in-dict d2)])
                 (unless (equal? k1 k2)
-                  (error (format "keys unequal in ~a and ~a: ~a ≠ ~a" arg1 arg2 k1 k2)))
+                  (error (format "keys unequal in ~e and ~e: ~a ≠ ~a" arg1 arg2 k1 k2)))
                 (unless (equal? v1 v2)
-                  (error (format "values unequal in ~a and ~a: ~e ≠ ~e" arg1 arg2 v1 v2)))
+                  (error (format "values unequal in ~e and ~e: ~e ≠ ~e" arg1 arg2 v1 v2)))
                 (when (dict? v1)
                   (dict-compare v1 v2))
                 #true)))
