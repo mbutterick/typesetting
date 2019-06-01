@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/match racket/dict racket/format racket/string racket/sequence "int.rkt" "base.rkt")
+(require racket/match racket/port racket/dict racket/format racket/string racket/sequence "int.rkt" "base.rkt")
 (provide (all-defined-out))
 
 (define (length-resolvable? x)
@@ -18,16 +18,19 @@
     [_ (raise-argument-error 'resolve-length "fixed-size argument" x)]))
 
 (define (pretty-print-bytes bstr
+                            #:port [port-arg (current-output-port)]
                             #:radix [radix 16]
                             #:offset-min-width [offset-min-width 4]
                             #:row-length [bytes-per-row 16]
                             #:max-value [max-value 256])
+  (define port (or port-arg (open-output-bytes)))
   (define bs (bytes->list bstr))
   (define offset-str-length
     (max offset-min-width
     (string-length (let ([lbs (length bs)])
                      (~r (- lbs (remainder lbs bytes-per-row)))))))
-  (display
+  (parameterize ([current-output-port port])
+    (display
    (string-join
     (for/list ([row-bs (in-slice bytes-per-row bs)]
                [ridx (in-naturals)])
@@ -46,3 +49,5 @@
          (make-string shortfall #\space))
        "  "
        (format "~a" (bytes->string/utf-8 (apply bytes row-bs))))) "\n")))
+  (unless port-arg
+    (get-output-string port)))
