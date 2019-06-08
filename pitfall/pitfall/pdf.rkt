@@ -119,7 +119,7 @@
   (define doc-info (make-ref (pdf-info doc)))
   (ref-end doc-info)
     
-  (for-each font-end (hash-values (pdf-font-families doc)))
+  (for-each font-end (sort (hash-values (pdf-font-families doc)) string<? #:key pdf-font-name))
 
   (define pages-ref (dict-ref (pdf-root doc) 'Pages))
   (dict-set! pages-ref 'Count (length (pdf-pages doc)))
