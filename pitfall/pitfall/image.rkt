@@ -21,7 +21,7 @@
       [else (raise-argument-error 'open-pdf-image "valid image format" src)]))
   (img-constructor data label))
 
-    (define (image doc src [x-in #f] [y-in #f]
+    (define (image doc src [x-arg #f] [y-arg #f]
                    #:x [x-kwarg #f]
                    #:y [y-kwarg #f]
                    #:width [width #f]
@@ -32,8 +32,8 @@
                    #:align [align #f]
                    #:valign [valign #f]
                    )
-      (define x (or x-in x-kwarg (pdf-x doc)))
-      (define y (or y-in y-kwarg (pdf-y doc)))
+      (define x (or x-arg x-kwarg (pdf-x doc)))
+      (define y (or y-arg y-kwarg (pdf-y doc)))
 
       (define image (cond
                       [(and (string? src) (hash-ref (pdf-image-registry doc) src #f))]
@@ -45,10 +45,8 @@
 
       (define image-width ($img-width image))
       (define image-height ($img-height image))
-      (define options-width width)
-      (define options-height height)
-      (define w (or options-width image-width))
-      (define h (or options-height image-height))
+      (define w (or width image-width))
+      (define h (or height image-height))
       (define wp #f)
       (define hp #f)
       (define bp #f)
@@ -57,11 +55,11 @@
       (define bh #f)
 
       (cond
-        [(and options-width (not options-height))
+        [(and width (not height))
          (set! wp (/ w image-width))
          (set! w (* image-width wp))
          (set! h (* image-height wp))]
-        [(and options-height (not options-width))
+        [(and height (not width))
          (set! hp (/ h image-width))
          (set! w (* image-width hp))
          (set! h (* image-height hp))]
