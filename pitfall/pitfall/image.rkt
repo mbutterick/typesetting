@@ -21,9 +21,19 @@
       [else (raise-argument-error 'open-pdf-image "valid image format" src)]))
   (img-constructor data label))
 
-    (define (image doc src [x-in #f] [y-in #f] [options (mhasheq)])
-      (define x (or x-in (hash-ref options 'x #f) (pdf-x doc)))
-      (define y (or y-in (hash-ref options 'y #f) (pdf-y doc)))
+    (define (image doc src [x-in #f] [y-in #f]
+                   #:x [x-kwarg #f]
+                   #:y [y-kwarg #f]
+                   #:width [width #f]
+                   #:height [height #f]
+                   #:scale [scale #f]
+                   #:fit [fit #f]
+                   #:cover [cover #f]
+                   #:align [align #f]
+                   #:valign [valign #f]
+                   )
+      (define x (or x-in x-kwarg (pdf-x doc)))
+      (define y (or y-in y-kwarg (pdf-y doc)))
 
       (define image (cond
                       [(and (string? src) (hash-ref (pdf-image-registry doc) src #f))]
@@ -35,8 +45,8 @@
 
       (define image-width ($img-width image))
       (define image-height ($img-height image))
-      (define options-width (hash-ref options 'width #f))
-      (define options-height (hash-ref options 'height #f))
+      (define options-width width)
+      (define options-height height)
       (define w (or options-width image-width))
       (define h (or options-height image-height))
       (define wp #f)
@@ -55,11 +65,11 @@
          (set! hp (/ h image-width))
          (set! w (* image-width hp))
          (set! h (* image-height hp))]
-        [(hash-ref options 'scale #f)
+        [scale
          => (λ (scale-val)
               (set! w (* image-width scale-val))
               (set! h (* image-height scale-val)))]
-        [(hash-ref options 'fit #f)
+        [fit
          => (λ (fit-val)
               (match-define (list bw bh) fit-val)
               (set! bp (/ bw bh))
@@ -71,7 +81,7 @@
                 [else
                  (set! w (* bh ip))
                  (set! h bh)]))]
-        [(hash-ref options 'cover #f)
+        [cover
          => (λ (cover-val)
               (match-define (list bw bh) cover-val)
               (set! bp (/ bw bh))
@@ -84,11 +94,11 @@
                  (set! w bw)
                  (set! h (/ bw ip))]))])
 
-      (when (or (hash-ref options 'fit #f) (hash-ref options 'cover #f))
-        (case (hash-ref options 'align #f)
+      (when (or fit cover)
+        (case align
           [("center") (set! x (+ x (/ bw 2) (- (/ w 2))))]
           [("right") (set! x (+ x bw - w))])
-        (case (hash-ref options 'valign #f)
+        (case valign
           [("center") (set! y (+ y (/ bh 2) (- (/ h 2))))]
           [("bottom") (set! y (+ y bh - h))]))
 

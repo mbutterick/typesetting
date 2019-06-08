@@ -7,7 +7,7 @@
   [font doc "Times-Italic"]
   [font-size doc 25]
   [text doc "Here comes a JPEG!" 100 100]
-  [image doc test-jpeg 100 160 (hash 'width 412)])
+  [image doc test-jpeg 100 160 #:width 412])
 
 (define-runtime-path this "test7rkt.pdf")
 (make-doc this #f proc)

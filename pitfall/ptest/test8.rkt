@@ -7,7 +7,7 @@
   [font doc "Helvetica-Bold"]
   [font-size doc 25]
   [text doc "Another fantastic pic" 100 100]
-  [image doc pic 100 160 (hash 'width 412)])
+  [image doc pic 100 160 #:width 412])
 
 ; node's zlib.deflate makes smaller files, for some reason
 ; so don't compare file sizes in this case
