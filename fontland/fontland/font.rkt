@@ -139,7 +139,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
 |#
 
 
-(define (family->path fam #:bold [bold #f] #:italic [italic #f])
+(define (query-fontconfig fam [bold #f] [italic #f])
   #|
 https://www.freedesktop.org/software/fontconfig/fontconfig-user.html
 Fontconfig provides a textual representation for patterns that the library can both accept and generate. The representation is in three parts, first a list of family names, second a list of point sizes and finally a list of additional properties:
@@ -154,8 +154,7 @@ Fontconfig provides a textual representation for patterns that the library can b
   (fc-config-substitute (fc-config-get-current) fp 'FcMatchPattern)
   (fc-default-substitute fp)
   (define-values (res pat) (fc-font-match #f fp))
-  (define h
-    (for/hash ([str (cdr (string-split (bytes->string/utf-8 (fc-name-unparse pat)) ":"))])
+  (for/hasheq ([str (cdr (string-split (bytes->string/utf-8 (fc-name-unparse pat)) ":"))])
       (let loop ([kv (string-split str "=")])
         (match kv
           [(list k) (loop (list k "True"))]
@@ -165,7 +164,18 @@ Fontconfig provides a textual representation for patterns that the library can b
                                 ["False" #f]
                                 [(? string->number) (string->number v)]
                                 [val val]))]))))
-  (hash-ref h 'file))
+
+(define local-fallback-font (query-fontconfig ""))
+(define (family->path fam #:bold [bold #f] #:italic [italic #f])
+  (define res (query-fontconfig fam bold italic))
+  (define respath (string->path (hash-ref res 'file)))
+  (cond
+    ;; user explicitly asked for the local fallback, so it's ok
+    [(equal? (string-downcase fam) (string-downcase (hash-ref local-fallback-font 'fullname))) respath]
+    ;; result path is different than fallback, so it's ok
+    [(not (equal? respath (string->path (hash-ref local-fallback-font 'file)))) respath]
+    ;; result path is same as fallback, and fallback not requested, so fail
+    [else #false]))
 
 (define (open-font str-or-path #:bold [bold #f] #:italic [italic #f])
   ;; rather than use a `probe` function,
