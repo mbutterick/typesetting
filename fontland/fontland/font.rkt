@@ -11,8 +11,10 @@
          xenomorph
          racket/match
          racket/list
+         racket/string
          sugar/unstable/dict
          "unsafe/harfbuzz.rkt"
+         "unsafe/fontconfig.rkt"
          "glyph-position.rkt"
          sugar/list
          racket/promise)
@@ -136,16 +138,47 @@ approximates
 https://github.com/mbutterick/fontkit/blob/master/src/base.js
 |#
 
-(define (open-font str-or-path)
-  (define filename (if (path? str-or-path) (path->string str-or-path) str-or-path))
-  (define port (open-input-file filename))
+
+(define (family->path fam #:bold [bold #f] #:italic [italic #f])
+  #|
+https://www.freedesktop.org/software/fontconfig/fontconfig-user.html
+Fontconfig provides a textual representation for patterns that the library can both accept and generate. The representation is in three parts, first a list of family names, second a list of point sizes and finally a list of additional properties:
+    <families>-<point sizes>:<name1>=<values1>:<name2>=<values2>...
+|#
+
+  (define pat-str (string-join (filter values
+                                       (list fam
+                                             (and bold "bold")
+                                             (and italic "italic"))) ":"))
+  (define fp (fc-name-parse (string->bytes/utf-8 pat-str)))
+  (fc-config-substitute (fc-config-get-current) fp 'FcMatchPattern)
+  (fc-default-substitute fp)
+  (define-values (res pat) (fc-font-match #f fp))
+  (define h
+    (for/hash ([str (cdr (string-split (bytes->string/utf-8 (fc-name-unparse pat)) ":"))])
+      (let loop ([kv (string-split str "=")])
+        (match kv
+          [(list k) (loop (list k "True"))]
+          [(list k v) (values (string->symbol k)
+                              (match v
+                                ["True" #t]
+                                ["False" #f]
+                                [(? string->number) (string->number v)]
+                                [val val]))]))))
+  (hash-ref h 'file))
+
+(define (open-font str-or-path #:bold [bold #f] #:italic [italic #f])
   ;; rather than use a `probe` function,
   ;; just try making a font with each format and see what happens
+  (define str (if (path? str-or-path) (path->string str-or-path) str-or-path))
   (or
-   (for/or ([font-constructor (in-list (list +ttf-font +woff-font))])
+   (for*/or ([path-string (in-list (list str (family->path str #:bold bold #:italic italic)))]
+             #:when (file-exists? path-string)
+             [port (in-value (open-input-file path-string))]
+             [font-constructor (in-list (list +ttf-font +woff-font))])
      (with-handlers ([probe-fail? (λ (exn) #f)])
        (font-constructor port)))
-   (error 'create-font "unknown font format")))
+   (raise-argument-error 'open-font "valid font" str-or-path)))
 
 (module+ test
   (require rackunit racket/struct racket/vector)
