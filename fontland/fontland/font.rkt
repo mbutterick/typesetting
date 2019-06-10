@@ -155,27 +155,18 @@ Fontconfig provides a textual representation for patterns that the library can b
   (fc-default-substitute fp)
   (define-values (res pat) (fc-font-match #f fp))
   (for/hasheq ([str (cdr (string-split (bytes->string/utf-8 (fc-name-unparse pat)) ":"))])
-      (let loop ([kv (string-split str "=")])
-        (match kv
-          [(list k) (loop (list k "True"))]
-          [(list k v) (values (string->symbol k)
-                              (match v
-                                ["True" #t]
-                                ["False" #f]
-                                [(? string->number) (string->number v)]
-                                [val val]))]))))
+    (let loop ([kv (string-split str "=")])
+      (match kv
+        [(list k) (loop (list k "True"))]
+        [(list k v) (values (string->symbol k)
+                            (match v
+                              ["True" #t]
+                              ["False" #f]
+                              [(? string->number) (string->number v)]
+                              [val val]))]))))
 
-(define local-fallback-font (query-fontconfig ""))
 (define (family->path fam #:bold [bold #f] #:italic [italic #f])
-  (define res (query-fontconfig fam bold italic))
-  (define respath (string->path (hash-ref res 'file)))
-  (cond
-    ;; user explicitly asked for the local fallback, so it's ok
-    [(equal? (string-downcase fam) (string-downcase (hash-ref local-fallback-font 'fullname))) respath]
-    ;; result path is different than fallback, so it's ok
-    [(not (equal? respath (string->path (hash-ref local-fallback-font 'file)))) respath]
-    ;; result path is same as fallback, and fallback not requested, so fail
-    [else #false]))
+  (string->path (hash-ref (query-fontconfig fam bold italic) 'file)))
 
 (define (open-font str-or-path #:bold [bold #f] #:italic [italic #f])
   ;; rather than use a `probe` function,
@@ -183,7 +174,7 @@ Fontconfig provides a textual representation for patterns that the library can b
   (define str (if (path? str-or-path) (path->string str-or-path) str-or-path))
   (or
    (for*/or ([path-string (in-list (list str (family->path str #:bold bold #:italic italic)))]
-             #:when (file-exists? path-string)
+             #:when (and path-string (file-exists? path-string))
              [port (in-value (open-input-file path-string))]
              [font-constructor (in-list (list +ttf-font +woff-font))])
      (with-handlers ([probe-fail? (λ (exn) #f)])

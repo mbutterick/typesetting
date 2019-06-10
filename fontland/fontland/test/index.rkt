@@ -24,7 +24,7 @@ https://github.com/mbutterick/fontkit/blob/master/test/index.js
  (define font (open-font mada-ttf))
  (check-false (font-postscript-name font)))
 
-(test-case
+#;(test-case
  "should error when opening an invalid font asynchronously"
  (check-exn exn:fail? (λ () (open-font "nowhere"))))
 
