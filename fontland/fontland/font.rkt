@@ -14,7 +14,7 @@
          racket/string
          sugar/unstable/dict
          "unsafe/harfbuzz.rkt"
-         "unsafe/fontconfig.rkt"
+         #;"unsafe/fontconfig.rkt"
          "glyph-position.rkt"
          sugar/list
          racket/promise)
@@ -139,7 +139,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/base.js
 |#
 
 
-(define (query-fontconfig fam [bold #f] [italic #f])
+#;(define (query-fontconfig fam [bold #f] [italic #f])
   #|
 https://www.freedesktop.org/software/fontconfig/fontconfig-user.html
 Fontconfig provides a textual representation for patterns that the library can both accept and generate. The representation is in three parts, first a list of family names, second a list of point sizes and finally a list of additional properties:
@@ -165,7 +165,7 @@ Fontconfig provides a textual representation for patterns that the library can b
                               [(? string->number) (string->number v)]
                               [val val]))]))))
 
-(define (family->path fam #:bold [bold #f] #:italic [italic #f])
+#;(define (family->path fam #:bold [bold #f] #:italic [italic #f])
   (string->path (hash-ref (query-fontconfig fam bold italic) 'file)))
 
 (define (open-font str-or-path #:bold [bold #f] #:italic [italic #f])
@@ -173,7 +173,7 @@ Fontconfig provides a textual representation for patterns that the library can b
   ;; just try making a font with each format and see what happens
   (define str (if (path? str-or-path) (path->string str-or-path) str-or-path))
   (or
-   (for*/or ([path-string (in-list (list str (family->path str #:bold bold #:italic italic)))]
+   (for*/or ([path-string (in-list (list str #(family->path str #:bold bold #:italic italic)))]
              #:when (and path-string (file-exists? path-string))
              [port (in-value (open-input-file path-string))]
              [font-constructor (in-list (list +ttf-font +woff-font))])
