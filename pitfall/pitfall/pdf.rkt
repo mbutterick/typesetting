@@ -17,20 +17,22 @@
 (define (store-ref doc ref)
   (set-pdf-refs! doc (cons ref (pdf-refs doc))))
 
-(define (make-pdf #:output-path [output-path #f]
-                  #:compress [compress? (current-compress-streams)]
-                  #:auto-first-page [auto-first-page? (current-auto-first-page)]
-                  #:size [size "letter"]
-                  #:orientation [orientation "portrait"]
-                  #:width [width-arg #f]
-                  #:height [height-arg #f])
+(define (resolve-page-size! pdf width height size orientation)
   (match-define (list parsed-width parsed-height)
     (sort
      (hash-ref page-sizes (string-upcase size) (λ () (hash-ref page-sizes "LETTER")))
      ;; for portrait, shorter edge is width
      (if (member orientation '("portrait" "tall")) < >)))
-  (define width (or width-arg parsed-width))
-  (define height (or height-arg parsed-height))
+  (set-pdf-width! pdf (or width parsed-width))
+  (set-pdf-height! pdf (or height parsed-height)))
+
+(define (make-pdf #:output-path [output-path #f]
+                  #:compress [compress? (current-compress-streams)]
+                  #:auto-first-page [auto-first-page? (current-auto-first-page)]
+                  #:size [size "letter"]
+                  #:orientation [orientation "portrait"]
+                  #:width [width #f]
+                  #:height [height #f])
 
   ;; initial values
   (define pages null)
@@ -52,8 +54,8 @@
   (define x 0)
   (define y 0)
   (define image-registry (make-hash))
-  (define new-doc (pdf width
-                       height
+  (define new-doc (pdf #f
+                       #f
                        pages
                        refs
                        'dummy-root-value-that-will-be-replaced-below
@@ -78,6 +80,7 @@
   (register-ref-listener (λ (ref) (store-ref new-doc ref)))
   (set-pdf-root! new-doc (make-ref (mhasheq 'Type 'Catalog
                                             'Pages (make-ref (mhasheq 'Type 'Pages)))))
+  (resolve-page-size! new-doc width height size orientation)
 
   ;; initialize params
   (current-compress-streams compress?)
@@ -134,8 +137,8 @@
   (write-bytes-out (format "0 ~a" xref-count))
   (write-bytes-out "0000000000 65535 f ")
   (for ([ref (in-list (reverse (pdf-refs doc)))])
-       (write-bytes-out
-        (string-append (~r ($ref-offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
+    (write-bytes-out
+     (string-append (~r ($ref-offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
   (write-bytes-out "trailer")
   (write-bytes-out (convert (mhasheq 'Size xref-count
                                      'Root (pdf-root doc)
