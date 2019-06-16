@@ -1,6 +1,7 @@
 #lang debug racket/base
 (require "base.rkt"
          "dict.rkt"
+         "util.rkt"
          racket/dict
          racket/match
          racket/class
@@ -14,8 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
 (define (version-type? x)
-  (for/or ([proc (list integer? procedure? xenomorphic? symbol?)])
-    (proc x)))
+  (and x (length-resolvable? x)))
 
 (define x:versioned-dict%
   (class x:dict%
@@ -25,7 +25,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
                 [(@version-key version-key)])
 
     (unless (version-type? @type)
-      (raise-argument-error 'x:versioned-dict "integer, procedure, symbol, or xenomorphic" @type))
+      (raise-argument-error 'x:versioned-dict "integer, procedure, or xenomorphic" @type))
     
     (unless (and (dict? @versions) (andmap (λ (v) (or (dict? v) (x:dict? v))) (dict-values @versions)))
       (raise-argument-error 'x:versioned-dict "dict of dicts or structish" @versions))
@@ -43,7 +43,6 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       (define res (setup-private-fields port parent length))
       (define which-version (match @type
                               [(? integer? int) int]
-                              [(? symbol? key) #:when parent (dict-ref parent key)]
                               [(? procedure? proc) #:when parent (proc parent)]
                               [(or (? symbol?) (? procedure?))
                                (raise-argument-error 'decode "valid parent" parent)]
@@ -77,14 +76,14 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
         (send @type x:encode (dict-ref field-data @version-key #f) port parent))
 
       (for ([(key type) (in-dict (dict-ref @versions 'header null))])
-        (send type x:encode (dict-ref field-data key) port parent))
+           (send type x:encode (dict-ref field-data key) port parent))
 
       (define fields (select-field-set field-data))
       (unless (andmap (λ (key) (member key (dict-keys field-data))) (dict-keys fields))
         (raise-argument-error 'encode (format "hash that contains superset of xversioned-dict keys: ~a" (dict-keys fields)) (dict-keys field-data)))
       
       (for ([(key type) (in-dict fields)])
-        (send type x:encode (dict-ref field-data key) port parent))
+           (send type x:encode (dict-ref field-data key) port parent))
       
       (let loop ([i 0])
         (when (< i (length (dict-ref parent x:pointers-key)))
@@ -107,11 +106,11 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
       
       (define header-size
         (for/sum ([(key type) (in-dict (dict-ref @versions 'header null))])
-          (send type x:size (and val (dict-ref val key)) parent)))
+                 (send type x:size (and val (dict-ref val key)) parent)))
       
       (define fields-size
         (for/sum ([(key type) (in-dict (select-field-set val))])
-          (send type x:size (and val (send type pre-encode (dict-ref val key))) parent)))
+                 (send type x:size (and val (send type pre-encode (dict-ref val key))) parent)))
       
       (define pointer-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
       

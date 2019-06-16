@@ -26,14 +26,14 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x15\x05roxyb\x15")])
    (check-equal?
     (decode (x:dict 'name (x:string #:length uint8) 'age uint8
-                      'nested (x:dict 'name (x:string #:length uint8) 'age uint8)))
+                    'nested (x:dict 'name (x:string #:length uint8) 'age uint8)))
     (mhasheq 'name "roxyb" 'age 21 'nested (mhasheq 'name "roxyb" 'age 21)))))
 
 (test-case
  "dict: decode with process hook"
  (parameterize ([current-input-port (open-input-bytes #"\x05roxyb\x20")])
    (define struct (x:dict #:post-decode (λ (o) (hash-set! o 'canDrink (>= (hash-ref o 'age) 21)) o)
-                   'name (x:string #:length uint8) 'age uint8))
+                          'name (x:string #:length uint8) 'age uint8))
    (check-equal? (decode struct)
                  (mhasheq 'name "roxyb" 'age 32 'canDrink #t))))
 
@@ -52,9 +52,9 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
 (test-case
  "dict: compute the correct size with pointers"
  (check-equal? (send (x:dict 'name (x:string #:length uint8)
-                               'age uint8
-                               'ptr (x:pointer #:type uint8 #:dest-type (x:string #:length uint8)))
-                                x:size
+                             'age uint8
+                             'ptr (x:pointer #:type uint8 #:dest-type (x:string #:length uint8)))
+                     x:size
                      (mhash 'name "roxyb" 'age 21 'ptr "hello")) 14))
 
 (test-case
@@ -75,10 +75,11 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
  "dict: support pre-encode hook"
  (parameterize ([current-output-port (open-output-bytes)])
    (define struct (x:dict #:pre-encode (λ (val)
-                         (hash-set! val 'nameLength (string-length (hash-ref val 'name))) val)
-                            'nameLength uint8
-                            'name (x:string 'nameLength)
-                            'age uint8))
+                                         (hash-set! val 'nameLength (string-length (hash-ref val 'name)))
+                                         val)
+                          'nameLength uint8
+                          'name (x:string (λ (this) (hash-ref this 'nameLength)))
+                          'age uint8))
    (encode struct (mhasheq 'name "roxyb" 'age 21))
    (check-equal? (get-output-bytes (current-output-port)) #"\x05roxyb\x15")))
 
@@ -86,7 +87,7 @@ https://github.com/mbutterick/restructure/blob/master/test/Struct.coffee
  "dict: encode pointer data after structure"
  (parameterize ([current-output-port (open-output-bytes)])
    (define struct (x:dict 'name (x:string #:length uint8)
-                            'age uint8
-                            'ptr (x:pointer uint8 #:dest-type (x:string #:length uint8))))
+                          'age uint8
+                          'ptr (x:pointer uint8 #:dest-type (x:string #:length uint8))))
    (encode struct (hasheq 'name "roxyb" 'age 21 'ptr "hello"))
    (check-equal? (get-output-bytes (current-output-port)) #"\x05roxyb\x15\x08\x05hello")))

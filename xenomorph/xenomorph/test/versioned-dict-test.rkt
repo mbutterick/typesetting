@@ -80,8 +80,8 @@ https://github.com/mbutterick/restructure/blob/master/test/VersionedStruct.coffe
                                              'gender 0)))))
 
 (test-case
- "versioned dict: decode should support parent version key"
- (let ([vstruct (x:versioned-dict x:version-key
+ "versioned dict: decode should support parent version key via procedure"
+ (let ([vstruct (x:versioned-dict (λ (p) (hash-ref p x:version-key))
                                   (dictify
                                    0 (dictify 'name (x:string #:length uint8 #:encoding 'ascii)
                                               'age uint8)

@@ -6,7 +6,6 @@
   (or (not x)
       (exact-nonnegative-integer? x)
       (procedure? x)
-      (symbol? x)
       (x:int? x)))
 
 (define (resolve-length x input-port [parent #f])
