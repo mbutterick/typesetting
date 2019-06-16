@@ -1274,7 +1274,22 @@ The rest arguments determine the keys and value types of the dict. These argumen
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
-@racket[base-class] controls the class used for instantiation of the new object.   
+@racket[base-class] controls the class used for instantiation of the new object.  
+
+@examples[#:eval my-eval
+(define d1 (x:dict 'foo uint8 'bar (x:string #:length 5)))
+(define d1-vals (hasheq 'foo 42 'bar "hello"))
+(encode d1 d1-vals #f)
+(decode d1 #"*hello")
+
+(define d2 (x:dict 'zam (x:list #:length 3 #:type uint8)
+                   'nested d1))
+(define d2-vals (hasheq 'zam '(42 43 44)
+                        'nested d1-vals))
+(encode d2 d2-vals #f)
+(decode d2 #"*+,*hello")
+]
+
 }
 
 
@@ -1357,7 +1372,30 @@ Generate an instance of @racket[x:versioned-dict%] (or a subclass of @racket[x:v
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
-@racket[base-class] controls the class used for instantiation of the new object.   
+@racket[base-class] controls the class used for instantiation of the new object.  
+
+@examples[#:eval my-eval
+(define d1 (x:dict 'foo uint8 'bar (x:string #:length 5)))
+(define d1-vals (hasheq 'foo 42 'bar "hello" 'my-version-key 'd1))
+
+(define d2 (x:dict 'zam (x:list #:length 3 #:type uint8)
+                   'nested d1))
+(define d2-vals (hasheq 'zam '(42 43 44)
+                        'nested d1-vals
+                        'my-version-key 'd2))
+
+(define vdict (x:versioned-dict
+               #:type (x:symbol)
+               #:version-key 'my-version-key
+               #:versions (hash 'd1 d1 'd2 d2)))
+
+(encode vdict d1-vals #f)
+(decode vdict #"d1\0*hello")
+
+(encode vdict d2-vals #f)
+(decode vdict #"d2\0*+,*hello")
+]
+
 }
 
 @subsubsection{Reserved values}
