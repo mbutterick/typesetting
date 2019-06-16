@@ -1,4 +1,4 @@
-#lang scribble/manual
+  #lang scribble/manual
 
 @(require scribble/eval (for-label racket/base racket/class racket/file racket/dict racket/list racket/stream racket/promise racket/vector xenomorph))
 
@@ -173,18 +173,18 @@ For those familiar with programming-language lingo, an encoding somewhat resembl
 
 @subsection{A binary format for complex numbers}
 
-Racket natively supports @tech{complex numbers}. Suppose we want to encode these numbers in a binary format without losing precision. How would we do it?
+Racket natively supports @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{complex numbers}. Suppose we want to encode these numbers in a binary format without losing precision. How would we do it?
 
 First, we need to understand Racket's recipe for a complex number:
 
 @itemlist[
-@item{A @tech{complex number} has a @tech{real part} and an @tech{imaginary part}. The coeffiecient of each part is a @tech{real number}.}
+@item{A @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{complex number} has a @italic{real part} and an @italic{imaginary part}. The coeffiecient of each part is a @italic{real number}.}
 
-@item{A @tech{real number} is either a @tech{floating-point} number or an @tech{exact} number.}
+@item{A @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{real number} is either a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{inexact number} (that is, a @italic{floating-point number}) or an @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{exact number}.}
 
-@item{An @tech{exact number} is a rational number, that is, a number with a @tech{numerator} and @tech{denominator}.}
+@item{An @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{exact number} is a rational number — i.e., a number with a @italic{numerator} and @italic{denominator}.}
 
-@item{The @tech{numerator} and @tech{denominator} can each be an arbitrarily large signed @tech{integer}.}
+@item{The @italic{numerator} and @italic{denominator} can each be an arbitrarily large signed integer, which we'll call a @italic{big integer} to distinguish it from fixed-size integers otherwise common in binary formats.}
 
 ]
 
@@ -249,7 +249,7 @@ We specify a @racket[#:version-key] of @racket['version]. Then in our pre-encode
 (decode real #"\0-1\00016\0")
 ]
 
-Notice that the float loses some precision during the encoding & decoding process. This is a natural part of how floating-point numbers work — they are called @tech{inexact} for this reason — so this is a feature, not a bug.
+Notice that the float loses some precision during the encoding & decoding process. This is a natural part of how floating-point numbers work — they are called @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{inexact numbers} for this reason — so this is a feature, not a bug.
 
 @subsubsection{Complex numbers}
 
@@ -773,7 +773,7 @@ Create class instance that represents a string format of length @racket[len]. If
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 string?]{
-Returns a @tech{string}.
+Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{string}.
 }
 
 @defmethod[
@@ -878,7 +878,7 @@ Create class instance that represents a symbol format of length @racket[len]. If
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 symbol?]{
-Returns a @tech{symbol}.
+Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{symbol}.
 }
 
 @defmethod[
@@ -888,7 +888,7 @@ Returns a @tech{symbol}.
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
+Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
 }
 
 }
@@ -967,7 +967,7 @@ Create class instance that represents a list format with elements of type @racke
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 list?]{
-Returns a @tech{list} of values whose length is @racket[_len] and where each value is @racket[_type].
+Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{list} of values whose length is @racket[_len] and where each value is @racket[_type].
 }
 
 @defmethod[
@@ -977,7 +977,7 @@ Returns a @tech{list} of values whose length is @racket[_len] and where each val
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
+Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
 }
 
 }
@@ -1049,7 +1049,7 @@ Generate an instance of @racket[x:list%] (or a subclass of @racket[x:list%]) wit
 
 Under the hood, just a wrapper around the @racket[x:list%] class that produces a stream rather than a list. 
 
-The distinguishing feature of a @tech{stream} is that the evaluation is lazy: elements are only decoded as they are requested (and then they are cached for subsequent use). Therefore, a Xenomorph stream is a good choice when you don't want to incur the costs of decoding every element immediately (as you will when you use @secref{Lists}). 
+The distinguishing feature of a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{stream} is that the evaluation is lazy: elements are only decoded as they are requested (and then they are cached for subsequent use). Therefore, a Xenomorph stream is a good choice when you don't want to incur the costs of decoding every element immediately (as you will when you use @secref{Lists}). 
 
 @defclass[x:stream% x:list% ()]{
 Base class for stream formats. Use @racket[x:stream] to conveniently instantiate new stream formats.
@@ -1067,7 +1067,7 @@ Create class instance that represents a stream format with elements of type @rac
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 stream?]{
-Returns a @tech{stream} of values whose length is @racket[_len] and where each value is @racket[_type].
+Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{stream} of values whose length is @racket[_len] and where each value is @racket[_type].
 }
 
 @defmethod[
@@ -1077,7 +1077,7 @@ Returns a @tech{stream} of values whose length is @racket[_len] and where each v
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
+Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
 }
 
 }
@@ -1151,7 +1151,7 @@ Create class instance that represents a vector format with elements of type @rac
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 vector?]{
-Returns a @tech{vector} of values whose length is @racket[_len] and where each value is @racket[_type].
+Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{vector} of values whose length is @racket[_len] and where each value is @racket[_type].
 }
 
 @defmethod[
@@ -1161,7 +1161,7 @@ Returns a @tech{vector} of values whose length is @racket[_len] and where each v
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
+Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
 }
 
 }
@@ -1217,7 +1217,7 @@ val)
 
 @defmodule[xenomorph/dict]
 
-A @deftech{dict} is a store of keys and values. The analogy to a Racket @racket[dict?] is intentional, but in Xenomorph a dict must also be @emph{ordered}, because a binary encoding doesn't make sense if it happens in a different order every time. The more precise analogy would be to an @tech{association list} — a thing that has both dict-like and list-like qualities — but this would be a laborious name. 
+A @deftech{dict} is a store of keys and values. The analogy to a Racket @racket[dict?] is intentional, but in Xenomorph a dict must also be @emph{ordered}, because a binary encoding doesn't make sense if it happens in a different order every time. The more precise analogy would be to an @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{association list} — a thing that has both dict-like and list-like qualities — but this would be a laborious name. 
 
 @defclass[x:dict% x:base% ()]{
 Base class for dict formats. Use @racket[x:dict] to conveniently instantiate new dict formats.
@@ -1267,7 +1267,7 @@ Whether @racket[x] is an object of type @racket[x:dict%].
 x:dict?]{
 Generate an instance of @racket[x:dict%] (or a subclass of @racket[x:dict%]) with certain optional attributes.
 
-The rest arguments determine the keys and value types of the dict. These arguments can either be alternating keys and value-type arguments (similar to the calling pattern for @racket[hasheq]) or @tech{association lists}.
+The rest arguments determine the keys and value types of the dict. These arguments can either be alternating keys and value-type arguments (similar to the calling pattern for @racket[hasheq]) or @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{association lists}.
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
@@ -1359,9 +1359,12 @@ Generate an instance of @racket[x:versioned-dict%] (or a subclass of @racket[x:v
 
 @subsubsection{Reserved values}
 
+@declare-exporting[xenomorph]
+
 @defthing[x:version-key symbol? #:value 'x:version]{
-Key used to store & look up the version-selector value within the fields of a versioned dict.
+Key used by default to store & look up the version-selector value within the fields of a versioned dict. When the version dict is created, a different key can be specified.
 }
+
 
 
 
@@ -1460,7 +1463,7 @@ Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%
 
 @racket[allow-null?] controls whether the pointer can take on null values, and @racket[null-value] controls what that value is. Defaults are @racket[#true] and @racket[0], respectively.
 
-@racket[pointer-lazy?] controls whether the pointer is decoded immediately. If @racket[pointer-lazy?] is @racket[#true], then the decoding of the pointer is wrapped in a @tech{promise} that can later be evaluated with @racket[force]. Default is @racket[#false].
+@racket[pointer-lazy?] controls whether the pointer is decoded immediately. If @racket[pointer-lazy?] is @racket[#true], then the decoding of the pointer is wrapped in a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{promise} that can later be evaluated with @racket[force]. Default is @racket[#false].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
@@ -1468,6 +1471,8 @@ Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%
 }
 
 @subsubsection{Private values}
+
+@declare-exporting[xenomorph]
 
 @deftogether[(@defthing[x:start-offset-key symbol? #:value 'x:start-offset]
 @defthing[x:current-offset-key symbol? #:value 'x:current-offset]
