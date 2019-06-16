@@ -53,9 +53,9 @@ Invoke the library in a source file by importing it in the usual way:
 
 @subsection{Bytes and byte strings}
 
-Suppose we have a file on disk. What's in the file? Without knowing anything else, we can at least say the file contains a sequence of @deftech{bytes}. A @tech{byte} is the smallest unit of data storage. It's not, however, the smallest unit of information storage — that would be a @deftech{bit}. But when we read (or write) from disk (or other source, like memory), we work with bytes. 
+Suppose we have a file on disk. What's in the file? Without knowing anything else, we can at least say the file contains a sequence of @deftech{bytes}. A byte is the smallest unit of data storage. It's not, however, the smallest unit of information storage — that would be a @deftech{bit}. But when we read (or write) from disk (or other source, like memory), we work with bytes. A byte holds eight bits, so it can take on values between 0 and 255, inclusive. 
 
-A byte holds eight bits, so it can take on values between 0 and 255, inclusive. In Racket, a sequence of bytes is also known as a @deftech{byte string}. It prints as a series of values between quotation marks, prefixed with @litchar{#}:
+In Racket, a fixed-length array of bytes is also known as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}. It prints as a series of values between quotation marks, prefixed with @litchar{#}:
 
 @racketblock[#"ABC"]
 
@@ -344,7 +344,7 @@ Hook for post-processing on @racket[val] after it's returned by @racket[x:decode
 [parent (or/c xenomorphic? #false)]
 [args any/c] ...)
 bytes?]{
-Convert a value into a @tech{byte string} which is written to @racket[output-port]. Called by @racket[encode].
+Convert a value into a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string} which is written to @racket[output-port]. Called by @racket[encode].
 }
 
 @defmethod[
@@ -361,7 +361,7 @@ Hook for pre-processing on @racket[val] after it's passed to @racket[encode] but
 [parent (or/c xenomorphic? #false)]
 [args any/c] ...)
 exact-nonnegative-integer?]{
-The length of the @tech{byte string} that @racket[val] would produce if it were encoded using @racket[x:encode]. Called by @racket[size].
+The length of the @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string} that @racket[val] would produce if it were encoded using @racket[x:encode]. Called by @racket[size].
 }
 
 }
@@ -786,7 +786,7 @@ Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{string}.
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @racket[val], convert it to a string if needed, and encode it as a @tech{byte string}. If @racket[_len] is a @racket[xenomorphic?] object, the length is encoded at the beginning of the string using that object as the encoder.
+Take a @racket[val], convert it to a string if needed, and encode it as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}. If @racket[_len] is a @racket[xenomorphic?] object, the length is encoded at the beginning of the string using that object as the encoder.
 }
 
 }
@@ -891,7 +891,7 @@ Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{symbol}.
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
+Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}.
 }
 
 }
@@ -980,7 +980,7 @@ Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{list} of v
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
+Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}.
 }
 
 }
@@ -1080,7 +1080,7 @@ Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{stream} of
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
+Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}.
 }
 
 }
@@ -1164,7 +1164,7 @@ Returns a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{vector} of
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech{byte string}.
+Take a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequence} @racket[seq] of @racket[_type] items and encode it as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}.
 }
 
 }
@@ -1247,7 +1247,7 @@ Returns a @racket[hasheq] whose keys are the same as the keys in @racket[_fields
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take the keys and values in @racket[kvs] and encode them as a @tech{byte string}.
+Take the keys and values in @racket[kvs] and encode them as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}.
 }
 
 }
@@ -1338,7 +1338,7 @@ Returns a @racket[hasheq] whose keys are the same as the keys in @racket[_fields
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take the keys and values in @racket[kvs] and encode them as a @tech{byte string}.
+Take the keys and values in @racket[kvs] and encode them as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}.
 }
 
 }
@@ -1466,7 +1466,7 @@ Returns the dereferenced value of the pointer whose type is controlled by @racke
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a value of type @racket[_dest-type], wrap it in a pointer, and encode it as a @tech{byte string}.
+Take a value of type @racket[_dest-type], wrap it in a pointer, and encode it as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}.
 }
 
 }
@@ -1565,7 +1565,7 @@ Returns a hash whose keys are the names of the flags, and whose values are Boole
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take a hash — where hash keys are the names of the flags, hash values are Booleans — and encode it as a @tech{byte string}. 
+Take a hash — where hash keys are the names of the flags, hash values are Booleans — and encode it as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}. 
 }
 
 }
@@ -1643,7 +1643,7 @@ Returns either the value associated with a certain integer, or if the value is @
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Take value listed in the @racket[_values] field and encode it as a @tech{byte string}.
+Take value listed in the @racket[_values] field and encode it as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}.
 }
 
 }
@@ -1727,7 +1727,7 @@ Returns a value if the condition is met, otherwise returns @racket[(void)].
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Encodes @racket[val] as a @tech{byte string}, but only if the embedded condition is met. 
+Encodes @racket[val] as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string}, but only if the embedded condition is met. 
 }
 
 }
@@ -1800,7 +1800,7 @@ Returns @racket[(void)].
 [input-port input-port?]
 [parent (or/c xenomorphic? #false)])
 bytes?]{
-Encodes zeroes as a @tech{byte string} that is the length of @racket[_type].
+Encodes zeroes as a @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{byte string} that is the length of @racket[_type].
 }
 
 }
