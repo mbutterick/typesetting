@@ -1486,7 +1486,8 @@ Generate an instance of @racket[x:pointer%] (or a subclass of @racket[x:pointer%
 @defthing[x:pointer-type-key symbol? #:value 'x:ptr-type]
 @defthing[x:length-key symbol? #:value 'x:length]
 @defthing[x:val-key symbol? #:value 'x:val])]{
-Housekeeping.
+
+Private fields used for pointer housekeeping. There is no reason to mess with these.
 }
 
 
@@ -1558,6 +1559,17 @@ Generate an instance of @racket[x:bitfield%] (or a subclass of @racket[x:bitfiel
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
+
+@examples[#:eval my-eval
+(define flags (x:bitfield uint8 '(alpha bravo charlie delta echo)))
+(define vals (hasheq
+              'alpha #true
+              'charlie #true
+              'echo #true))
+(encode flags vals #f)
+(decode flags #"\25")
+]
+
 }
 
 

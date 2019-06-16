@@ -35,6 +35,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Bitfield.coffee
       flag-hash)
 
     (define/augment (x:encode flag-hash port [parent #f])
+      (define invalid-flags
+        (for/list ([flag (in-hash-keys flag-hash)]
+                   #:unless (member flag @flags))
+          flag))
+      (unless (null? invalid-flags)
+        (raise-argument-error 'encode (format "valid flag name ~v" @flags) invalid-flags))
       (define bit-int (for/sum ([(flag idx) (in-indexed @flags)]
                                 #:when (and flag (hash-ref flag-hash flag #f)))
                                (arithmetic-shift 1 idx)))
