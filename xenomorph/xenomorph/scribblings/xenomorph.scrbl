@@ -1652,6 +1652,9 @@ Generate an instance of @racket[x:enum%] (or a subclass of @racket[x:enum%]) wit
 }
 
 
+
+@;{
+
 @subsection{Optional}
 
 @defmodule[xenomorph/optional]
@@ -1713,11 +1716,15 @@ Generate an instance of @racket[x:optional%] (or a subclass of @racket[x:optiona
 
 @racket[type-arg] or @racket[type-kw] (whichever is provided, though @racket[type-arg] takes precedence) controls the type wrapped by the optional object, which must be @racket[xenomorphic?].
 
-@racket[cond-arg] or @racket[cond-kw] (whichever is provided, though @racket[cond-arg] takes precedence) is the condition that is evaluated to determine if the optional object should encode or decode. If the condition is a procedure, the procedure is evaluated for its result. Default is @racket[#true].
+@racket[cond-arg] or @racket[cond-kw] (whichever is provided, though @racket[cond-arg] takes precedence) is the condition that is evaluated to determine if the optional object should encode or decode. 
+
+If the condition is a procedure, the procedure is evaluated for its result. The procedure must take two arguments: the first is the optional object, the second is the parent object (if it exists). Default is @racket[#true].
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
 @racket[base-class] controls the class used for instantiation of the new object.   
+}
+
 }
 
 
@@ -1786,7 +1793,16 @@ Generate an instance of @racket[x:reserved%] (or a subclass of @racket[x:reserve
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
-@racket[base-class] controls the class used for instantiation of the new object.   
+@racket[base-class] controls the class used for instantiation of the new object. 
+
+@examples[#:eval my-eval
+(define res (x:reserved #:type uint32))
+(encode res 1 #f)
+(encode res 1234 #f)
+(encode res 12345678 #f)
+(void? (decode res #"\0\0\0\0"))
+]
+
 }
 
 @subsection{Utilities}
