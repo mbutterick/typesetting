@@ -372,6 +372,16 @@ The length of the @tech{byte string} that @racket[val] would produce if it were 
 
 @defmodule[xenomorph/number]
 
+
+@subsubsection{Little endian vs. big endian}
+
+When an integer is more than one byte long, one has to consider how the bytes are ordered. If the byte representing the lowest 8 bits appears first, it's known as @emph{little endian} byte ordering. If this byte appears last, it's called @emph{big endian} byte ordering. 
+
+For example, the integer 1 in 32-bit occupies four bytes. In little endian, the bytes would be in increasing order, or @racket[#"\1\0\0\0"]. In big endian, the bytes would be in decreasing order, or @racket[#"\0\0\0\1"].
+
+When encoding and decoding binary formats, one has to be consistent about endianness, because it will change the meaning of the binary value. For instance, if we inadvertently treated the big-endian byte string @racket[#"\0\0\0\1"] as little endian, we'd get the result @racket[16777216] instead of the expected @racket[1].
+
+
 @defproc[
 (endian-value?
 [val any/c])
@@ -384,13 +394,6 @@ Whether @racket[val] is either @racket['be] (representing big endian) or @racket
 The endian value of the current system. Big endian is represented as @racket['be] and little endian as @racket['le]. This can be used as an argument for classes that inherit from @racket[x:number%]. 
 
 Use this value carefully, however. Binary formats are usually defined using one endian convention or the other (so that data can be exchanged among machines regardless of the endianness of the underlying system).
-
-@margin-note{When an integer is more than one byte long, one has to consider how the bytes are ordered. If the byte representing the lowest 8 bits appears first, it's known as @emph{little endian} byte ordering. If this byte appears last, it's called @emph{big endian} byte ordering. 
-
-For example, the integer 1 in 32-bit occupies four bytes. In little endian, it would be encoded as @racket[#"\1\0\0\0"]. In big endian, as @racket[#"\0\0\0\1"].
-
-When encoding and decoding binary formats, one has to be consistent about endianness, because it will change the meaning of the binary value. For instance, if we inadvertently treated the big-endian byte stream @racket[#"\0\0\0\1"] as little endian, we'd get the result @racket[16777216] instead of the expected @racket[1].
-}
 
 }
 
