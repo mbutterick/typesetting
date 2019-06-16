@@ -1581,7 +1581,7 @@ An @deftech{enumeration} is a mapping of values to sequential integers.
 
 
 @defclass[x:enum% x:base% ()]{
-Base class for list formats. Use @racket[x:enum] to conveniently instantiate new list formats.
+Base class for list formats. Use @racket[x:enum] to conveniently instantiate new enumeration formats.
 
 @defconstructor[
 ([type x:int?]
@@ -1636,7 +1636,19 @@ Generate an instance of @racket[x:enum%] (or a subclass of @racket[x:enum%]) wit
 
 @racket[pre-encode-proc] and @racket[post-decode-proc] control the pre-encoding and post-decoding procedures, respectively. Each takes as input the value to be processed and returns a new value.
 
-@racket[base-class] controls the class used for instantiation of the new object.   
+@racket[base-class] controls the class used for instantiation of the new object.
+
+@examples[#:eval my-eval
+(define e (x:enum #:type uint8
+                  #:values '("foo" "bar" "baz" #f)))
+(encode e "baz" #f)
+(decode e #"\2")
+(code:comment @#,t{corresponding enum value is #false, so we pass through input value})
+(decode e #"\3")
+(code:comment @#,t{no corresponding enum value, so we pass through input value})
+(decode e #"\5")
+]
+
 }
 
 
