@@ -1306,7 +1306,7 @@ The versioned dict is a format derived from @racket[x:dict%] that contains multi
 (version-type?
 [x any/c])
 boolean?]{
-Whether @racket[x] can be used as the version type of a versioned dict. Valid types are @racket[integer?], @racket[procedure?], @racket[xenomorphic?], or @racket[symbol?].
+Whether @racket[x] can be used as the version type of a versioned dict. Valid types are @racket[integer?], @racket[procedure?], or @racket[xenomorphic?].
 }
 
 

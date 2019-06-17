@@ -15,7 +15,7 @@ https://github.com/mbutterick/restructure/blob/master/src/VersionedStruct.coffee
 |#
 
 (define (version-type? x)
-  (and x (length-resolvable? x)))
+  (and x (or (length-resolvable? x) (xenomorphic? x))))
 
 (define x:versioned-dict%
   (class x:dict%
