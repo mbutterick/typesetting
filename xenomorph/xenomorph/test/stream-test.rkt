@@ -53,21 +53,21 @@ https://github.com/mbutterick/restructure/blob/master/test/LazyArray.coffee
    (check-equal? (stream->list arr) '(1 2 3 4))))
 
 (test-case
- "stream: size should work with xlazy-arrays"
+ "stream: size should work with streams"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (x:stream uint8 4))
    (define arr (decode xla))
    (check-equal? (send xla x:size arr) 4)))
 
 (test-case
- "stream: encode should work with xlazy-arrays"
+ "stream: encode should work with streams"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (x:stream uint8 4))
    (define arr (decode xla))  
    (check-equal? (encode xla arr #f) (bytes 1 2 3 4))))
 
 (test-case
- "stream: encode should work with xlazy-arrays with pre-encode"
+ "stream: encode should work with streams with pre-encode"
  (parameterize ([current-input-port (open-input-bytes (bytes 1 2 3 4 5))])
    (define xla (x:stream uint8 4 #:pre-encode (λ (str) (stream-map (λ (val) (* 2 val)) str))))
    (define arr (decode xla))  
