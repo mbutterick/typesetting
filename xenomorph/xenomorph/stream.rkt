@@ -28,20 +28,21 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
       (define stream-starting-pos (pos port))
       (define item-size (send @type x:size #f new-parent))
       ;; have to be able to retreive nth item of stream, random access
+      (define stream-ending-pos (and maybe-len (+ stream-starting-pos (* maybe-len item-size))))
       (define item-indexes-retrieved null)
       (begin0
         (for*/stream ([index (in-range (or maybe-len +inf.0))]
-                      [orig-pos (in-value (pos port))]
-                      [index-pos (in-value (pos port (+ stream-starting-pos (* item-size index))))]
-                      [_ (in-value (begin (pos port index-pos) void))]
                       ;; for streams of indefinite length, stop gathering when we're at eof
-                      #:break (and (not maybe-len) (eof-object? (peek-byte port))))
+                      #:break (and (not maybe-len)
+                                   (eof-object? (peek-byte port (+ stream-starting-pos (* item-size index))))))
+          (define index-pos (+ stream-starting-pos (* item-size index)))
+          (pos port index-pos)
           (when (eof-object? (peek-byte port))
-            (raise-argument-error 'decode (format "bytes for ~a items" index) (pos port)))
+            (raise-argument-error 'decode (format "at port position ~a, not enough bytes for item ~a" (pos port) index) (pos port)))
           (begin0
             (send @type x:decode port new-parent)
             (set! item-indexes-retrieved (cons index item-indexes-retrieved))
-            (pos port orig-pos)))
+            (pos port stream-ending-pos)))
         (let ([items-to-skip (or maybe-len (if (pair? item-indexes-retrieved)
                                                (add1 (apply max item-indexes-retrieved))
                                                0))])
@@ -99,7 +100,10 @@ https://github.com/mbutterick/restructure/blob/master/src/LazyArray.coffee
   (define la (x:stream uint8 4))
   (define ila (decode la ds))
   (check-equal? (pos ds) 4)
+  (check-equal? (stream-ref ila 0) 65)
+  (check-equal? (pos ds) 4)
   (check-equal? (stream-ref ila 1) 66)
+  (check-equal? (pos ds) 4)
   (check-equal? (stream-ref ila 3) 68)
   (check-equal? (pos ds) 4)
   (check-equal? (stream->list ila) '(65 66 67 68))
