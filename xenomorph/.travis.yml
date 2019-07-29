@@ -14,9 +14,9 @@ env:
     #- RACKET_VERSION=7.0
     - RACKET_VERSION=7.1
     - RACKET_VERSION=7.2
-     # natipkg builds not available for HEAD or HEADCS
-    #- RACKET_VERSION=HEAD
-    #- RACKET_VERSION=HEADCS
+    - RACKET_VERSION=7.3
+    - RACKET_VERSION=HEAD
+    - RACKET_VERSION=HEADCS
 
 # You may want to test against certain versions of Racket, without
 # having them count against the overall success/failure.
