@@ -17,22 +17,17 @@
 (define (store-ref doc ref)
   (set-pdf-refs! doc (cons ref (pdf-refs doc))))
 
-(define (resolve-page-size! pdf width height size orientation)
+(define (resolve-page-size width height size orientation)
   (match-define (list parsed-width parsed-height)
     (sort
      (hash-ref page-sizes (string-upcase size) (λ () (hash-ref page-sizes "LETTER")))
      ;; for portrait, shorter edge is width
      (if (member orientation '("portrait" "tall")) < >)))
-  (set-pdf-width! pdf (or width parsed-width))
-  (set-pdf-height! pdf (or height parsed-height)))
+  (list (or width parsed-width) (or height parsed-height)))
 
 (define (make-pdf #:output-path [output-path #f]
                   #:compress [compress? (current-compress-streams)]
-                  #:auto-first-page [auto-first-page? (current-auto-first-page)]
-                  #:size [size "letter"]
-                  #:orientation [orientation "portrait"]
-                  #:width [width #f]
-                  #:height [height #f])
+                  #:auto-first-page [auto-first-page? (current-auto-first-page)])
 
   ;; initial values
   (define pages null)
@@ -54,9 +49,7 @@
   (define x 0)
   (define y 0)
   (define image-registry (make-hash))
-  (define new-doc (pdf #f
-                       #f
-                       pages
+  (define new-doc (pdf pages
                        refs
                        'dummy-root-value-that-will-be-replaced-below
                        info
@@ -80,18 +73,22 @@
   (register-ref-listener (λ (ref) (store-ref new-doc ref)))
   (set-pdf-root! new-doc (make-ref (mhasheq 'Type 'Catalog
                                             'Pages (make-ref (mhasheq 'Type 'Pages)))))
-  (resolve-page-size! new-doc width height size orientation)
 
   ;; initialize params
   (current-compress-streams compress?)
   (current-auto-first-page auto-first-page?)
-  (when (current-auto-first-page) (add-page new-doc))
+  (when (current-auto-first-page)
+    (add-page new-doc))
   (when (current-auto-helvetica) (font new-doc "Helvetica"))
   new-doc)
 
-(define (add-page doc [width (pdf-width doc)] [height (pdf-height doc)])
+(define (add-page doc [width-arg #f] [height-arg #f]
+                  #:size [size "letter"]
+                  #:orientation [orientation "portrait"])
+    
   ;; create a page object
   (define page-parent (dict-ref (pdf-root doc) 'Pages))
+  (match-define (list width height) (resolve-page-size width-arg height-arg size orientation))
   (set-pdf-pages! doc (cons (make-page #:parent page-parent #:width width #:height height) (pdf-pages doc)))
       
   (when (test-mode)
@@ -137,8 +134,8 @@
   (write-bytes-out (format "0 ~a" xref-count))
   (write-bytes-out "0000000000 65535 f ")
   (for ([ref (in-list (reverse (pdf-refs doc)))])
-    (write-bytes-out
-     (string-append (~r ($ref-offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
+       (write-bytes-out
+        (string-append (~r ($ref-offset ref) #:min-width 10 #:pad-string "0") " 00000 n ")))
   (write-bytes-out "trailer")
   (write-bytes-out (convert (mhasheq 'Size xref-count
                                      'Root (pdf-root doc)

@@ -5,9 +5,7 @@
 ;; structs
 (define verbose-pitfall-printing? (make-parameter #f))
 
-(struct pdf (width
-             height
-             pages
+(struct pdf (pages
              refs
              root
              info
