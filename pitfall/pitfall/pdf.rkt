@@ -32,9 +32,12 @@
   ;; initial values
   (define pages null)
   (define refs null)
-  (define info (mhasheq 'Producer "PITFALL"
-                        'Creator "PITFALL"
-                        'CreationDate (current-seconds)))
+  (define now (current-seconds))
+  (define producer (format "Racket ~a (Pitfall library)" (version)))
+  (define info (mhasheq 'Producer producer
+                        'Creator producer ; or application program using Pitfall
+                        'CreationDate now
+                        'ModDate now))
   (define opacity-registry (make-hash))
   (define current-fill-color '("black" 1))
   (define ctm default-ctm-value)

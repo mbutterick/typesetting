@@ -49,6 +49,16 @@
                   (parse-1 ip)
                   (port->bytes ip)) #"z"))
 
+(define excluded-keys
+  (list #"/Producer"
+        #"/Creator"
+        #"/CreationDate"
+        #"/ModDate"
+        #"/Keywords"
+        #"/Title"
+        #"/Author"
+        #"/Subject"))
+
 (define (parse-1 ip)
   (cond
     ;; the complication is that arrays & dicts can contain other arrays & dicts
@@ -62,7 +72,7 @@
        (sort ; put hash into order so it's comparable
         (for/list ([kv (in-slice 2 items)]
                    ;; suppress these keys so we can compare pdfkit & pitfall output
-                   #:unless (member (car kv) (list #"/Producer" #"/Creator" #"/CreationDate")))
+                   #:unless (member (car kv) excluded-keys))
           (apply cons kv))
         bytes<?
         #:key car))
