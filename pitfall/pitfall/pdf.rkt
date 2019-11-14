@@ -33,7 +33,7 @@
   (define pages null)
   (define refs null)
   (define now (current-seconds))
-  (define producer (format "Racket ~a (Pitfall library)" (version)))
+  (define producer (format "Racket ~a [Pitfall library]" (version)))
   (define info (mhasheq 'Producer producer
                         'Creator producer ; or application program using Pitfall
                         'CreationDate now
