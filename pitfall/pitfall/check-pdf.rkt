@@ -73,7 +73,7 @@
         (for/list ([kv (in-slice 2 items)]
                    ;; suppress these keys so we can compare pdfkit & pitfall output
                    #:unless (member (car kv) excluded-keys))
-          (apply cons kv))
+                  (apply cons kv))
         bytes<?
         #:key car))
      (cond ;; might have a stream
@@ -106,7 +106,7 @@
 
 (define (parse-pdf-bytes bs)
   (for/list ([tok (in-port parse-1 (open-input-bytes bs))])
-    tok))
+            tok))
 
 (define (pdf->dict pdf)
   (define pdf-bs (if (bytes? pdf) pdf (file->bytes pdf)))
@@ -118,17 +118,17 @@
      (sort ; sort by byte offset
       (cdr ; drop zeroth record: there is no zeroth object
        (for/list ([i (in-range ref-count)])
-         (cons i (read (open-input-bytes (car (regexp-match #px"\\d{10}" xref-ip)))))))
+                 (cons i (read (open-input-bytes (car (regexp-match #px"\\d{10}" xref-ip)))))))
       < #:key cdr)
      (list (cons #f xoff))))
   (sort ; sort by index
    (parameterize ([current-input-port (open-input-bytes pdf-bs)])
      (for/list ([(idx start) (in-dict obj-locations)]
                 [(_ end) (in-dict (cdr obj-locations))])
-       (cons idx (car (parse-pdf-bytes (peek-bytes (- end start) start))))))
+               (cons idx (car (parse-pdf-bytes (peek-bytes (- end start) start))))))
    < #:key car))
 
-(define (dict-compare arg1 arg2)
+(define (dict-compare arg1 arg2 [obj-idx #f])
   (define d1 (if (dict? arg1) arg1 (pdf->dict arg1)))
   (define d2 (if (dict? arg2) arg2 (pdf->dict arg2)))
   (unless (dict? d1)
@@ -139,13 +139,14 @@
     (error (format "dict lengths different in d1 (~a) and d2 (~a)" (length d1) (length d2))))
   (for/and ([(k1 v1) (in-dict d1)]
             [(k2 v2) (in-dict d2)])
-    (unless (equal? k1 k2)
-      (error (format "keys unequal in ~e and ~e: ~a ≠ ~a" arg1 arg2 k1 k2)))
-    (unless (equal? v1 v2)
-      (error (format "values unequal in ~e and ~e: ~e ≠ ~e" arg1 arg2 v1 v2)))
-    (when (dict? v1)
-      (dict-compare v1 v2))
-    #true))
+           (define current-object-idx (or obj-idx k1))
+           (cond
+             [(dict? v1) (dict-compare v1 v2 current-object-idx)]
+             [(not (equal? k1 k2))
+              (error (format "keys unequal in object ~a: ~a ≠ ~a" current-object-idx k1 k2))]
+             [(not (equal? v1 v2))
+              (error (format "values unequal in object ~a for key ~e: ~e ≠ ~e" current-object-idx k1 v1 v2))]
+             [else #true])))
 
 (define-simple-check (check-headers-equal? ps1 ps2)
   (equal? (peek-bytes 14 0 (open-input-file ps1))
@@ -163,7 +164,7 @@
       [(vector? val) (dump (vector->list val))]
       [(dict? val)
        (for/list ([(k v) (in-dict (sort (dict->list val) #:key car symbol<?))])
-         (list k (dump v)))]
+                 (list k (dump v)))]
       [(list? val) (map dump val)]
       [else val]))
 
@@ -174,8 +175,8 @@
         (= (length v1) (length v2))
         (for/and ([x1 (in-list v1)]
                   [x2 (in-list v2)])
-          (unless (cmp x1 x2)
-            (set! misses (cons (list v1 x1 v2 x2) misses)))))]
+                 (unless (cmp x1 x2)
+                   (set! misses (cons (list v1 x1 v2 x2) misses)))))]
       [else (equal? v1 v2)]))
 
   (define ibs1 (dict-ref (dict-ref (pdf->dict f1) 8) 'stream))
@@ -189,5 +190,5 @@
 #;(module+ main
     (for ([p (in-directory)]
           #:when (path-has-extension? p #"pdf"))
-      (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
-        (pdf->dict p))))
+         (with-handlers ([exn:fail? (λ (exn) (println (format "~a failed" p)))])
+           (pdf->dict p))))
