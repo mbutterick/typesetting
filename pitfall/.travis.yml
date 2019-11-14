@@ -39,5 +39,5 @@ script:
  - travis_retry raco pkg install --deps search-auto https://github.com/mbutterick/fontland.git
  - travis_retry raco pkg install --deps search-auto https://github.com/mbutterick/pitfall.git
  - raco test -p pitfall
- 
+ - raco test -l ptest/all
  
