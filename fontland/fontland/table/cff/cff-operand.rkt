@@ -64,11 +64,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/cff/CFFOperand.js
         [(<= -32768 value 32767) 3]
         [else 5]))
 
+    (define (string->inexact str)
+      (string->number str 10 'number-or-false 'decimal-as-inexact))
+      
     (define/augment (x:encode value-arg stream . _)
       ;; if the value needs to be forced to the largest size (32 bit)
       ;; e.g. for unknown pointers, save the old value and set to 32768
       (define value (if (Ptr? value-arg) (Ptr-val value-arg) value-arg))
-      (define val (if value (string->number (format "~a" value)) 0))
+      (define val (if value (string->inexact (format "~a" value)) 0))
 
       (cond
         [(and (Ptr? value-arg) (Ptr-forceLarge value-arg))
