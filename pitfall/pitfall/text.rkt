@@ -98,7 +98,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
               #:features [features (pdf-current-font-features doc)]
               #:fill [fill? #t]
               #:stroke [stroke? #f]
-              #:tracking [character-tracking 0]
+              #:tracking [character-tracking-arg #f]
               #:underline [underline? #f]
               #:link [link-url #f]
               #:strike [strike? #f]
@@ -110,6 +110,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
   ;; 180109: character spacing works in pdf, but quad doesn't account for it yet
 
+  (define character-tracking (or character-tracking-arg 0))
   ;; calculate the actual rendered width of the string after word and character spacing
   (define rendered-width
     ;; wrap this in delay so it's only calculated if needed
