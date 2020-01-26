@@ -4,7 +4,7 @@
   racket/class
   racket/string
   racket/list
-  (only-in srfi/19 date->string))
+  gregor)
 (provide convert)
 
 (define escaped-chars '(#\newline #\return #\tab #\backspace #\page #\( #\) #\\))
@@ -65,7 +65,9 @@
                                     (number->string b 16))))]
       [($ref? x) (format "~a 0 R" ($ref-id x))]
       [(object? x) (send x to-string)]
-      [(date? x) (format "(D:~aZ)" (date->string x "~Y~m~d~H~M~S"))]
+      ;; for date format, see p.160 of PDF Reference 1.7
+      ;; replacing : with ' in the UTC offset is a PDF peculiarity
+      [(moment? x) (format "(D:~a)" (regexp-replace #px"([+|-])(\\d\\d):(\\d\\d)$" (~t x "YYYYMMddHHmmssXXX") "\\1\\2'\\3'"))]
       [(list? x) (format "[~a]" (string-join (map loop x) " "))]
       [(hash? x) (string-join (append (list "<<")
                                       (for/list ([(k v) (in-hash x)])
@@ -82,7 +84,7 @@
   (check-equal? (convert "öéÿ") "(þÿ\u0000ö\u0000é\u0000ÿ)")
   (check-equal? (convert "fôobár") "(þÿ\u0000f\u0000ô\u0000o\u0000b\u0000á\u0000r)")
   (check-equal? (convert #"foobar") "<666f6f626172>")
-  (check-equal? (convert (seconds->date (quotient 1494483337320 1000) #f)) "(D:20170511061537Z)")
+  (check-equal? (convert (moment 2017 5 11 6 15 37 #:tz "UTC")) "(D:20170511061537Z)")
   (check-equal? (convert (list 'foobar "öéÿ" #"foobar")) "[/foobar (þÿ\u0000ö\u0000é\u0000ÿ) <666f6f626172>]")
   (check-true (let ([res (convert (hash 'foo 42 'bar 'fly))])
                 (or (equal? res "<<\n/foo 42\n/bar /fly\n>>")

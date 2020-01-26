@@ -6,6 +6,7 @@
   racket/format
   racket/dict
   sugar/unstable/dict
+  gregor
   "annotation.rkt"
   "reference.rkt"
   "object.rkt"
@@ -32,7 +33,7 @@
   ;; initial values
   (define pages null)
   (define refs null)
-  (define now (current-seconds))
+  (define now (now/moment))
   (define producer (format "Racket ~a [Pitfall library]" (version)))
   (define info (mhasheq 'Producer producer
                         'Creator producer ; or application program using Pitfall
