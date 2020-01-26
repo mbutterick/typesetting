@@ -11,6 +11,7 @@
                "fontland"
                "rackunit-lib"
                "srfi-lite-lib"
-               "sugar"))
+               "sugar"
+               "gregor"))
 (define build-deps '("debug"))
 (define update-implies '("fontland"))
