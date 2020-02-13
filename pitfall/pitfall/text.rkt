@@ -179,6 +179,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
 (define (string-width doc str
                       #:tracking [character-tracking 0]
-                      #:features [features (pdf-current-font-features doc)])
-  (+ (measure-string (pdf-current-font doc) str (pdf-current-font-size doc) features)
+                      #:features [features #false])
+  (+ (measure-string (pdf-current-font doc) str (pdf-current-font-size doc) (or features (pdf-current-font-features doc)))
      (* character-tracking (sub1 (string-length str)))))
