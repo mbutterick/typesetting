@@ -33,6 +33,7 @@
 (define (default-buffer-setup buf)
   (hb_buffer_set_direction buf 'HB_DIRECTION_LTR)
   (hb_buffer_set_script buf 'HB_SCRIPT_LATIN)
+  (hb_buffer_set_cluster_level buf 'HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS)
   (hb_buffer_set_language buf (hb_language_from_string #"en"))
   buf)
 
@@ -54,6 +55,10 @@
                                                 (_uint = 0)
                                                 (_int = text-length)
                                                 -> _void))
+
+(define _hb_cluster_t (_enum hb-cluster-levels))
+(define-harfbuzz hb_buffer_set_cluster_level (_fun _hb_buffer_t _hb_cluster_t -> _void))
+(define-harfbuzz hb_buffer_get_cluster_level (_fun _hb_buffer_t -> _hb_cluster_t))
 
 (define _hb_direction_t (_enum hb-direction-values))
 (define-harfbuzz hb_buffer_set_direction (_fun _hb_buffer_t _hb_direction_t -> _void))
