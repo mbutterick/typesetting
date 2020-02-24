@@ -21,17 +21,28 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 |#
 
 (define (do-horiz-line doc x y width [underline? #f])
+  (define (scale-to-em x) (* (pdf-current-font-size doc) (/ x 1000.0)))
   (save doc)
   (when underline?
     (apply stroke-color doc (pdf-current-fill-color doc)))
-  (define new-line-width (max 0.5 (floor (/ (pdf-current-font-size doc) 10))))
-  (line-width doc new-line-width)
+  (define stroke-width
+    (cond
+      [(or (not underline?) (test-mode)) (max 0.5 (floor (/ (pdf-current-font-size doc) 10)))]
+      [else
+       (scale-to-em (pdf-font-underline-thickness (pdf-current-font doc)))]))
+  (line-width doc stroke-width)
   (define vert-em-adjustment (if underline? 1 0.6))
-  (define vert-line-pos (+ y
-                           (* (current-line-height doc) vert-em-adjustment)
-                           (- (if underline? new-line-width 0))))
-  (move-to doc x vert-line-pos)
-  (line-to doc (+ x width) vert-line-pos)
+  (define vert-line-adj
+    (+ y
+       (* (current-line-height doc) vert-em-adjustment)
+       (- (cond
+            [(test-mode) stroke-width]
+            [underline?
+             ;; underline-position field is negative, by convention, so we change the sign
+             (scale-to-em (- (pdf-font-underline-position (pdf-current-font doc))))]
+            [else 0]))))
+  (move-to doc x vert-line-adj)
+  (line-to doc (+ x width) vert-line-adj)
   (stroke doc)
   (restore doc))
 
@@ -107,8 +118,6 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
   (when y-in (set-pdf-y! doc y-in))
   (define x (pdf-x doc))
   (define y (pdf-y doc))
-
-  ;; 180109: character spacing works in pdf, but quad doesn't account for it yet
 
   (define character-tracking (or character-tracking-arg 0))
   ;; calculate the actual rendered width of the string after word and character spacing

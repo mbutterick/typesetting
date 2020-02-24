@@ -38,6 +38,8 @@
                   id
                   ascender
                   descender
+                  underline-position
+                  underline-thickness
                   line-gap
                   bbox
                   ref
