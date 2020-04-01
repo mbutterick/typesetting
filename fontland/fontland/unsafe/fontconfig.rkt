@@ -1,14 +1,21 @@
 #lang racket/base
-
 (require ffi/unsafe
          ffi/unsafe/define
          ffi/unsafe/define/conventions
          (for-syntax racket/base
-                     racket/string
-                     racket/syntax
                      syntax/parse))
 
-(define fc-lib (ffi-lib "libfontconfig"))
+;; header file
+;; https://github.com/servo/libfontconfig/blob/master/fontconfig/fontconfig.h 
+
+;; fontconfig docs
+;; https://www.freedesktop.org/software/fontconfig/fontconfig-devel/x102.html
+
+;; racket-installed fontconfig
+(define fc-lib (ffi-lib "libfontconfig" '("1" #f)))
+
+;; system fontconfig (for opportunistic testing. Not necessarily available)
+#;(define fc-lib (ffi-lib "libfontconfig"))
 
 (define-ffi-definer define-fc fc-lib
   #:make-c-id convention:hyphen->camelcase
@@ -50,23 +57,29 @@
                            fc-result-type-mismatch
                            fc-result-no-id
                            fc-result-out-of-memory)))
+
+(define _FcMatchKind (_enum '(FcMatchPattern
+                              FcMatchFont
+                              FcMatchScan)))
+
 (define _FcLangResult (_enum '(fc-lang-equal = 0
                                              fc-lang-different-country
                                              fc-lang-different-territory
                                              fc-lang-different-lang)))
 
-(define _FcMatchKind (_enum  '(FcMatchPattern = 0
-                                              FcMatchFont)))
-(define _FcBool (_enum  '(FcFalse = 0
-                                  FcTrue)))
-
 (define-cstruct _FcMatrix ([xx _double] [xy _double]
                                         [yx _double] [yy _double]))
+
+(define _FcValue-union (_union _bytes
+                               _int
+                               _bool
+                               _double
+                               _FcMatrix-pointer
+                               _FcCharSet
+                               _FcLangSet))
 (define-cstruct _FcValue ([type _FcType]
-                          [u (_union _bytes _int _bool _double
-                                     _FcMatrix-pointer
-                                     _FcCharSet
-                                     _FcLangSet)]))
+                          [u _FcValue-union]))
+
 
 (define-syntax (define-fc-functions stx)
   (syntax-parse stx
@@ -93,19 +106,24 @@
   [fc-pattern-hash               (_fun _FcPattern -> _int32)]
   [fc-pattern-add                (_fun _FcPattern _bytes _FcValue _bool -> _bool)]
   [fc-pattern-add-weak           (_fun _FcPattern _bytes _FcValue _bool -> _bool)]
-  [fc-pattern-get                (_fun _FcPattern _bytes _int _FcValue -> _FcResult)]
+  [fc-pattern-get                (_fun _FcPattern
+                                       _bytes
+                                       _int
+                                       [val : (_ptr o _FcValue)]
+                                       -> _FcResult
+                                       -> val)]
+  [fc-pattern-get-string          (_fun _FcPattern
+                                        _bytes
+                                        _int
+                                        [val : (_ptr o _bytes)]
+                                        -> _FcResult
+                                        -> val)]
   ;; TODO: vararg
   ;fc-pattern-build
   [fc-pattern-del                (_fun _FcPattern _bytes -> _bool)]
   [fc-pattern-remove             (_fun _FcPattern _bytes _int -> _bool)]
   [fc-pattern-print              (_fun _FcPattern -> _void)]
-  [fc-config-substitute          (_fun _FcConfig
-                                       _FcPattern
-                                       _FcMatchKind
-                                       ->
-                                       _FcBool)]
-  [fc-default-substitute         (_fun _FcPattern -> _void)]
-  [fc-name-parse                 (_fun _bytes -> _FcPattern)]
+  [fc-name-parse                 (_fun _bytes -> _FcPattern/null)]
   [fc-name-unparse               (_fun _FcPattern -> _bytes)]
   [fc-pattern-format             (_fun _FcPattern _bytes -> _string)]
 
@@ -119,7 +137,9 @@
                                        _FcObjectSet
                                        ->
                                        _FcFontSet)]
-  [fc-font-set-match             (_fun _FcConfig/null
+  ;; https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcfontsetmatch.html
+  ;; If config is NULL, the current configuration is used
+  [fc-font-set-match             (_fun [_FcConfig/null = #false]
                                        [set : (_list i _FcFontSet)]
                                        [_int = (length set)]
                                        _FcPattern
@@ -127,14 +147,7 @@
                                        ->
                                        [pat : _FcPattern]
                                        ->
-                                       (values res pat))]
-  [fc-font-match                 (_fun _FcConfig/null
-                                       _FcPattern
-                                       [res : (_ptr o _FcResult)]
-                                       ->
-                                       [pat : _FcPattern]
-                                       ->
-                                       (values res pat))]
+                                       (and (eq? res 'fc-result-match) pat))]
   [fc-font-set-print             (_fun _FcFontSet -> _void)]
   [fc-font-set-sort              (_fun _FcConfig/null
                                        [set : (_list i _FcFontSet)]
@@ -220,23 +233,30 @@
   [fc-config-create               (_fun -> _FcConfig)]
   [fc-config-reference            (_fun _FcConfig/null -> _void)]
   [fc-config-destroy              (_fun _FcConfig -> _void)]
-  [fc-config-set-current          (_fun _FcConfig -> _bool)]
+  [fc-config-set-current          (_fun _FcConfig -> _bool -> (void))]
   [fc-config-get-current          (_fun -> _FcConfig)]
   [fc-config-upto-date            (_fun _FcConfig/null -> _bool)]
-  [fc-config-home                 (_fun _FcConfig -> _path)]
+  [fc-config-home                 (_fun -> _path)]
   [fc-config-enable-home          (_fun _bool -> _bool)]
   [fc-config-build-fonts          (_fun _FcConfig/null -> _bool)]
   [fc-config-get-config-dirs      (_fun _FcConfig/null -> _FcStrList)]
   [fc-config-get-font-dirs        (_fun _FcConfig/null -> _FcStrList)]
   [fc-config-get-config-files     (_fun _FcConfig/null -> _FcStrList)]
   [fc-config-get-cache-dirs       (_fun _FcConfig/null -> _FcStrList)]
-  [fc-config-get-fonts            (_fun _FcConfig _FcSetName -> _FcFontSet/null)]
-  [fc-config-get-blanks           (_fun _FcConfig/null -> _FcBlanks)]
+  [fc-config-get-fonts            (_fun _FcConfig/null _FcSetName -> _FcFontSet/null)]
+  [fc-config-get-blanks           (_fun _FcConfig/null -> _FcBlanks/null)]
   [fc-config-get-rescan-interval  (_fun _FcConfig/null -> _int)]
   [fc-config-set-rescan-interval  (_fun _FcConfig/null _int -> _bool)]
-  [fc-config-app-font-add-file    (_fun _FcConfig _path -> _bool)]
-  [fc-config-app-font-add-dir     (_fun _FcConfig _path -> _bool)]
-  [fc-config-app-font-clear       (_fun _FcConfig -> _void)]
+  [fc-config-app-font-add-file    (_fun _FcConfig/null _path -> _bool)]
+  [fc-config-app-font-add-dir     (_fun _FcConfig/null _path -> _bool)]
+  ;; https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcconfigsubstitute.html
+  ;; "If config is NULL, the current configuration is used"
+  [fc-config-substitute           (_fun [_FcConfig/null = #false]
+                                        _FcPattern
+                                        _FcMatchKind
+                                        -> _bool)]
+  [fc-default-substitute         (_fun _FcPattern -> _void)]
+  [fc-config-app-font-clear       (_fun _FcConfig/null -> _void)]
 
   [fc-name-get-object-type         (_fun _bytes -> _FcObjectType)]
 
@@ -246,7 +266,7 @@
                                          -> [b : _bool]
                                          -> (values b res))]
 
-  [fc-blanks-create                (_fun -> _FcBlanks)]
+  [fc-blanks-create                (_fun -> _FcBlanks/null)]
   [fc-blanks-destroy               (_fun _FcBlanks -> _void)]
   [fc-blanks-add                   (_fun _FcBlanks _int -> _bool)]
   [fc-blanks-is-member             (_fun _FcBlanks _int -> _bool)]
@@ -260,15 +280,26 @@
   [fc-atomic-unlock                (_fun _FcAtomic -> _void)]
   [fc-atomic-destroy               (_fun _FcAtomic -> _void)]
 
-  [fc-file-scan                    (_fun _FcFontSet _FcStrSet
-                                         _FcFileCache _FcBlanks
-                                         _bytes _bool
-                                         -> _bool)]
+  [fc-file-scan                    (_fun [fs : _FcFontSet = (fc-font-set-create)]
+                                         [_FcStrSet = (fc-str-set-create)]
+                                         (_ptr o _FcFileCache)
+                                         (_ptr o _FcBlanks/null)
+                                         _bytes
+                                         [force : _bool = #true]
+                                         -> [res : _bool]
+                                         -> (and res fs))]
+  ;; https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcdirscan.html
+  ;; "If cache is not zero or if force is FcFalse, this function currently returns FcFalse."
+  ;; therefore always pass 0 for cache argument
+  [fc-dir-scan                    (_fun [fs : _FcFontSet = (fc-font-set-create)]
+                                        [_FcStrSet = (fc-str-set-create)]
+                                        [_int = 0]
+                                        (_ptr o _FcBlanks/null)
+                                        _bytes
+                                        [force : _bool = #true]
+                                        -> [res : _bool]
+                                        -> (and res fs))]
   [fc-file-is-dir                  (_fun _bytes -> _bool)]
-  [fc-dir-scan                     (_fun _FcFontSet _FcStrSet
-                                         _FcFileCache _FcBlanks
-                                         _bytes _bool
-                                         -> _bool)]
   [fc-dir-cache-unlink             (_fun _bytes _FcConfig -> _bool)]
   [fc-dir-cache-valid              (_fun _bytes -> _bool)]
   [fc-dir-cache-load               (_fun _bytes _FcConfig
@@ -295,7 +326,7 @@
   [fc-str-set-del                  (_fun _FcStrSet _bytes -> _bool)]
   [fc-str-set-destroy              (_fun _FcStrSet -> _void)]
   [fc-str-list-create              (_fun _FcStrSet -> _FcStrList)]
-  [fc-str-list-first               (_fun _FcStrList -> _bytes)]
+  [fc-str-list-first               (_fun _FcStrList -> _void)]
   [fc-str-list-next                (_fun _FcStrList -> _bytes)]
   [fc-str-list-done                (_fun _FcStrList -> _void)]
 
