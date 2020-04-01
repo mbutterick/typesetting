@@ -170,7 +170,10 @@ Fontconfig provides a textual representation for patterns that the library can b
   ;; just try making a font with each format and see what happens
   (define str (if (path? str-or-path) (path->string str-or-path) str-or-path))
   (or
-   (for*/or ([path-string (in-list (list str (family->path str #:bold bold #:italic italic)))]
+   ;; wrapping these in thunks so that they are not evaluated until the iteration demands it
+   (for*/or ([path-string-thunk (in-list (list (λ () str)
+                                               (λ () (family->path str #:bold bold #:italic italic))))]
+             [path-string (in-value (path-string-thunk))]
              #:when (and path-string (file-exists? path-string))
              [port (in-value (open-input-file path-string))]
              [font-constructor (in-list (list +ttf-font +woff-font))])
