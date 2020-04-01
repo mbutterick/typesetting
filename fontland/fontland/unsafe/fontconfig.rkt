@@ -280,7 +280,7 @@
   [fc-atomic-unlock                (_fun _FcAtomic -> _void)]
   [fc-atomic-destroy               (_fun _FcAtomic -> _void)]
 
-  [fc-file-scan                    (_fun [fs : _FcFontSet = (fc-font-set-create)]
+  [fc-file-scan                    (_fun [fs : _FcFontSet/null = (fc-font-set-create)]
                                          [_FcStrSet = (fc-str-set-create)]
                                          (_ptr o _FcFileCache)
                                          (_ptr o _FcBlanks/null)
@@ -291,7 +291,7 @@
   ;; https://www.freedesktop.org/software/fontconfig/fontconfig-devel/fcdirscan.html
   ;; "If cache is not zero or if force is FcFalse, this function currently returns FcFalse."
   ;; therefore always pass 0 for cache argument
-  [fc-dir-scan                    (_fun [fs : _FcFontSet = (fc-font-set-create)]
+  [fc-dir-scan                    (_fun [fs : _FcFontSet/null = (fc-font-set-create)]
                                         [_FcStrSet = (fc-str-set-create)]
                                         [_int = 0]
                                         (_ptr o _FcBlanks/null)
