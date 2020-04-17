@@ -5,7 +5,7 @@
 (define deps '("draw-lib"
                "with-cache"
                "at-exp-lib"
-               "base"
+               ["base" #:version "7.1"]
                "beautiful-racket-lib"
                "brag"
                "fontland"
