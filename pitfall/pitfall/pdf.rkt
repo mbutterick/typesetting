@@ -147,6 +147,7 @@
   (write-bytes-out "startxref")
   (write-bytes-out (numberizer xref-offset))
   (write-bytes-out "%%EOF")
+  (flush-output)
   (close-output-port (current-output-port))
   (current-output-port last-output-port))
 
