@@ -29,12 +29,12 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (unless (assocs? fields)
     (raise-argument-error 'x:dict-parse-fields "assocs" fields))
   (for ([(key type) (in-dict fields)])
-    (define val (match type
-                  [(? procedure? proc) (proc mheq)]
-                  [_ (send type x:decode port mheq)]))
-    (unless (void? val)
-      (hash-set! mheq key val))
-    (hash-set! mheq x:current-offset-key (- (pos port) (hash-ref mheq x:start-offset-key))))
+       (define val (match type
+                     [(? procedure? proc) (proc mheq)]
+                     [_ (send type x:decode port mheq)]))
+       (unless (void? val)
+         (hash-set! mheq key val))
+       (hash-set! mheq x:current-offset-key (- (pos port) (hash-ref mheq x:start-offset-key))))
   mheq)
 
 (define x:dict%
@@ -67,41 +67,45 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
                               x:pointer-size-key 0)) 
       (hash-set! parent x:pointer-offset-key (+ (pos port) (x:size field-data parent #f))) 
       (for ([(key type) (in-dict @fields)])
-        (send type x:encode (dict-ref field-data key) port parent))
+           (send type x:encode (dict-ref field-data key) port parent))
       (for ([ptr (in-list (hash-ref parent x:pointers-key))])
-        (match ptr
-          [(x:ptr type val parent) (send type x:encode val port parent)])))
+           (match ptr
+             [(x:ptr type val parent) (send type x:encode val port parent)])))
     
     (define/augride (x:size [val #f] [parent-arg #f] [include-pointers #t])
       (define parent (mhasheq x:parent-key parent-arg
                               x:val-key val
                               x:pointer-size-key 0))
-      (define fields-size (for/sum ([(key type) (in-dict @fields)]
-                                    #:when (xenomorphic-type? type))
-                            (send type x:size (and val (send type pre-encode (dict-ref val key))) parent)))
+      (define fields-size (let ([key-missing-signal (gensym)])
+                            (for/sum ([(key type) (in-dict @fields)]
+                                      #:when (xenomorphic-type? type))
+                                     (match (dict-ref val key key-missing-signal)
+                                       [(== key-missing-signal eq?)
+                                        (raise-argument-error 'x:dict (format "dict that contains value for key ~v" key) val)]
+                                       [val (send type x:size (and val (send type pre-encode val)) parent)]))))
       (define pointers-size (if include-pointers (dict-ref parent x:pointer-size-key) 0))
       (+ fields-size pointers-size))))
 
 (define (x:dict? x) (is-a? x x:dict%))
 
 (define/contract (x:dict #:pre-encode [pre-proc #f]
-                           #:post-decode [post-proc #f]
-                           #:base-class [base-class x:dict%]
-                           . dicts)
+                         #:post-decode [post-proc #f]
+                         #:base-class [base-class x:dict%]
+                         . dicts)
   (()
    (#:pre-encode (or/c (any/c . -> . any/c) #false)
     #:post-decode (or/c (any/c . -> . any/c) #false)
     #:base-class (λ (c) (subclass? c x:dict%)))
-    #:rest (listof any/c)
+   #:rest (listof any/c)
    . ->* .
    x:dict?)
   (define args (flatten dicts))
   (unless (even? (length args))
     (raise-argument-error 'x:dict "equal number of keys and values" dicts))
   (define fields (for/list ([kv (in-slice 2 args)])
-                   (unless (symbol? (car kv))
-                     (raise-argument-error '+xstruct "symbol" (car kv)))
-                   (apply cons kv)))
+                           (unless (symbol? (car kv))
+                             (raise-argument-error '+xstruct "symbol" (car kv)))
+                           (apply cons kv)))
   (new (generate-subclass base-class pre-proc post-proc) [fields fields]))
 
 (module+ test
@@ -109,18 +113,18 @@ https://github.com/mbutterick/restructure/blob/master/src/Struct.coffee
   (define (random-pick xs) (list-ref xs (random (length xs))))
   (check-exn exn:fail:contract? (λ () (x:dict 42)))
   (for ([i (in-range 20)])
-    ;; make random structs and make sure we can round trip
-    (define field-types
-      (for/list ([i (in-range 40)])
-        (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
-    (define size-num-types
-      (for/sum ([num-type (in-list field-types)])
-        (send num-type x:size)))
-    (define xs (x:dict (for/list ([num-type (in-list field-types)])
-                           (cons (gensym) num-type))))
-    (define bs (apply bytes (for/list ([i (in-range size-num-types)])
-                              (random 256))))
-    (check-equal? (encode xs (decode xs bs) #f) bs)))
+       ;; make random structs and make sure we can round trip
+       (define field-types
+         (for/list ([i (in-range 40)])
+                   (random-pick (list uint8 uint16be uint16le uint32be uint32le double))))
+       (define size-num-types
+         (for/sum ([num-type (in-list field-types)])
+                  (send num-type x:size)))
+       (define xs (x:dict (for/list ([num-type (in-list field-types)])
+                                    (cons (gensym) num-type))))
+       (define bs (apply bytes (for/list ([i (in-range size-num-types)])
+                                         (random 256))))
+       (check-equal? (encode xs (decode xs bs) #f) bs)))
 
 ;; bw compat
 (define x:struct% x:dict%)
