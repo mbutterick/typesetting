@@ -6,6 +6,7 @@
          "glyphrun.rkt"
          "directory.rkt"
          "woff-directory.rkt"
+         "woff2-directory.rkt"
          "struct.rkt"
          "table-stream.rkt"
          "font-path.rkt"
@@ -90,6 +91,18 @@ https://github.com/mbutterick/fontkit/blob/master/src/WOFFFont.js
   (+ttf-font port
              #:directory woff-directory
              #:probe (list #"wOFF")
+             #:constructor woff-font))
+
+
+#|
+approximates
+https://github.com/mbutterick/fontkit/blob/master/src/WOFF2Font.js
+|#
+
+(define (+woff2-font port)
+  (+ttf-font port
+             #:directory woff2-directory
+             #:probe (list #"wOF2")
              #:constructor woff-font))
 
 ;; 181228: disk-based caching (either with sqlite or `with-cache`) is a loser
