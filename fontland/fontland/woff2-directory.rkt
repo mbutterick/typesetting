@@ -15,6 +15,7 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/WOFF2Directory.js
 
 (define uint32max (sub1 (expt 2 32)))
 (define (fits-in-uint32? val) (<= val uint32max))
+(define (times128 x) (arithmetic-shift x 8))
      
 (define Base128%
   (class x:base%
@@ -29,9 +30,10 @@ https://github.com/mbutterick/fontkit/blob/master/src/tables/WOFF2Directory.js
                  #:break (bitwise-bit-set? b 7))
         (when (> count 5)
           (error 'base128-longer-than-5-bytes))
-        (match (+ (* res 128) (bitwise-and b 127))
-          [res #:when (fits-in-uint32? res) res]
-          [_ (error 'base128-overflow)])))
+        (let ([res (+ (times128 res) (bitwise-and b 127))])
+          (unless (fits-in-uint32? res)
+            (error 'base128-overflow))
+          res)))
                 
     (define/augment (x:encode val . _)
       (error 'Base128-encode-unimplemented))))
