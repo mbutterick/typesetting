@@ -1,4 +1,4 @@
-pitfall [![Build Status](https://travis-ci.org/mbutterick/pitfall.svg?branch=master)](https://travis-ci.org/mbutterick/pitfall)
+pitfall ![Build Status](https://github.com/mbutterick/pitfall/workflows/CI/badge.svg)
 -
 Racket library for generating PDFs. Based on [PDFKit](https://github.com/devongovett/pdfkit).
 
