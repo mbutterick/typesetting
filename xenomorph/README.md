@@ -1,4 +1,4 @@
-# xenomorph [![Build Status](https://travis-ci.org/mbutterick/xenomorph.svg?branch=master)](https://travis-ci.org/mbutterick/xenomorph)
+# xenomorph ![Build Status](https://github.com/mbutterick/xenomorph/workflows/CI/badge.svg)
 
 Racket library for binary encoding & decoding. Based on [`restructure`](https://github.com/foliojs/restructure).
 
