@@ -39,6 +39,13 @@ Even if the name is new, the idea of a CSP is probably familiar. For instance, 
 
 When the computer solves a CSP, it's using an analogous process of deductive reasoning to eliminate impossible assignments, eventually converging on a solution (or determining that no solution exists). 
 
+@section{So this is the ultimate tool for the lazy programmer?}
+
+It allows us to describe a problem to the computer in higher-level terms than we usually do. That can be helpful when we have no idea how to create a specialized algorithm, or we just don't feel like it. 
+
+But there's still some finesse and artistry involved in setting up the CSP, especially its constraints. In general, a CSP with more constraints will converge on a solution faster. Furthermore, since we're not just lazy but also impatient, we usually want our answer in a few seconds, not tomorrow or next week. So it's usually worth spending a little extra effort to specify the constraints as carefully as we can, to maximize our chances of getting an answer in a reasonable time.
+
+
 @section{First example}
 
 Suppose we wanted to find @link["http://www.friesian.com/pythag.htm"]{Pythagorean triples} with sides between 10 and 49, inclusive.
