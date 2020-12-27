@@ -392,13 +392,13 @@ Number of threads used by the minimum-conflicts solver.
 @defparam[current-node-consistency val (or/c #false procedure?) #:value #f]{
 Whether node consistency is applied. Node consistency is helpful for certain CSPs, but not others, so it is @racket[#false] by default.
 
-Helpful for which CSPs? ``Node consistency'' means that for any one-arity (aka unary) constraints on a variable, we immediately filter out any domain values that don't satisfy the constraint.
+Helpful for which CSPs? ``Node consistency'' means that for any one-arity (aka unary) constraints on a variable, we can filter out any domain values that don't satisfy the constraint, thereby reducing the size of the search space. So if the CSP starts with unary constraints, and the constraints foreclose certain values, node consistency can be useful. The cost of node consistency is proportional to the number of values in the domain (because all of them have to be tested).
 }
 
 @defparam[current-arity-reduction val (or/c #false procedure?) #:value #t]{
 Whether constraints are reduced in arity where possible. This usually helps, so the default is @racket[#true].
 
-Why does it help? Because lower-arity constraints tend to be faster to test, and the solver can use node consistency on one-arity constraints (see @racket[current-node-cosistency]). 
+Why does it help? Because lower-arity constraints tend to be faster to test, and the solver can use node consistency on one-arity constraints (see @racket[current-node-consistency]). 
 
 For instance, suppose we have variables representing positive integers @racket[a] and @racket[b] and the constraint says @racket[(< a b)]. Further suppose that @racket[b] is assigned value @racket[5]. At that point, this constraint can be ``rephrased'' as the one-arity function @racket[(< a 5)]. This implies that there are only four possible values for @racket[a] (namely, @racket['(1 2 3 4)])). If node consistency is active, the domain of @racket[a] can immediately be checked to see if it includes any of those values. But none of this is possible if we don't reduce the arity.
 }
