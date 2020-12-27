@@ -309,6 +309,20 @@ Which would become:
 This is better, but also overkill, because if @racket[(< a b)] and @racket[(< b c)], then by transitivity, @racket[(< a c)] is necessarily true. So this is a case where pairwise expands into more constraints than we actually need. This will not produce any wrong solutions, but especially on larger lists of variables, it creates unnecessary work that my slow down the solution search.
 }
 
+@defproc[(make-var-names 
+[prefix string?]
+[vals (listof any/c)]
+[suffix string? ""])
+(listof symbol?)]{
+Helper function to generate mass quantities of variable names. The @racket[_prefix] and (optional) @racket[_suffix] strings are wrapped around each value in @racket[_vals], and converted to a symbol.
+
+@my-examples[
+(make-var-names "foo" (range 6) "bar")
+(make-var-names "col" (range 10))
+]
+
+}
+
 @defproc[(solve 
 [prob csp?] )
 (or/c #false (listof (cons/c symbol? any/c)))]{

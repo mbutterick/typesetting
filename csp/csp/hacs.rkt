@@ -80,6 +80,11 @@
   ((name?) ((listof any/c)) . ->* . var?)
   (var name (list->set vals)))
 
+(define/contract (make-var-names prefix vals [suffix ""])
+  ((string? (listof any/c)) ((string?)) . ->* . (listof name?))
+  (for/list ([val (in-list vals)])
+    (string->symbol (format "~a~a~a" prefix val suffix))))
+
 (define/contract (add-vars! prob names [vals-or-procedure empty])
   ((csp? (listof name?)) ((or/c (listof any/c) procedure?)) . ->* . void?)
   (for/fold ([vrs (vars prob)]
