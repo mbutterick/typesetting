@@ -369,8 +369,12 @@ Produce a Graphviz representation of the CSP that can be rendered into a beautif
 Next variable that the CSP solver will attempt to assign a value to. If @racket[#false], solver just picks the first unassigned variable.
 }
 
+@defparam[current-order-values val (or/c #false procedure?) #:value #f]{
+Procedure that orders the remaining values in a domain. Default is @racket[#false], which means that the domain values are tried in their original order. If bad values are likely to be clustered together, it can be worth trying @racket[shuffle] for this parameter, which randomizes which value gets chosen next. Shuffling is also helpful in CSPs where all the variable values must be different (because otherwise, the values for every variable are tried in the same order, which means that the search space is front-loaded with failure).
+}
+
 @defparam[current-inference val (or/c #false procedure?) #:value #f]{
-Current inference rule used by the solver. If @racket[#false], solver uses a forward checker.
+Current inference rule used by the solver. If @racket[#false], solver uses @racket[forward-check].
 }
 
 @defparam[current-solver val (or/c #false procedure?) #:value #f]{
@@ -387,12 +391,39 @@ Number of threads used by the minimum-conflicts solver.
 
 @defparam[current-node-consistency val (or/c #false procedure?) #:value #f]{
 Whether node consistency is applied. Node consistency is helpful for certain CSPs, but not others, so it is @racket[#false] by default.
+
+Helpful for which CSPs? ``Node consistency'' means that for any one-arity (aka unary) constraints on a variable, we immediately filter out any domain values that don't satisfy the constraint.
 }
 
 @defparam[current-arity-reduction val (or/c #false procedure?) #:value #t]{
 Whether constraints are reduced in arity where possible. This usually helps, so the default is @racket[#true].
+
+Why does it help? Because lower-arity constraints tend to be faster to test, and the solver can use node consistency on one-arity constraints (see @racket[current-node-cosistency]). 
+
+For instance, suppose we have variables representing positive integers @racket[a] and @racket[b] and the constraint says @racket[(< a b)]. Further suppose that @racket[b] is assigned value @racket[5]. At that point, this constraint can be ``rephrased'' as the one-arity function @racket[(< a 5)]. This implies that there are only four possible values for @racket[a] (namely, @racket['(1 2 3 4)])). If node consistency is active, the domain of @racket[a] can immediately be checked to see if it includes any of those values. But none of this is possible if we don't reduce the arity.
 }
 
+@section{Other helpers}
+
+@defproc[(mrv-degree-hybrid
+[prob csp?])
+(or/c #false var?)]{
+Use this with @racket[current-select-variable]. Selects next variable for assignment by choosing the one with the shortest remaining domain length and maximum number of constraints. The idea is that this variable is likely to fail more quickly than others, so we'd rather trigger that failure as soon as we can (in which case we know we need to explore a different part of the state space).
+}
+
+@defproc[(forward-check
+[prob csp?]
+[name name?])
+csp?]{
+Used for inference when @racket[current-inference] is not otherwise set. Tests whether the newest variable assignment necessarily causes any other variable domains to collapse, and thereby discovers a failure faster than backtracking alone.
+}
+
+@defproc[(ac-3
+[prob csp?]
+[name name?])
+csp?]{
+Can be used for inference by passing to @racket[current-inference]. Applies the AC-3 arc-consistency algorithm. Similar to forward checking, but checks pairs of variables rather than single variables. Thus, it is a more thorough form of inference, but for that reason it will usually take longer (and may not add much value).
+}
 
 @section{Structure types}
 
