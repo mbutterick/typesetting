@@ -254,6 +254,8 @@ void?]
 void?]
 )]{
 Imperatively add a new constraint. The constraint applies the function @racket[_func] to the list of variable names given in @racket[_names]. The return value of @racket[_func] does not need to be a Boolean, but any return value other than @racket[#false] is treated as if it were @racket[#true].
+
+@racket[add-constraints!] is the same, but adds the constraint @racket[_func] to each list of variable names in @racket[_namess] (which is therefore a list of lists of variable names).
 }
 
 @defproc[(add-pairwise-constraint! 
