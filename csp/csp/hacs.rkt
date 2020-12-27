@@ -124,6 +124,8 @@
 
 (define/contract (add-constraint! prob proc names [proc-name #false])
   ((csp? procedure? (listof name?)) (name?) . ->* . void?)
+  (unless (and (list? names) (andmap name? names))
+    (raise-argument-error 'add-constraint! "list of names" names))
   (add-constraints! prob proc (list names) proc-name #:caller 'add-constraint!))
 
 (define/contract (alldiff x y)
