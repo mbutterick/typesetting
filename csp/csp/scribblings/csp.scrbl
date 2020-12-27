@@ -214,29 +214,11 @@ By contrast, when we use a CSP, @italic{all we need are the rules}. The CSP solv
 
 @section{Making & solving CSPs}
 
-@defstruct[csp ([vars (listof var?)]
-                 [constraints (listof constraint?)])
-           #:transparent]{
-TK
-}
-
-@defstruct[var ([name name?]
-                 [domain (listof any/c)])
-           #:transparent]{
-TK
-}
-
-@defstruct[constraint ([names (listof name?)]
-                 [proc procedure?])
-           #:transparent]{
-TK
-}
-
 
 @defproc[(make-csp [vars (listof var?) null] 
                    [constraints (listof constraint?) empty])
          csp?]{
-TK
+Create a new CSP. Variables and constraints can be added to the CSP by passing them as arguments. Or you can create an empty CSP and then add variables and constraints imperatively (e.g., with @racket[add-var!] or @racket[add-constraint!]).
 }
 
 
@@ -252,7 +234,9 @@ void?]
 [domain (or/c (listof any/c) procedure?) empty])
 void?]
 )]{
-TK
+Imperatively add a new variable called @racket[_name] to the CSP with permissible values listed in @racket[_domain]. The solution to a CSP is a list of pairs where each variable has been assigned a value from its domain.
+
+@racket[add-vars!] is the same, but adds multiple variables that have the same domain.
 }
 
 @deftogether[(
@@ -269,7 +253,7 @@ void?]
 [func-name (or/c #false name?) #f])
 void?]
 )]{
-TK
+Imperatively add a new constraint. The constraint applies the function @racket[_func] to the list of variable names given in @racket[_names]. The return value of @racket[_func] does not need to be a Boolean, but any return value other than @racket[#false] is treated as if it were @racket[#true].
 }
 
 @defproc[(add-pairwise-constraint! 
@@ -278,24 +262,68 @@ TK
 [names (listof name?)]
 [func-name (or/c #false name?) #f])
 void?]{
-TK
+Similar to @racket[add-constraint!], but it takes a two-arity procedure @racket[_func] and adds it as a constraint between each pair of names in @racket[_names].
+
+Why? CSPs are more efficient with lower-arity constraints (roughly, because you can rule out invalid values sooner). So usually, decomposing a larger-arity constraint into a group of smaller ones is a good idea. 
+
+For instance, suppose you have three variables, and you want them to end up holding values that are coprime. Your constraint function is @racket[coprime?]. This function is variadic (meaning, it can take any number of arguments) so you could use @racket[add-constraint!] like so:
+
+@racketblock[
+(add-constraint! my-csp coprime? '(a b c))
+]
+
+But because the comparison can be done two at a time, we could write this instead:
+
+@racketblock[
+(add-pairwise-constraint! my-csp coprime? '(a b c))
+]
+
+Which would be equivalent to:
+
+@racketblock[
+(add-constraint! my-csp coprime? '(a b))
+(add-constraint! my-csp coprime? '(b c))
+(add-constraint! my-csp coprime? '(a c))
+]
+
+Still, @racket[add-pairwise-constraint!] doesn't substitute for thoughtful constraint design. For instance, suppose instead we want our variables to be strictly increasing. This time, our constraint function is @racket[<]:
+
+@racketblock[
+(add-constraint! my-csp < '(a b c))
+]
+
+And we could instead write:
+
+@racketblock[
+(add-pairwise-constraint! my-csp < '(a b c))
+]
+
+Which would become:
+
+@racketblock[
+(add-constraint! my-csp < '(a b))
+(add-constraint! my-csp < '(b c))
+(add-constraint! my-csp < '(a c))
+]
+
+This is better, but also overkill, because if @racket[(< a b)] and @racket[(< b c)], then by transitivity, @racket[(< a c)] is necessarily true. So this is a case where pairwise expands into more constraints than we actually need. This will not produce any wrong solutions, but especially on larger lists of variables, it creates unnecessary work that my slow down the solution search.
 }
 
 @defproc[(solve 
 [prob csp?] )
-(or/c #false any/c (listof any/c))]{
-TK
+(or/c #false (listof (cons/c symbol? any/c)))]{
+Return a solution for the CSP, or @racket[#false] if no solution exists.
 }
 
 @defproc[(solve* 
 [prob csp?] 
 [count natural? +inf.0])
-(listof any/c)]{
-TK
+(listof (listof (cons/c symbol? any/c)))]{
+Return all the solutions for the CSP. If there are none, returns @racket[null]. The optional @racket[_count] argument returns a certain number of solutions (or fewer, if not that many solutions exist)
 }
 
 @defform[(in-solutions prob)]{
-TK
+Iterator form for use with @racket[for] loops that incrementally returns solutions to @racket[_prob].
 }
 
 
@@ -304,62 +332,71 @@ TK
 @defproc[(state-count
 [prob csp?])
 natural?]{
-TK
+Number of possible variable assignments for @racket[_prob], otherwise known as the state space. This is the product of the domain sizes of each variable. So a CSP that assigns five variables, each of which can have the values @racket["a-z"], has a state count of @racket[(expt 5 26)] = @racket[1490116119384765625]. 
 }
 
 @defproc[(csp->graph
 [prob csp?])
 graph?]{
-TK
+Creates an undirected graph (using Racket's @racket[graph] library) where each CSP variable is represented in the graph as a vertex, and each constraint between any pair of variables is represented as an edge.
 }
 
 @defproc[(csp->graphviz
 [prob csp?])
 string?]{
-TK
+Produce a Graphviz representation of the CSP that can be rendered into a beautiful diagram.
 }
 
 @section{Parameters}
 
-
 @defparam[current-select-variable val (or/c #false procedure?) #:value #f]{
-TK
-}
-
-@defparam[current-order-values val (or/c #false procedure?) #:value #f]{
-TK
+Next variable that the CSP solver will attempt to assign a value to. If @racket[#false], solver just picks the first unassigned variable.
 }
 
 @defparam[current-inference val (or/c #false procedure?) #:value #f]{
-TK
+Current inference rule used by the solver. If @racket[#false], solver uses a forward checker.
 }
 
 @defparam[current-solver val (or/c #false procedure?) #:value #f]{
-TK
-}
-
-@defparam[current-random val (or/c #false procedure?) #:value #t]{
-TK
+Current solver algorithm used to solve the CSP. If @racket[#false], CSP will use a backtracking solver.
 }
 
 @defparam[current-decompose val (or/c #false procedure?) #:value #t]{
-TK
+Whether CSP will be decomposed into independent subproblems (if possible), because smaller CSPs are typically easier to solve than larger ones (and then the component solutions are reassembled into a larger solution).
 }
 
 @defparam[current-thread-count val (or/c #false natural?) #:value 4]{
-TK
+Number of threads used by the minimum-conflicts solver.
 }
 
 @defparam[current-node-consistency val (or/c #false procedure?) #:value #f]{
-TK
+Whether node consistency is applied. Node consistency is helpful for certain CSPs, but not others, so it is @racket[#false] by default.
 }
 
 @defparam[current-arity-reduction val (or/c #false procedure?) #:value #t]{
-TK
+Whether constraints are reduced in arity where possible. This usually helps, so the default is @racket[#true].
 }
 
-@defparam[current-learning val (or/c #false procedure?) #:value #f]{
-TK
+
+@section{Structure types}
+
+
+@defstruct[csp ([vars (listof var?)]
+                 [constraints (listof constraint?)])
+           #:transparent]{
+Represents a CSP.
+}
+
+@defstruct[var ([name name?]
+                 [domain (listof any/c)])
+           #:transparent]{
+Represents a variable in a CSP.
+}
+
+@defstruct[constraint ([names (listof name?)]
+                 [proc procedure?])
+           #:transparent]{
+Represents a constraing in a CSP.
 }
 
 
