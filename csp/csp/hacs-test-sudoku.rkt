@@ -1,30 +1,35 @@
 #lang debug br
 (require sugar/debug "hacs.rkt")
 
-(define cells (for/list ([i (in-range 81)])
-                (string->symbol (format "c~a" i))))
-
-(define (make-sudoku)
+(define (make-base-sudoku)
   (define sudoku (make-csp))
+
+  (define cells (range 81))
   (add-vars! sudoku cells (range 1 10))
 
-  (define (not= . xs) (not (check-duplicates xs =))) 
+  (for ([i 9])
+    (define row-cells (filter (λ (cell) (= (quotient cell 9) i)) cells))
+    (add-all-diff-constraint! sudoku row-cells)
+    
+    (define col-cells (filter (λ (cell) (= (remainder cell 9) i)) cells))
+    (add-all-diff-constraint! sudoku col-cells))
 
-  (for ([i (in-range 9)])
-    (define row-cells (for/list ([(name idx) (in-indexed cells)]
-                                 #:when (= (quotient idx 9) i))
-                        name))
-    (add-pairwise-constraint! sudoku not= row-cells)
-    (define col-cells (for/list ([(name idx) (in-indexed cells)]
-                                 #:when (= (remainder idx 9) i))
-                        name))
-    (add-pairwise-constraint! sudoku not= col-cells))
+  (define box-starts '(0 3 6 27 30 33 54 57 60))
+  (define box-offsets '(0 1 2 9 10 11 18 19 20))
+  (for ([start box-starts])
+    (add-all-diff-constraint! sudoku (map (curry + start) box-offsets)))
   
-  (for ([i '(0 3 6 27 30 33 54 57 60)])
-    (define box-cells (for/list ([offset '(0 1 2 9 10 11 18 19 20)])
-                        (string->symbol (format "c~a" (+ i offset)))))
-    (add-pairwise-constraint! sudoku not= box-cells))
-  
+  sudoku)
+
+(define (make-sudoku-board . strs)
+  (define sudoku (make-base-sudoku))
+  (define vals (for*/list ([str (in-list strs)]
+                           [c (in-string str)]
+                           #:unless (memv c '(#\- #\|)))
+                 (string->number (string c))))
+  (for ([(val vidx) (in-indexed vals)]
+        #:when val)
+    (add-constraint! sudoku (curry = val) (list vidx)))
   sudoku)
 
 (require racket/sequence)
@@ -32,23 +37,10 @@
   (displayln (string-join (map ~a (for/list ([row (in-slice 9 (csp->assocs sol))])
                                     (map cdr row))) "\n")))
 
-(define (board . strs)
-  (define sudoku (make-sudoku))
-  (define vals
-    (for*/list ([str (in-list strs)]
-                [c (in-string str)]
-                #:unless (memv c '(#\- #\|)))
-      (string->number (string c))))
-  (for ([name cells]
-        [val vals]
-        #:when val)
-    (add-constraint! sudoku (curry = val) (list name) (string->symbol (format "is-~a" val))))
-  sudoku)
-
 ;; http://jeapostrophe.github.io/2013-10-23-sudoku-post.html
 
 (define b1
-  (board
+  (make-sudoku-board
    "53 | 7 |   "
    "6  |195|   "
    " 98|   | 6 "
@@ -63,7 +55,7 @@
 
 ;; "Hard" example
 (define b2
-  (board
+  (make-sudoku-board
    " 7 | 2 |  5"
    "  9| 87|  3"
    " 6 |   | 4 "
@@ -78,7 +70,7 @@
 
 ;; "Evil" example
 (define b3
-  (board
+  (make-sudoku-board
    "  8|   | 45"
    "   | 8 |9  "
    "  2|4  |   "
@@ -94,7 +86,6 @@
 (current-inference forward-check)
 (current-select-variable mrv-degree-hybrid)
 (current-order-values shuffle)
-(current-random #true)
 (current-node-consistency #t)
 (current-arity-reduction #t)
 (define trials 5)
@@ -108,7 +99,7 @@
 
 (define (euler-value sol)
   (match sol
-    [(list (cons (== 'c0) h) (cons (== 'c1) t) (cons (== 'c2) d) _ ...) 
+    [(list (cons 0 h) (cons 1 t) (cons 2 d) _ ...) 
      (+ (* 100 h) (* 10 t) d)]))
 
 
@@ -124,4 +115,4 @@
     (for/list ([puz (in-slice 10 (string-split (port->string (open-input-file "euler-sudoku-grids.txt")) "\n"))])
       (map (λ (str) (string-replace str "0" " ")) (cdr puz))))
   (for/sum ([bstr bstrs])
-    (euler-value (solve (apply board bstr)))))
+    (euler-value (solve (apply make-sudoku-board bstr)))))

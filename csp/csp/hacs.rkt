@@ -144,7 +144,6 @@
 (define current-order-values (make-parameter #f))
 (define current-inference (make-parameter #f))
 (define current-solver (make-parameter #f))
-(define current-random (make-parameter #t))
 (define current-decompose (make-parameter #t))
 (define current-thread-count (make-parameter 4))
 (define current-node-consistency (make-parameter #f))
