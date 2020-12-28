@@ -370,7 +370,7 @@ Number of possible variable assignments for @racket[_prob], otherwise known as t
 @defproc[(csp->graph
 [prob csp?])
 graph?]{
-Creates an undirected graph (using Racket's @racket[graph] library) where each CSP variable is represented in the graph as a vertex, and each constraint between any pair of variables is represented as an edge.
+Create an undirected graph (using Racket's @racket[graph] library) where each CSP variable is represented in the graph as a vertex, and each constraint between any pair of variables is represented as an edge.
 }
 
 @defproc[(csp->graphviz
