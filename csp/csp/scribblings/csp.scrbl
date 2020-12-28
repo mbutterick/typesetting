@@ -465,6 +465,8 @@ Number of threads used by the @racket[min-conflicts-solver].
 Whether node consistency is applied. Node consistency is helpful for certain CSPs, but not others, so it is @racket[#false] by default.
 
 Helpful for which CSPs? @italic{Node consistency} means that for any one-arity (aka unary) constraints on a variable, we can filter out any domain values that don't satisfy the constraint, thereby reducing the size of the search space. So if the CSP starts with unary constraints, and the constraints foreclose certain values, node consistency can be useful. The cost of node consistency is proportional to the number of values in the domain (because all of them have to be tested).
+
+Node consistency tends to be especially helpful in CSPs where all the assignment values have to be different, and even more so where the variables all have the same domain (say, 100 variables, each with a value between 0 and 99 inclusive). In a case like this, any assignment to one variable means that value can no longer be used by any other variable. Node consistency will remove these values from the other variable domains, thereby pruning the search space aggressively.
 }
 
 @defparam[current-arity-reduction val (or/c #false procedure?) #:value #t]{
