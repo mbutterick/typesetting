@@ -221,7 +221,7 @@
 (add-vars! zebra ps '(dogs snails foxes horses zebra))
 
 (for ([vars (list ns cs ds ss ps)])
-  (add-all-diff-constraint! zebra vars #:proc eq?))
+  (add-all-diff-constraint! zebra vars #:same eq?))
 
 (define (xnor lcond rcond)
   (or (and lcond rcond) (and (not lcond) (not rcond))))
