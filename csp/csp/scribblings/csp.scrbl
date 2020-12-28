@@ -232,12 +232,12 @@ Create a new CSP. Variables and constraints can be added to the CSP by passing t
 @deftogether[(
 @defproc[(add-var! 
 [prob csp?] 
-[name name?]
+[name var-name?]
 [domain (or/c (listof any/c) procedure?) empty])
 void?]
 @defproc[(add-vars! 
 [prob csp?]
-[names (listof name?)]
+[names (listof var-name?)]
 [domain (or/c (listof any/c) procedure?) empty])
 void?]
 )]{
@@ -250,14 +250,14 @@ Imperatively add a new variable called @racket[_name] to the CSP with permissibl
 @defproc[(add-constraint! 
 [prob csp?] 
 [func procedure?]
-[names (listof name?)]
-[func-name (or/c #false name?) #f])
+[names (listof var-name?)]
+[func-name (or/c #false var-name?) #f])
 void?]
 @defproc[(add-constraints! 
 [prob csp?]
 [func procedure?]
-[namess (listof (listof name?))]
-[func-name (or/c #false name?) #f])
+[namess (listof (listof var-name?))]
+[func-name (or/c #false var-name?) #f])
 void?]
 )]{
 Imperatively add a new constraint. The constraint applies the function @racket[_func] to the list of variable names given in @racket[_names]. The return value of @racket[_func] does not need to be a Boolean, but any return value other than @racket[#false] is treated as if it were @racket[#true].
@@ -265,11 +265,20 @@ Imperatively add a new constraint. The constraint applies the function @racket[_
 @racket[add-constraints!] is the same, but adds the constraint @racket[_func] to each list of variable names in @racket[_namess] (which is therefore a list of lists of variable names).
 }
 
+@defproc[(add-all-diff-constraint! 
+[prob csp?] 
+[names (listof var-name?) (map var-name (csp-vars prob))]
+[#:proc equal-proc equal?])
+void?]{
+Imperatively add an ``all diff'' constraint, which is a pairwise @racket[(compose1 not equal?)] constraint. A equality function other than @racket[equal?] can be passed via the @racket[#:proc] argument. There is nothing special about using this function vs. applying the constraint manually. 
+}
+
+
 @defproc[(add-pairwise-constraint! 
 [prob csp?] 
 [func procedure?]
-[names (listof name?)]
-[func-name (or/c #false name?) #f])
+[names (listof var-name?)]
+[func-name (or/c #false var-name?) #f])
 void?]{
 Similar to @racket[add-constraint!], but it takes a two-arity procedure @racket[_func] and adds it as a constraint between each pair of names in @racket[_names].
 
@@ -410,29 +419,58 @@ Why does it help? Because lower-arity constraints tend to be faster to test, and
 For instance, suppose we have variables representing positive integers @racket[a] and @racket[b] and the constraint says @racket[(< a b)]. Further suppose that @racket[b] is assigned value @racket[5]. At that point, this constraint can be ``rephrased'' as the one-arity function @racket[(< a 5)]. This implies that there are only four possible values for @racket[a] (namely, @racket['(1 2 3 4)])). If node consistency is active, the domain of @racket[a] can immediately be checked to see if it includes any of those values. But none of this is possible if we don't reduce the arity.
 }
 
-@section{Other helpers}
+
+@section{Selecting the next variable}
+
+Pass these functions to @racket[current-select-variable].
 
 @defproc[(mrv-degree-hybrid
 [prob csp?])
 (or/c #false var?)]{
-Use this with @racket[current-select-variable]. Selects next variable for assignment by choosing the one with the shortest remaining domain length and maximum number of constraints. The idea is that this variable is likely to fail more quickly than others, so we'd rather trigger that failure as soon as we can (in which case we know we need to explore a different part of the state space).
+Selects next variable for assignment by choosing the one with the fewest values in its domain (aka @italic{minimum remaining values} or @italic{mrv}; see also @racket[minimum-remaining-values]) and largest number of constraints (aka @italic{degree}; see also @racket[max-degree]). The idea is that this variable is likely to fail more quickly than others, so we'd rather trigger that failure as soon as we can (in which case we know we need to explore a different part of the state space).
 }
+
+@defproc[(minimum-remaining-values
+[prob csp?])
+(or/c #false var?)]{
+Selects next variable for assignment by choosing the one with the fewest values in its domain.
+}
+
+@defproc[(max-degree
+[prob csp?])
+(or/c #false var?)]{
+Selects next variable for assignment by choosing the one with the largest number of constraints.
+}
+
+@section{Inference}
+
+Pass these functions to @racket[current-inference].
 
 @defproc[(forward-check
 [prob csp?]
-[name name?])
+[name var-name?])
 csp?]{
 Used for inference when @racket[current-inference] is not otherwise set. Tests whether the newest variable assignment necessarily causes any other variable domains to collapse, and thereby discovers a failure faster than backtracking alone.
 }
 
 @defproc[(ac-3
 [prob csp?]
-[name name?])
+[name var-name?])
 csp?]{
-Can be used for inference by passing to @racket[current-inference]. Applies the AC-3 arc-consistency algorithm. Similar to forward checking, but checks pairs of variables rather than single variables. Thus, it is a more thorough form of inference, but for that reason it will usually take longer (and may not add much value).
+Applies the AC-3 arc-consistency algorithm. Similar to forward checking, but checks pairs of variables rather than single variables. Thus, it is a more thorough form of inference, but for that reason it will usually take longer (and may not add much value).
 }
 
-@section{Structure types}
+
+@defproc[(no-inference
+[prob csp?]
+[name var-name?])
+csp?]{
+Truth in advertising: performs no inference.
+}
+
+
+
+@section{Structure types & predicates}
 
 
 @defstruct[csp ([vars (listof var?)]
@@ -441,22 +479,27 @@ Can be used for inference by passing to @racket[current-inference]. Applies the 
 Represents a CSP.
 }
 
-@defstruct[var ([name name?]
+@defstruct[var ([name var-name?]
                  [domain (listof any/c)])
            #:transparent]{
 Represents a variable in a CSP.
 }
 
-@defstruct[constraint ([names (listof name?)]
+@defstruct[constraint ([names (listof var-name?)]
                  [proc procedure?])
            #:transparent]{
 Represents a constraing in a CSP.
 }
 
+@defproc[(var-name?
+[x any/c])
+boolean?]{
+Check whether @racket[_x] is a valid CSP variable name, which today can mean any value, but I might change my mind.
+}
 
 @section{License & source code}
 
-This module is licensed under the LGPL.
+This module is licensed under the MIT license.
 
 Source repository at @link["http://github.com/mbutterick/csp"]{http://github.com/mbutterick/csp}. Suggestions & corrections welcome.
 

@@ -15,14 +15,14 @@
 
 (define (print-debug-info)
   (when-debug
-   (displayln (format "assignments: ~a  forward checks ~a  checks: ~a " nassns nchecks nfchecks))))
+   (displayln (format "assignments: ~a  forward checks: ~a  checks: ~a " nassns nchecks nfchecks))))
 
 (define-syntax-rule (in-cartesian x)
   (in-generator (let ([argss x])
                   (let loop ([argss argss][acc empty])
                     (if (null? argss)
                         (yield (reverse acc))
-                        (for ([arg (car argss)])
+                        (for ([arg (in-stream (car argss))])
                           (loop (cdr argss) (cons arg acc))))))))
 
 (struct csp (vars constraints) #:mutable #:transparent)
@@ -40,8 +40,6 @@
     ;; apply proc in many-to-many style
     (for/and ([args (in-cartesian (map (λ (name) (find-domain prob name)) (constraint-names const)))])
       (apply (constraint-proc const) args))))
-
-(define name? symbol?)
 
 (define/contract (make-constraint [names null] [proc values])
   (() ((listof name?) procedure?) . ->* . constraint?)
@@ -61,6 +59,7 @@
     gr))
 
 (struct var (name domain) #:transparent)
+(define (var-name? x) #true) ; anything is ok for now
 (define domain var-domain)
 
 (struct checked-variable var (history) #:transparent)
@@ -106,7 +105,7 @@
   ((csp? procedure? (listof (listof name?))) ((or/c #false name?)) . ->* . void?)
   (unless (procedure? proc)
     (raise-argument-error caller-id "procedure" proc))
-  (unless (and (list? namess) (andmap (λ (ns) (and (list? ns) (andmap name? ns))) namess))
+  (unless (and (list? namess) (andmap list? namess))
     (raise-argument-error caller-id "list of lists of names" namess))
   (set-csp-constraints! prob (append (constraints prob) 
                                      (for/list ([names (in-list namess)])
@@ -118,13 +117,13 @@
 
 (define/contract (add-pairwise-constraint! prob proc names [proc-name #false])
   ((csp? procedure? (listof name?)) (name?) . ->* . void?)
-  (unless (and (list? names) (andmap name? names))
+  (unless (list? names)
     (raise-argument-error 'add-pairwise-constraint! "list of names" names))
   (add-constraints! prob proc (combinations names 2) proc-name #:caller 'add-pairwise-constraint!))
 
 (define/contract (add-constraint! prob proc names [proc-name #false])
   ((csp? procedure? (listof name?)) (name?) . ->* . void?)
-  (unless (and (list? names) (andmap name? names))
+  (unless (list? names)
     (raise-argument-error 'add-constraint! "list of names" names))
   (add-constraints! prob proc (list names) proc-name #:caller 'add-constraint!))
 
@@ -132,6 +131,11 @@
   (any/c any/c . -> . boolean?)
   (not (= x y)))
 (define alldiff= alldiff)
+
+(define (add-all-diff-constraint! prob [names (map var-name (csp-vars prob))]
+                                  #:proc [equal-proc equal?])
+  (add-pairwise-constraint! prob (λ (x y) (not (equal-proc x y))) names
+                            (string->symbol (format "all-diff-~a" (object-name equal-proc)))))
 
 (struct backtrack (histories) #:transparent)
 (define (backtrack! [names null]) (raise (backtrack names)))
@@ -521,8 +525,8 @@
                  [(var name domain)
                   (define (wants-backtrack? exn)
                     (and (backtrack? exn) (or (let ([bths (backtrack-histories exn)])
-                                                (or (empty? bths) (for*/or ([bth bths]
-                                                                            [rec bth])
+                                                (or (empty? bths) (for*/or ([bth (in-list bths)]
+                                                                            [rec (in-list bth)])
                                                                     (eq? name (car rec))))))))
                   (for/fold ([conflicts null]
                              #:result (void))
