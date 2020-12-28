@@ -377,14 +377,14 @@
                                                           (memq cname checkable-names))))
                                    const)))
   (for/fold ([prob prob]
-             [arcs (sort starting-arcs < #:key (λ (a) (length (find-domain prob (arc-name a)))) #:cache-keys? #true)]
+             [arcs (sort starting-arcs < #:key (λ (a) (domain-length (find-domain prob (arc-name a)))) #:cache-keys? #true)]
              #:result (prune-singleton-constraints prob))
             ([i (in-naturals)]
              #:break (empty? arcs))
     (match-define (cons (arc name proc) other-arcs) arcs)
     (define reduced-csp (reduce-domain prob (arc name proc)))
     (define (domain-reduced? name)
-      (= (length (find-domain prob name)) (length (find-domain reduced-csp name))))
+      (= (domain-length (find-domain prob name)) (domain-length (find-domain reduced-csp name))))
     (values reduced-csp (if (domain-reduced? name)
                             (remove-duplicates (append (starting-arcs . terminating-at? . name) other-arcs))
                             other-arcs))))
@@ -553,7 +553,7 @@
   ((non-empty-listof any/c) . -> . any/c)
   (match xs
     [(list x) x]
-    [xs (list-ref xs (random (length xs)))]))
+    [(app set->list xs) (list-ref xs (random (length xs)))]))
 
 (define (assign-random-vals prob)
   (for/fold ([new-csp prob])
@@ -602,7 +602,7 @@
 (define/contract (min-conflicts-value prob name vals)
   (csp? name? (listof any/c) . -> . any/c)
   ;; Return the value that will give var the least number of conflicts
-  (define vals-by-conflict (sort vals < #:key (λ (val) (nconflicts prob name val))
+  (define vals-by-conflict (sort (set->list vals) < #:key (λ (val) (nconflicts prob name val))
                                  #:cache-keys? #true))
   (for/first ([val (in-list vals-by-conflict)]
               #:unless (equal? val (first (find-domain prob name)))) ;; but change the value
