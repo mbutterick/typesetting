@@ -437,8 +437,8 @@
   (when-debug (set! nfchecks (+ (length checked-vars) nchecks)))
   ;; conflict-set will be empty if there are no empty domains (as we would hope)
   (define conflict-set (for/list ([cvr (in-list checked-vars)]
-                               #:when (set-empty? (domain cvr)))
-                      (history cvr)))
+                                  #:when (set-empty? (domain cvr)))
+                         (history cvr)))
   ;; for conflict-directed backjumping it's essential to forward-check ALL vars
   ;; (even after an empty domain is generated) and combine their conflicts
   ;; so we can discover the *most recent past var* that could be the culprit.
@@ -512,46 +512,51 @@
              [val (in-list (map cdr assocs))])
      (equal? x val))))
 
+(struct solver (generator kill) #:transparent
+  #:property prop:procedure 0)
+
 (define/contract (backtracking-solver
                   prob
                   #:select-variable [select-unassigned-variable
                                      (or (current-select-variable) first-unassigned-variable)]
                   #:order-values [order-domain-values (or (current-order-values) first-domain-value)]
                   #:inference [inference (or (current-inference) forward-check)])
-  ((csp?) (#:select-variable procedure? #:order-values procedure? #:inference procedure?) . ->* . generator?)
-  (generator ()
-             (define starting-state-count (state-count prob))
-             (define states-examined 0)
-             (define reduce-arity-proc (if (current-arity-reduction) reduce-constraint-arity values))
-             (let loop ([prob ((if (current-node-consistency) make-nodes-consistent values) prob)])
-               (match (select-unassigned-variable prob)
-                 [#false (yield prob)]
-                 [(var name domain)
-                  (define (wants-backtrack? exn)
-                    (and (backtrack? exn) (or (let ([bths (backtrack-histories exn)])
-                                                (or (empty? bths) (for*/or ([bth (in-list bths)]
-                                                                            [rec (in-list bth)])
-                                                                    (eq? name (car rec))))))))
-                  (for/fold ([conflicts null]
-                             #:result (void))
-                            ([val (in-list (order-domain-values (set->list domain)))])
-                    (with-handlers ([wants-backtrack?
-                                     (λ (bt)
-                                       (define bths (backtrack-histories bt))
-                                       (append conflicts (remq name (remove-duplicates
-                                                                     (for*/list ([bth (in-list bths)]
-                                                                                 [rec (in-list bth)])
-                                                                       (car rec)) eq?))))])
-                      (let* ([prob (assign-val prob name val)]
-                             ;; reduce constraints before inference,
-                             ;; to create more forward-checkable (binary) constraints
-                             [prob (reduce-arity-proc prob)]
-                             [prob (inference prob name)]
-                             [prob (check-constraints prob)])
-                        (loop prob))
-                      ;; conflicts goes inside the handler expression
-                      ;; so raises can supersede it
-                      conflicts))]))))
+  ((csp?) (#:select-variable procedure? #:order-values procedure? #:inference procedure?) . ->* . solver?)
+  (solver
+   (generator ()
+              (define starting-state-count (state-count prob))
+              (define states-examined 0)
+              (define reduce-arity-proc (if (current-arity-reduction) reduce-constraint-arity values))
+              (let loop ([prob ((if (current-node-consistency) make-nodes-consistent values) prob)])
+                (match (select-unassigned-variable prob)
+                  [#false (yield prob)]
+                  [(var name domain)
+                   (define (wants-backtrack? exn)
+                     (and (backtrack? exn) (or (let ([bths (backtrack-histories exn)])
+                                                 (or (empty? bths) (for*/or ([bth (in-list bths)]
+                                                                             [rec (in-list bth)])
+                                                                     (eq? name (car rec))))))))
+                   (for/fold ([conflicts null]
+                              #:result (void))
+                             ([val (in-list (order-domain-values (set->list domain)))])
+                     (with-handlers ([wants-backtrack?
+                                      (λ (bt)
+                                        (define bths (backtrack-histories bt))
+                                        (append conflicts (remq name (remove-duplicates
+                                                                      (for*/list ([bth (in-list bths)]
+                                                                                  [rec (in-list bth)])
+                                                                        (car rec)) eq?))))])
+                       (let* ([prob (assign-val prob name val)]
+                              ;; reduce constraints before inference,
+                              ;; to create more forward-checkable (binary) constraints
+                              [prob (reduce-arity-proc prob)]
+                              [prob (inference prob name)]
+                              [prob (check-constraints prob)])
+                         (loop prob))
+                       ;; conflicts goes inside the handler expression
+                       ;; so raises can supersede it
+                       conflicts))])))
+   void))
 
 (define/contract (random-pick xs)
   ((non-empty-listof any/c) . -> . any/c)
@@ -580,12 +585,16 @@
             (assign-val prob name val)]))))))
 
 (define/contract (min-conflicts-solver prob [max-steps 100])
-  ((csp?) (exact-positive-integer?) . ->* . generator?)
-  (generator ()
-             (for ([thread-count (or (current-thread-count) 1)]) ; todo: what is ideal thread count?
-               (make-min-conflcts-thread prob thread-count max-steps))
-             (for ([i (in-naturals)])
-               (yield (thread-receive)))))
+  ((csp?) (exact-positive-integer?) . ->* . solver?)
+  ; todo: what is ideal thread count?
+  (define threads (for/list ([thread-count (or (current-thread-count) 1)]) 
+                    (make-min-conflcts-thread prob thread-count max-steps)))
+  (solver
+   (generator ()
+              (let loop ()
+                (yield (thread-receive))
+                (loop)))
+   (λ () (for-each kill-thread threads) )))
 
 (define/contract (optimal-stop-min proc xs)
   (procedure? (listof any/c) . -> . any/c)
@@ -660,18 +669,20 @@
         (extract-subcsp prob nodeset))
       (list prob)))
 
-(define (make-solution-generator prob)
+(define (make-solution-generator prob max-solutions)
   (generator ()
              (define subprobs (decompose-prob prob))
              (define solgens (map (current-solver) subprobs))
              (define solstreams (for/list ([solgen (in-list solgens)])
                                   (for/stream ([sol (in-producer solgen (void))]) 
                                     sol)))
-             (for ([solution-pieces (in-cartesian solstreams)])
-               (yield (combine-csps solution-pieces)))))
+             (for ([solution-pieces (in-cartesian solstreams)]
+                   [count (in-range max-solutions)])
+               (yield (combine-csps solution-pieces)))
+             (for-each solver-kill solgens)))
 
-(define-syntax-rule (in-solutions PROB)
-  (in-producer (make-solution-generator PROB) (void)))
+(define-syntax-rule (in-solutions PROB MAX-SOLUTIONS)
+  (in-producer (make-solution-generator PROB MAX-SOLUTIONS) (void)))
 
 (define/contract (solve* prob [max-solutions +inf.0]
                          #:finish-proc [finish-proc (λ (p) (csp->assocs p (map var-name (vars prob))))]
@@ -680,8 +691,7 @@
   (when-debug (reset-nassns!) (reset-nfchecks!) (reset-nchecks!))          
 
   (parameterize ([current-solver (or solver (current-solver) backtracking-solver)])
-    (for/list ([sol (in-solutions prob)]
-               [idx (in-range max-solutions)])
+    (for/list ([sol (in-solutions prob max-solutions)])
       (finish-proc sol))))
 
 (define/contract (solve prob
