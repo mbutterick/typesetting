@@ -277,6 +277,32 @@ By contrast, when we use a CSP, @italic{all we need are the rules}. The CSP solv
 
 @section{Making & solving CSPs}
 
+The variables in a CSP, and the possible values (aka the @italic{domains}) of each, are usually determined by the problem itself. So when we create a CSP, there are really only two areas of artistry and finesse: the choice of constraints and the choice of solver (and related solver settings). It's usually pretty easy to try different solvers & settings on a trial-and-error basis. So ultimately, most of the programming effort in CSPs comes down to designing constraints.
+
+What makes a good list of constraints? In general, our goal is to use constraints to tell the solver things that are true about our CSP so that it can converge on a solution as fast as possible. Given that most CSP search spaces are as vast and barren as the Mojave, our constraints are often not just the difference between a fast solution and a slow one, but whether the solver can finish in a non-boring amount of time.
+
+As it traverses the search space, the solver is constantly trying out partial assignments and learning about which avenues are likely to be fruitful. To that end, it wants to be able to avoid descending into parts of the search space that will be dead ends. For that reason, the most powerful tools for the CSP auteur are @bold{constraints relating two variables} (aka @italic{two-arity constraints}). Two-arity constraints can be checked early in the search process, and help the solver eliminate useless parts of the search space quickly. Two-arity constraints also work with inference functions like @racket[forward-check] and @racket[ac-3]. Once one of the variables is assigned, a two-arity constraint can be reduced to a one-arity constraint, which cooperates with node consistency (see @racket[current-node-consistency]). 
+
+Say it with me again: two-arity constraints! OK, you got it.
+
+Some other tips:
+
+@itemlist[#:style 'ordered
+
+@item{The golden rule is to use as many two-arity constraints as necessary. If you can express your CSP using nothing but two-arity constraints, so much the better.}
+
+@item{Constraints with @italic{fewer} variables are generally preferable to those with @italic{more} variables. In programming we call this idea @italic{arity}; in CSP solving it's known as @italic{degree}.}
+
+@item{@italic{More} constraints are better than @italic{fewer} if the extra constraints use fewer variables. That is, lower-degree constraints are enough of a win that even if the lower-degree constraint overlaps with a higher-degree constraint, it's still better to include it. Why? Because it lets the solver eliminate fruitless parts of the search tree by considering fewer variables.}
+
+@item{Corollary: if a higher-degree constraint can be completely expressed in terms of lower-degree constraints, then do that, and get rid of the higher-degree constraint altogether. For an example, see @racket[add-pairwise-constraint!].}
+
+@item{In cases where the constraints have the same degree, and they completely overlap in terms of what they prove, use the @italic{fewest possible} consrtaints. For an example, see @racket[add-transitive-constraint!].}
+
+]
+
+By the way, in terms of the program itself, it doesn't matter what order you add the constraints. The CSP solver will visit them in whatever way it needs to.
+
 
 @defproc[(make-csp [vars (listof var?) null] 
                    [constraints (listof constraint?) empty])
