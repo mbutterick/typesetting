@@ -4,8 +4,7 @@
 (current-inference forward-check)
 (current-select-variable mrv-degree-hybrid)
 (current-order-values shuffle)
-(current-random #true)
-(current-node-consistency #f)
+(current-node-consistency #t)
 (current-arity-reduction #t)
 
 (check-equal? (first-unassigned-variable (csp (list (var 'a (range 3)) (var 'b (range 3))) null))
@@ -21,47 +20,62 @@
 
 (check-equal?
  (csp-vars (forward-check (forward-check (csp (list (avar 'a '(1))  (avar 'b '(0)) (var 'c '(0 1 2)))
-                                                (list (constraint '(a c) (negate =))
-                                                      (constraint '(b c) (negate =)))) 'a) 'b))
- (list (avar 'a '(1)) (avar 'b '(0)) (cvar 'c (set 2) '((b . 0) (a . 1)))))
+                                              (list (constraint '(a c) (negate =))
+                                                    (constraint '(b c) (negate =)))) 'a) 'b))
+ (list (avar 'a '(1)) (avar 'b '(0)) (cvar 'c (seteq 2) '((b . 0) (a . 1)))))
 
 (check-equal?
- ;; no inconsistency: b≠c not checked when fc is relative to a
+ ;; no inconsistency: b≠c not checked when fc is relative to a, so assignment succeeds
  (csp-vars (forward-check (csp (list (avar 'a '(1))  (var 'b (range 2)) (var 'c '(0)))
-                                 (list (constraint '(a b) (negate =))
-                                       (constraint '(b c) (negate =)))) 'a))
- (list (avar 'a '(1)) (cvar 'b (set 0) '((a . 1))) (var 'c '(0))))
+                               (list (constraint '(a b) (negate =))
+                                     (constraint '(b c) (negate =)))) 'a))
+ (list (avar 'a '(1)) (cvar 'b (seteq 0) '((a . 1))) (var 'c '(0))))
+
+;; inconsistency: b≠c is checked by AC-3, thus assignment fails
+(check-exn backtrack?
+           (λ ()
+             (csp-vars (ac-3 (csp (list (avar 'a '(1))  (var 'b (range 2)) (var 'c '(0)))
+                                  (list (constraint '(a b) (negate =))
+                                        (constraint '(b c) (negate =)))) 'a))))
 
 (check-equal?
  ;; no inconsistency: a≠b not checked when fc ignores a, which is already assigned
  (csp-vars (forward-check (csp (list (avar 'a '(1))  (avar 'b '(1)) (var 'c (range 2)))
-                                 (list (constraint '(a b) (negate =))
-                                       (constraint '(b c) (negate =)))) 'b))
- (list (avar 'a '(1)) (avar 'b '(1)) (cvar 'c (set 0) '((b . 1)))))
+                               (list (constraint '(a b) (negate =))
+                                     (constraint '(b c) (negate =)))) 'b))
+ (list (avar 'a '(1)) (avar 'b '(1)) (cvar 'c (seteq 0) '((b . 1)))))
+
+(check-equal?
+ ;; no inconsistency: a≠b is not checked by AC-3, because it's already assigned
+ ;; todo: is this the right result?
+ (csp-vars (ac-3 (csp (list (avar 'a '(1))  (avar 'b '(1)) (var 'c (range 2)))
+                      (list (constraint '(a b) (negate =))
+                            (constraint '(b c) (negate =)))) 'b))
+ (list (avar 'a '(1)) (avar 'b '(1)) (var 'c (seteq 0))))
 
 (check-exn backtrack?
            (λ () (csp-vars (forward-check (csp (list (avar 'a '(1))
-                                                       (var 'b '(1)))
-                                                 (list (constraint '(a b) (negate =)))) 'a))))
+                                                     (var 'b '(1)))
+                                               (list (constraint '(a b) (negate =)))) 'a))))
 
 
 (check-equal? (csp-vars (forward-check (csp (list (var 'a '(0))
-                                                    (var 'b (range 3)))
-                                              (list (constraint '(a b) <))) 'a))
-              (list (var 'a '(0)) (cvar 'b (set 1 2) '((a . 0)))))
+                                                  (var 'b (range 3)))
+                                            (list (constraint '(a b) <))) 'a))
+              (list (var 'a '(0)) (cvar 'b (seteq 1 2) '((a . 0)))))
 
 (check-equal?
  (parameterize ([current-inference forward-check])
    (length (solve* (csp (list (var 'x (range 3))
-                               (var 'y (range 3))
-                               (var 'z (range 3)))
-                         (list (constraint '(x y) <>)
-                               (constraint '(x z) <>)
-                               (constraint '(y z) <>)))))) 6)
+                              (var 'y (range 3))
+                              (var 'z (range 3)))
+                        (list (constraint '(x y) <>)
+                              (constraint '(x z) <>)
+                              (constraint '(y z) <>)))))) 6)
 
 (parameterize ([current-inference forward-check])
   (define vds (for/list ([k '(wa nt nsw q t v sa)])
-                        (var k '(red green blue))))
+                (var k '(red green blue))))
   (define cs (list
               (constraint '(wa nt) neq?)
               (constraint '(wa sa) neq?)
@@ -122,7 +136,7 @@
 
 (define (word-value . xs)
   (for/sum ([(x idx) (in-indexed (reverse xs))])
-           (* x (expt 10 idx))))
+    (* x (expt 10 idx))))
 
 (define smm (make-csp))
 (add-vars! smm '(s e n d m o r y) (λ () (range 10)))
@@ -150,14 +164,14 @@
 (add-vars! queens qs rows)
 (define (q-col q) (string->number (string-trim (symbol->string q) "q")))
 (for* ([qs (in-combinations qs 2)])
-      (match-define (list qa qb) qs)
-      (match-define (list qa-col qb-col) (map q-col qs))
-      (add-constraint! queens
-                       (λ (qa-row qb-row)
-                         (and 
-                          (not (= (abs (- qa-row qb-row)) (abs (- qa-col qb-col)))) ; same diagonal?
-                          (not (= qa-row qb-row)))) ; same row?
-                       (list qa qb)))
+  (match-define (list qa qb) qs)
+  (match-define (list qa-col qb-col) (map q-col qs))
+  (add-constraint! queens
+                   (λ (qa-row qb-row)
+                     (and 
+                      (not (= (abs (- qa-row qb-row)) (abs (- qa-col qb-col)))) ; same diagonal?
+                      (not (= qa-row qb-row)))) ; same row?
+                   (list qa qb)))
 
 (check-equal? 92 (length (time-named (solve* queens))))
 (print-debug-info)
@@ -208,7 +222,7 @@
 (add-vars! zebra ps '(dogs snails foxes horses zebra))
 
 (for ([vars (list ns cs ds ss ps)])
-     (add-pairwise-constraint! zebra neq? vars))
+  (add-pairwise-constraint! zebra neq? vars))
 
 (define (xnor lcond rcond)
   (or (and lcond rcond) (and (not lcond) (not rcond))))
@@ -217,7 +231,7 @@
 
 (define (paired-with* lval lefts rval rights)
   (for ([left lefts][right rights])
-       (paired-with lval left rval right)))
+    (paired-with lval left rval right)))
 
 ;# 1. The englishman lives in a red house. 
 ('englishman ns . paired-with* . 'red cs)
@@ -252,13 +266,13 @@
   (for ([righta (drop-right rights 2)]
         [left (cdr lefts)]
         [rightb (drop rights 2)])
-       (add-constraint! zebra (λ (left righta rightb)
-                                (or (not (eq? left lval)) (eq? righta rval) (eq? rval rightb)))
-                        (list left righta rightb)))
+    (add-constraint! zebra (λ (left righta rightb)
+                             (or (not (eq? left lval)) (eq? righta rval) (eq? rval rightb)))
+                     (list left righta rightb)))
   (for ([left (list (first lefts) (last lefts))]
         [right (list (second rights) (fourth rights))])
-       (add-constraint! zebra (λ (left right) (xnor (eq? left lval) (eq? rval right)))
-                        (list left right))))
+    (add-constraint! zebra (λ (left right) (xnor (eq? left lval) (eq? rval right)))
+                     (list left right))))
 
 ;# 10. The man who smokes chesterfields lives next to the one who keeps foxes.
 ('chesterfields ss . next-to . 'foxes ps)
@@ -281,8 +295,7 @@
 (define (finish x)
   (apply map list (slice-at x 5)))
 
-(check-equal? (parameterize ([current-select-variable mrv]
-                             [current-random #f])
+(check-equal? (parameterize ([current-select-variable mrv])
                 (finish (time-named (solve zebra))))
               '(((nationality-0 . norwegian) (color-0 . yellow) (drink-0 . water) (smoke-0 . kools) (pet-0 . foxes))
                 ((nationality-1 . ukrainian) (color-1 . blue) (drink-1 . tea) (smoke-1 . chesterfields) (pet-1 . horses))
@@ -293,10 +306,9 @@
 
 (module+ main
   (begin
-   (define-syntax n (λ (stx) #'10))
-   (time-avg n (void (solve quarters)))
-   (time-avg n (void (solve* xsum)))
-   (time-avg n (void (solve smm)))
-   (time-avg n (void (solve* queens)))
-   (time-avg n (void (solve zebra)))))
-  
+    (define-syntax n (λ (stx) #'10))
+    (time-avg n (void (solve quarters)))
+    (time-avg n (void (solve* xsum)))
+    (time-avg n (void (solve smm)))
+    (time-avg n (void (solve* queens)))
+    (time-avg n (void (solve zebra)))))
