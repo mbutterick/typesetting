@@ -324,9 +324,9 @@ Imperatively add a new constraint. The constraint applies the function @racket[_
 @defproc[(add-all-diff-constraint! 
 [prob csp?] 
 [names (listof var-name?) (map var-name (csp-vars prob))]
-[#:proc equal-proc equal?])
+[#:same equal-proc equal?])
 void?]{
-Imperatively add an ``all diff'' constraint, which is a pairwise @racket[(compose1 not equal?)] constraint. A equality function other than @racket[equal?] can be passed via the @racket[#:proc] argument. There is nothing special about using this function vs. applying the constraint manually. 
+Imperatively add an ``all diff'' constraint, which is a pairwise @racket[(compose1 not equal?)] constraint. A equality function other than @racket[equal?] can be passed via the @racket[#:same] argument. There is nothing special about using this function vs. applying the constraint manually. 
 }
 
 
@@ -383,6 +383,52 @@ Which would become:
 This is better, but also overkill, because if @racket[(< a b)] and @racket[(< b c)], then by transitivity, @racket[(< a c)] is necessarily true. So this is a case where pairwise expands into more constraints than we actually need. This will not produce any wrong solutions, but especially on larger lists of variables, it creates unnecessary work that my slow down the solution search.
 }
 
+
+@defproc[(add-transitive-constraint! 
+[prob csp?] 
+[func procedure?]
+[names (listof var-name?)]
+[func-name (or/c #false var-name?) #f])
+void?]{
+Similar to @racket[add-pairwise-constraint!], but adds the constraint between every @italic{sequential} pair of names in @racket[_names] (not every @italic{possible} pair).
+
+For instance, consider this use of @racket[add-pairwise-constraint!]:
+
+@racketblock[
+(add-pairwise-constraint! my-csp < '(a b c d))
+]
+
+This applies the constraint between every possible pair, so the result is equivalent to:
+
+@racketblock[
+(add-constraint! my-csp < '(a b))
+(add-constraint! my-csp < '(a c))
+(add-constraint! my-csp < '(a d))
+(add-constraint! my-csp < '(b c))
+(add-constraint! my-csp < '(b d))
+(add-constraint! my-csp < '(c d))
+]
+
+This isn't wrong, but as any seventh grader could tell you, it's overkill. @racket[<] is a transitive relation, therefore if it's true that @racket[(< a b)] and @racket[(< b c)], it's necessarily also true that @racket[(< a c)]. So there's no need to apply a separate constraint for that.
+
+This is the behavior we get from @racket[add-transitive-constraint!]. For instance if we instead write this:
+
+@racketblock[
+(add-transitive-constraint! my-csp < '(a b c d))
+]
+
+The constraint is applied between every sequential pair, so the result is equivalent to:
+
+@racketblock[
+(add-constraint! my-csp < '(a b))
+(add-constraint! my-csp < '(b c))
+(add-constraint! my-csp < '(c d))
+]
+
+Same truth in half the constraints.
+}
+
+
 @defproc[(make-var-names 
 [prefix string?]
 [vals (listof any/c)]
@@ -394,8 +440,8 @@ Helper function to generate mass quantities of variable names. The @racket[_pref
 (make-var-names "foo" (range 6) "bar")
 (make-var-names "col" (range 10))
 ]
-
 }
+
 
 @defproc[(solve 
 [prob csp?] )
@@ -410,8 +456,8 @@ Return a solution for the CSP, or @racket[#false] if no solution exists.
 Return all the solutions for the CSP. If there are none, returns @racket[null]. The optional @racket[_count] argument returns a certain number of solutions (or fewer, if not that many solutions exist)
 }
 
-@defform[(in-solutions prob)]{
-Iterator form for use with @racket[for] loops that incrementally returns solutions to @racket[_prob].
+@defform[(in-solutions prob count)]{
+Iterator form for use with @racket[for] loops that incrementally returns solutions to @racket[_prob], up to a maximum of @racket[_count].
 }
 
 
@@ -445,12 +491,12 @@ Next variable that the CSP solver will attempt to assign a value to. If @racket[
 Procedure that orders the remaining values in a domain. Default is @racket[#false], which means that the domain values are tried in their original order. If bad values are likely to be clustered together, it can be worth trying @racket[shuffle] for this parameter, which randomizes which value gets chosen next. Shuffling is also helpful in CSPs where all the variable values must be different (because otherwise, the values for every variable are tried in the same order, which means that the search space is front-loaded with failure).
 }
 
-@defparam[current-inference val (or/c #false procedure?) #:value #f]{
-Current inference rule used by the solver. If @racket[#false], solver uses @racket[forward-check].
+@defparam[current-inference val (or/c #false procedure?) #:value forward-check]{
+Current inference rule used by the solver. If @racket[#false], solver uses @racket[no-inference]. Default is @racket[forward-check].
 }
 
-@defparam[current-solver val (or/c #false procedure?) #:value #f]{
-Current solver algorithm used to solve the CSP. If @racket[#false], CSP will use @racket[backtracking-solver].
+@defparam[current-solver val procedure? #:value backtracking-solver]{
+Current solver algorithm used to solve the CSP. Default is @racket[backtracking-solver].
 }
 
 @defparam[current-decompose val (or/c #false procedure?) #:value #t]{

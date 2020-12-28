@@ -129,6 +129,14 @@
     (raise-argument-error 'add-pairwise-constraint! "list of names" names))
   (add-constraints! prob proc (combinations names 2) proc-name #:caller 'add-pairwise-constraint!))
 
+(define/contract (add-transitive-constraint! prob proc names [proc-name #false])
+  ((csp? procedure? (listof name?)) (name?) . ->* . void?)
+  (unless (and (list? names) (>= (length names) 2))
+    (raise-argument-error 'add-transitive-constraint! "list of two or more names" names))
+  (add-constraints! prob proc (for/list ([name (in-list names)]
+                                         [next (in-list (cdr names))])
+                                (list name next)) proc-name #:caller 'add-transitive-constraint!))
+
 (define/contract (add-constraint! prob proc names [proc-name #false])
   ((csp? procedure? (listof name?)) (name?) . ->* . void?)
   (unless (list? names)
@@ -141,22 +149,12 @@
 (define alldiff= alldiff)
 
 (define (add-all-diff-constraint! prob [names (map var-name (csp-vars prob))]
-                                  #:proc [equal-proc equal?])
+                                  #:same [equal-proc equal?])
   (add-pairwise-constraint! prob (λ (x y) (not (equal-proc x y))) names
                             (string->symbol (format "all-diff-~a" (object-name equal-proc)))))
 
 (struct backtrack (histories) #:transparent)
 (define (backtrack! [names null]) (raise (backtrack names)))
-
-(define current-select-variable (make-parameter #f))
-(define current-order-values (make-parameter #f))
-(define current-inference (make-parameter #f))
-(define current-solver (make-parameter #f))
-(define current-decompose (make-parameter #t))
-(define current-thread-count (make-parameter 4))
-(define current-node-consistency (make-parameter #f))
-(define current-arity-reduction (make-parameter #t))
-(define current-learning (make-parameter #f))
 
 (define/contract (check-name-in-csp! caller prob name)
   (symbol? csp? name? . -> . void?)
@@ -413,12 +411,12 @@
        [constraints
         (define ref-val (first (find-domain prob ref-name)))
         (define new-vals
-           (for/list ([val (in-set vals)]
-                      #:when (for/and ([const (in-list constraints)])
-                               (match const
-                                 [(constraint (list (== name eq?) _) proc) (proc val ref-val)]
-                                 [(constraint _ proc) (proc ref-val val)])))
-             val))
+          (for/list ([val (in-set vals)]
+                     #:when (for/and ([const (in-list constraints)])
+                              (match const
+                                [(constraint (list (== name eq?) _) proc) (proc val ref-val)]
+                                [(constraint _ proc) (proc ref-val val)])))
+            val))
         (make-checked-var name new-vals (cons (cons ref-name ref-val) (match vr
                                                                         [(checked-variable _ _ history) history]
                                                                         [_ null])))])]))
@@ -507,8 +505,8 @@
          (match-define (var name vals) vr)
          (define name-constraints (filter (λ (const) (constraint-relates? const name)) unary-constraints))
          (make-var name (for/list ([val (in-set vals)]
-                                  #:when (for/and ([const (in-list name-constraints)])
-                                           ((constraint-proc const) val)))
+                                   #:when (for/and ([const (in-list name-constraints)])
+                                            ((constraint-proc const) val)))
                           val)))
        other-constraints)))
 
@@ -526,7 +524,7 @@
                   #:select-variable [select-unassigned-variable
                                      (or (current-select-variable) first-unassigned-variable)]
                   #:order-values [order-domain-values (or (current-order-values) first-domain-value)]
-                  #:inference [inference (or (current-inference) forward-check)])
+                  #:inference [inference (or (current-inference) no-inference)])
   ((csp?) (#:select-variable procedure? #:order-values procedure? #:inference procedure?) . ->* . solver?)
   (solver
    (generator ()
@@ -675,7 +673,7 @@
         (extract-subcsp prob nodeset))
       (list prob)))
 
-(define (make-solution-generator prob max-solutions)
+(define (make-solution-generator prob [max-solutions #false])
   (generator ()
              (define subprobs (decompose-prob prob))
              (define solgens (map (current-solver) subprobs))
@@ -683,20 +681,22 @@
                                   (for/stream ([sol (in-producer solgen (void))]) 
                                     sol)))
              (for ([solution-pieces (in-cartesian solstreams)]
-                   [count (in-range max-solutions)])
+                   [count (in-range (or max-solutions +inf.0))])
                (yield (combine-csps solution-pieces)))
              (for-each solver-kill solgens)))
 
-(define-syntax-rule (in-solutions PROB MAX-SOLUTIONS)
-  (in-producer (make-solution-generator PROB MAX-SOLUTIONS) (void)))
+(define-syntax (in-solutions stx)
+  (syntax-case stx ()
+    [(_ PROB) #'(in-solutions PROB #false)]
+    [(_ PROB MAX-SOLUTIONS) #'(in-producer (make-solution-generator PROB MAX-SOLUTIONS) (void))]))
 
-(define/contract (solve* prob [max-solutions +inf.0]
+(define/contract (solve* prob [max-solutions #false]
                          #:finish-proc [finish-proc (λ (p) (csp->assocs p (map var-name (vars prob))))]
                          #:solver [solver #f])
   ((csp?) (natural? #:finish-proc procedure? #:solver procedure?) . ->* . (listof any/c))
   (when-debug (reset-nassns!) (reset-nfchecks!) (reset-nchecks!))          
 
-  (parameterize ([current-solver (or solver (current-solver) backtracking-solver)])
+  (parameterize ([current-solver (or solver (current-solver))])
     (for/list ([sol (in-solutions prob max-solutions)])
       (finish-proc sol))))
 
@@ -712,3 +712,12 @@
 (define (<> a b) (not (= a b)))
 (define (neq? a b) (not (eq? a b)))
 
+(define current-select-variable (make-parameter #f))
+(define current-order-values (make-parameter #f))
+(define current-inference (make-parameter forward-check))
+(define current-solver (make-parameter backtracking-solver))
+(define current-decompose (make-parameter #t))
+(define current-thread-count (make-parameter 4))
+(define current-node-consistency (make-parameter #f))
+(define current-arity-reduction (make-parameter #t))
+(define current-learning (make-parameter #f))

@@ -4,7 +4,6 @@
 (current-inference forward-check)
 (current-select-variable mrv)
 (current-order-values shuffle)
-(current-random #true)
 
 (define (word-value . xs)
   (for/sum ([(x idx) (in-indexed (reverse xs))])

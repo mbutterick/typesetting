@@ -112,12 +112,11 @@
 #
 |#
 (define xsum (make-csp))
-(add-vars! xsum '(l1 l2 l3 l4 r1 r2 r3 r4 x) (range 1 10))
-(add-pairwise-constraint! xsum < '(l1 l2 l3 l4))
-(add-pairwise-constraint! xsum < '(r1 r2 r3 r4))
-(add-constraint! xsum (λ (l1 l2 l3 l4 x) (= 27 (+ l1 l2 l3 l4 x))) '(l1 l2 l3 l4 x))
-(add-constraint! xsum (λ (r1 r2 r3 r4 x)  (= 27 (+ r1 r2 r3 r4 x))) '(r1 r2 r3 r4 x))
-(add-pairwise-constraint! xsum alldiff= '(l1 l2 l3 l4 r1 r2 r3 r4 x))
+(add-vars! xsum '(1 2 3 4 5 6 7 8 9) '(1 2 3 4 5 6 7 8 9))
+(add-transitive-constraint! xsum < '(1 2 4 5))
+(add-transitive-constraint! xsum < '(6 7 8 9))
+(add-constraints! xsum (λ xs (= 27 (apply + xs))) '((1 2 3 4 5) (6 7 3 8 9)))
+(add-all-diff-constraint! xsum)
 
 (check-equal? (length (time-named (solve* xsum))) 8)
 (print-debug-info)
@@ -151,7 +150,7 @@
 (add-constraint! smm (λ (s e n d m o r y)
                        (= (+ (word-value s e n d) (word-value m o r e))
                           (word-value m o n e y))) '(s e n d m o r y))
-(add-pairwise-constraint! smm alldiff= '(s e n d m o r y))
+(add-all-diff-constraint! smm)
 (check-equal? (parameterize ([current-select-variable mrv-degree-hybrid]) ; todo: why is plain mrv so bad on this problem?
                 (time-named (solve smm))) '((s . 9) (e . 5) (n . 6) (d . 7) (m . 1) (o . 0) (r . 8) (y . 2)))
 (print-debug-info)
@@ -222,7 +221,7 @@
 (add-vars! zebra ps '(dogs snails foxes horses zebra))
 
 (for ([vars (list ns cs ds ss ps)])
-  (add-pairwise-constraint! zebra neq? vars))
+  (add-all-diff-constraint! zebra vars #:proc eq?))
 
 (define (xnor lcond rcond)
   (or (and lcond rcond) (and (not lcond) (not rcond))))

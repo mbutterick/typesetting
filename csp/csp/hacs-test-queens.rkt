@@ -4,12 +4,11 @@
 (current-inference forward-check)
 (current-select-variable mrv)
 (current-order-values shuffle)
-(current-random #true)
 
 ;; queens problem
 ;; place queens on chessboard so they do not intersect
 
-(define board-size 8)
+(define board-size 10)
 
 (define queens (make-csp))
 (define qs (range board-size))
@@ -25,12 +24,12 @@
 
 (define (sol->string sol)
   (define assocs (csp->assocs sol))
-  (string-join (for/list ([q (in-list (sort assocs < #:key car))])
+  (displayln (string-join (for/list ([q (in-list (sort assocs < #:key car))])
                  (apply string (add-between (for/list ([idx (in-range board-size)])
                                               (if (= idx (cdr q)) #\@ #\·)) #\space))) "\n"))
+  assocs)
 
 (current-thread-count 4)
-(displayln (solve queens #:finish-proc sol->string))
-(parameterize (#;[current-solver min-conflicts-solver])
-  (time (solve queens)))
+(parameterize ([current-solver min-conflicts-solver])
+  (time (solve queens #:finish-proc sol->string)))
 
