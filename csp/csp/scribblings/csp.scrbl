@@ -380,7 +380,7 @@ Which would become:
 (add-constraint! my-csp < '(a c))
 ]
 
-This is better, but also overkill, because if @racket[(< a b)] and @racket[(< b c)], then by transitivity, @racket[(< a c)] is necessarily true. So this is a case where pairwise expands into more constraints than we actually need. This will not produce any wrong solutions, but especially on larger lists of variables, it creates unnecessary work that my slow down the solution search.
+This isn't wrong, but if @racket[(< a b)] and @racket[(< b c)], then by transitivity, @racket[(< a c)] is necessarily true. So pairwise expansion results in more constraints than we need, which in turn can make the search slower than it could be. In these situations, @racket[add-transitive-constraint!] is the better choice.
 }
 
 
