@@ -394,7 +394,7 @@ Current inference rule used by the solver. If @racket[#false], solver uses @rack
 }
 
 @defparam[current-solver val (or/c #false procedure?) #:value #f]{
-Current solver algorithm used to solve the CSP. If @racket[#false], CSP will use a backtracking solver.
+Current solver algorithm used to solve the CSP. If @racket[#false], CSP will use @racket[backtracking-solver].
 }
 
 @defparam[current-decompose val (or/c #false procedure?) #:value #t]{
@@ -402,7 +402,7 @@ Whether CSP will be decomposed into independent subproblems (if possible), becau
 }
 
 @defparam[current-thread-count val (or/c #false natural?) #:value 4]{
-Number of threads used by the minimum-conflicts solver.
+Number of threads used by the @racket[min-conflicts-solver].
 }
 
 @defparam[current-node-consistency val (or/c #false procedure?) #:value #f]{
@@ -417,6 +417,35 @@ Whether constraints are reduced in arity where possible. This usually helps, so 
 Why does it help? Because lower-arity constraints tend to be faster to test, and the solver can use node consistency on one-arity constraints (see @racket[current-node-consistency]). 
 
 For instance, suppose we have variables representing positive integers @racket[a] and @racket[b] and the constraint says @racket[(< a b)]. Further suppose that @racket[b] is assigned value @racket[5]. At that point, this constraint can be ``rephrased'' as the one-arity function @racket[(< a 5)]. This implies that there are only four possible values for @racket[a] (namely, @racket['(1 2 3 4)])). If node consistency is active, the domain of @racket[a] can immediately be checked to see if it includes any of those values. But none of this is possible if we don't reduce the arity.
+}
+
+@section{Solvers}
+
+Pass these functions to @racket[current-solver].
+
+@defproc[(backtracking-solver
+[prob csp?])
+generator?]{
+The default solver. Conducts an exhaustive, deterministic search of the state space. @italic{Backtracking} means that when the solver reaches a dead end in the search space, it unwinds to the last successful variable assignment and tries again. The details of its behavior are modified by @racket[current-select-variable], @racket[current-inference], and @racket[current-node-consistency].
+
+The advantage of the backtracking solver: it proceeds through the search space in a systematic matter. If there is a solution, the backtracking solver will find it. Eventually. 
+
+The disadvantage: the same. Some search spaces are so huge, and the solutions so rare, that concentrating the effort on searching any particular branch is likely to be futile. For a more probabilistic approach, try @racket[min-conflicts-solver].
+}
+
+@defproc[(min-conflicts-solver
+[prob csp?]
+[max-steps exact-positive-integer? 100])
+generator?]{
+An alternative solver. Begins with a random assignment and then tries to minimize the number of conflicts (that is, constraint violations), up to @racket[_max-steps] (which defaults to 100). In essence, this is a probabilistic hill-climbing algorithm, where the solver makes random guesses and then tries to nudge those guesses toward the correct answer. 
+
+I like to imagine the solver flying above the search space with a planeload of paratroopers, who are dropped into the search territory. Each of them tries to walk from the place they land (= the initial random assignment) toward a solution. 
+
+It's a little weird that this works at all, but it does. Sometimes even better than the @racket[backtracking-solver], because the minimum-conflicts solver is ``sampling'' the search space at many diverse locations. Whereas the @racket[backtracking-solver] can get stuck in a fruitless area of the search space, the minimum-conflicts solver keeps moving around.
+
+Of course, to avoid getting stuck, the minimum-conflicts solver has to abandon guesses that aren't panning out. Hence the @racket[_max-steps] argument, which controls the number of steps the solver takes on a certain attempt before giving up.
+
+The other parameter that affects this solver is @racket[current-thread-count], which defaults to 4. The solver is multithreaded in the sense that it pursues multiple solutions simultaneously. This way, if one thread finds a solution earlier, it will not be blocked by the others.
 }
 
 

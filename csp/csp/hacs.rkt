@@ -576,7 +576,7 @@
             (assign-val prob name val)]))))))
 
 (define/contract (min-conflicts-solver prob [max-steps 100])
-  ((csp?) (integer?) . ->* . generator?)
+  ((csp?) (exact-positive-integer?) . ->* . generator?)
   (generator ()
              (for ([thread-count (or (current-thread-count) 1)]) ; todo: what is ideal thread count?
                (make-min-conflcts-thread prob thread-count max-steps))
