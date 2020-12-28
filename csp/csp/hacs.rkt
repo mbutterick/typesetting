@@ -344,14 +344,14 @@
                    constraint-proc ; so val stays on left
                    (λ (val other-val) (constraint-proc other-val val)))) ; otherwise reverse arg order
   (define (satisfies-arc? val)
-    (for/or ([other-val (in-list (find-domain prob other-name))])
+    (for/or ([other-val (in-set (find-domain prob other-name))])
       (proc val other-val)))
   (make-csp
    (for/list ([vr (in-vars prob)])
      (cond
        [(assigned-var? vr) vr]
        [(eq? name (var-name vr))
-        (make-var name (match (filter satisfies-arc? (domain vr))
+        (make-var name (match (filter satisfies-arc? (set->list (domain vr)))
                          [(? empty?) (backtrack!)]
                          [vals vals]))]
        [else vr]))
@@ -371,24 +371,27 @@
   ;; has values in their domain that satisfy every binary constraint
   (define checkable-names (cons ref-name (filter-not (λ (vn) (assigned-name? prob vn)) (map var-name (vars prob)))))
   (define starting-arcs
-    (two-arity-constraints->arcs (for/list ([const (in-constraints prob)]
-                                            #:when (and (two-arity? const)
-                                                        (for/and ([cname (in-list (constraint-names const))])
-                                                          (memq cname checkable-names))))
-                                   const)))
+    (two-arity-constraints->arcs
+     (for/list ([const (in-constraints prob)]
+                #:when (and (two-arity? const)
+                            (for/and ([cname (in-list (constraint-names const))])
+                              (memq cname checkable-names))))
+       const)))
   (for/fold ([prob prob]
-             [arcs (sort starting-arcs < #:key (λ (a) (domain-length (find-domain prob (arc-name a)))) #:cache-keys? #true)]
+             [arcs (sort starting-arcs < #:key (λ (a) (domain-length (find-var prob (arc-name a)))) #:cache-keys? #true)]
              #:result (prune-singleton-constraints prob))
             ([i (in-naturals)]
              #:break (empty? arcs))
-    (match-define (cons (arc name proc) other-arcs) arcs)
-    (define reduced-csp (reduce-domain prob (arc name proc)))
-    (define (domain-reduced? name)
-      (= (domain-length (find-domain prob name)) (domain-length (find-domain reduced-csp name))))
-    (values reduced-csp (if (domain-reduced? name)
-                            (remove-duplicates (append (starting-arcs . terminating-at? . name) other-arcs))
-                            other-arcs))))
-
+    (match-define (cons (and first-arc (arc name _)) other-arcs) arcs)
+    (define reduced-csp (reduce-domain prob first-arc))
+    (define domain-reduced?
+      (< (domain-length (find-var reduced-csp name)) (domain-length (find-var prob name))))
+    (values reduced-csp
+            (if domain-reduced?
+                ;; revision reduced the domain, so supplement the list of arcs
+                (remove-duplicates (append (starting-arcs . terminating-at? . name) other-arcs))
+                ;; revision did not reduce the domain, so keep going
+                other-arcs))))
 
 (define/contract (forward-check-var prob ref-name vr)
   (csp? name? var? . -> . var?)

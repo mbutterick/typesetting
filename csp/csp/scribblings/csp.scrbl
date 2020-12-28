@@ -479,14 +479,16 @@ Pass these functions to @racket[current-inference].
 [prob csp?]
 [name var-name?])
 csp?]{
-Used for inference when @racket[current-inference] is not otherwise set. Tests whether the newest variable assignment necessarily causes any other variable domains to collapse, and thereby discovers a failure faster than backtracking alone.
+Used for inference when @racket[current-inference] is not otherwise set. Tests whether the newest variable assignment necessarily causes any other variable domains to become empty. and thereby discovers a failure faster than backtracking alone.
 }
 
 @defproc[(ac-3
 [prob csp?]
 [name var-name?])
 csp?]{
-Applies the AC-3 arc-consistency algorithm. Similar to forward checking, but checks pairs of variables rather than single variables. Thus, it is a more thorough form of inference, but for that reason it will usually take longer (and may not add much value).
+Applies the AC-3 arc-consistency algorithm. Similar to forward checking, but checks pairs of variables rather than single variables. Thus, it is a more thorough form of inference, but for that reason it will usually take longer.
+
+Specifically: following a new variable assignment, AC-3 examines the remaining constraints that link exactly two variables. It checks that each variable has at least one value in its domain that can be paired with the other to satisfy the constraint. If no such pair exists, then the constraint can never be satisfied, so the new variable assignment must fail. 
 }
 
 
