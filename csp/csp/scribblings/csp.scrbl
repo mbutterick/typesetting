@@ -537,16 +537,22 @@ Pass these functions to @racket[current-inference].
 [prob csp?]
 [name var-name?])
 csp?]{
-Used for inference when @racket[current-inference] is not otherwise set. Tests whether the newest variable assignment necessarily causes any other variable domains to become empty. and thereby discovers a failure faster than backtracking alone.
+Used for inference when @racket[current-inference] is not otherwise set. Forward checking determines whether the assignment to @racket[_name] necessarily causes another variable domain to become empty. How? It examines the remaining two-arity constraints that link variable @racket[_name] to an unassigned variable. For each of these constraints, it plugs in the new value for @racket[_name] and checks that the other variable still has values in its domain that can meet the constraint. If not, the assignment to @racket[_name] must fail. Forward checking can discover failures faster than backtracking alone.
 }
 
 @defproc[(ac-3
 [prob csp?]
 [name var-name?])
 csp?]{
-Applies the AC-3 arc-consistency algorithm. Similar to forward checking, but checks pairs of variables rather than single variables. Thus, it is a more thorough form of inference, but for that reason it will usually take longer.
+Applies the AC-3 arc-consistency algorithm. Similar to forward checking, but checks farther ahead. For that reason, it will usually take longer. (It is not necessarily better, however.)
 
-Specifically: following a new variable assignment, AC-3 examines the remaining constraints that link exactly two variables. It checks that each variable has at least one value in its domain that can be paired with the other to satisfy the constraint. If no such pair exists, then the constraint can never be satisfied, so the new variable assignment must fail. 
+Specifically: following a new variable assignment, AC-3 examines all constraints that link exactly two unassigned variables. It checks that each variable has at least one value in its domain that can be paired with the other to satisfy the constraint (this pair comprises the eponymous @italic{arc}). If no such pair exists, then the constraint can never be satisfied, so the new variable assignment must fail. 
+
+``So AC-3 is a superset of @racket[forward-check]?" Yes. Both techniques examine two-arity constraints after variable @racket[_name] has been assigned a value. Forward checking, however, only examines two-arity functions that include variable @racket[_name] in the constraint. Whereas AC-3 checks @italic{all} two-arity functions (even those that don't include @racket[_name]). 
+
+In this way, AC-3 can detect inconsistencies that forward checking would miss. For instance, consider a CSP with three variables @italic{a} @italic{b} and @italic{c}, and three constraints @italic{ab}, @italic{ac}, and @italic{ab}. We assign a value to @italic{a}. Forward checking would then check constraints @italic{ab} and @italic{ac}, perhaps removing values from the domains of @italic{b} and @italic{c} to be consistent with the new value of @italic{a}. These domain reductions, however, might be inconsistent with constraint @italic{bc}. Forward checking won't notice this, because it never tests @italic{bc}. But AC-3 does test @italic{bc}, so it would notice the inconsistency.
+
+The problem with AC-3 is that it's necessarily recursive: each time it eliminates a domain value from a certain variable, it has to recheck all the two-arity constraints (because any of them might have been made inconsistent by the removal of this value). AC-3 only stops when it can no longer remove any value from any domain. So yes, compared to simple forward checking, it does more. But it also potentially costs a lot more, especially if the variables have large domains.
 }
 
 
