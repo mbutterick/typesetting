@@ -585,7 +585,11 @@
 
 (define/contract (optimal-stop-min proc xs)
   (procedure? (listof any/c) . -> . any/c)
-  (define-values (sample candidates) (split-at xs (inexact->exact (floor (* .458 (length xs))))))
+  ;; coefficient from
+  ;; https://www.math.ucla.edu/~tom/Stopping/sr2.pdf
+  (define optimal-stopping-coefficient .458)
+  (define-values (sample candidates)
+    (split-at xs (inexact->exact (floor (* optimal-stopping-coefficient (length xs))))))
   (define threshold (argmin proc sample))
   (or (for/first ([candidate (in-list candidates)]
                   #:when (<= (proc candidate) threshold))
