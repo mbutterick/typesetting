@@ -75,11 +75,17 @@
   (() ((listof var?) (listof constraint?)) . ->* . csp?)
   (csp vars consts))
 
+(define (varvals->set vals)
+  (match vals
+    [(list (or (? fixnum?) (? symbol?)) ...) (list->seteq vals)]
+    [_ (list->set vals)]))
+
 (define/contract (make-var name [vals null])
   ((name?) ((listof any/c)) . ->* . var?)
-  (var name (match vals
-              [(list (or (? fixnum?) (? symbol?)) ...) (list->seteq vals)]
-              [_ (list->set vals)])))
+  (var name (varvals->set vals)))
+
+(define (make-checked-var name vals history)
+  (checked-variable name (varvals->set vals) history))
 
 (define/contract (make-var-names prefix vals [suffix ""])
   ((string? (listof any/c)) ((string?)) . ->* . (listof name?))
@@ -407,13 +413,13 @@
        [constraints
         (define ref-val (first (find-domain prob ref-name)))
         (define new-vals
-          (for/set ([val (in-set vals)]
-                    #:when (for/and ([const (in-list constraints)])
-                             (match const
-                               [(constraint (list (== name eq?) _) proc) (proc val ref-val)]
-                               [(constraint _ proc) (proc ref-val val)])))
-            val))
-        (checked-variable name new-vals (cons (cons ref-name ref-val) (match vr
+           (for/list ([val (in-set vals)]
+                      #:when (for/and ([const (in-list constraints)])
+                               (match const
+                                 [(constraint (list (== name eq?) _) proc) (proc val ref-val)]
+                                 [(constraint _ proc) (proc ref-val val)])))
+             val))
+        (make-checked-var name new-vals (cons (cons ref-name ref-val) (match vr
                                                                         [(checked-variable _ _ history) history]
                                                                         [_ null])))])]))
 
@@ -500,7 +506,7 @@
        (for/list ([vr (in-vars prob)])
          (match-define (var name vals) vr)
          (define name-constraints (filter (λ (const) (constraint-relates? const name)) unary-constraints))
-         (make-var name (for/set ([val (in-set vals)]
+         (make-var name (for/list ([val (in-set vals)]
                                   #:when (for/and ([const (in-list name-constraints)])
                                            ((constraint-proc const) val)))
                           val)))
