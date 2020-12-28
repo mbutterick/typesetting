@@ -77,7 +77,9 @@
 
 (define/contract (make-var name [vals null])
   ((name?) ((listof any/c)) . ->* . var?)
-  (var name (list->set vals)))
+  (var name (match vals
+              [(list (or (? fixnum?) (? symbol?)) ...) (list->seteq vals)]
+              [_ (list->set vals)])))
 
 (define/contract (make-var-names prefix vals [suffix ""])
   ((string? (listof any/c)) ((string?)) . ->* . (listof name?))
@@ -435,8 +437,8 @@
   (when-debug (set! nfchecks (+ (length checked-vars) nchecks)))
   ;; conflict-set will be empty if there are no empty domains (as we would hope)
   (define conflict-set (for/list ([cvr (in-list checked-vars)]
-                                  #:when (set-empty? (domain cvr)))
-                         (history cvr)))
+                               #:when (set-empty? (domain cvr)))
+                      (history cvr)))
   ;; for conflict-directed backjumping it's essential to forward-check ALL vars
   ;; (even after an empty domain is generated) and combine their conflicts
   ;; so we can discover the *most recent past var* that could be the culprit.
