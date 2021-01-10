@@ -48,11 +48,12 @@ But there's still some finesse and artistry involved in setting up the CSP, espe
 
 @section{First example}
 
-Suppose we wanted to find @link["http://www.friesian.com/pythag.htm"]{Pythagorean triples} with sides between 10 and 49, inclusive.
+Suppose we wanted to find @link["http://www.friesian.com/pythag.htm"]{Pythagorean triples} with sides between 1 and 29, inclusive.
 
 First we create a new CSP called @racket[triples], using @racket[make-csp]:
 
 @examples[#:label #f #:eval my-eval
+(require csp)
 (define triples (make-csp))
 ]
 
@@ -60,9 +61,9 @@ First we create a new CSP called @racket[triples], using @racket[make-csp]:
 We use CSP variables to represent the values in the triple. We insert each one with @racket[add-var!], where each variable has a @tech{symbol} for its name and a list of values for its domain:
 
 @examples[#:label #f #:eval my-eval
-(add-var! triples 'a (range 10 50))
-(add-var! triples 'b (range 10 50))
-(add-var! triples 'c (range 10 50))
+(add-var! triples 'a (range 1 30))
+(add-var! triples 'b (range 1 30))
+(add-var! triples 'c (range 1 30))
 ]
 
 Then we need our constraint. We make a function called @racket[valid-triple?] that tests three values to see if they qualify as a Pythagorean triple. Then we insert this function as a constraint using @racket[add-constraint!], passing as arguments 1) the function we want to use for the constraint, and 2) a list of variable names that the constraint applies to. 
@@ -82,7 +83,7 @@ Finally we call @racket[solve], which finds a solution (if it exists):
 (solve triples)
 ]
 
-``But that's just the 5--12--13 triple, doubled.'' True. Suppose we want to ensure that the values in our solution have no common factors. We add a new @racket[coprime?] constraint:
+``But that's just the 3--4--5 triangle, tripled.'' True. Suppose we want to ensure that the values in our solution have no common factors. We add a new @racket[coprime?] constraint:
 
 @examples[#:label #f #:eval my-eval
 (require math/number-theory)
@@ -95,13 +96,13 @@ We @racket[solve] again to see the new result:
 (solve triples)
 ]
 
-Perhaps we're curious to see how many of these triples exist. We use @racket[solve*] to find all four solutions:
+Perhaps we're curious to see how many of these triples exist. We use @racket[solve*] to find all 10 solutions:
 
 @examples[#:label #f #:eval my-eval
 (solve* triples)
 ]
 
-``But really there's only two solutions — the values for @racket[a] and @racket[b] are swapped in the other two.'' Fair enough. We might say that this problem is @deftech{symmetric} relative to variables @racket[a] and @racket[b], because they have the same domains and are constrained the same way. We can break the symmetry by adding a constraint that forces @racket[a] to be less than or equal to @racket[b]:
+``But really there's only five solutions — the values for @racket[a] and @racket[b] are swapped in the other two.'' Fair enough. We might say that this problem is @deftech{symmetric} relative to variables @racket[a] and @racket[b], because they have the same domains and are constrained the same way. We can break the symmetry by adding a constraint that forces @racket[a] to be less than or equal to @racket[b]:
 
 @examples[#:label #f #:eval my-eval
 (add-constraint! triples <= '(a b))
@@ -153,9 +154,9 @@ The whole example in one block:
 
 (define triples (make-csp))
 
-(add-var! triples 'a (range 10 50))
-(add-var! triples 'b (range 10 50))
-(add-var! triples 'c (range 10 50))
+(add-var! triples 'a (range 1 30))
+(add-var! triples 'b (range 1 30))
+(add-var! triples 'c (range 1 30))
 
 (define (valid-triple? x y z)
   (= (expt z 2) (+ (expt x 2) (expt y 2))))
@@ -174,10 +175,10 @@ The whole example in one block:
 ``Dude, are you kidding me? I can write a much shorter loop to do the same thing—"
 
 @my-examples[
-(for*/list ([a (in-range 10 50)]
-            [b (in-range 10 50)]
+(for*/list ([a (in-range 1 30)]
+            [b (in-range 1 30)]
             #:when (<= a b)
-            [c (in-range 10 50)]
+            [c (in-range 1 30)]
             #:when (and (coprime? a b c) (valid-triple? a b c)))
            (map cons '(a b c) (list a b c)))
 ]
