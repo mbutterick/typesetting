@@ -58,7 +58,7 @@ First we create a new CSP called @racket[triples], using @racket[make-csp]:
 ]
 
 
-We use CSP variables to represent the values in the triple. We insert each one with @racket[add-var!], where each variable has a @tech{symbol} for its name and a list of values for its domain:
+We use CSP variables to represent the values in the triple. We insert each one with @racket[add-var!], where each variable has a symbol for its name and a list of values for its domain:
 
 @examples[#:label #f #:eval my-eval
 (add-var! triples 'a (range 1 30))
@@ -83,26 +83,27 @@ Finally we call @racket[solve], which finds a solution (if it exists):
 (solve triples)
 ]
 
-``But that's just the 3--4--5 triangle, tripled.'' True. Suppose we want to ensure that the values in our solution have no common factors. We add a new @racket[coprime?] constraint:
+Perhaps we're curious to see how many of these triples exist. We use @racket[solve*] to find all 200 solutions:
+
+@examples[#:label #f #:eval my-eval
+(solve* triples)
+]
+
+``But some of those solutions are just multiples of others, like 3--4--5 and 6--8--10.'' True. Suppose we want to ensure that the values in each solution have no common factors. We add a new @racket[coprime?] constraint:
 
 @examples[#:label #f #:eval my-eval
 (require math/number-theory)
 (add-constraint! triples coprime? '(a b c))
 ]
 
-We @racket[solve] again to see the new result:
-
-@examples[#:label #f #:eval my-eval
-(solve triples)
-]
-
-Perhaps we're curious to see how many of these triples exist. We use @racket[solve*] to find all 10 solutions:
+We @racket[solve*] again to see the 10 results:
 
 @examples[#:label #f #:eval my-eval
 (solve* triples)
 ]
 
-``But really there's only five solutions — the values for @racket[a] and @racket[b] are swapped in the other two.'' Fair enough. We might say that this problem is @deftech{symmetric} relative to variables @racket[a] and @racket[b], because they have the same domains and are constrained the same way. We can break the symmetry by adding a constraint that forces @racket[a] to be less than or equal to @racket[b]:
+
+``But really there's only five unique solutions — the values for @racket[a] and @racket[b] are swapped in the other two.'' Fair enough. We might say that this problem is @deftech{symmetric} relative to variables @racket[a] and @racket[b], because they have the same domains and are constrained the same way. We can break the symmetry by adding a constraint that forces @racket[a] to be less than or equal to @racket[b]:
 
 @examples[#:label #f #:eval my-eval
 (add-constraint! triples <= '(a b))
@@ -122,7 +123,7 @@ By the way, what if we had accidentally included @racket[c] in the last constrai
 
 Nothing changes. Why not? Because of the existing @racket[valid-triple?] constraint, @racket[c] is necessarily going to be larger than @racket[a] and @racket[b]. So it always meets this constraint too. It's good practice to not duplicate constraints between the same sets of variables — the ``belt and suspenders'' approach just adds work for no benefit.
 
-We should use @racket[solve*] with care. It can't finish until the CSP solver examines every possible assignment of values in the problem, which can be a big number. Specifically, it's the product of the domain sizes of each variable, which in this case is 40 × 40 × 40 = 64,000. This realm of possible assignments is also known as the CSP's @deftech{state space}. We can also get this number from @racket[state-count]:
+We should use @racket[solve*] with care. It can't finish until the CSP solver examines every possible assignment of values in the problem, which can be a big number. Specifically, it's the product of the domain sizes of each variable, which in this case is 29 × 29 × 29 = 24,389. This realm of possible assignments is also known as the CSP's @deftech{state space}. We can also get this number from @racket[state-count]:
 
 @examples[#:label #f #:eval my-eval
 (state-count triples)
@@ -167,7 +168,7 @@ The whole example in one block:
 
 (add-constraint! triples <= '(a b))
 
-(solve* triples 2)
+(solve* triples)
 ]
 
 @section{Interlude}
