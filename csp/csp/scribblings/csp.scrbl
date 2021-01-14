@@ -83,7 +83,7 @@ Finally we call @racket[solve], which finds a solution (if it exists):
 (solve triples)
 ]
 
-Perhaps we're curious to see how many of these triples exist. We use @racket[solve*] to find all 200 solutions:
+Perhaps we're curious to see how many of these triples exist. We use @racket[solve*] to find all 20 solutions:
 
 @examples[#:label #f #:eval my-eval
 (solve* triples)
@@ -96,14 +96,14 @@ Perhaps we're curious to see how many of these triples exist. We use @racket[sol
 (add-constraint! triples coprime? '(a b c))
 ]
 
-We @racket[solve*] again to see the 10 results:
+We @racket[solve*] again to see the reduced set of 10 results:
 
 @examples[#:label #f #:eval my-eval
 (solve* triples)
 ]
 
 
-``But really there's only five unique solutions — the values for @racket[a] and @racket[b] are swapped in the other two.'' Fair enough. We might say that this problem is @deftech{symmetric} relative to variables @racket[a] and @racket[b], because they have the same domains and are constrained the same way. We can break the symmetry by adding a constraint that forces @racket[a] to be less than or equal to @racket[b]:
+``But really there's only five unique solutions — the values for @racket[a] and @racket[b] are swapped in the other five.'' Fair enough. We might say that this problem is @deftech{symmetric} relative to variables @racket[a] and @racket[b], because they have the same domains and are constrained the same way. We can break the symmetry by adding a constraint that forces @racket[a] to be less than or equal to @racket[b]:
 
 @examples[#:label #f #:eval my-eval
 (add-constraint! triples <= '(a b))
