@@ -19,7 +19,7 @@
 ;; types
 (define _void-pointer (_cpointer 'void-pointer))
 (define _char _byte)
-(define _bstring _bytes)
+(define _bstring _bytes/nul-terminated)
 (define _hb_buffer_t (_cpointer 'hb_buffer_t))
 (define  _hb_language_t (_cpointer 'hb_language_t))
 (define _hb_bool_t _int)
@@ -161,7 +161,7 @@
   ;; Set the script, language and direction of the buffer.
   (check-true (eq? 'HB_DIRECTION_LTR (hb_buffer_get_direction buf)))
   (check-true (eq? 'HB_SCRIPT_LATIN  (hb_buffer_get_script buf)))
-  (check-equal? #"en" (hb_language_to_string (hb_buffer_get_language buf))) 
+  (check-equal? (hb_language_to_string (hb_buffer_get_language buf)) #"en") 
   
   ;; Create a face and a font, using FreeType for now.
   (define face (FT_New_Face ft-lib test-font-path))
