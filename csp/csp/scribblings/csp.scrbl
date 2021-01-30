@@ -657,7 +657,7 @@ Represents a variable in a CSP.
 @defstruct[constraint ([names (listof var-name?)]
                  [proc procedure?])
            #:transparent]{
-Represents a constraing in a CSP.
+Represents a constraint in a CSP.
 }
 
 @defproc[(var-name?
