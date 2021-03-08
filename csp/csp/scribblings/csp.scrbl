@@ -184,7 +184,7 @@ The whole example in one block:
            (map cons '(a b c) (list a b c)))
 ]
 
-Yes, I agree that in this toy example, the CSP approach is overkill. The variables are few enough, the domains small enough, and the constraints simple enough, that a loop is more concise. Also, with only 64,000 possibilities in the state space, this sort of brute-force approach is cheap & cheerful.
+Yes, I agree that in this toy example, the CSP approach is overkill. The variables are few enough, the domains small enough, and the constraints simple enough, that a loop is more concise. Also, with only 24,389 possibilities in the state space, this sort of brute-force approach is cheap & cheerful.
 
 @section{Second example}
 
