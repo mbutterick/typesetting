@@ -1,0 +1,66 @@
+#lang racket/base
+(require pitfall/pdftest)
+
+(define (proc doc)
+  [font doc "Courier-Bold"]
+     [font-size doc 10]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Courier-BoldOblique"]
+     [font-size doc 11]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Courier-Oblique"]
+     [font-size doc 12]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Courier"]
+     [font-size doc 14]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Helvetica-Bold"]
+     [font-size doc 16]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Helvetica-BoldOblique"]
+     [font-size doc 18]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Helvetica-Oblique"]
+     [font-size doc 20]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Helvetica"]
+     [font-size doc 22]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Symbol"]
+     [font-size doc 24]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Times-Bold"]
+     [font-size doc 26]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Times-BoldItalic"]
+     [font-size doc 28]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Times-Italic"]
+     [font-size doc 30]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "Times-Roman"]
+     [font-size doc 32]
+     [text doc "Hello"]
+     [translate doc -30 30]
+     [font doc "ZapfDingbats"]
+     [font-size doc 34]
+     [text doc "Hello"])
+
+(define-runtime-path this "test4rkt.pdf")
+(make-doc this #f proc)
+
+(define-runtime-path that "test4crkt.pdf")
+(make-doc that #t proc)
+
