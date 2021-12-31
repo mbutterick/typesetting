@@ -1,5 +1,5 @@
 #lang racket/base
-(require hyphenate/private/core racket/list racket/file)
+(require hyphenate/private/core racket/list racket/file racket/string)
 (provide (rename-out [pmb #%module-begin]) #%app #%datum #%top-interaction)
 
 (define-syntax-rule (pmb STRS)
@@ -13,9 +13,9 @@
 (module+ reader
   (provide read-syntax)
   (define (read-syntax src in)
-    (with-syntax ([STRS (for/list ([line (in-lines in)]
-                                   #:when (and (positive? (string-length line)) ; omit empty
-                                               (not (regexp-match #rx"^;" line)))) ; omit comments
+    (with-syntax ([STRS (for*/list ([line (in-lines in)]
+                                    [line (in-value (string-trim line #rx";.*$"))] ; omit comment
+                                   #:when (positive? (string-length line))) ; omit empty
                           line)])
       (syntax->datum #'(module patterns hyphenate/private/pattern-prep
                          STRS)))))
