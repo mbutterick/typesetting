@@ -265,6 +265,7 @@ Naming guidelines
                      :inset-bottom
                      :inset-left
                      :inset-right
+                     :first-line-indent
                      :border-inset-top
                      :border-inset-bottom
                      :border-inset-left
