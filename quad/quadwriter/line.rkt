@@ -265,7 +265,7 @@
     ;; some lines are a little tight, as opposed to all of them being loose
     ;; this has to be based on a certain quad, not set globally for the line-wrap operation,
     ;; because different lines might have different alignment settings.
-    ["justify" 1.04]
+    ["justify" 1.025]
     [_ 1]))
 
 (define (line-wrap qs wrap-size [debug #false])
