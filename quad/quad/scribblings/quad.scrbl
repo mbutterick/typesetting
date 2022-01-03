@@ -454,7 +454,7 @@ The Q-expressions @racketresult['#,line-break], @racketresult['#,column-break], 
 
 
 @defthing[para-break qexpr?]{
-The @tech{Q-expression} @racketresult['#,para-break]. Used to denote the start of a new paragraph.
+The @tech{Q-expression} @racketresult['#,para-break]. Used to denote the start of a new paragraph. The default @racket[space-before] a paragraph is 0; the default @racket[space-after] is 60% of the paragraph's @racket[line-height].
 }
 
 

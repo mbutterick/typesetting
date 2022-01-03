@@ -245,7 +245,9 @@
           new-lines
           (match q-after
             [(? column-break-quad? column-break) (list column-break)] ; hard column (or section or page) break
-            [#false (list (make-paragraph-spacer maybe-first-line :space-after (* default-line-height 0.6)))] ; paragraph break
+            [#false
+             (define default-paragraph-spacing (* default-line-height 0.6))
+             (list (make-paragraph-spacer maybe-first-line :space-after default-paragraph-spacing))] ; paragraph break
             [_ null]))) ; hard line break
                        
 
