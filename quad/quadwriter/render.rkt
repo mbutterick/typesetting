@@ -34,18 +34,22 @@
 (provide (all-defined-out))
 
 
-
-(define (setup-pdf-path pdf-path-arg)
+(define (setup-pdf-path pdf-path-arg replace-existing-file?)
   ;; convert pathlike arg into nice complete path.
-  (path->complete-path
-   (simplify-path
-    (expand-user-path
-     (->path
-      (match pdf-path-arg
-        ;; a #false arg signals that we're going to return the bytes directly,
-        ;; so we use a temp path to write the file, and we'll delete it later.
-        [#false (build-path (find-system-path 'temp-dir) "quadwriter-temp.pdf")]
-        [path path]))))))
+  (define pdf-path
+    (path->complete-path
+     (simplify-path
+      (expand-user-path
+       (->path
+        (match pdf-path-arg
+          ;; a #false arg signals that we're going to return the bytes directly,
+          ;; so we use a temp path to write the file, and we'll delete it later.
+          [#false (build-path (find-system-path 'temp-dir) "quadwriter-temp.pdf")]
+          [path path]))))))
+  (unless replace-existing-file?
+    (when (file-exists? pdf-path)
+      (raise-argument-error 'render-pdf "path that doesn't exist" pdf-path)))
+  pdf-path)
 
 
 (define (handle-hyphenate q)
@@ -59,7 +63,7 @@
                                             #:min-left-length 3
                                             #:min-right-length 3))]
                  [substr (in-list (regexp-match* (regexp (string hyphen-char)) hstr #:gap-select? #t))])
-                (struct-copy quad q [elems (list substr)]))]
+       (struct-copy quad q [elems (list substr)]))]
     [else (list q)]))
 
 
@@ -68,12 +72,12 @@
   (unless (even? (length pcs))
     (raise-argument-error 'string->feature-list "even number of tags and values" pcs))
   (for/list ([kv (in-slice 2 pcs)])
-            (cons (match (first kv)
-                    [(? string? k) (string->bytes/utf-8 k)]
-                    [k (raise-argument-error 'string->feature-list "string" k)])
-                  (match (string->number (second kv))
-                    [(? number? num) num]
-                    [v (raise-argument-error 'string->feature-list "number string" v)]))))
+    (cons (match (first kv)
+            [(? string? k) (string->bytes/utf-8 k)]
+            [k (raise-argument-error 'string->feature-list "string" k)])
+          (match (string->number (second kv))
+            [(? number? num) num]
+            [v (raise-argument-error 'string->feature-list "number string" v)]))))
 
 (define (parse-font-features! attrs)
   ;; `font-features` are OpenType font feature specifiers.
@@ -108,7 +112,7 @@
   ;; we parse them into the equivalent measurement in points.
   (for ([k (in-hash-keys attrs)]
         #:when (takes-dimension-string? k))
-       (hash-update! attrs k (λ (val) (parse-dimension val attrs))))
+    (hash-update! attrs k (λ (val) (parse-dimension val attrs))))
   attrs)
 
 (define (downcase-values! attrs)
@@ -116,9 +120,9 @@
   ;; so we can check them more easily later.
   (for ([k (in-hash-keys attrs)]
         #:unless (has-case-sensitive-value? k))
-       (hash-update! attrs k (λ (val) (match val
-                                        [(? string? str) (string-downcase str)]
-                                        [_ val]))))
+    (hash-update! attrs k (λ (val) (match val
+                                     [(? string? str) (string-downcase str)]
+                                     [_ val]))))
   attrs)
 
 (define (complete-every-path! attrs)
@@ -127,7 +131,7 @@
   ;; relies on `current-directory` being parameterized to source file's dir
   (for ([k (in-hash-keys attrs)]
         #:when (takes-path? k))
-       (hash-update! attrs k (compose1 path->string path->complete-path)))
+    (hash-update! attrs k (compose1 path->string path->complete-path)))
   attrs)
 
 (define (handle-cascading-attrs attrs)
@@ -140,7 +144,7 @@
                              ;; because they can be denoted relative to em size
                              parse-dimension-strings!
                              parse-font-features!))])
-       (proc attrs)))
+    (proc attrs)))
 
 (define (drop-leading-breaks qs)
   ;; any leading breaks are pointless at the start of the doc, so drop them.
@@ -165,53 +169,66 @@
     (define (get-define-val q) (quad-ref q 'define))
     (define-values (dqs not-dqs) (partition get-define-val qs))
     (for ([dq-group (in-list (group-by get-define-val dqs))])
-         (hash-set! (current-named-quads) (get-define-val (car dq-group)) dq-group))
+      (hash-set! (current-named-quads) (get-define-val (car dq-group)) dq-group))
     not-dqs)
 
-(define default-line-height-multiplier 1.42)
-(define (setup-qs qx-arg base-dir)
-  ;; convert our input Q-expression into a useful form.
+(define (insert-typographic-niceties qx-arg)
+  (decode qx-arg
+          #:string-proc (compose1 smart-ellipses smart-dashes)
+          #:txexpr-proc smart-quotes))
 
-  ;; some typographic niceties
-  (define qexpr
-    (let ([qx (decode qx-arg
-                        #:string-proc (compose1 smart-ellipses smart-dashes)
-                        #:txexpr-proc smart-quotes)])
-      (match qx
-        [(txexpr tag attrs elements)
-         ;; we insert a dummy quad '(q ".")
-         ;; (could be anything, but we want to use something obvious
-         ;; so we don't trigger a fallback font)
-         ;; to get a sample of the global attrs
-         ;; which we will strip off after atomization
-         ;; but keep the attrs around in case anyone needs to use them
-         ;; for instance, quads added to the layout like footers
-         ;; won't have another way of getting this
-      (list* tag attrs (cons '(q ".") elements))])))
-  
+(define (insert-dummy-element qx)
+  (match qx
+    [(txexpr tag attrs elements)
+     ;; we insert a dummy element "."
+     ;; (could be anything, but we want to use something obvious
+     ;; so we don't trigger a fallback font)
+     ;; to get a sample of the global attrs
+     ;; which we will strip off after atomization
+     ;; but keep the attrs around in case anyone needs to use them
+     ;; for instance, quads added to the layout like footers
+     ;; won't have another way of getting this
+     (list* tag attrs (cons "." elements))]))
+
+(define (apply-default-styling-attributes qexpr)
   ;; apply some default styling attributes.
   ;; These will only be used if the underlying q-expression hasn't specified its own values,
   ;; which will naturally override these.
-  (define q
-    (qexpr->quad (list 'q (list->attrs
-                           :font-family default-font-family
-                           :font-size (number->string default-font-size)
-                           :font-features default-font-features
-                           :hyphenate "true"
-                           :line-height (number->string (floor (* default-line-height-multiplier default-font-size)))) qexpr)))
+  (qexpr->quad (list 'q (list->attrs
+                         :font-family default-font-family
+                         :font-size (number->string default-font-size)
+                         :font-features default-font-features
+                         :hyphenate "true"
+                         :line-height
+                         (number->string (floor (* default-line-height-multiplier default-font-size)))) qexpr)))
+
+(define (make-atomic-qs q)
+  (atomize q
+           #:attrs-proc handle-cascading-attrs
+           #:missing-glyph-action 'fallback
+           #:fallback "fallback"
+           #:emoji "fallback-emoji"
+           #:math "fallback-math"
+           #:font-path-resolver resolve-font-path!))
+
+(define (store-dummy-element-and-discard qs)
+  (current-top-level-quad (car qs))
+  (cdr qs))
+
+(define (apply-hyphenation qs)
+  (time-log hyphenate (apply append (map handle-hyphenate qs))))
+
+(define default-line-height-multiplier 1.42)
+(define (setup-qs qx-arg [base-dir (current-directory)])
+  ;; convert our input Q-expression into a useful form.
+
   (setup-font-path-table! base-dir)
-  (let* ([qs (atomize q
-                      #:attrs-proc handle-cascading-attrs
-                      #:missing-glyph-action 'fallback
-                      #:fallback "fallback"
-                      #:emoji "fallback-emoji"
-                      #:math "fallback-math"
-                      #:font-path-resolver resolve-font-path!)]
-         [qs (let ()
-               ;; store the dummy element and discard
-               (current-top-level-quad (car qs))
-               (cdr qs))]
-         [qs (time-log hyphenate (apply append (map handle-hyphenate qs)))]
+  (let* ([qx (insert-typographic-niceties qx-arg)]
+         [qexpr (insert-dummy-element qx)]
+         [q (apply-default-styling-attributes qexpr)]
+         [qs (make-atomic-qs q)]
+         [qs (store-dummy-element-and-discard qs)]
+         [qs (apply-hyphenation qs)]
          [qs (map generic->typed-quad qs)]
          [qs (drop-leading-breaks qs)]
          #;[qs (extract-defined-quads qs)]
@@ -265,7 +282,7 @@
 (define (setup-column-gap qs)
   (or (debug-column-gap)  (quad-ref (car qs) :column-gap default-column-gap)))
 
-(define (setup-pdf-metadata! qs pdf)
+(define (setup-pdf-metadata! pdf qs)
   (define kv-dict
     (cons
      (cons 'Creator (format "Racket ~a [Quad ~a]" (version) (pkg-checksum "quad" #:short #true)))
@@ -275,9 +292,9 @@
                                            (cons :pdf-keywords 'Keywords)))]
                  [str (in-value (and (pair? qs) (quad-ref (car qs) k)))]
                  #:when str)
-                (cons pdf-k str))))
+       (cons pdf-k str))))
   (for ([(k v) (in-dict kv-dict)])
-       (hash-set! (pdf-info pdf) k v)))
+    (hash-set! (pdf-info pdf) k v)))
 
 (define (footnote-flow? q) (equal? (quad-ref q 'flow) "footnote"))
 
@@ -306,9 +323,10 @@
                [size (pt line-wrap-size printable-height)]))
   (time-log page-wrap (page-wrap column-qs printable-width page-quad-prototype)))
 
+(define (layout qs)
+  (quad-update! q:doc [elems (make-sections qs)]))
 
 (define (make-sections all-qs)
-  
   (for/fold ([sections-acc null]
              #:result (reverse sections-acc))
             ([qs (in-list (filter-split all-qs section-break-quad?))])
@@ -399,7 +417,7 @@
          [query-matches (in-value (query qi (string-append "doc[this]:" query-str) rq))]
          #:when query-matches
          [query-match (in-list query-matches)])
-        (quad-update! query-match [elems (append (quad-elems query-match) (list (quad-copy quad rq)))]))
+    (quad-update! query-match [elems (append (quad-elems query-match) (list (quad-copy quad rq)))]))
   doc)
 
 (define (wants-parent? x) (and (quad? x) (quad-ref x :parent)))
@@ -427,7 +445,7 @@
          #:when query-str
          [parent (in-value (query qi query-str wp))]
          #:when parent)
-        (quad-update! parent [elems (append (quad-elems parent) (list wp))]))
+    (quad-update! parent [elems (append (quad-elems parent) (list wp))]))
   doc)
 
 (define (correct-line-alignment doc)
@@ -437,17 +455,44 @@
   (for* ([section (in-list (quad-elems doc))]
          [(page page-idx) (in-indexed (quad-elems section))]
          #:when (page-quad? page))
-        (define right-side? (odd? (add1 page-idx)))
-        (define zero-filler-side (if right-side? "inner" "outer"))
-        (let loop ([x page])
-          (cond
-            [(and (line-quad? x)
-                  (equal? zero-filler-side (quad-ref x :line-align))
-                  (filler-quad? (car (quad-elems x))))
-             ;; collapse the filler quad by setting size to 0
-             (set-quad-size! (car (quad-elems x)) (pt 0 0))]
-            [(quad? x) (for-each loop (quad-elems x))])))
+    (define right-side? (odd? (add1 page-idx)))
+    (define zero-filler-side (if right-side? "inner" "outer"))
+    (let loop ([x page])
+      (cond
+        [(and (line-quad? x)
+              (equal? zero-filler-side (quad-ref x :line-align))
+              (filler-quad? (car (quad-elems x))))
+         ;; collapse the filler quad by setting size to 0
+         (set-quad-size! (car (quad-elems x)) (pt 0 0))]
+        [(quad? x) (for-each loop (quad-elems x))])))
   doc)
+
+(define (setup-base-dir base-dir-arg pdf-path-arg)
+  (define maybe-dir (cond
+                      ;; for reasons unclear, DrRacket sometimes sneaks
+                      ;; an "unsaved editor" into base-dir-arg, despite efforts
+                      ;; probably my fault 
+                      [(equal? base-dir-arg "unsaved editor") pdf-path-arg]
+                      [base-dir-arg]
+                      [pdf-path-arg]
+                      [else (current-directory)]))
+  (define base-dir (match maybe-dir
+                     [(? directory-exists? dir) dir]
+                     [(app path->complete-path cp)
+                      (define-values (dir name _) (split-path cp))
+                      dir]))
+  (unless (directory-exists? base-dir)
+    (raise-argument-error 'render-pdf "existing directory" base-dir))
+  base-dir)
+
+(define (log-completion)
+  (log-quadwriter-info (format "wrote PDF to ~a" (pdf-output-path (current-pdf)))))
+
+(define (return-pdf-bytes pdf-path-arg)
+  (define pdf-path (pdf-output-path (current-pdf)))
+  (begin0
+    (file->bytes pdf-path)
+    (delete-file pdf-path)))
 
 (define/contract (render-pdf qx-arg
                              [pdf-path-arg #false]
@@ -465,59 +510,28 @@
   ;; `base-dir-arg` is the starting point for resolving any relative pathnames,
   ;; and looking for fonts and other assets.
 
-  (define base-dir (let ([maybe-dir (cond
-                                      ;; for reasons unclear, DrRacket sometimes sneaks
-                                      ;; an "unsaved editor" into base-dir-arg, despite efforts
-                                      ;; probably my fault 
-                                      [(equal? base-dir-arg "unsaved editor") pdf-path-arg]
-                                      [base-dir-arg]
-                                      [pdf-path-arg]
-                                      [else (current-directory)])])
-                     (match maybe-dir
-                       [(? directory-exists? dir) dir]
-                       [(app path->complete-path cp)
-                        (define-values (dir name _) (split-path cp))
-                        dir])))
-  
-  (unless (directory-exists? base-dir)
-    (raise-argument-error 'render-pdf "existing directory" base-dir))
-  
-  (define pdf-path (setup-pdf-path pdf-path-arg))
-  (unless replace-existing-file?
-    (when (file-exists? pdf-path)
-      (raise-argument-error 'render-pdf "path that doesn't exist" pdf-path)))
-
   ;; `make-pdf` creates a PDF data structure using the pitfall library.
   ;; this structure provides some services as we lay out the document,
   ;; and then when we render, we'll rely on pitfall's PDF-drawing routines.
-  (parameterize ([current-pdf (make-pdf #:compress compress?
-                                        #:auto-first-page #false
-                                        #:output-path pdf-path)]
+  (parameterize ([current-pdf
+                  (make-pdf #:compress compress?
+                            #:auto-first-page #false
+                            #:output-path (setup-pdf-path pdf-path-arg replace-existing-file?))]
                  ;; set `current-directory` so that ops like `path->complete-path`
                  ;; will be handled relative to the original directory
-                 [current-directory base-dir]
+                 [current-directory (setup-base-dir base-dir-arg pdf-path-arg)]
                  ;; a lot of operations need to look at pages used so it's easier to
                  ;; make it a parameter than endlessly pass it around as an argument.
                  [section-pages-used 0]
                  [verbose-quad-printing? #false]
                  #;[current-named-quads (make-hash)]) ; for ease of debugging; not mandatory
-    (define qs (time-log setup-qs (setup-qs qx-arg base-dir)))
-    (setup-pdf-metadata! qs (current-pdf))
-    ;; all the heavy lifting happens inside `make-sections`
-    ;; which calls out to `make-pages`, `make-columns`, and so on.
-   
-    (define doc (let ([doc (quad-update! q:doc [elems (make-sections qs)])])
-                  (time-log prep-doc (let* ([doc (correct-line-alignment doc)]
-                                            [doc (resolve-repeaters doc)]
-                                            [doc (resolve-parents doc)])
-                                       doc))))
-    ;; call `position` and `draw` separately so we can print a timer for each
-    (define positioned-doc (time-log position (position doc)))
-    ;; drawing implies that a PDF is written to disk
-    (time-log draw (draw positioned-doc (current-pdf))))
-
-  (if pdf-path-arg
-      (log-quadwriter-info (format "wrote PDF to ~a" pdf-path))
-      (begin0
-        (file->bytes pdf-path)
-        (delete-file pdf-path))))
+    (let* ([qs (time-log setup-qs (setup-qs qx-arg))]
+           [_ (setup-pdf-metadata! (current-pdf) qs)]
+           ;; all the heavy lifting happens inside `layout`
+           [doc (layout qs)]
+           [doc (correct-line-alignment doc)]
+           [doc (resolve-repeaters doc)]
+           [doc (resolve-parents doc)]
+           [positioned-doc (position doc)]
+           [_ (draw positioned-doc (current-pdf))])
+      (if pdf-path-arg (log-completion) (return-pdf-bytes)))))
