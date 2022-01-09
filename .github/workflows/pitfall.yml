@@ -1,10 +1,11 @@
-name: CI
+name: pitfall CI
 
 on: [push, pull_request]
 
 jobs:
   run:
     name: "Build using Racket '${{ matrix.racket-version }}' (${{ matrix.racket-variant }})"
+    working-directory: ./pitfall
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
