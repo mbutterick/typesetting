@@ -4,12 +4,12 @@ on: [push, pull_request]
 
 jobs:
   call-xenomorph-workflow:
-    uses: mbutterick/typesetting/xenomorph/.github/workflows/ci.yml
+    uses: mbutterick/typesetting/xenomorph/.github/workflows/ci.yml@main
   call-quad-workflow:
-    uses: mbutterick/typesetting/quad/.github/workflows/ci.yml
+    uses: mbutterick/typesetting/quad/.github/workflows/ci.yml@main
   call-pitfall-workflow:
-    uses: mbutterick/typesetting/pitfall/.github/workflows/ci.yml
+    uses: mbutterick/typesetting/pitfall/.github/workflows/ci.yml@main
   call-hyphenate-workflow:
-    uses: mbutterick/typesetting/hyphenate/.github/workflows/ci.yml
+    uses: mbutterick/typesetting/hyphenate/.github/workflows/ci.yml@main
   call-fontland-workflow:
-    uses: mbutterick/typesetting/fontland/.github/workflows/ci.yml
+    uses: mbutterick/typesetting/fontland/.github/workflows/ci.yml@main
