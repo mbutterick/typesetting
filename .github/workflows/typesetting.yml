@@ -1,10 +1,6 @@
-name: pitfall CI
+name: typesetting CI
 
 on: [push, pull_request]
-
-defaults:
-  run:
-    working-directory: ./pitfall
 
 jobs:
   run:
@@ -35,14 +31,35 @@ jobs:
     - name: install xenomorph
       run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=xenomorph#main
 
+    - name: install hyphenate
+      run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=hyphenate#main
+
     - name: install fontland
       run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=fontland#main
 
-    - name: Install package and its dependencies
-      run: raco pkg install --auto --batch
+    - name: install pitfall
+      run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=pitfall#main
 
-    - name: Run the tests
+    - name: install quad
+      run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=quad#main
+
+    - name: Run hyphenate tests
+      run: xvfb-run raco test -j 4 -p hyphenate
+
+    - name: Run xenomorph tests
+      run: xvfb-run raco test -j 4 -p xenomorph
+      
+    - name: Run fontland tests
+      run: xvfb-run raco test -j 4 -p fontland
+
+    - name: Run pitfall ftests
       run: xvfb-run raco test -j 4 -p pitfall
 
     - name: Run the ptests
-      run: xvfb-run racket -l ptest/all
+      run: xvfb-run raco test -l ptest/all
+
+    - name: Run quad tests
+      run: xvfb-run raco test -j 4 -p quad
+
+    - name: Run the qtests
+      run: xvfb-run raco test -l qtest/all
