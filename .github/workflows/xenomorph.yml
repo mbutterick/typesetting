@@ -2,10 +2,13 @@ name: xenomorph CI
 
 on: [push, pull_request]
 
+defaults:
+  run:
+    working-directory: ./xenomorph
+
 jobs:
   run:
     name: "Build using Racket '${{ matrix.racket-version }}' (${{ matrix.racket-variant }})"
-    working-directory: ./xenomorph
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

@@ -2,10 +2,13 @@ name: hyphenate CI
 
 on: [push, pull_request]
 
+defaults:
+  run:
+    working-directory: ./hyphenate
+
 jobs:
   run:
     name: "Build using Racket '${{ matrix.racket-version }}' (${{ matrix.racket-variant }})"
-    working-directory: ./hyphenate
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
