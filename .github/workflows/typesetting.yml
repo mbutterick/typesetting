@@ -52,14 +52,14 @@ jobs:
     - name: Run fontland tests
       run: xvfb-run raco test -j 4 -p fontland
 
-    - name: Run pitfall ftests
+    - name: Run pitfall tests
       run: xvfb-run raco test -j 4 -p pitfall
 
     - name: Run the ptests
-      run: xvfb-run raco test -l ptest/all
+      run: xvfb-run racket -l ptest/all
 
     - name: Run quad tests
       run: xvfb-run raco test -j 4 -p quad
 
     - name: Run the qtests
-      run: xvfb-run raco test -l qtest/all
+      run: xvfb-run racket -l qtest/all
