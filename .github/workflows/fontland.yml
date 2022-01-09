@@ -32,6 +32,9 @@ jobs:
         version: ${{ matrix.racket-version }}
         variant: ${{ matrix.racket-variant }}
 
+    - name: install xenomorph
+      run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=xenomorph#main
+
     - name: Install package and its dependencies
       run: raco pkg install --auto --batch
 
