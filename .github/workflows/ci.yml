@@ -1,0 +1,15 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  call-xenomorph-workflow:
+    uses: mbutterick/typesetting/xenomorph/.github/workflows/ci.yml
+  call-quad-workflow:
+    uses: mbutterick/typesetting/quad/.github/workflows/ci.yml
+  call-pitfall-workflow:
+    uses: mbutterick/typesetting/pitfall/.github/workflows/ci.yml
+  call-hyphenate-workflow:
+    uses: mbutterick/typesetting/hyphenate/.github/workflows/ci.yml
+  call-fontland-workflow:
+    uses: mbutterick/typesetting/fontland/.github/workflows/ci.yml
