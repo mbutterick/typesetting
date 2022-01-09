@@ -35,6 +35,9 @@ jobs:
     - name: install xenomorph
       run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=xenomorph#main
 
+    - name: install hyphenate
+      run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=hyphenate#main
+
     - name: install fontland
       run: raco pkg install --deps search-auto https://github.com/mbutterick/typesetting.git?path=fontland#main
 
