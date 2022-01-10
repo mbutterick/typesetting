@@ -534,4 +534,4 @@
            [doc (resolve-parents doc)]
            [positioned-doc (position doc)]
            [_ (draw positioned-doc (current-pdf))])
-      (if pdf-path-arg (log-completion) (return-pdf-bytes)))))
+      (if pdf-path-arg (log-completion) (return-pdf-bytes pdf-path-arg)))))
