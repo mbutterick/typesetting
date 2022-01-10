@@ -84,9 +84,13 @@
                (match-define (list k v) kv)
                ;; coerce number strings to actual numbers
                ;; this misbehaves on a list index like "1." which becomes 1.0
+               ;; FIXME: we don't convert the value of key 'string
+               ;; on the idea that if it's "1" we don't want to make it a number.
+               ;; but this is dirty beyond belief
                (hash-set! mheq k (cond
                                    [(equal? v "true") #true]
                                    [(equal? v "false") #false]
+                                   [(eq? k 'string) v]
                                    [(string->number v)]
                                    [else v])))
           (make-quad #:tag tag
