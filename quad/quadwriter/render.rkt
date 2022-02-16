@@ -188,7 +188,9 @@
      ;; but keep the attrs around in case anyone needs to use them
      ;; for instance, quads added to the layout like footers
      ;; won't have another way of getting this
-     (list* tag attrs (cons "." elements))]))
+     ;; the dummy tag and dummy value ensure that the "." string
+     ;; isn't merged into the following string during atomization
+     (list* tag attrs (cons '(q ((dummy-tag "dummy-value")) ".") elements))]))
 
 (define (apply-default-styling-attributes qexpr)
   ;; apply some default styling attributes.
