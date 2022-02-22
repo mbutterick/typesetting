@@ -351,8 +351,11 @@
     (define insert-blank-page?
       (and (pair? qs)
            ;; if we need a 'left page and will get 'right (or vice versa) then insert page
-           (let ([next-page-side (if (even? (add1 (section-pages-used))) 'left 'right)])
-             (not (eq? section-starting-side next-page-side)))))
+           (cond
+             [(eq? section-starting-side 'next) #false]
+             [else
+              (let ([next-page-side (if (even? (add1 (section-pages-used))) 'left 'right)])
+                (not (eq? section-starting-side next-page-side)))])))
 
     ;; update page count before starting page wrap
     (when insert-blank-page?
