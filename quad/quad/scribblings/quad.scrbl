@@ -807,6 +807,8 @@ Quadwriter supports the usual TrueType (@racket[.ttf]) and OpenType (@racket[.ot
 @item{If there is only one font file in the family subdirectory, then it is used every time the font family is requested.}
 
 @item{Alternatively, you can specify styled variants by creating within the family directory style subdirectories called @racket["regular"], @racket["bold"], @racket["italic"], and @racket["bold-italic"].}
+
+@item{Oh, you dislike making subdirectories? Then you can also specify styled variants by putting a set of four font files at the top level of the family subdirectory whose filenames include @racket["bold"] and @racket["italic"] (denoting the bold italic style), @racket["bold"] (denoting bold), @racket["italic"] (denoting italic), and neither @racket["bold"] nor @racket["italic"] (denoting regular).}
 ]
 
 Though this system may seem like a lot of housekeeping, it's nice for two reasons. First, we use the filesystem to map font names to font files, and avoid having another configuration file floating around our project. Second, we create a layer of abstraction between font names and files. This makes it easy to change the fonts in the document: you just put new fonts in the appropriate font-family directory, and you don't need to faff about with the source file itself.
