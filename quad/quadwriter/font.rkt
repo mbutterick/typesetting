@@ -3,6 +3,7 @@
          racket/string
          racket/path
          racket/match
+         racket/list
          fontland/font-path
          "attrs.rkt")
 (provide (all-defined-out))
@@ -49,10 +50,21 @@
         (define key
           (cons (string-downcase family-name)
                 (cond
+                  ;; cases where fonts are in subdirectories named by style
+                  ;; infer style from subdir name
                   [(member "bold-italic" path-parts) 'bi]
                   [(member "bold" path-parts) 'b]
                   [(member "italic" path-parts) 'i]
-                  [else 'r])))
+                  [else
+                   ;; try to infer from filename alone
+                   (define filename (string-downcase (last path-parts)))
+                   (define filename-contains-bold? (string-contains? filename "bold"))
+                   (define filename-contains-italic? (string-contains? filename "italic"))
+                   (cond
+                     [(and filename-contains-bold? filename-contains-italic?) 'bi]
+                     [filename-contains-bold? 'b]
+                     [filename-contains-italic? 'i]
+                     [else 'r])])))
         ;; only set value if there's not one there already.
         ;; this means that we only use the first eligible font we find.
         (hash-ref! font-paths key font-path)))
