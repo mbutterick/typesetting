@@ -3,17 +3,16 @@
 (provide (all-defined-out))
 
 (define (unstackify inst-str)
-  (define tok-port (open-input-string inst-str))
-  (let loop ([acc null][stack null])
-    (match (read tok-port)
-      [(? eof-object?) (reverse acc)]
-      [tok
-       (match (cons tok stack)
-         [(list* 'doc sym rest) (loop (cons ($doc sym) acc) rest)]
-         [(list* 'page sym rest) (loop (cons ($page sym) acc) rest)]
-         [(list* 'text charint rest) (loop (cons ($text charint) acc) rest)]
-         [(list* 'move x y rest) (loop (cons ($move ($point x y)) acc) rest)]
-         [new-stack (loop acc new-stack)])])))
+  (for/fold ([acc null]
+             [stack null]
+             #:result (reverse acc))
+            ([tok (in-port read (open-input-string inst-str))])
+    (match (cons tok stack)
+      [(list* 'doc sym rest) (values (cons ($doc sym) acc) rest)]
+      [(list* 'page sym rest) (values (cons ($page sym) acc) rest)]
+      [(list* 'text charint rest) (values (cons ($text charint) acc) rest)]
+      [(list* 'move x y rest) (values (cons ($move ($point x y)) acc) rest)]
+      [new-stack (values acc new-stack)])))
 
 (define-syntax-rule (define-render-pass (PASS-NAME ARG)
                       EXPRS ...)
@@ -25,8 +24,9 @@
 
 (define-render-pass (render-to-text xs)
   (define move-posns (map $move-posn (filter $move? xs)))
-  (define xmax (add1 (apply max (map $point-x move-posns))))
-  (define ymax (add1 (apply max (map $point-y move-posns))))
+  (define (max-of field) (apply max (map field move-posns)))
+  (define xmax (add1 (max-of $point-x)))
+  (define ymax (add1 (max-of $point-y)))
   (define char-pos-table (make-hasheqv))
   ;; scan over the instructions and record where the chars want to go
   (let loop ([current-loc 0+0i][xs xs])
@@ -42,10 +42,10 @@
   (displayln
    (string-join
     (for/list ([y (in-range ymax)])
-              (list->string
-               (map integer->char
-                    (for/list ([x (in-range xmax)])
-                              (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n")))
+      (list->string
+       (map integer->char
+            (for/list ([x (in-range xmax)])
+              (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n")))
 
 (require racket/gui)
 (define-render-pass (render-to-bitmap xs)
