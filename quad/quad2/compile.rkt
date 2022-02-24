@@ -1,6 +1,15 @@
 #lang debug racket/base
-(require racket/contract racket/function rackunit racket/list "pass.rkt" "drawing.rkt" "quad.rkt")
-(provide quad-compile)
+(require racket/contract
+         racket/function
+         rackunit
+         racket/list
+         racket/match
+         racket/string
+         racket/format
+         "pass.rkt"
+         "drawing.rkt"
+         "quad.rkt")
+(provide quad-compile quad-compile-to-stack stackify)
 
 (define/contract (posn-add p0 p1)
   ($point? $size? . -> . $point?)
@@ -21,7 +30,7 @@
 
 (define/contract (make-compiler . passes)
   (() #:rest (listof pass/c)
-      . ->* . (any/c . -> . (listof any/c)))
+      . ->* . (any/c . -> . any/c))
   (apply compose1 (reverse (cons quadify passes))))
 
 (define (min-x rect) ($point-x ($rect-origin rect)))
@@ -59,17 +68,31 @@
     (posn-add winning-posn (advance q))))
 
 (define-pass (make-drawing-insts qs)
-  #:precondition (λ (qs) (andmap has-position? qs))
-  #:postcondition (λ (qs) (andmap $drawing-inst? qs))
+  #:precondition (λ (qs) (and (list? qs) (andmap has-position? qs)))
+  #:postcondition (λ (qs) (and (list? qs) (andmap $drawing-inst? qs)))
   (flatten
    (list ($doc 'start) ($page 'start)
          (for/list ([q (in-list qs)])
                    (cond
                      [($quad? q)
-                      (list ($move ($quad-posn q)) ($text ($quad-char q)))]
+                      (list ($move ($quad-posn q)) ($text (char->integer ($quad-char q))))]
                      [else (error 'render-unknown-thing)]))
          ($page 'end) ($doc 'end))))
-  
+
+
+(define-pass (stackify xs)
+  #:precondition (λ (xs) (and (list? xs) (andmap $drawing-inst? xs)))
+  #:postcondition string?
+  (string-join
+   (for/list ([x (in-list xs)])
+             (string-join (map ~a (match x
+                                    [($move ($point x y)) (list y x 'move)]
+                                    [($text charint) (list charint 'text)]
+                                    [($doc sym) (list sym 'doc)]
+                                    [($page sym) (list sym 'page)]
+                                    [_ (error 'unknown-drawing-inst)])) " ")) "\n"))
+
+(define quad-compile-to-stack (make-compiler layout make-drawing-insts stackify))
 (define quad-compile (make-compiler layout make-drawing-insts))
 #;(check-equal? 
    (list

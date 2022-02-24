@@ -1,8 +1,10 @@
 #lang debug racket/base
-(require "compile.rkt" "render.rkt" "quad.rkt")
+(require "compile.rkt" "render.rkt" "quad.rkt" racket/string)
 
 (define drawing-insts (parameterize ([current-wrap-width 6])
-                       #R (quad-compile "Hello this is the radio")))
+                        (quad-compile-to-stack "Hello this is the earth")))
+
+(displayln (string-replace drawing-insts "\n" " "))
 
 (render-to-text drawing-insts)
 

@@ -2,12 +2,26 @@
 (require "pass.rkt" "drawing.rkt" "quad.rkt" racket/match racket/string)
 (provide (all-defined-out))
 
+(define (unstackify inst-str)
+  (define tok-port (open-input-string inst-str))
+  (let loop ([acc null][stack null])
+    (match (read tok-port)
+      [(? eof-object?) (reverse acc)]
+      [tok
+       (match (cons tok stack)
+         [(list* 'doc sym rest) (loop (cons ($doc sym) acc) rest)]
+         [(list* 'page sym rest) (loop (cons ($page sym) acc) rest)]
+         [(list* 'text charint rest) (loop (cons ($text charint) acc) rest)]
+         [(list* 'move x y rest) (loop (cons ($move ($point x y)) acc) rest)]
+         [new-stack (loop acc new-stack)])])))
+
 (define-syntax-rule (define-render-pass (PASS-NAME ARG)
                       EXPRS ...)
   (define-pass (PASS-NAME ARG)
-    #:precondition (λ (xs) (and (list? xs) (andmap $drawing-inst? xs)))
+    #:precondition string?
     #:postcondition values
-    EXPRS ...))
+    (let ([ARG (unstackify ARG)])
+      EXPRS ...)))
 
 (define-render-pass (render-to-text xs)
   (define move-posns (map $move-posn (filter $move? xs)))
@@ -29,8 +43,9 @@
    (string-join
     (for/list ([y (in-range ymax)])
               (list->string
-               (for/list ([x (in-range xmax)])
-                         (hash-ref char-pos-table (make-rectangular x y) #\space)))) "\n")))
+               (map integer->char
+                    (for/list ([x (in-range xmax)])
+                              (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n")))
 
 (require racket/gui)
 (define-render-pass (render-to-bitmap xs)
@@ -55,8 +70,8 @@
       (match xs
         [(cons ($move ($point x y)) rest)
          (loop (make-rectangular x y) rest)]
-        [(cons ($text c) rest)
-           (send dc draw-text (string c) (real-part current-loc) (imag-part current-loc))
+        [(cons ($text charint) rest)
+         (send dc draw-text (string (integer->char charint)) (real-part current-loc) (imag-part current-loc))
          (loop current-loc rest)]
         [(cons _ rest) (loop current-loc rest)])))
   
