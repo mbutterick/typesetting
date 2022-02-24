@@ -8,3 +8,4 @@
 (struct $quad (posn char) #:transparent #:mutable)
 
 (define current-wrap-width (make-parameter 5))
+(define current-page-size (make-parameter ($size 10 10)))

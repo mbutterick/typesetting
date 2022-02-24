@@ -1,79 +1,91 @@
 #lang debug racket/base
-(require "pass.rkt" "drawing.rkt" "quad.rkt" racket/match racket/string)
+(require "pass.rkt" "quad.rkt" "compile.rkt")
 (provide (all-defined-out))
 
-(define (unstackify inst-str)
-  (for/fold ([acc null]
-             [stack null]
-             #:result (reverse acc))
-            ([tok (in-port read (open-input-string inst-str))])
-    (match (cons tok stack)
-      [(list* 'doc sym rest) (values (cons ($doc sym) acc) rest)]
-      [(list* 'page sym rest) (values (cons ($page sym) acc) rest)]
-      [(list* 'text charint rest) (values (cons ($text charint) acc) rest)]
-      [(list* 'move x y rest) (values (cons ($move ($point x y)) acc) rest)]
-      [new-stack (values acc new-stack)])))
+(struct $renderer (doc-start-func
+                   doc-end-func
+                   page-start-func
+                   page-end-func
+                   text-func
+                   move-func
+                   return-func) #:transparent)
 
-(define-syntax-rule (define-render-pass (PASS-NAME ARG)
-                      EXPRS ...)
-  (define-pass (PASS-NAME ARG)
-    #:precondition string?
-    #:postcondition values
-    (let ([ARG (unstackify ARG)])
-      EXPRS ...)))
+(define current-renderer (make-parameter ($renderer void void void void void void void)))
 
-(define-render-pass (render-to-text xs)
-  (define move-posns (map $move-posn (filter $move? xs)))
-  (define (max-of field) (apply max (map field move-posns)))
-  (define xmax (add1 (max-of $point-x)))
-  (define ymax (add1 (max-of $point-y)))
-  (define char-pos-table (make-hasheqv))
+(define text-renderer
   ;; scan over the instructions and record where the chars want to go
-  (let loop ([current-loc 0+0i][xs xs])
-    (unless (null? xs)
-      (match xs
-        [(cons ($move ($point x y)) rest)
-         (loop (make-rectangular x y) rest)]
-        [(cons ($text c) rest)
-         (hash-set! char-pos-table current-loc c)
-         (loop current-loc rest)]
-        [(cons _ rest) (loop current-loc rest)])))
-  ;; fill in a character grid
-  (displayln
-   (string-join
-    (for/list ([y (in-range ymax)])
-      (list->string
-       (map integer->char
-            (for/list ([x (in-range xmax)])
-              (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n")))
+  (let ([char-pos-table (make-hasheqv)]
+        [current-loc 0+0i]
+        [xmax 0]
+        [ymax 0]
+        [results null])
+    ($renderer
+     void
+     void
+     (λ (width height)
+       (set! xmax width)
+       (set! ymax height))
+     (λ ()
+       ;; fill in a character grid
+       (define str (string-join
+                    (for/list ([y (in-range ymax)])
+                              (list->string
+                               (map integer->char
+                                    (for/list ([x (in-range xmax)])
+                                              (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n"))
+       (set! results (cons str results)))
+     (λ (charint) (hash-set! char-pos-table current-loc charint))
+     (λ (x y) (set! current-loc (make-rectangular x y)))
+     (λ ()
+       (unless (pair? results)
+         (error 'text-renderer-failed))
+       (for-each displayln results)))))
 
 (require racket/gui)
-(define-render-pass (render-to-bitmap xs)
-  (define move-posns (map $move-posn (filter $move? xs)))
-  (define xmax (add1 (apply max (map $point-x move-posns))))
-  (define ymax (add1 (apply max (map $point-y move-posns))))
-  
-  (define em-scale 30)
-  (define target (make-bitmap (* em-scale xmax) (* em-scale ymax)))
-  (define dc (new bitmap-dc% [bitmap target]))
-  (send dc scale em-scale em-scale) 
 
-  (define face-list (get-face-list 'mono))
-  (when (null? face-list)
-    (error 'no-mono-font-available))
-  (define my-face (car face-list))
-  (send dc set-font (make-font #:size 1 #:face my-face))
-  (send dc set-text-foreground "black")
+(define drr-renderer
+  ;; scan over the instructions and record where the chars want to go
+  (let ([targets null]
+        [dc #f]
+        [current-loc 0+0i])
+    ($renderer
+     void
+     void
+     (let ([em-scale 30]
+           [my-face (match (get-face-list 'mono)
+                      [(? null?) (error 'no-mono-font-available)]
+                      [(cons face _) face])])
+       (λ (width height)
+         (define target (make-bitmap (* em-scale width) (* em-scale height)))
+         (set! targets (cons target targets))
+         (set! dc (new bitmap-dc% [bitmap target]))
+         (send dc scale em-scale em-scale) 
+         (send dc set-font (make-font #:size 1 #:face my-face))
+         (send dc set-text-foreground "black")))
+     void
+     (λ (charint)
+       (send dc draw-text (string (integer->char charint)) (real-part current-loc) (imag-part current-loc)))
+     (λ (x y) (set! current-loc (make-rectangular x y)))
+     (λ () (for-each displayln (map (λ (target) (make-object image-snip% target)) targets))))))
 
-  (let loop ([current-loc 0+0i][xs xs])
-    (unless (null? xs)
-      (match xs
-        [(cons ($move ($point x y)) rest)
-         (loop (make-rectangular x y) rest)]
-        [(cons ($text charint) rest)
-         (send dc draw-text (string (integer->char charint)) (real-part current-loc) (imag-part current-loc))
-         (loop current-loc rest)]
-        [(cons _ rest) (loop current-loc rest)])))
-  
-  (make-object image-snip% target))
+(define-pass (render inst-str #:using [renderer (current-renderer)])
+  #:precondition string?
+  #:postcondition any/c
+  (let/ec exit
+    (for/fold ([stack null]
+               #:result (void))
+              ([tok (in-port read (open-input-string inst-str))])
+      (define next-stack (cons tok stack))
+      (cond
+        [(memq tok valid-tokens)
+         (match next-stack
+           [(list* 'doc-start rest) (($renderer-doc-start-func renderer)) rest]
+           [(list* 'doc-end _) (exit (($renderer-doc-end-func renderer)))]
+           [(list* 'page-start x y rest) (($renderer-page-start-func renderer) x y) rest]
+           [(list* 'page-end rest) (($renderer-page-end-func renderer)) rest]
+           [(list* 'text charint rest) (($renderer-text-func renderer) charint) rest]
+           [(list* 'move x y rest) (($renderer-move-func renderer) x y) rest]
+           [_ next-stack])]
+        [else next-stack])))
+  (($renderer-return-func renderer)))
 

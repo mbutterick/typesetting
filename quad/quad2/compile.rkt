@@ -9,7 +9,7 @@
          "pass.rkt"
          "drawing.rkt"
          "quad.rkt")
-(provide quad-compile quad-compile-to-stack stackify)
+(provide quad-compile quad-compile-to-stack stackify valid-tokens)
 
 (define/contract (posn-add p0 p1)
   ($point? $size? . -> . $point?)
@@ -28,9 +28,7 @@
   (for/list ([c (in-string str)])
             ($quad #f c)))
 
-(define/contract (make-compiler . passes)
-  (() #:rest (listof pass/c)
-      . ->* . (any/c . -> . any/c))
+(define (make-compiler . passes)
   (apply compose1 (reverse (cons quadify passes))))
 
 (define (min-x rect) ($point-x ($rect-origin rect)))
@@ -79,17 +77,23 @@
                      [else (error 'render-unknown-thing)]))
          ($page 'end) ($doc 'end))))
 
+(define valid-tokens '(doc-start doc-end page-start page-end text move))
 
 (define-pass (stackify xs)
   #:precondition (λ (xs) (and (list? xs) (andmap $drawing-inst? xs)))
   #:postcondition string?
+  (define move-points (map $move-posn (filter $move? xs)))
+  (define xmax (add1 (apply max (map $point-x move-points))))
+  (define ymax (add1 (apply max (map $point-y move-points))))
   (string-join
    (for/list ([x (in-list xs)])
              (string-join (map ~a (match x
                                     [($move ($point x y)) (list y x 'move)]
                                     [($text charint) (list charint 'text)]
-                                    [($doc sym) (list sym 'doc)]
-                                    [($page sym) (list sym 'page)]
+                                    [($doc 'start) '(doc-start)]
+                                    [($doc 'end) '(doc-end)]
+                                    [($page 'start) (list ymax xmax 'page-start)]
+                                    [($page 'end) '(page-end)]
                                     [_ (error 'unknown-drawing-inst)])) " ")) "\n"))
 
 (define quad-compile-to-stack (make-compiler layout make-drawing-insts stackify))

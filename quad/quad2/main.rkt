@@ -1,15 +1,13 @@
 #lang debug racket/base
 (require "compile.rkt" "render.rkt" "quad.rkt" racket/string)
 
-(define drawing-insts (parameterize ([current-wrap-width 6])
+(define drawing-insts (parameterize ([current-wrap-width 13])
                         (quad-compile-to-stack "Hello this is the earth")))
 
-(displayln (string-replace drawing-insts "\n" " "))
+(displayln drawing-insts)
 
-(render-to-text drawing-insts)
-
-(render-to-bitmap drawing-insts)
+(render drawing-insts #:using text-renderer)
+(render drawing-insts #:using drr-renderer)
 
 #;(render-to-html drawing-insts)
-
 #;(render-to-pdf drawing-insts)
