@@ -16,17 +16,17 @@
   ($point (+ ($point-x p0) ($size-width p1)) (+ ($point-y p0) ($size-height p1))))
 
 (define/contract (size char)
-  ($quad? . -> . $size?)
+  (quad? . -> . $size?)
   ($size 1 1))
 
 (define/contract (advance char)
-  ($quad? . -> . $size?)
+  (quad? . -> . $size?)
   ($size 1 0))
 
 (define/contract (quadify str)
-  (string? . -> . (listof $quad?))
+  (string? . -> . (listof quad?))
   (for/list ([c (in-string str)])
-            ($quad #f c)))
+            (make-quad #f (list (cons 'char c)))))
 
 (define (make-compiler . passes)
   (apply compose1 (reverse (cons quadify passes))))
@@ -48,7 +48,7 @@
   (and (rect-contains-point? outer ($rect-origin inner))
        (rect-contains-point? outer ($point (max-x inner) (max-y inner)))))
   
-(define (has-position? q) (not (eq? ($quad-posn q) #false)))
+(define (has-position? q) (not (eq? (quad-posn q) #false)))
 (define-pass (layout qs)
   #:precondition (λ (qs) (and (list? qs) (andmap (λ (q) (not (has-position? q))) qs)))
   #:postcondition (λ (qs) (and (list? qs) (andmap has-position? qs)))
@@ -62,7 +62,7 @@
             ([q (in-list qs)])
     (define first-posn-on-next-line ($point 0 (add1 ($point-y posn))))
     (define winning-posn (or (ormap (λ (posn) (quad-fits? q posn)) (list posn first-posn-on-next-line)) (error 'no-posn-that-fits)))
-    (set-$quad-posn! q winning-posn)
+    (set-quad-posn! q winning-posn)
     (posn-add winning-posn (advance q))))
 
 (define-pass (make-drawing-insts qs)
@@ -72,8 +72,8 @@
    (list ($doc 'start) ($page 'start)
          (for/list ([q (in-list qs)])
                    (cond
-                     [($quad? q)
-                      (list ($move ($quad-posn q)) ($text (char->integer ($quad-char q))))]
+                     [(quad? q)
+                      (list ($move (quad-posn q)) ($text (char->integer (quad-char q))))]
                      [else (error 'render-unknown-thing)]))
          ($page 'end) ($doc 'end))))
 
