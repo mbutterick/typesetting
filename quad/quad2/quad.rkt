@@ -25,7 +25,7 @@
 (define set-quad-tag! set-$quad-tag!)
 (define quad-attrs $quad-attrs)
 (define (quad-attrs? x) (match x
-                        [(list (cons symbol? _) ...) #true]
+                        [(list (cons (? symbol?) _) ...) #true]
                         [_ #false]))
 (define set-quad-attrs! set-$quad-attrs!)
 (define quad-elems $quad-elems)
