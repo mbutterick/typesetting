@@ -1,5 +1,5 @@
 #lang debug racket/base
-(require "pass.rkt" "quad.rkt" "compile.rkt")
+(require "compile.rkt" "draw.rkt" "layout.rkt")
 (provide (all-defined-out))
 
 (struct $renderer (doc-start-func
@@ -68,9 +68,7 @@
      (λ (x y) (set! current-loc (make-rectangular x y)))
      (λ () (for-each displayln (map (λ (target) (make-object image-snip% target)) targets))))))
 
-(define-pass (render inst-str #:using [renderer (current-renderer)])
-  #:precondition string?
-  #:postcondition any/c
+(define (render inst-str #:using [renderer (current-renderer)])
   (let/ec exit
     (for/fold ([stack null]
                #:result (void))
