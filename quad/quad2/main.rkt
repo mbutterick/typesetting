@@ -14,7 +14,7 @@
   #:postcondition quad?
   (match x
     [(? quad?) x]
-    [(list (? quad?) ...) (make-quad #:elems (list x))]
+    [(list (? quad?) ...) (make-quad #:elems x)]
     [_ (make-quad #:elems (list x))]))
 
 
