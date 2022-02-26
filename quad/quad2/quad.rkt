@@ -12,8 +12,8 @@
 (define (quad? x)
   (match x
     [($quad (? quad-tag?)
-             (list (cons symbol? _) ...)
-             (list _ ...)) #true]
+            (? quad-attrs?)
+            (? quad-elems?)) #true]
     [_ #false]))
 
 (struct $quad (tag attrs elems) #:transparent #:mutable)
@@ -24,9 +24,8 @@
                         [_ #false]))
 (define set-quad-tag! set-$quad-tag!)
 (define quad-attrs $quad-attrs)
-(define (quad-attrs? x) (match x
-                        [(list (cons (? symbol?) _) ...) #true]
-                        [_ #false]))
+(define (make-quad-attrs alist) (make-hasheq alist))
+(define (quad-attrs? x) (hash-eq? x))
 (define set-quad-attrs! set-$quad-attrs!)
 (define quad-elems $quad-elems)
 (define (quad-elems? x) (list? x))
@@ -36,22 +35,21 @@
   ((quad-tag? quad-attrs?) #:rest quad-elems? . ->* . quad?)
   ($quad tag attrs elems))
 
-(define (quad-ref q key [default-val #false]) (match (assq key (quad-attrs q))
-                                             [#false default-val]
-                                             [(cons _ val) val]))
+(define (quad-ref q key [default-val #false])
+  (hash-ref (quad-attrs q) key default-val))
 (define (quad-set! q key val)
-  (set-quad-attrs! q (cons (cons key val) (quad-attrs q))))
+  (hash-set! (quad-attrs q) key val))
 
 (define-syntax (define-quad-field stx)
   (syntax-case stx ()
     [(_ FIELD)
      (with-syntax ([GETTER (format-id stx "quad-~a" #'FIELD)]
                    [SETTER (format-id stx "set-quad-~a!" #'FIELD)])
-     #'(begin        
-         (define (GETTER q) (quad-ref q 'FIELD))
-         (define (SETTER q val) (quad-set! q 'FIELD val))))]))
+       #'(begin        
+           (define (GETTER q) (quad-ref q 'FIELD))
+           (define (SETTER q val) (quad-set! q 'FIELD val))))]))
 
 (define-quad-field posn)
 (define-quad-field char)
 
-(define q (make-quad 'div '((hello . "world")) "fine"))
+#;(define q (make-quad 'div (make-hasheq '((hello . "world"))) "fine"))

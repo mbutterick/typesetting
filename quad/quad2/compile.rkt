@@ -26,7 +26,7 @@
 (define/contract (quadify str)
   (string? . -> . (listof quad?))
   (for/list ([c (in-string str)])
-            (make-quad #f (list (cons 'char c)))))
+            (make-quad #f (make-quad-attrs (list (cons 'char c))))))
 
 (define (make-compiler . passes)
   (apply compose1 (reverse (cons quadify passes))))
