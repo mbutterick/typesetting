@@ -13,10 +13,9 @@
   #:precondition values
   #:postcondition quad?
   (match x
-    [(? quad?) x]
-    [(list (? quad?) ...) (make-quad #:elems x)]
-    [_ (make-quad #:elems (list x))]))
-
+    [(or (? quad? q) (list (? quad? q))) q]
+    [(and (list (? quad?) ...) qs) (make-quad #:elems qs)]
+    [other (make-quad #:elems (list other))]))
 
 (define quad-compile (make-compiler (list
                                      bootstrap
