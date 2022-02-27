@@ -10,8 +10,8 @@
 (provide (all-defined-out))
 
 (define-pass (make-drawing-insts qs)
-  #:precondition (list-of has-position?)
-  #:postcondition (list-of $drawing-inst?)
+  #:pre (list-of has-position?)
+  #:post (list-of $drawing-inst?)
   (flatten
    (list ($doc 'start) ($page 'start)
          (for/list ([q (in-list qs)])
@@ -24,8 +24,8 @@
 (define valid-tokens '(doc-start doc-end page-start page-end text move))
 
 (define-pass (stackify xs)
-  #:precondition (λ (xs) (and (list? xs) (andmap $drawing-inst? xs)))
-  #:postcondition string?
+  #:pre (list-of $drawing-inst?)
+  #:post string?
   (define move-points (map $move-posn (filter $move? xs)))
   (define xmax (add1 (apply max (map $point-x move-points))))
   (define ymax (add1 (apply max (map $point-y move-points))))

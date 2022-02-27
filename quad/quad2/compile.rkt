@@ -16,14 +16,16 @@
   (make-compiler (append (compiler-passes c) passes)))
 
 (define-syntax-rule (define-pass (PASS-NAME ARG OTHER-ARG ...)
-                      #:precondition PRECOND-PROC
-                      #:postcondition POSTCOND-PROC
+                      #:pre PRECOND-PROC
+                      #:post POSTCOND-PROC
                       EXPRS ...)
   (define PASS-NAME
-    (make-compiler (list (λ (ARG OTHER-ARG ...)
-                           (unless (PRECOND-PROC ARG)
-                             (error 'PASS-NAME (format "precondition failed: ~a for value ~v" 'PRECOND-PROC ARG)))
-                           (define res (let () EXPRS ...))
-                           (unless (POSTCOND-PROC res)
-                             (error 'PASS-NAME (format "postcondition failed: ~a for value ~v" 'POSTCOND-PROC res)))
-                           res)))))
+    (make-compiler
+     (list (procedure-rename
+            (λ (ARG OTHER-ARG ...)
+              (unless (PRECOND-PROC ARG)
+                (raise-argument-error 'PASS-NAME (format "~a" 'PRECOND-PROC) ARG))
+              (define res (let () EXPRS ...))
+              (unless (POSTCOND-PROC res)
+                (raise-argument-error 'PASS-NAME (format "~a" 'POSTCOND-PROC) res))
+              res) 'PASS-NAME)))))

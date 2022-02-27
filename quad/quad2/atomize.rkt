@@ -16,8 +16,8 @@ that will eventually be the tail of the attrs in every atomized quad.
 |#
 
 (define-pass (atomize q)
-  #:precondition quad?
-  #:postcondition (list-of quad?)
+  #:pre quad?
+  #:post (list-of quad?)
   (match (quad-elems q)
     [(cons str _)
      (for/list ([c (in-string str)])

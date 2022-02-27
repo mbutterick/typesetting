@@ -10,8 +10,8 @@
          racket/match)
 
 (define-pass (bootstrap x)
-  #:precondition values
-  #:postcondition quad?
+  #:pre values
+  #:post quad?
   (match x
     [(or (? quad? q) (list (? quad? q))) q]
     [(and (list (? quad?) ...) qs) (make-quad #:elems qs)]

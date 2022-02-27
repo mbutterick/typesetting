@@ -36,8 +36,8 @@
        (rect-contains-point? outer ($point (max-x inner) (max-y inner)))))
 
 (define-pass (layout qs)
-  #:precondition (list-of has-no-position?)
-  #:postcondition (list-of has-position?)
+  #:pre (list-of has-no-position?)
+  #:post (list-of has-position?)
   (define frame ($rect ($point 0 0) ($size (current-wrap-width) 30)))
   (define (quad-fits? q posn)
     (define q-size (size q))
