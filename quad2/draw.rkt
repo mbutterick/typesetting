@@ -4,7 +4,7 @@
          racket/format
          racket/match
          "quad.rkt"
-         "compile.rkt"
+         "pipeline.rkt"
          "struct.rkt"
          "layout.rkt")
 (provide (all-defined-out))

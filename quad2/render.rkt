@@ -1,5 +1,7 @@
 #lang debug racket/base
-(require "compile.rkt" "draw.rkt" "layout.rkt")
+(require "pipeline.rkt"
+         "draw.rkt"
+         "layout.rkt")
 (provide (all-defined-out))
 
 (struct $renderer (doc-start-func

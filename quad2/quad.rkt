@@ -25,7 +25,7 @@
 (define (quad-tag? x) (match x
                         [(or (? symbol?) #false) #true]
                         [_ #false]))
-(define (make-quad-attrs alist) (make-hasheq alist))
+(define (make-quad-attrs [alist null]) (make-hasheq alist))
 (define (quad-attrs? x) (hash-eq? x))
 (define (quad-elems? x) (list? x))
 

@@ -2,8 +2,8 @@
 (require "layout.rkt"
          "render.rkt"
          "quad.rkt"
-         "compile.rkt"
-         "atomize.rkt"
+         "pipeline.rkt"
+         "linearize.rkt"
          "layout.rkt"
          "draw.rkt"
          racket/string
@@ -17,17 +17,32 @@
     [(and (list (? quad?) ...) qs) (make-quad #:elems qs)]
     [other (make-quad #:elems (list other))]))
 
-(define quad-compile (make-compiler (list
-                                     bootstrap
-                                     atomize
-                                     layout
-                                     make-drawing-insts)))
+(define-pass (make-weirdo-char-quads qs)
+  #:pre (list-of simple-quad?)
+  #:post (list-of simple-quad?)
+  (apply append
+         (for/list ([q (in-list qs)])
+                   (match q
+                     [(quad _ _ (list (? string? str)))
+                      (for/list ([c (in-string str)])
+                                (define new-attrs (make-hasheq (cons (cons 'char c) (hash->list (quad-attrs q)))))
+                                (make-quad #:tag (quad-tag q)
+                                           #:attrs new-attrs
+                                           #:elems null))]
+                     [_ (list q)]))))
 
-(define quad-compile-to-stack (compiler-append quad-compile
-                                               (list stackify)))
+(define quad-compile (make-pipeline (list
+                                     bootstrap
+                                     linearize
+                                     merge-adjacent-strings
+                                     split-whitespace
+                                     make-weirdo-char-quads
+                                     layout
+                                     make-drawing-insts
+                                     stackify)))
 
 (define drawing-insts (parameterize ([current-wrap-width 13])
-                        (quad-compile-to-stack "Hello this is the earth")))
+                        (quad-compile "Hello this is the earth")))
 
 (displayln drawing-insts)
 

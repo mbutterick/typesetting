@@ -1,6 +1,6 @@
 #lang debug racket/base
 (require racket/contract
-         "compile.rkt"
+         "pipeline.rkt"
          "quad.rkt")
 (provide layout)
 
