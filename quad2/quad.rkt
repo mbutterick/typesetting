@@ -14,16 +14,16 @@
 
 (define (list-of proc) (λ (x) (and (list? x) (andmap proc x))))
 
-(struct quad (tag attrs elems) #:transparent #:mutable
+(struct quad (tag attrs elems posn) #:transparent #:mutable
   #:constructor-name quad-constructor
-  #:guard (λ (tag attrs elems name)
+  #:guard (λ (tag attrs elems posn name)
             (unless (match (list tag attrs elems)
                       [(list (? quad-tag?)
                              (? quad-attrs?)
                              (? quad-elems?)) #true]
                       [_ #false])
               (error 'no-dice))
-            (values tag attrs elems)))
+            (values tag attrs elems posn)))
              
 (define (quad-tag? x) (match x
                         [(or (? symbol?) #false) #true]
@@ -42,7 +42,7 @@
                             #:attrs [attrs (make-quad-attrs null)]
                             #:elems [elems null])
   (() (#:tag quad-tag? #:attrs quad-attrs? #:elems quad-elems?) . ->* . quad?)
-  (quad-constructor tag attrs elems))
+  (quad-constructor tag attrs elems #false))
 
 (define (quad-ref q key [default-val #false])
   (hash-ref (quad-attrs q) key default-val))
@@ -58,8 +58,7 @@
            (define (GETTER q) (quad-ref q 'FIELD))
            (define (SETTER q val) (quad-set! q 'FIELD val))))]))
 
-(define-quad-field posn)
-(define-quad-field char)
+#;(define-quad-field posn)
 
 (define (has-no-position? q) (not (has-position? q)))
 (define (has-position? q) (quad-posn q))

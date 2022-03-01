@@ -16,8 +16,6 @@
   (quad? . -> . $size?)
   ($size 1 0))
 
-
-
 (define (min-x rect) ($point-x ($rect-origin rect)))
 (define (width rect) ($size-width ($rect-size rect)))
 (define (max-x rect) (+ (min-x rect) (width rect)))

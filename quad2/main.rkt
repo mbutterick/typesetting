@@ -6,10 +6,11 @@
          "linearize.rkt"
          "layout.rkt"
          "draw.rkt"
+         "struct.rkt"
          racket/string
          racket/match)
 
-(define-pass (bootstrap x)
+(define-pass (bootstrap-input x)
   #:pre values
   #:post quad?
   (match x
@@ -17,37 +18,35 @@
     [(and (list (? quad?) ...) qs) (make-quad #:elems qs)]
     [other (make-quad #:elems (list other))]))
 
-(define-pass (make-weirdo-char-quads qs)
+(define-pass (single-char-quads qs)
   #:pre (list-of simple-quad?)
   #:post (list-of simple-quad?)
   (apply append
          (for/list ([q (in-list qs)])
                    (match q
-                     [(quad _ _ (list (? string? str)))
+                     [(quad _ _ (list (? string? str)) _)
                       (for/list ([c (in-string str)])
-                                (define new-attrs (make-hasheq (cons (cons 'char c) (hash->list (quad-attrs q)))))
-                                (make-quad #:tag (quad-tag q)
-                                           #:attrs new-attrs
-                                           #:elems null))]
+                                (struct-copy quad q [elems (list (string c))]))]
                      [_ (list q)]))))
 
 (define quad-compile (make-pipeline (list
-                                     bootstrap
+                                     bootstrap-input
                                      linearize
+                                     mark-text-runs
                                      merge-adjacent-strings
                                      split-whitespace
-                                     make-weirdo-char-quads
+                                     single-char-quads
                                      layout
                                      make-drawing-insts
                                      stackify)))
 
-(define drawing-insts (parameterize ([current-wrap-width 13])
+(define insts (parameterize ([current-wrap-width 13])
                         (quad-compile "Hello this is the earth")))
 
-(displayln drawing-insts)
+(displayln insts)
 
-(render drawing-insts #:using text-renderer)
-(render drawing-insts #:using drr-renderer)
-
-#;(render-to-html drawing-insts)
-#;(render-to-pdf drawing-insts)
+(when (string? insts)
+  (render insts #:using text-renderer)
+  (render insts #:using drr-renderer)
+  #;(render-to-html drawing-insts)
+  #;(render-to-pdf drawing-insts))

@@ -17,7 +17,7 @@
          (for/list ([q (in-list qs)])
                    (cond
                      [(quad? q)
-                      (list ($move (quad-posn q)) ($text (char->integer (quad-char q))))]
+                      (list ($move (quad-posn q)) ($text (char->integer (car (string->list (car (quad-elems q)))))))]
                      [else (error 'render-unknown-thing)]))
          ($page 'end) ($doc 'end))))
 

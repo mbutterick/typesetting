@@ -50,9 +50,7 @@
           [(null? head) e0]
           [else
            (define qs-to-merge (cons e0 head))
-           (make-quad #:tag (quad-tag e0)
-                      #:attrs (quad-attrs e0)
-                      #:elems (list (string-join (append-map quad-elems qs-to-merge) "")))])
+           (struct-copy quad e0 [elems (list (string-join (append-map quad-elems qs-to-merge) ""))])])
         (merge tail))])))
 
 (module+ test
@@ -69,17 +67,26 @@
          (for/list ([q (in-list qs)])
                    (match (quad-elems q)
                      [(list (? string? str))
-                      (define tag (quad-tag q))
-                      (define attrs (quad-attrs q))
                       ;; the "gaps" (parts that don't match pattern) are guaranteed to be at even indexes
                       ;; If string starts with a "gap", a zero-length separator is appended to the start.
                       ;; so we just ignore those.
                       (for/list ([(substr idx) (in-indexed (regexp-match* whitespace-pat str #:gap-select? #t))]
                                  #:unless (zero? (string-length substr)))
-                                (make-quad #:tag tag
-                                           #:attrs attrs
-                                           #:elems (list (if (even? idx) substr word-space))))]
+                                (struct-copy quad q [elems (list (if (even? idx) substr word-space))]))]
                      [_ (list q)]))))
                                        
 (module+ test
-  (split-whitespace mlqs))
+  (define smlqs (split-whitespace mlqs)))
+
+(define-pass (mark-text-runs qs)
+  #:pre (list-of simple-quad?)
+  #:post (list-of simple-quad?)
+  (for ([q (in-list qs)]
+        #:when (match (quad-elems q)
+                 [(list (? string?) ..1) #t]
+                 [_ #false]))
+       (set-quad-tag! q 'text-run))
+  qs)
+
+(module+ test
+  (mark-text-runs smlqs))

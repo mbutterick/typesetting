@@ -36,7 +36,7 @@
                                     (for/list ([x (in-range xmax)])
                                               (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n"))
        (set! results (cons str results)))
-     (λ (charint) (hash-set! char-pos-table current-loc charint))
+     (λ (str) (hash-set! char-pos-table current-loc str))
      (λ (x y) (set! current-loc (make-rectangular x y)))
      (λ ()
        (unless (pair? results)
