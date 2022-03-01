@@ -1,5 +1,8 @@
 #lang debug racket/base
-(require racket/contract racket/match (for-syntax racket/base racket/syntax))
+(require racket/contract
+         racket/match
+         racket/hash
+         (for-syntax racket/base racket/syntax))
 (provide (all-defined-out))
 
 (struct $point (x y) #:transparent #:mutable)
@@ -26,6 +29,12 @@
                         [(or (? symbol?) #false) #true]
                         [_ #false]))
 (define (make-quad-attrs [alist null]) (make-hasheq alist))
+
+(define (quad-attrs-union . attrss)
+  (define qas (make-quad-attrs))
+  (apply hash-union! #:combine (λ (v1 v2) v2) qas attrss)
+  qas)
+
 (define (quad-attrs? x) (hash-eq? x))
 (define (quad-elems? x) (list? x))
 

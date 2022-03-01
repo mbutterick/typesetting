@@ -15,9 +15,7 @@
   #:pre quad?
   #:post (list-of simple-quad?)
   (let loop ([q q][attrs-context (make-quad-attrs)]) ;; returns (list-of quad?)
-    (define current-attrs (let ([qas (make-quad-attrs)])
-                            (hash-union! #:combine (λ (v1 v2) v2) qas attrs-context (quad-attrs q))
-                            qas))
+    (define current-attrs (quad-attrs-union attrs-context (quad-attrs q)))
     (define (mq es) (make-quad #:tag (quad-tag q) #:attrs current-attrs #:elems es))
     (match (quad-elems q)
       [(? null?) (list (mq null))]
