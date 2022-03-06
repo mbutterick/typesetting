@@ -11,7 +11,8 @@
          racket/match)
 
 (define-pass (bootstrap-input x)
-  #:pre values
+  ;; turn a simple string into a quad for testing layout.
+  #:pre string?
   #:post quad?
   (match x
     [(or (? quad? q) (list (? quad? q))) q]
@@ -19,6 +20,7 @@
     [other (make-quad #:elems (list other))]))
 
 (define-pass (single-char-quads qs)
+  ;; break list of quads into single characters (keystrokes)
   #:pre (list-of simple-quad?)
   #:post (list-of simple-quad?)
   (apply append
