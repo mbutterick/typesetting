@@ -21,6 +21,11 @@
 (define top-font-directory "fonts")
 (define font-file-extensions '(#".otf" #".ttf" #".woff"))
 
+(define (fonts-in-directory dir)
+  (for/list ([font-path (in-directory dir)]
+             #:when (member (path-get-extension font-path) font-file-extensions))
+            font-path))
+
 (define (setup-font-path-table! base-path)
   ;; create a table of font paths that we can use to resolve references to font names.
   
@@ -40,8 +45,8 @@
          #:when (directory-exists? fonts-dir)
          [font-family-subdir (in-directory fonts-dir)]
          #:when (directory-exists? font-family-subdir)
-         [font-path (in-directory font-family-subdir)]
-         #:when (member (path-get-extension font-path) font-file-extensions))
+         [fonts-in-this-directory (in-value (fonts-in-directory font-family-subdir))]
+         [font-path (in-list fonts-in-this-directory)])
         (match-define (list font-path-string family-name)
           (for/list ([x (list font-path font-family-subdir)])
                     (path->string (find-relative-path fonts-dir x))))
@@ -50,6 +55,9 @@
         (define key
           (cons (string-downcase family-name)
                 (cond
+                  ;; special case: if there's only one style in the family directory,
+                  ;; treat it as the regular style, regardless of name
+                  [(= (length fonts-in-this-directory) 1) 'r]
                   ;; cases where fonts are in subdirectories named by style
                   ;; infer style from subdir name
                   [(member "bold-italic" path-parts) 'bi]
@@ -57,6 +65,7 @@
                   [(member "italic" path-parts) 'i]
                   [else
                    ;; try to infer from filename alone
+                   ;; TODO: what happens when there is no regular style?
                    (define filename (string-downcase (last path-parts)))
                    (define filename-contains-bold? (string-contains? filename "bold"))
                    (define filename-contains-italic? (string-contains? filename "italic"))
