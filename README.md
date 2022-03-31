@@ -1,5 +1,4 @@
 ## typesetting 
-![Build Status](https://github.com/mbutterick/typesetting/workflows/typesetting%20CI/badge.svg)
 
 ### License: MIT with exceptions
 
