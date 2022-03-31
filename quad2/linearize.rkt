@@ -9,7 +9,7 @@
 
 (define (simple-quad? x) (and (quad? x) (<= (length (quad-elems x)) 1)))
 
-(define-pass (linearize q)
+(define-pass (linearize-quad q)
   ;; convert a single quad into a list of quads, with the attributes propagated downward
   ;; every resulting quad should have at most one element
   #:pre quad?
@@ -27,7 +27,7 @@
 
 (module+ test
   (define q (make-quad #:attrs (hasheq 'foo 42) #:elems (list (make-quad #:elems (list "Hi" "    idiot" (make-quad #:attrs (hasheq 'bar 84) #:elems '("There")) " Eve" "ry" "one" (make-quad #:attrs (hasheq 'zam 108) #:elems null))))))
-  (define lqs (linearize q))
+  (define lqs (linearize-quad q))
   lqs)
 
 

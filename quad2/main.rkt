@@ -7,6 +7,7 @@
          "layout.rkt"
          "draw.rkt"
          "struct.rkt"
+         "attr.rkt"
          racket/string
          racket/match)
 
@@ -19,7 +20,7 @@
     [(and (list (? quad?) ...) qs) (make-quad #:elems qs)]
     [other (make-quad #:elems (list other))]))
 
-(define-pass (single-char-quads qs)
+(define-pass (split-into-single-char-quads qs)
   ;; break list of quads into single characters (keystrokes)
   #:pre (list-of simple-quad?)
   #:post (list-of simple-quad?)
@@ -33,17 +34,36 @@
 
 (define quad-compile (make-pipeline (list
                                      bootstrap-input
-                                     linearize
+                                     ;; TODO: resolve font paths
+                                     ;; TODO: missing glyphs
+                                     linearize-quad
+                                     ;; TODO: maybe we shouldn't downcase values?
+                                     ;; we have to track attrs that are case sensitive
+                                     ;; instead we could use case-insensitive matching where suitable
+                                     ;; but will it always be apparent whether it's suitable?
+                                     ;; or will we have to still track which attrs are case-sensitive?
+                                     downcase-attr-values
+                                     ;; upgrade relative paths to complete for ease of handling later
+                                     ;; TODO: we have to track which attrs take a path
+                                     ;; (to distinguish them from attrs that might have path-like values
+                                     ;; that should be left alone)
+                                     complete-attr-paths
+                                     ;; TODO: resolve font paths
+                                     ;; TODO: resolve font sizes
+                                     ;; we resolve dimension strings after font size
+                                     ;; because they can be denoted relative to em size
+                                     parse-dimension-strings
+                                     ;; TODO: parse feature strings
                                      mark-text-runs
                                      merge-adjacent-strings
                                      split-whitespace
-                                     single-char-quads
+                                     split-into-single-char-quads
                                      layout
                                      make-drawing-insts
                                      stackify)))
 
 (define insts (parameterize ([current-wrap-width 13])
-                        (quad-compile "Hello this is the earth")))
+                (quad-compile "Hello this is the earth")))
 
 (displayln insts)
 
