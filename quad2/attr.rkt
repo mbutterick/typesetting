@@ -8,14 +8,20 @@
          "quad.rkt")
 (provide (all-defined-out))
 
-(define (do-attr-iteration qs #:which-key predicate #:value-proc proc)
+(define (do-attr-iteration qs #:which-key which-arg #:value-proc proc)
+  (define key-predicate
+    (match which-arg
+      [(? symbol? sym) (λ (k) (eq? k sym))]
+      [(and (list (? symbol?) ...) syms) (λ (k) (memq k syms))]
+      [(? procedure? pred) pred]
+      [other (raise-argument-error 'do-attr-iteration "key predicate" other)]))
   (define attrs-seen (make-hasheq))
   (for ([q (in-list qs)])
        (define attrs (quad-attrs q))
        (hash-ref! attrs-seen attrs
                   (λ ()
                     (for ([k (in-hash-keys attrs)]
-                          #:when (predicate k))
+                          #:when (key-predicate k))
                          (hash-update! attrs k (λ (val) (proc val attrs))))
                     #t)))
   qs)

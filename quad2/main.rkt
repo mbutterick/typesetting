@@ -8,6 +8,7 @@
          "draw.rkt"
          "struct.rkt"
          "attr.rkt"
+         "font.rkt"
          racket/string
          racket/match)
 
@@ -26,16 +27,14 @@
   #:post (list-of simple-quad?)
   (apply append
          (for/list ([q (in-list qs)])
-                   (match q
-                     [(quad _ _ (list (? string? str)) _)
-                      (for/list ([c (in-string str)])
-                                (struct-copy quad q [elems (list (string c))]))]
-                     [_ (list q)]))))
+           (match q
+             [(quad _ _ (list (? string? str)) _)
+              (for/list ([c (in-string str)])
+                (struct-copy quad q [elems (list (string c))]))]
+             [_ (list q)]))))
 
 (define quad-compile (make-pipeline (list
                                      bootstrap-input
-                                     ;; TODO: resolve font paths
-                                     ;; TODO: missing glyphs
                                      linearize-quad
                                      ;; TODO: maybe we shouldn't downcase values?
                                      ;; we have to track attrs that are case sensitive
@@ -43,12 +42,14 @@
                                      ;; but will it always be apparent whether it's suitable?
                                      ;; or will we have to still track which attrs are case-sensitive?
                                      downcase-attr-values
+                                     ;; TODO: convert booleanized attrs
+                                     ;; TODO: convert numerical attrs
                                      ;; upgrade relative paths to complete for ease of handling later
                                      ;; TODO: we have to track which attrs take a path
                                      ;; (to distinguish them from attrs that might have path-like values
                                      ;; that should be left alone)
                                      complete-attr-paths
-                                     ;; TODO: resolve font paths
+                                     resolve-font-paths
                                      ;; TODO: resolve font sizes
                                      ;; we resolve dimension strings after font size
                                      ;; because they can be denoted relative to em size
@@ -58,6 +59,7 @@
                                      merge-adjacent-strings
                                      split-whitespace
                                      split-into-single-char-quads
+                                     ;; TODO: missing glyphs
                                      layout
                                      make-drawing-insts
                                      stackify)))
