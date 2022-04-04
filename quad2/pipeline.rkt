@@ -1,6 +1,7 @@
 #lang debug racket/base
 (require racket/match
          (for-syntax racket/base)
+         "param.rkt"
          "quad.rkt")
 (provide (all-defined-out))
 
@@ -11,7 +12,15 @@
               (raise-argument-error 'bad-input-to-compiler-constructor "list of procedures" procs))
             procs)
   #:property prop:procedure
-  (λ args (apply (apply compose1 (reverse (pipeline-passes (car args)))) (cdr args))))
+  (λ args
+    (match-define (list* pipeline pass-arg _) args)
+    (let ([show-timing (show-timing)])
+      (for/fold ([pass-arg pass-arg])
+                ([pass (in-list (pipeline-passes pipeline))])
+        (define thunk (λ () (pass pass-arg)))
+        (if show-timing
+            (time (displayln pass) (thunk))
+            (thunk))))))
 
 (define (compiler-append c passes)
   (make-pipeline (append (pipeline-passes c) passes)))

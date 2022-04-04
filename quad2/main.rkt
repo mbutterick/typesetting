@@ -9,6 +9,8 @@
          "struct.rkt"
          "attr.rkt"
          "font.rkt"
+         "constants.rkt"
+         "param.rkt"
          racket/string
          racket/match)
 
@@ -33,38 +35,42 @@
                 (struct-copy quad q [elems (list (string c))]))]
              [_ (list q)]))))
 
-(define quad-compile (make-pipeline (list
-                                     bootstrap-input
-                                     linearize-quad
-                                     ;; TODO: maybe we shouldn't downcase values?
-                                     ;; we have to track attrs that are case sensitive
-                                     ;; instead we could use case-insensitive matching where suitable
-                                     ;; but will it always be apparent whether it's suitable?
-                                     ;; or will we have to still track which attrs are case-sensitive?
-                                     downcase-attr-values
-                                     ;; TODO: convert booleanized attrs
-                                     ;; TODO: convert numerical attrs
-                                     ;; upgrade relative paths to complete for ease of handling later
-                                     ;; TODO: we have to track which attrs take a path
-                                     ;; (to distinguish them from attrs that might have path-like values
-                                     ;; that should be left alone)
-                                     complete-attr-paths
-                                     resolve-font-paths
-                                     ;; TODO: resolve font sizes
-                                     ;; we resolve dimension strings after font size
-                                     ;; because they can be denoted relative to em size
-                                     parse-dimension-strings
-                                     ;; TODO: parse feature strings
-                                     mark-text-runs
-                                     merge-adjacent-strings
-                                     split-whitespace
-                                     split-into-single-char-quads
-                                     ;; TODO: missing glyphs
-                                     layout
-                                     make-drawing-insts
-                                     stackify)))
+(define quad-compile
+  (make-pipeline (list
+                    bootstrap-input
+                    linearize-quad
 
-(define insts (parameterize ([current-wrap-width 13])
+                    ;; attribute sanitizing =============
+                    ;; all attrs start out as symbol-string pairs.
+                    ;; we convert keys & values to corresponding higher-level types.
+                    upgrade-attr-keys
+                    downcase-attr-values
+                    ;; TODO: convert booleanized attrs
+                    ;; TODO: convert numerical attrs
+                    complete-attr-paths
+
+                    ;; resolutions & parsings =============
+                    resolve-font-paths
+                    ;; TODO: resolve font sizes
+                    ;; we resolve dimension strings after font size
+                    ;; because they can be denoted relative to em size
+                    parse-dimension-strings
+                    ;; TODO: parse feature strings
+
+                    
+                    mark-text-runs
+                    merge-adjacent-strings
+                    split-whitespace
+                    split-into-single-char-quads
+                    ;; TODO: missing glyphs
+                    layout
+                    make-drawing-insts
+                    stackify)))
+
+(define insts (parameterize ([current-wrap-width 13]
+                             [current-attrs all-attrs]
+                             [current-strict-attrs #true]
+                             [show-timing #f])
                 (quad-compile "Hello this is the earth")))
 
 (displayln insts)

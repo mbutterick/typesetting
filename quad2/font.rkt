@@ -6,14 +6,12 @@
          racket/string
          fontland/font-path
          "quad.rkt"
+         "constants.rkt"
          "pipeline.rkt"
+         "param.rkt"
+         "struct.rkt"
          "attr.rkt")
 (provide (all-defined-out))
-
-(define :font-family 'font-family)
-(define :font-path 'font-path)
-(define :font-bold 'font-bold)
-(define :font-italic 'font-italic)
 
 (define-runtime-path quad2-fonts-dir "default-fonts")
 (define-runtime-path default-font-face "default-fonts/default/SourceSerifPro-Regular.otf")
@@ -97,14 +95,13 @@
   ;; and fall through to the default font when we do the `cond` below.
   ;; TODO: family->path doesn't work because it relies on ffi into fontconfig
   ;; which has broken in cs, I guess
-  #|
-(unless (hash-has-key? font-paths regular-key)
-    (for* ([bold (in-list (list #false #true))]
-           [italic (in-list (list #false #true))])
-      (hash-set! font-paths
-                 (make-key font-family bold italic)
-                 (family->path font-family #:bold bold #:italic italic))))
-|#
+  #;(unless (hash-has-key? font-paths regular-key)
+    (display "(fontconfig lookup unimplemented)")
+    #;(for* ([bold (in-list (list #false #true))]
+             [italic (in-list (list #false #true))])
+        (hash-set! font-paths
+                   (make-key font-family bold italic)
+                   (family->path font-family #:bold bold #:italic italic))))
   (cond
     [(hash-ref font-paths (make-key font-family bold italic) #false)]
     ;; try regular style if style-specific key isn't there for b i or bi
@@ -121,12 +118,12 @@
   ;; convert references to a font family and style to an font path on disk
   ;; we trust it exists because we used `setup-font-path-table` earlier,
   ;; but if not, fallback fonts will kick in, on the idea that a missing font shouldn't stop the show
-  (define this-font-family (hash-ref! attrs :font-family default-font-family))
+  (define this-font-family (hash-ref! attrs (attr-name :font-family) default-font-family))
   (match (string-downcase this-font-family)
     [(? font-path-string? ps) (path->complete-path ps)]
     [_
-     (define this-bold (hash-ref! attrs :font-bold #false))
-     (define this-italic (hash-ref! attrs :font-italic #false))
+     (define this-bold (hash-ref! attrs (attr-name :font-bold) #false))
+     (define this-italic (hash-ref! attrs (attr-name :font-italic) #false))
      (font-attrs->path font-paths this-font-family this-bold this-italic)]))
 
 (define-pass (resolve-font-paths qs)
@@ -137,17 +134,21 @@
   #:post (list-of quad?)
   (define font-paths (setup-font-path-table))
   (do-attr-iteration qs
-                     #:which-key :font-family
+                     #:which-attr :font-family
                      #:value-proc (λ (val attrs) (resolve-font-path font-paths val attrs))))
 
 (module+ test
   (require rackunit)
-  (define q (make-quad #:attrs (make-hasheq '((font-family . "Heading")))))
-  (define qs (list q))
-  (define (resolved-font-for-family val #:bold [bold #f] #:italic [italic #f])
-    (last (explode-path (quad-ref (car (resolve-font-paths (list (make-quad #:attrs (make-hasheq (list (cons :font-family val) (cons :font-bold bold)
-                                                                                                       (cons :font-italic italic))))))) :font-family))))
-  (check-equal? (resolved-font-for-family "Heading") (string->path "fira-sans-light.otf"))
-  (check-equal? (resolved-font-for-family "CODE") (string->path "fira-mono.otf"))
-  (check-equal? (resolved-font-for-family "blockquote" #:bold #t) (string->path "fira-sans-bold.otf"))
-  (check-equal? (resolved-font-for-family "nonexistent-fam") (string->path "SourceSerifPro-Regular.otf")))
+  (define-attr-list debug-attrs
+    [:font-family (attr-uncased-string 'font-family)])
+  (parameterize ([current-attrs debug-attrs])
+    (define (resolved-font-for-family val #:bold [bold #f] #:italic [italic #f])
+      (define qs (list (make-quad #:attrs (make-hasheq
+                                           (list (cons 'font-family (string-downcase val))
+                                                 (cons 'font-bold bold)
+                                                 (cons 'font-italic italic))))))
+      (last (explode-path (quad-ref (car (resolve-font-paths qs)) 'font-family))))
+    (check-equal? (resolved-font-for-family "Heading") (string->path "fira-sans-light.otf"))
+    (check-equal? (resolved-font-for-family "CODE") (string->path "fira-mono.otf"))
+    (check-equal? (resolved-font-for-family "blockquote" #:bold #t) (string->path "fira-sans-bold.otf"))
+    (check-equal? (resolved-font-for-family "nonexistent-fam") (string->path "SourceSerifPro-Regular.otf"))))

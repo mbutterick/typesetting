@@ -5,29 +5,57 @@
          racket/string
          "dimension.rkt"
          "pipeline.rkt"
-         "quad.rkt")
+         "struct.rkt"
+         "constants.rkt"
+         "quad.rkt"
+         "param.rkt")
 (provide (all-defined-out))
 
-(define (do-attr-iteration qs #:which-key which-arg #:value-proc proc)
+(define (do-attr-iteration qs #:which-attr which-arg #:value-proc proc)
   (define key-predicate
     (match which-arg
-      [(? symbol? sym) (λ (k) (eq? k sym))]
-      [(and (list (? symbol?) ...) syms) (λ (k) (memq k syms))]
+      [(? attr? attr) (λ (k) (eq? k (attr-name attr)))]
+      [(and (list (? attr?) ...) attrs) (λ (k) (memq k (map attr-name attrs)))]
       [(? procedure? pred) pred]
       [other (raise-argument-error 'do-attr-iteration "key predicate" other)]))
   (define attrs-seen (make-hasheq))
   (for ([q (in-list qs)])
-       (define attrs (quad-attrs q))
-       (hash-ref! attrs-seen attrs
-                  (λ ()
-                    (for ([k (in-hash-keys attrs)]
-                          #:when (key-predicate k))
-                         (hash-update! attrs k (λ (val) (proc val attrs))))
-                    #t)))
+    (define attrs (quad-attrs q))
+    (hash-ref! attrs-seen attrs
+               (λ ()
+                 (for ([k (in-hash-keys attrs)]
+                       #:when (key-predicate k))
+                   (hash-update! attrs k (λ (val) (proc val attrs))))
+                 #t)))
   qs)
 
-;; TODO: make real `has-case-sensitive-value?`
-(define (has-case-sensitive-value? x) #false)
+(define-pass (upgrade-attr-keys qs)
+  ;; convert attr keys from symbols to attr struct types
+  ;; also lets us validate keys strictly, if we want
+  #:pre (list-of quad?)
+  #:post (list-of quad?)
+  (define attr-lookup-table (for/hasheq ([a (in-list (current-attrs))])
+                              (values (attr-name a) a)))
+  (define attrs-seen (make-hasheq))
+  (define strict-attrs? (current-strict-attrs))
+  (for ([q (in-list qs)])
+    (define attrs (quad-attrs q))
+    (hash-ref! attrs-seen attrs
+               (λ ()
+                 (for ([(k v) (in-hash attrs)]
+                       #:unless (attr? k))
+                   (cond
+                     [(symbol? k)
+                      (match (hash-ref attr-lookup-table k #false)
+                        [(? attr? attr)
+                         (hash-remove! attrs k)
+                         (hash-set! attrs attr v)]
+                        [_ #:when strict-attrs?
+                           (raise-argument-error 'upgrade-attr-keys "known attr" k)]
+                        [_ (void)])]
+                     [else (raise-argument-error 'upgrade-attr-keys "symbol or attr" k)]))
+                 #t)))
+  qs)
 
 (define-pass (downcase-attr-values qs)
   ;; make attribute values lowercase, unless they're case-sensitive
@@ -40,7 +68,7 @@
   #:pre (list-of quad?)
   #:post (list-of quad?)
   (do-attr-iteration qs
-                     #:which-key (λ (k) (not (has-case-sensitive-value? k)))
+                     #:which-attr attr-cased-string?
                      #:value-proc (λ (val attrs) (string-downcase val))))
 
 ;; TODO: make real `takes-path?`
@@ -53,11 +81,8 @@
   ;; so we don't get tripped up later by relative paths
   ;; relies on `current-directory` being parameterized to source file's dir
   (do-attr-iteration qs
-                     #:which-key takes-path?
+                     #:which-attr attr-path?
                      #:value-proc (λ (val attrs) (path->string (path->complete-path val)))))
-
-;; TODO: make real `takes-dimension-string?`
-(define (takes-dimension-string? x) (memq x '(dim)))
 
 (define-pass (parse-dimension-strings qs)
   #:pre (list-of quad?)
@@ -65,13 +90,27 @@
   ;; certain attributes can be "dimension strings", which are strings like "3in" or "4.2cm"
   ;; we parse them into the equivalent measurement in points.
   (do-attr-iteration qs
-                     #:which-key takes-dimension-string?
-                     #:value-proc (λ (val attrs) (parse-dimension val attrs))))
+                     #:which-attr attr-dimension-string?
+                     #:value-proc parse-dimension))
 
 (module+ test
   (require rackunit)
-  (define q (make-quad #:attrs (make-hasheq '((foo . "BAR")(ps . "file.txt")(dim . "2in")))))
-  (define qs (list q))
-  (check-equal? (quad-ref (car (downcase-attr-values qs)) 'foo) "bar")
-  (check-true (complete-path? (string->path (quad-ref (car (complete-attr-paths qs)) 'ps))))
-  (check-equal? (quad-ref (car (parse-dimension-strings qs)) 'dim) 144))
+  (define-attr-list debug-attrs
+    [:foo (attr-cased-string 'foo)]
+    [:ps (attr-path 'ps)]
+    [:dim (attr-dimension-string 'dim)])
+  (parameterize ([current-attrs debug-attrs])
+    (define q (make-quad #:attrs (make-hasheq (list (cons :foo "BAR")
+                                                    (cons 'ding "dong")
+                                                    (cons :ps "file.txt")
+                                                    (cons :dim "2in")))))
+    (define qs (list q))
+    (check-not-exn (λ ()
+                     (parameterize ([current-strict-attrs #false])
+                       (upgrade-attr-keys qs))))
+    (check-exn exn? (λ ()
+                     (parameterize ([current-strict-attrs #true])
+                       (upgrade-attr-keys qs))))
+    (check-equal? (quad-ref (car (downcase-attr-values qs)) :foo) "bar")
+    (check-true (complete-path? (string->path (quad-ref (car (complete-attr-paths qs)) :ps))))
+    (check-equal? (quad-ref (car (parse-dimension-strings qs)) :dim) 144)))
