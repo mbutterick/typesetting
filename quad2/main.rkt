@@ -45,12 +45,12 @@
                     ;; we convert keys & values to corresponding higher-level types.
                     upgrade-attr-keys
                     downcase-attr-values
-                    ;; TODO: convert booleanized attrs
-                    ;; TODO: convert numerical attrs
-                    complete-attr-paths
+                    convert-boolean-attr-values
+                    convert-numeric-attr-values
 
                     ;; resolutions & parsings =============
                     resolve-font-paths
+                    complete-attr-paths
                     ;; TODO: resolve font sizes
                     ;; we resolve dimension strings after font size
                     ;; because they can be denoted relative to em size
@@ -69,11 +69,11 @@
 
 (define insts (parameterize ([current-wrap-width 13]
                              [current-attrs all-attrs]
-                             [current-strict-attrs #true]
-                             [show-timing #f])
+                             [current-strict-attrs? #t]
+                             [current-show-timing? #f]
+                             [current-use-preconditions? #t]
+                             [current-use-postconditions? #t])
                 (quad-compile "Hello this is the earth")))
-
-(displayln insts)
 
 (when (string? insts)
   (render insts #:using text-renderer)

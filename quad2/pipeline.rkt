@@ -14,11 +14,11 @@
   #:property prop:procedure
   (λ args
     (match-define (list* pipeline pass-arg _) args)
-    (let ([show-timing (show-timing)])
+    (let ([show-timing? (current-show-timing?)])
       (for/fold ([pass-arg pass-arg])
                 ([pass (in-list (pipeline-passes pipeline))])
         (define thunk (λ () (pass pass-arg)))
-        (if show-timing
+        (if show-timing?
             (time (displayln pass) (thunk))
             (thunk))))))
 
@@ -37,10 +37,12 @@
            (procedure-rename
             #,(syntax/loc stx
                 (λ (ARG OTHER-ARG ...)
-                  (unless (PRECOND-PROC ARG)
-                    (raise-argument-error 'PASS-NAME (format "~a" 'PRECOND-PROC) ARG))
+                  (when (current-use-preconditions?)
+                    (unless (PRECOND-PROC ARG)
+                      (raise-argument-error 'PASS-NAME (format "~a" 'PRECOND-PROC) ARG)))
                   (define res (let () EXPRS ...))
+                  (when (current-use-postconditions?)
                   (unless (POSTCOND-PROC res)
-                    (raise-argument-error 'PASS-NAME (format "~a" 'POSTCOND-PROC) res))
+                    (raise-argument-error 'PASS-NAME (format "~a" 'POSTCOND-PROC) res)))
                   res))
             'PASS-NAME))))]))
