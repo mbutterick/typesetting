@@ -98,7 +98,7 @@
   ;; relies on `current-directory` being parameterized to source file's dir
   (do-attr-iteration qs
                      #:which-attr attr-path?
-                     #:value-proc (λ (val attrs) (path->string (path->complete-path val)))))
+                     #:value-proc (λ (val attrs) (path->complete-path val))))
 
 (define-pass (parse-dimension-strings qs)
   #:pre (list-of quad?)
