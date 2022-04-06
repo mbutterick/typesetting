@@ -25,4 +25,4 @@
   path
   numeric
   boolean
-  ignored)
+  unknown)

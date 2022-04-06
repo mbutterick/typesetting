@@ -53,8 +53,8 @@
     (cond
       [(attr-key? ak) av]
       [(symbol? ak)
-       (match (hash-ref attr-lookup-table ak :ignored-key)
-         [(== :ignored-key eq?)
+       (match (hash-ref attr-lookup-table ak :unknown-key)
+         [(== :unknown-key eq?)
           #:when strict-attrs?
           (raise-argument-error 'upgrade-attr-keys "known attr" ak)]
          [attr-key
@@ -94,10 +94,8 @@
   (do-attr-iteration qs
                      #:which-attr attr-numeric-key?
                      #:attr-proc (λ (ak av attrs)
-                                   (cond
-                                     [(string->number av)]
-                                     [else
-                                      (raise-argument-error 'convert-numeric-attr-values "numeric string" av)]))))
+                                   (or (string->number av)
+                                       (raise-argument-error 'convert-numeric-attr-values "numeric string" av)))))
 
 (define-pass (complete-attr-paths qs)
   #:pre (list-of quad?)
@@ -107,8 +105,7 @@
   ;; relies on `current-directory` being parameterized to source file's dir
   (do-attr-iteration qs
                      #:which-attr attr-path-key?
-                     #:attr-proc (λ (ak av attrs)
-                                   (path->complete-path av))))
+                     #:attr-proc (λ (ak av attrs) (path->complete-path av))))
 
 (define-pass (parse-dimension-strings qs)
   #:pre (list-of quad?)
