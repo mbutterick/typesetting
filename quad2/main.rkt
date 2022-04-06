@@ -12,17 +12,28 @@
          "constants.rkt"
          "param.rkt"
          racket/string
+         txexpr
          racket/list
          racket/match)
 
+(define (txexpr->quad x)
+  (match x
+    [(txexpr tag attrs elems)
+     (make-quad #:tag tag
+                #:attrs (attrs->hash attrs)
+                #:elems (map txexpr->quad elems))]
+    [_ x]))
+
 (define-pass (bootstrap-input x)
   ;; turn a simple string into a quad for testing layout.
-  #:pre string?
+  #:pre values
   #:post (list-of quad?)
-  (list (match x
-          [(or (? quad? q) (list (? quad? q))) q]
-          [(and (list (? quad?) ...) qs) (make-quad #:elems qs)]
-          [other (make-quad #:elems (list other))])))
+  (let loop ([x x])
+    (match x
+      [(? quad? q) (list q)]
+      [(and (list (? quad?) ...) qs) (loop (make-quad #:elems qs))]
+      [(? txexpr? tx) (loop (txexpr->quad tx))]
+      [(? string? str) (loop (make-quad #:elems (list str)))])))
 
 (define-pass (split-into-single-char-quads qs)
   ;; break list of quads into single characters (keystrokes)
