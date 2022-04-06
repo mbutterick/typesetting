@@ -38,6 +38,9 @@
 
 (define quad-compile
   (make-pipeline (list
+                  ;; each pass in the pipeline is at least
+                  ;; (list-of quad?) -> (list-of quad?)
+                  
                   ;; attribute prep =============
                   ;; all attrs start out as symbol-string pairs.
                   ;; we convert keys & values to corresponding higher-level types.

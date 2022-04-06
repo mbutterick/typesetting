@@ -13,14 +13,16 @@
 (provide (all-defined-out))
 
 (define (do-attr-iteration qs
-                           #:which-attr which-attr
+                           #:which-attr [which-attr #false]
                            #:attr-proc attr-proc)
   (define attr-predicate
     (match which-attr
+      [#false (λ (ak av) #true)]
       [(? attr-key? attr-key) (λ (ak av) (eq? ak attr-key))]
-      [(? procedure? pred) (if (eq? 1 (procedure-arity pred))
-                               (λ (ak _) (pred ak)) ; 1 arity implies key-only test
-                               pred)]
+      [(? procedure? pred)
+       (if (eq? 1 (procedure-arity pred))
+           (λ (ak _) (pred ak)) ; 1 arity implies key-only test
+           pred)]
       [other (raise-argument-error 'do-attr-iteration "key predicate" other)]))
   (define attrs-seen (mutable-seteq))
   (let loop ([xs qs])
@@ -31,7 +33,11 @@
            (unless (set-member? attrs-seen attrs)
              (for ([(ak av) (in-hash attrs)]
                    #:when (attr-predicate ak av))
-                  (hash-set! attrs ak (attr-proc ak av attrs)))
+                  (match (attr-proc ak av attrs)
+                    ;; void value: do nothing
+                    [(? void?) (void)]
+                    ;; otherwise treat return value as new attr value
+                    [new-av (hash-set! attrs ak new-av)]))
              (set-add! attrs-seen attrs))
            (loop (quad-elems q)))))
   qs)
@@ -43,22 +49,20 @@
   #:post (list-of quad?)
   (define attr-lookup-table (for/hasheq ([a (in-list (current-attrs))])
                                         (values (attr-key-name a) a)))
-  (define attrs-seen (mutable-seteq))
   (define strict-attrs? (current-strict-attrs?))
   (define (do-upgrade ak av attrs)
     (cond
+      [(attr-key? ak) av]
       [(symbol? ak)
-       (match (hash-ref attr-lookup-table ak #false)
-         [(? attr-key? attr)
+       (match (hash-ref attr-lookup-table ak :ignored-key)
+         [(== :ignored-key eq?)
+          #:when strict-attrs?
+          (raise-argument-error 'upgrade-attr-keys "known attr" ak)]
+         [attr-key
           (hash-remove! attrs ak)
-          (hash-set! attrs attr av)]
-         [_ #:when strict-attrs?
-            (raise-argument-error 'upgrade-attr-keys "known attr" ak)]
-         [_ (void)])]
+          (hash-set! attrs attr-key av)])]
       [else (raise-argument-error 'upgrade-attr-keys "symbol or attr" ak)]))
-  (do-attr-iteration qs
-                     #:which-attr (λ (ak) (not (attr-key? ak)))
-                     #:attr-proc do-upgrade))
+  (do-attr-iteration qs #:attr-proc do-upgrade))
 
 (define-pass (downcase-attr-values qs)
   ;; make attribute values lowercase, unless they're case-sensitive
@@ -80,9 +84,10 @@
   #:post (list-of quad?)
   (do-attr-iteration qs
                      #:which-attr attr-boolean-key?
-                     #:attr-proc (λ (ak av attrs) (match (string-downcase av)
-                                                     ["false" #false]
-                                                     [_ #true]))))
+                     #:attr-proc (λ (ak av attrs)
+                                   (match (string-downcase av)
+                                     ["false" #false]
+                                     [_ #true]))))
 
 (define-pass (convert-numeric-attr-values qs)
   #:pre (list-of quad?)
@@ -90,10 +95,10 @@
   (do-attr-iteration qs
                      #:which-attr attr-numeric-key?
                      #:attr-proc (λ (ak av attrs)
-                                    (cond
-                                      [(string->number av)]
-                                      [else
-                                       (raise-argument-error 'convert-numeric-attr-values "numeric string" av)]))))
+                                   (cond
+                                     [(string->number av)]
+                                     [else
+                                      (raise-argument-error 'convert-numeric-attr-values "numeric string" av)]))))
 
 (define-pass (complete-attr-paths qs)
   #:pre (list-of quad?)
@@ -103,7 +108,8 @@
   ;; relies on `current-directory` being parameterized to source file's dir
   (do-attr-iteration qs
                      #:which-attr attr-path-key?
-                     #:attr-proc (λ (ak av attrs) (path->complete-path av))))
+                     #:attr-proc (λ (ak av attrs)
+                                   (path->complete-path av))))
 
 (define-pass (parse-dimension-strings qs)
   #:pre (list-of quad?)
@@ -124,20 +130,20 @@
     [:boolf (attr-boolean-key 'bool)]
     [:num (attr-numeric-key 'num)])
   (parameterize ([current-attrs debug-attrs])
-    (define q (make-quad #:attrs (make-hasheq (list (cons :foo "BAR")
-                                                    (cons 'ding "dong")
-                                                    (cons :ps "file.txt")
-                                                    (cons :dim "2in")
-                                                    (cons :boolt "true")
-                                                    (cons :boolf "false")
-                                                    (cons :num "42.5")))))
-    (define qs (list q))
-    (check-not-exn (λ ()
-                     (parameterize ([current-strict-attrs? #false])
-                       (upgrade-attr-keys qs))))
+    (define (make-q) (make-quad #:attrs (make-hasheq (list (cons :foo "BAR")
+                                                           (cons 'ding "dong")
+                                                           (cons :ps "file.txt")
+                                                           (cons :dim "2in")
+                                                           (cons :boolt "true")
+                                                           (cons :boolf "false")
+                                                           (cons :num "42.5")))))
+    (define qs (list (make-q)))
     (check-exn exn? (λ ()
                       (parameterize ([current-strict-attrs? #true])
-                        (upgrade-attr-keys qs))))
+                        (upgrade-attr-keys (list (make-q))))))
+    (check-not-exn (λ ()
+                     (parameterize ([current-strict-attrs? #false])
+                       (upgrade-attr-keys (list (make-q))))))
     (check-equal? (quad-ref (car (downcase-attr-values qs)) :foo) "bar")
     (check-true (complete-path? (quad-ref (car (complete-attr-paths qs)) :ps)))
     (check-equal? (quad-ref (car (parse-dimension-strings qs)) :dim) 144)

@@ -9,6 +9,7 @@
     (define LIST-NAME (list ATTR-NAME ...))))
 
 (define-attr-list all-attrs
+  [:ignored-key (attr-ignored-key (gensym))]
   [:font-family (attr-uncased-string-key 'font-family)]
   [:font-path (attr-path-key 'font-path)]
   [:font-bold (attr-boolean-key 'font-bold)]

@@ -24,4 +24,5 @@
   dimension-string
   path
   numeric
-  boolean)
+  boolean
+  ignored)
