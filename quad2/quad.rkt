@@ -42,7 +42,8 @@
                             #:attrs [attrs (make-quad-attrs null)]
                             #:elems [elems null])
   (() (#:tag quad-tag? #:attrs quad-attrs? #:elems quad-elems?) . ->* . quad?)
-  (quad-constructor tag attrs elems #false))
+  (let ([attrs (if (immutable? attrs) (make-hasheq (hash->list attrs)) attrs)])
+    (quad-constructor tag attrs elems #false)))
 
 (define (quad-ref q key [default-val #false])
   (hash-ref (quad-attrs q) key default-val))
