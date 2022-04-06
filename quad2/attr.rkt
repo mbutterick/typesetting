@@ -3,6 +3,7 @@
          racket/hash
          racket/list
          racket/string
+         racket/set
          "dimension.rkt"
          "pipeline.rkt"
          "struct.rkt"
@@ -11,22 +12,28 @@
          "param.rkt")
 (provide (all-defined-out))
 
-(define (do-attr-iteration qs #:which-attr which-arg #:value-proc proc)
-  (define key-predicate
-    (match which-arg
-      [(? attr? attr) (λ (k) (eq? k (attr-name attr)))]
-      [(and (list (? attr?) ...) attrs) (λ (k) (memq k (map attr-name attrs)))]
-      [(? procedure? pred) pred]
+(define (do-attr-iteration qs
+                           #:which-attr which-attr
+                           #:attr-proc attr-proc)
+  (define attr-predicate
+    (match which-attr
+      [(? attr-key? attr-key) (λ (ak av) (eq? ak attr-key))]
+      [(? procedure? pred) (if (eq? 1 (procedure-arity pred))
+                               (λ (ak _) (pred ak)) ; 1 arity implies key-only test
+                               pred)]
       [other (raise-argument-error 'do-attr-iteration "key predicate" other)]))
-  (define attrs-seen (make-hasheq))
-  (for ([q (in-list qs)])
-       (define attrs (quad-attrs q))
-       (hash-ref! attrs-seen attrs
-                  (λ ()
-                    (for ([k (in-hash-keys attrs)]
-                          #:when (key-predicate k))
-                         (hash-update! attrs k (λ (val) (proc val attrs))))
-                    #t)))
+  (define attrs-seen (mutable-seteq))
+  (let loop ([xs qs])
+    (for ([x (in-list xs)]
+          #:when (quad? x))
+         (let* ([q x]
+                [attrs (quad-attrs q)])
+           (unless (set-member? attrs-seen attrs)
+             (for ([(ak av) (in-hash attrs)]
+                   #:when (attr-predicate ak av))
+                  (hash-set! attrs ak (attr-proc ak av attrs)))
+             (set-add! attrs-seen attrs))
+           (loop (quad-elems q)))))
   qs)
 
 (define-pass (upgrade-attr-keys qs)
@@ -35,27 +42,23 @@
   #:pre (list-of quad?)
   #:post (list-of quad?)
   (define attr-lookup-table (for/hasheq ([a (in-list (current-attrs))])
-                                        (values (attr-name a) a)))
-  (define attrs-seen (make-hasheq))
+                                        (values (attr-key-name a) a)))
+  (define attrs-seen (mutable-seteq))
   (define strict-attrs? (current-strict-attrs?))
-  (for ([q (in-list qs)])
-       (define attrs (quad-attrs q))
-       (hash-ref! attrs-seen attrs
-                  (λ ()
-                    (for ([(k v) (in-hash attrs)]
-                          #:unless (attr? k))
-                         (cond
-                           [(symbol? k)
-                            (match (hash-ref attr-lookup-table k #false)
-                              [(? attr? attr)
-                               (hash-remove! attrs k)
-                               (hash-set! attrs attr v)]
-                              [_ #:when strict-attrs?
-                                 (raise-argument-error 'upgrade-attr-keys "known attr" k)]
-                              [_ (void)])]
-                           [else (raise-argument-error 'upgrade-attr-keys "symbol or attr" k)]))
-                    #t)))
-  qs)
+  (define (do-upgrade ak av attrs)
+    (cond
+      [(symbol? ak)
+       (match (hash-ref attr-lookup-table ak #false)
+         [(? attr-key? attr)
+          (hash-remove! attrs ak)
+          (hash-set! attrs attr av)]
+         [_ #:when strict-attrs?
+            (raise-argument-error 'upgrade-attr-keys "known attr" ak)]
+         [_ (void)])]
+      [else (raise-argument-error 'upgrade-attr-keys "symbol or attr" ak)]))
+  (do-attr-iteration qs
+                     #:which-attr (λ (ak) (not (attr-key? ak)))
+                     #:attr-proc do-upgrade))
 
 (define-pass (downcase-attr-values qs)
   ;; make attribute values lowercase, unless they're case-sensitive
@@ -68,27 +71,29 @@
   #:pre (list-of quad?)
   #:post (list-of quad?)
   (do-attr-iteration qs
-                     #:which-attr attr-cased-string?
-                     #:value-proc (λ (val attrs) (string-downcase val))))
+                     #:which-attr attr-cased-string-key?
+                     #:attr-proc (λ (ak av attrs) (string-downcase av))))
 
 
 (define-pass (convert-boolean-attr-values qs)
   #:pre (list-of quad?)
   #:post (list-of quad?)
   (do-attr-iteration qs
-                     #:which-attr attr-boolean?
-                     #:value-proc (λ (val attrs) (match (string-downcase val)
-                                                   ["false" #false]
-                                                   [_ #true]))))
+                     #:which-attr attr-boolean-key?
+                     #:attr-proc (λ (ak av attrs) (match (string-downcase av)
+                                                     ["false" #false]
+                                                     [_ #true]))))
 
 (define-pass (convert-numeric-attr-values qs)
   #:pre (list-of quad?)
   #:post (list-of quad?)
   (do-attr-iteration qs
-                     #:which-attr attr-numeric?
-                     #:value-proc (λ (val attrs)
-                                    (or (string->number val)
-                                        (raise-argument-error 'convert-numeric-attr-values "numeric string" val)))))
+                     #:which-attr attr-numeric-key?
+                     #:attr-proc (λ (ak av attrs)
+                                    (cond
+                                      [(string->number av)]
+                                      [else
+                                       (raise-argument-error 'convert-numeric-attr-values "numeric string" av)]))))
 
 (define-pass (complete-attr-paths qs)
   #:pre (list-of quad?)
@@ -97,8 +102,8 @@
   ;; so we don't get tripped up later by relative paths
   ;; relies on `current-directory` being parameterized to source file's dir
   (do-attr-iteration qs
-                     #:which-attr attr-path?
-                     #:value-proc (λ (val attrs) (path->complete-path val))))
+                     #:which-attr attr-path-key?
+                     #:attr-proc (λ (ak av attrs) (path->complete-path av))))
 
 (define-pass (parse-dimension-strings qs)
   #:pre (list-of quad?)
@@ -106,18 +111,18 @@
   ;; certain attributes can be "dimension strings", which are strings like "3in" or "4.2cm"
   ;; we parse them into the equivalent measurement in points.
   (do-attr-iteration qs
-                     #:which-attr attr-dimension-string?
-                     #:value-proc parse-dimension))
+                     #:which-attr attr-dimension-string-key?
+                     #:attr-proc (λ (ak av attrs) (parse-dimension av attrs))))
 
 (module+ test
   (require rackunit)
   (define-attr-list debug-attrs
-    [:foo (attr-cased-string 'foo)]
-    [:ps (attr-path 'ps)]
-    [:dim (attr-dimension-string 'dim)]
-    [:boolt (attr-boolean 'bool)]
-    [:boolf (attr-boolean 'bool)]
-    [:num (attr-numeric 'num)])
+    [:foo (attr-cased-string-key 'foo)]
+    [:ps (attr-path-key 'ps)]
+    [:dim (attr-dimension-string-key 'dim)]
+    [:boolt (attr-boolean-key 'bool)]
+    [:boolf (attr-boolean-key 'bool)]
+    [:num (attr-numeric-key 'num)])
   (parameterize ([current-attrs debug-attrs])
     (define q (make-quad #:attrs (make-hasheq (list (cons :foo "BAR")
                                                     (cons 'ding "dong")
@@ -134,7 +139,7 @@
                       (parameterize ([current-strict-attrs? #true])
                         (upgrade-attr-keys qs))))
     (check-equal? (quad-ref (car (downcase-attr-values qs)) :foo) "bar")
-    (check-true (complete-path? (string->path (quad-ref (car (complete-attr-paths qs)) :ps))))
+    (check-true (complete-path? (quad-ref (car (complete-attr-paths qs)) :ps)))
     (check-equal? (quad-ref (car (parse-dimension-strings qs)) :dim) 144)
     (let ([q (car (convert-boolean-attr-values qs))])
       (check-true (quad-ref q :boolt))

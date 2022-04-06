@@ -118,12 +118,12 @@
   ;; convert references to a font family and style to an font path on disk
   ;; we trust it exists because we used `setup-font-path-table` earlier,
   ;; but if not, fallback fonts will kick in, on the idea that a missing font shouldn't stop the show
-  (define this-font-family (hash-ref! attrs (attr-name :font-family) default-font-family))
+  (define this-font-family (hash-ref! attrs (attr-key-name :font-family) default-font-family))
   (match (string-downcase this-font-family)
     [(? font-path-string? ps) (path->complete-path ps)]
     [_
-     (define this-bold (hash-ref! attrs (attr-name :font-bold) #false))
-     (define this-italic (hash-ref! attrs (attr-name :font-italic) #false))
+     (define this-bold (hash-ref! attrs (attr-key-name :font-bold) #false))
+     (define this-italic (hash-ref! attrs (attr-key-name :font-italic) #false))
      (font-attrs->path font-paths this-font-family this-bold this-italic)]))
 
 (define-pass (resolve-font-paths qs)
@@ -135,12 +135,12 @@
   (define font-paths (setup-font-path-table))
   (do-attr-iteration qs
                      #:which-attr :font-family
-                     #:value-proc (λ (val attrs) (resolve-font-path font-paths val attrs))))
+                     #:attr-proc (λ (ak av attrs) (resolve-font-path font-paths av attrs))))
 
 (module+ test
   (require rackunit)
   (define-attr-list debug-attrs
-    [:font-family (attr-uncased-string 'font-family)])
+    [:font-family (attr-uncased-string-key 'font-family)])
   (parameterize ([current-attrs debug-attrs])
     (define (resolved-font-for-family val #:bold [bold #f] #:italic [italic #f])
       (define qs (list (make-quad #:attrs (make-hasheq

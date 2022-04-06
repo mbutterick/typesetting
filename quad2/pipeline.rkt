@@ -36,7 +36,7 @@
           (list
            (procedure-rename
             #,(syntax/loc stx
-                (λ (ARG OTHER-ARG ...)
+                (λ (ARG)
                   (when (current-use-preconditions?)
                     (unless (PRECOND-PROC ARG)
                       (raise-argument-error 'PASS-NAME (format "~a (as precondition)" 'PRECOND-PROC) ARG)))

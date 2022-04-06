@@ -9,25 +9,27 @@
 
 (define (simple-quad? x) (and (quad? x) (<= (length (quad-elems x)) 1)))
 
-(define-pass (linearize-quad q)
+(define-pass (linearize qs)
   ;; convert a single quad into a list of quads, with the attributes propagated downward
   ;; every resulting quad should have at most one element
-  #:pre quad?
+  #:pre (list-of quad?)
   #:post (list-of simple-quad?)
-  (let loop ([q q][attrs-context (make-quad-attrs)]) ;; returns (list-of quad?)
-    (define current-attrs (quad-attrs-union attrs-context (quad-attrs q)))
-    (define (mq es) (make-quad #:tag (quad-tag q) #:attrs current-attrs #:elems es))
-    (match (quad-elems q)
-      [(? null?) (list (mq null))]
-      [(? pair? elems)
-       (apply append (for/list ([e (in-list elems)])
-                               (cond
-                                 [(quad? e) (loop e current-attrs)]
-                                 [else (list (mq (list e)))])))])))
+  (append*
+   (for/list ([q (in-list qs)])
+             (let loop ([q q][attrs-context (make-quad-attrs)]) ;; returns (list-of quad?)
+               (define current-attrs (quad-attrs-union attrs-context (quad-attrs q)))
+               (define (mq es) (make-quad #:tag (quad-tag q) #:attrs current-attrs #:elems es))
+               (match (quad-elems q)
+                 [(? null?) (list (mq null))]
+                 [(? pair? elems)
+                  (apply append (for/list ([e (in-list elems)])
+                                          (cond
+                                            [(quad? e) (loop e current-attrs)]
+                                            [else (list (mq (list e)))])))])))))
 
 (module+ test
   (define q (make-quad #:attrs (hasheq 'foo 42) #:elems (list (make-quad #:elems (list "Hi" "    idiot" (make-quad #:attrs (hasheq 'bar 84) #:elems '("There")) " Eve" "ry" "one" (make-quad #:attrs (hasheq 'zam 108) #:elems null))))))
-  (define lqs (linearize-quad q))
+  (define lqs (linearize (list q)))
   lqs)
 
 
