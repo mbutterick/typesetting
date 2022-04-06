@@ -39,8 +39,7 @@
                     ;; otherwise treat return value as new attr value
                     [new-av (hash-set! attrs ak new-av)]))
              (set-add! attrs-seen attrs))
-           (loop (quad-elems q)))))
-  qs)
+           (loop (quad-elems q))))))
 
 (define-pass (upgrade-attr-keys qs)
   ;; convert attr keys from symbols to attr struct types

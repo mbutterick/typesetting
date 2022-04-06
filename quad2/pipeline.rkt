@@ -40,9 +40,15 @@
                   (when (current-use-preconditions?)
                     (unless (PRECOND-PROC ARG)
                       (raise-argument-error 'PASS-NAME (format "~a (as precondition)" 'PRECOND-PROC) ARG)))
-                  (define res (let () EXPRS ...))
-                  (when (current-use-postconditions?)
-                  (unless (POSTCOND-PROC res)
-                    (raise-argument-error 'PASS-NAME (format "~a (as postcondition)" 'POSTCOND-PROC) res)))
-                  res))
+                  ;; a pass can be functional or mutational.
+                  ;; if it returns void, assume mutational
+                  ;; and return the input item.
+                  (define res (match (let () EXPRS ...)
+                                [(? void?) ARG]
+                                [val val]))
+                  (begin0
+                    res
+                    (when (current-use-postconditions?)
+                      (unless (POSTCOND-PROC res)
+                        (raise-argument-error 'PASS-NAME (format "~a (as postcondition)" 'POSTCOND-PROC) res))))))
             'PASS-NAME))))]))
