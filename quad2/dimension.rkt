@@ -1,9 +1,7 @@
 #lang debug racket/base
-(require racket/match)
+(require racket/match
+         "constants.rkt")
 (provide (all-defined-out))
-
-;; TODO: define :font-size properly
-(define :font-size 'font-size)
 
 (define (pica->pts prefix [suffix #false])
   ;; both pieces of measurement are either positive or negative
