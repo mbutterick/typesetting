@@ -1,4 +1,5 @@
 #lang racket/base
+(require (for-syntax racket/base racket/syntax))
 (provide (all-defined-out))
 
 (struct $drawing-inst () #:transparent)
@@ -7,10 +8,20 @@
 (struct $doc $drawing-inst (inst) #:transparent)
 (struct $page $drawing-inst (inst) #:transparent)
 
-(struct attr (name) #:transparent)
-(struct attr-uncased-string attr () #:transparent)
-(struct attr-cased-string attr () #:transparent)
-(struct attr-dimension-string attr () #:transparent)
-(struct attr-path attr () #:transparent)
-(struct attr-numeric attr () #:transparent)
-(struct attr-boolean attr () #:transparent)
+(struct attr-key (name) #:transparent)
+
+(define-syntax (define-attr-key-types stx)
+  (syntax-case stx ()
+    [(_ ID ...)
+     (with-syntax ([(ATTR-ID-KEY ...) (map (λ (id-stx) (format-id stx "attr-~a-key" id-stx)) (syntax->list #'(ID ...)))])
+       #'(begin
+           (struct ATTR-ID-KEY attr-key () #:transparent) ...))]))
+
+;; for type X, creates struct called attr-X-key
+(define-attr-key-types
+  uncased-string
+  cased-string
+  dimension-string
+  path
+  numeric
+  boolean)

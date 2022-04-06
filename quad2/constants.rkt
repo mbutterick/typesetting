@@ -9,8 +9,8 @@
     (define LIST-NAME (list ATTR-NAME ...))))
 
 (define-attr-list all-attrs
-  [:font-family (attr-uncased-string 'font-family)]
-  [:font-path (attr-path 'font-path)]
-  [:font-bold (attr-boolean 'font-bold)]
-  [:font-italic (attr-boolean 'font-italic)]
-  [:font-size (attr-dimension-string 'font-size)])
+  [:font-family (attr-uncased-string-key 'font-family)]
+  [:font-path (attr-path-key 'font-path)]
+  [:font-bold (attr-boolean-key 'font-bold)]
+  [:font-italic (attr-boolean-key 'font-italic)]
+  [:font-size (attr-dimension-string-key 'font-size)])
