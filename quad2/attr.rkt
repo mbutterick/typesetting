@@ -114,7 +114,7 @@
   ;; we parse them into the equivalent measurement in points.
   (do-attr-iteration qs
                      #:which-attr attr-dimension-string-key?
-                     #:attr-proc (λ (ak av attrs) (parse-dimension av attrs))))
+                     #:attr-proc (λ (ak av attrs) (parse-dimension av))))
 
 (module+ test
   (require rackunit)
@@ -142,7 +142,7 @@
                        (upgrade-attr-keys (list (make-q))))))
     (check-equal? (quad-ref (car (downcase-attr-values qs)) :foo) "bar")
     (check-true (complete-path? (quad-ref (car (complete-attr-paths qs)) :ps)))
-    (check-equal? (quad-ref (car (parse-dimension-strings qs)) :dim) 144)
+    (check-true (procedure? (quad-ref (car (parse-dimension-strings qs)) :dim)))
     (let ([q (car (convert-boolean-attr-values qs))])
       (check-true (quad-ref q :boolt))
       (check-false (quad-ref q :boolf)))

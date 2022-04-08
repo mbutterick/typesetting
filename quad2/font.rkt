@@ -10,6 +10,7 @@
          "pipeline.rkt"
          "param.rkt"
          "struct.rkt"
+         "dimension.rkt"
          "attr.rkt")
 (provide (all-defined-out))
 
@@ -18,6 +19,7 @@
 (define top-font-directory "fonts")
 (define font-file-extensions '(#".otf" #".ttf" #".woff" #".woff2"))
 (define default-font-family "text")
+(define default-font-size 12)
 
 (define (fonts-in-directory dir)
   (for/list ([font-path (in-directory dir)]
@@ -153,3 +155,42 @@
     (check-equal? (resolved-font-for-family "CODE") (string->path "fira-mono.otf"))
     (check-equal? (resolved-font-for-family "blockquote" #:bold #t) (string->path "fira-sans-bold.otf"))
     (check-equal? (resolved-font-for-family "nonexistent-fam") (string->path "SourceSerifPro-Regular.otf"))))
+
+(define (parse-em pstr)
+  (define em-suffix "em")
+  (and
+   pstr
+   (string? pstr)
+   (string-suffix? pstr em-suffix)
+   (string->number (string-trim pstr em-suffix))))
+
+(define-pass (resolve-font-sizes qs)
+  ;; convert font-size attributes into a simple font size
+  ;; we stashed the previous size in private key 'font-size-previous
+  #:pre (list-of quad?)
+  #:post (list-of quad?)
+  
+  (define (resolve-font-size-once attrs)
+    ;; FIXME: this technique no longer works because
+    ;; it depends on resolving values while attrs are being cascaded
+    (define base-size-adjusted
+      (match (hash-ref attrs :font-size default-font-size)
+        ;; if our value represents an adjustment,
+        ;; we apply the adjustment to the previous value
+        [(? procedure? proc) (proc (hash-ref attrs :font-size-previous default-font-size))]
+        ;; otherwise we use our value directly
+        [val val]))
+    ;; we write our new value into both font-size and font-size-previous
+    ;; because as we cascade down, we're likely to come across superseding values
+    ;; of font-size (but font-size-previous will persist)
+    (hash-set! attrs :font-size base-size-adjusted)
+    (hash-set! attrs :font-size-previous base-size-adjusted))
+  
+  (define font-paths (setup-font-path-table))
+  (do-attr-iteration qs
+                     #:attr-proc (λ (ak av attrs) (resolve-font-size-once attrs))))
+
+
+(module+ test
+  (define qs (bootstrap-input (make-quad #:tag 'div #:attrs (make-hasheq (list (cons :font-size "100pt"))) #:elems (list (make-quad #:tag 'span #:attrs (make-hasheq (list (cons :font-size-previous "100pt") (cons :font-size "1.5em"))))))))
+  (resolve-font-sizes (parse-dimension-strings qs)))

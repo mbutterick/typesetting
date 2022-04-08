@@ -15,10 +15,12 @@
   (flatten
    (list ($doc 'start) ($page 'start)
          (for/list ([q (in-list qs)])
-                   (cond
-                     [(quad? q)
-                      (list ($move (quad-posn q)) ($text (char->integer (car (string->list (car (quad-elems q)))))))]
-                     [else (error 'render-unknown-thing)]))
+           (cond
+             [(quad? q)
+              (if (pair? (quad-elems q))
+                  (list ($move (quad-posn q)) ($text (char->integer (car (string->list (car (quad-elems q)))))))
+                  (list))]
+             [else (error 'render-unknown-thing)]))
          ($page 'end) ($doc 'end))))
 
 (define valid-tokens '(doc-start doc-end page-start page-end text move))
@@ -27,15 +29,15 @@
   #:pre (list-of $drawing-inst?)
   #:post string?
   (define move-points (map $move-posn (filter $move? xs)))
-  (define xmax (add1 (apply max (map $point-x move-points))))
-  (define ymax (add1 (apply max (map $point-y move-points))))
+  (define xmax (if (pair? move-points) (add1 (apply max (map $point-x move-points))) 0))
+  (define ymax (if (pair? move-points) (add1 (apply max (map $point-y move-points))) 0))
   (string-join
    (for/list ([x (in-list xs)])
-             (string-join (map ~a (match x
-                                    [($move ($point x y)) (list y x 'move)]
-                                    [($text charint) (list charint 'text)]
-                                    [($doc 'start) '(doc-start)]
-                                    [($doc 'end) '(doc-end)]
-                                    [($page 'start) (list ymax xmax 'page-start)]
-                                    [($page 'end) '(page-end)]
-                                    [_ (error 'unknown-drawing-inst)])) " ")) "\n"))
+     (string-join (map ~a (match x
+                            [($move ($point x y)) (list y x 'move)]
+                            [($text charint) (list charint 'text)]
+                            [($doc 'start) '(doc-start)]
+                            [($doc 'end) '(doc-end)]
+                            [($page 'start) (list ymax xmax 'page-start)]
+                            [($page 'end) '(page-end)]
+                            [_ (error 'unknown-drawing-inst)])) " ")) "\n"))

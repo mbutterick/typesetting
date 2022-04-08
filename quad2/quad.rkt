@@ -2,7 +2,9 @@
 (require racket/contract
          racket/match
          racket/hash
-         (for-syntax racket/base racket/syntax))
+         txexpr
+         (for-syntax racket/base racket/syntax)
+         "struct.rkt")
 (provide (all-defined-out))
 
 (struct $point (x y) #:transparent #:mutable)
@@ -46,6 +48,8 @@
     (quad-constructor tag attrs elems #false)))
 
 (define (quad-ref q key [default-val #false])
+  (unless (attr-key? key)
+    (raise-argument-error 'quad-ref "attr-key?" key))
   (hash-ref (quad-attrs q) key default-val))
 (define (quad-set! q key val)
   (hash-set! (quad-attrs q) key val))
@@ -63,6 +67,23 @@
 
 (define (has-no-position? q) (not (has-position? q)))
 (define (has-position? q) (quad-posn q))
+
+(define (txexpr->quad x)
+  (match x
+    [(txexpr tag attrs elems)
+     (make-quad #:tag tag
+                #:attrs (attrs->hash attrs)
+                #:elems (map txexpr->quad elems))]
+    [_ x]))
+
+(define (bootstrap-input x)
+  ;; turn a simple string into a quad for testing layout.
+  (let loop ([x x])
+    (match x
+      [(? quad? q) (list q)]
+      [(and (list (? quad?) ...) qs) (loop (make-quad #:elems qs))]
+      [(? txexpr? tx) (loop (txexpr->quad tx))]
+      [(? string? str) (loop (make-quad #:elems (list str)))])))
 
 (module+ test
   (define q (make-quad #:tag 'div #:attrs (make-hasheq '((hello . "world"))) #:elems (list "fine"))))

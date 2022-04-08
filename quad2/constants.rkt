@@ -14,4 +14,5 @@
   [:font-path (attr-path-key 'font-path)]
   [:font-bold (attr-boolean-key 'font-bold)]
   [:font-italic (attr-boolean-key 'font-italic)]
-  [:font-size (attr-dimension-string-key 'font-size)])
+  [:font-size (attr-dimension-string-key 'font-size)]
+  [:font-size-previous (attr-dimension-string-key 'font-size-previous)])

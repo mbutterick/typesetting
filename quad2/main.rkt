@@ -1,39 +1,16 @@
 #lang debug racket/base
 (require "layout.rkt"
-         "render.rkt"
          "quad.rkt"
          "pipeline.rkt"
          "linearize.rkt"
          "layout.rkt"
          "draw.rkt"
-         "struct.rkt"
          "attr.rkt"
          "font.rkt"
          "constants.rkt"
          "param.rkt"
-         racket/string
-         txexpr
          racket/list
          racket/match)
-
-(define (txexpr->quad x)
-  (match x
-    [(txexpr tag attrs elems)
-     (make-quad #:tag tag
-                #:attrs (attrs->hash attrs)
-                #:elems (map txexpr->quad elems))]
-    [_ x]))
-
-(define-pass (bootstrap-input x)
-  ;; turn a simple string into a quad for testing layout.
-  #:pre values
-  #:post (list-of quad?)
-  (let loop ([x x])
-    (match x
-      [(? quad? q) (list q)]
-      [(and (list (? quad?) ...) qs) (loop (make-quad #:elems qs))]
-      [(? txexpr? tx) (loop (txexpr->quad tx))]
-      [(? string? str) (loop (make-quad #:elems (list str)))])))
 
 (define-pass (split-into-single-char-quads qs)
   ;; break list of quads into single characters (keystrokes)
@@ -59,10 +36,6 @@
                   downcase-attr-values
                   convert-boolean-attr-values
                   convert-numeric-attr-values
-                  ;; TODO: resolve font sizes
-                  resolve-font-sizes
-                  ;; we resolve dimension strings after font size
-                  ;; because they can be denoted relative to em size
                   parse-dimension-strings
 
                   ;; linearization =============
@@ -74,10 +47,11 @@
                   linearize
 
                   ;; resolutions & parsings =============
+                  ;; TODO: finish resolve-font-sizes
+                  #;resolve-font-sizes
                   resolve-font-paths
                   complete-attr-paths
                   ;; TODO: parse feature strings
-
                     
                   mark-text-runs
                   merge-adjacent-strings
@@ -88,16 +62,22 @@
                   make-drawing-insts
                   stackify)))
 
-(define insts (parameterize ([current-wrap-width 13]
-                             [current-attrs all-attrs]
-                             [current-strict-attrs? #t]
-                             [current-show-timing? #f]
-                             [current-use-preconditions? #t]
-                             [current-use-postconditions? #t])
-                (quad-compile (bootstrap-input "Hello this is the earth"))))
+(module+ test
+  (require "render.rkt")
+  (define (test-compile x)
+    (parameterize ([current-wrap-width 13]
+                               [current-attrs all-attrs]
+                               [current-strict-attrs? #t]
+                               [current-show-timing? #f]
+                               [current-use-preconditions? #t]
+                               [current-use-postconditions? #t])
+                  (quad-compile (bootstrap-input x))))
 
-(when (string? insts)
-  (render insts #:using text-renderer)
-  (render insts #:using drr-renderer)
-  #;(render-to-html drawing-insts)
-  #;(render-to-pdf drawing-insts))
+  (match (test-compile "Hello this is the earth")
+    [(? string? insts)
+    (render insts #:using text-renderer)
+    (render insts #:using drr-renderer)
+    #;(render-to-html drawing-insts)
+    #;(render-to-pdf drawing-insts)
+    ]))
+
