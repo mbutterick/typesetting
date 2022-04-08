@@ -7,7 +7,20 @@
          "quad.rkt")
 (provide (all-defined-out))
 
-(define (simple-quad? x) (and (quad? x) (<= (length (quad-elems x)) 1)))
+(define (simple-quad? x)
+  (and (quad? x) (<= (length (quad-elems x)) 1)))
+
+(define-pass (split-into-single-char-quads qs)
+  ;; break list of quads into single characters (keystrokes)
+  #:pre (list-of simple-quad?)
+  #:post (list-of simple-quad?)
+  (append*
+   (for/list ([q (in-list qs)])
+     (match q
+       [(quad _ _ (list (? string? str)) _)
+        (for/list ([c (in-string str)])
+          (struct-copy quad q [elems (list (string c))]))]
+       [_ (list q)]))))
 
 (define-pass (linearize qs)
   ;; convert a single quad into a list of quads, with the attributes propagated downward

@@ -12,34 +12,39 @@
          "param.rkt")
 (provide (all-defined-out))
 
+(define (for-each-attrs xs proc)
+  (define attrs-seen (mutable-seteq))
+  (let loop ([xs xs][parent-attrs #false])
+    (for ([x (in-list xs)]
+          #:when (quad? x))
+         (let* ([attrs (quad-attrs x)])
+           (unless (set-member? attrs-seen attrs)
+             (proc attrs parent-attrs)
+             (set-add! attrs-seen attrs))
+           (loop (quad-elems x) attrs)))))
+
 (define (do-attr-iteration qs
-                           #:which-attr [which-attr #false]
-                           #:attr-proc attr-proc)
+                           #:which-attr [which-attr 'all-attributes-signal]
+                           #:attr-proc attr-proc
+                           #:wants-parent-attrs [wants-parent-attrs? #false])
   (define attr-predicate
     (match which-attr
-      [#false (λ (ak av) #true)]
+      ['all-attributes-signal (λ (ak av) #true)]
       [(? attr-key? attr-key) (λ (ak av) (eq? ak attr-key))]
       [(? procedure? pred)
        (if (eq? 1 (procedure-arity pred))
            (λ (ak _) (pred ak)) ; 1 arity implies key-only test
            pred)]
       [other (raise-argument-error 'do-attr-iteration "key predicate" other)]))
-  (define attrs-seen (mutable-seteq))
-  (let loop ([xs qs])
-    (for ([x (in-list xs)]
-          #:when (quad? x))
-         (let* ([q x]
-                [attrs (quad-attrs q)])
-           (unless (set-member? attrs-seen attrs)
-             (for ([(ak av) (in-hash attrs)]
-                   #:when (attr-predicate ak av))
-                  (match (attr-proc ak av attrs)
-                    ;; void value: do nothing
-                    [(? void?) (void)]
-                    ;; otherwise treat return value as new attr value
-                    [new-av (hash-set! attrs ak new-av)]))
-             (set-add! attrs-seen attrs))
-           (loop (quad-elems q))))))
+  (for-each-attrs qs
+                  (λ (attrs parent-attrs)
+                    (for ([(ak av) (in-hash attrs)]
+                          #:when (attr-predicate ak av))
+                         (match (if wants-parent-attrs? (attr-proc ak av attrs parent-attrs) (attr-proc ak av attrs))
+                           ;; void value: do nothing
+                           [(? void?) (void)]
+                           ;; otherwise treat return value as new attr value
+                           [new-av (hash-set! attrs ak new-av)])))))
 
 (define-pass (upgrade-attr-keys qs)
   ;; convert attr keys from symbols to attr struct types
@@ -63,6 +68,14 @@
       [else (raise-argument-error 'upgrade-attr-keys "symbol or attr" ak)]))
   (do-attr-iteration qs #:attr-proc do-upgrade))
 
+(define-pass (fill-default-attr-values qs)
+  #:pre (list-of quad?)
+  #:post (list-of quad?)
+  (define mandatory-keys (filter attr-key-mandatory? (current-attrs)))
+  (for-each-attrs qs (λ (attrs parent-attrs)
+                       (for ([ak (in-list mandatory-keys)])
+                            (hash-ref! attrs ak (attr-key-default ak))))))
+
 (define-pass (downcase-attr-values qs)
   ;; make attribute values lowercase, unless they're case-sensitive
   ;; so we can check them more easily later.
@@ -84,8 +97,9 @@
   (do-attr-iteration qs
                      #:which-attr attr-boolean-key?
                      #:attr-proc (λ (ak av attrs)
-                                   (match (string-downcase av)
-                                     ["false" #false]
+                                   (match av
+                                     [(? boolean?) av]
+                                     [(? string? str) #:when (equal? (string-downcase str) "false") #false]
                                      [_ #true]))))
 
 (define-pass (convert-numeric-attr-values qs)
@@ -96,6 +110,7 @@
                      #:attr-proc (λ (ak av attrs)
                                    (or (string->number av)
                                        (raise-argument-error 'convert-numeric-attr-values "numeric string" av)))))
+
 
 (define-pass (complete-attr-paths qs)
   #:pre (list-of quad?)
@@ -116,15 +131,18 @@
                      #:which-attr attr-dimension-string-key?
                      #:attr-proc (λ (ak av attrs) (parse-dimension av))))
 
+
+
 (module+ test
   (require rackunit)
   (define-attr-list debug-attrs
-    [:foo (attr-cased-string-key 'foo)]
-    [:ps (attr-path-key 'ps)]
-    [:dim (attr-dimension-string-key 'dim)]
-    [:boolt (attr-boolean-key 'bool)]
-    [:boolf (attr-boolean-key 'bool)]
-    [:num (attr-numeric-key 'num)])
+    [:foo (make-attr-cased-string-key 'foo)]
+    [:ps (make-attr-path-key 'ps)]
+    [:dim (make-attr-dimension-string-key 'dim)]
+    [:boolt (make-attr-boolean-key 'bool)]
+    [:boolf (make-attr-boolean-key 'bool)]
+    [:num (make-attr-numeric-key 'num)]
+    [:num-def-42 (make-attr-numeric-key 'num-def-42 #true 42)])
   (parameterize ([current-attrs debug-attrs])
     (define (make-q) (make-quad #:attrs (make-hasheq (list (cons :foo "BAR")
                                                            (cons 'ding "dong")
@@ -140,9 +158,10 @@
     (check-not-exn (λ ()
                      (parameterize ([current-strict-attrs? #false])
                        (upgrade-attr-keys (list (make-q))))))
+    (check-equal? (quad-ref (car (fill-default-attr-values (list (make-q)))) :num-def-42) 42)
     (check-equal? (quad-ref (car (downcase-attr-values qs)) :foo) "bar")
     (check-true (complete-path? (quad-ref (car (complete-attr-paths qs)) :ps)))
-    (check-true (procedure? (quad-ref (car (parse-dimension-strings qs)) :dim)))
+    (check-equal? (quad-ref (car (parse-dimension-strings qs)) :dim) 144)
     (let ([q (car (convert-boolean-attr-values qs))])
       (check-true (quad-ref q :boolt))
       (check-false (quad-ref q :boolf)))

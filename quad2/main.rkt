@@ -12,18 +12,6 @@
          racket/list
          racket/match)
 
-(define-pass (split-into-single-char-quads qs)
-  ;; break list of quads into single characters (keystrokes)
-  #:pre (list-of simple-quad?)
-  #:post (list-of simple-quad?)
-  (append*
-   (for/list ([q (in-list qs)])
-     (match q
-       [(quad _ _ (list (? string? str)) _)
-        (for/list ([c (in-string str)])
-          (struct-copy quad q [elems (list (string c))]))]
-       [_ (list q)]))))
-
 (define quad-compile
   (make-pipeline (list
                   ;; each pass in the pipeline is at least
@@ -33,10 +21,12 @@
                   ;; all attrs start out as symbol-string pairs.
                   ;; we convert keys & values to corresponding higher-level types.
                   upgrade-attr-keys
+                  fill-default-attr-values
                   downcase-attr-values
                   convert-boolean-attr-values
                   convert-numeric-attr-values
                   parse-dimension-strings
+                  resolve-font-sizes
 
                   ;; linearization =============
                   ;; we postpone this step until we're certain any
@@ -47,8 +37,6 @@
                   linearize
 
                   ;; resolutions & parsings =============
-                  ;; TODO: finish resolve-font-sizes
-                  #;resolve-font-sizes
                   resolve-font-paths
                   complete-attr-paths
                   ;; TODO: parse feature strings
