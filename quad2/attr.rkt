@@ -13,6 +13,9 @@
 (provide (all-defined-out))
 
 (define (for-each-attrs xs proc)
+  ;; apply `proc` to each set of attrs in `xs`.
+  ;; recursively descend from top to bottom.
+  ;; but also track which attrs are visited and skip any already visited.
   (define attrs-seen (mutable-seteq))
   (let loop ([xs xs][parent-attrs #false])
     (for ([x (in-list xs)]
