@@ -41,11 +41,11 @@
   #:post (list-of simple-quad?)
   (append*
    (for/list ([q (in-list qs)])
-             (match q
-               [(quad _ _ (list (? string? str)) _)
-                (for/list ([c (in-string str)])
-                          (struct-copy quad q [elems (list (string c))]))]
-               [_ (list q)]))))
+     (match q
+       [(quad _ _ (list (? string? str)) _)
+        (for/list ([c (in-string str)])
+          (struct-copy quad q [elems (list (string c))]))]
+       [_ (list q)]))))
 
 (define quad-compile
   (make-pipeline (list
@@ -59,6 +59,8 @@
                   downcase-attr-values
                   convert-boolean-attr-values
                   convert-numeric-attr-values
+                  ;; TODO: resolve font sizes
+                  resolve-font-sizes
                   ;; we resolve dimension strings after font size
                   ;; because they can be denoted relative to em size
                   parse-dimension-strings
@@ -74,7 +76,6 @@
                   ;; resolutions & parsings =============
                   resolve-font-paths
                   complete-attr-paths
-                  ;; TODO: resolve font sizes
                   ;; TODO: parse feature strings
 
                     

@@ -96,12 +96,12 @@
   ;; TODO: family->path doesn't work because it relies on ffi into fontconfig
   ;; which has broken in cs, I guess
   #;(unless (hash-has-key? font-paths regular-key)
-    (display "(fontconfig lookup unimplemented)")
-    #;(for* ([bold (in-list (list #false #true))]
-             [italic (in-list (list #false #true))])
-        (hash-set! font-paths
-                   (make-key font-family bold italic)
-                   (family->path font-family #:bold bold #:italic italic))))
+      (display "(fontconfig lookup unimplemented)")
+      #;(for* ([bold (in-list (list #false #true))]
+               [italic (in-list (list #false #true))])
+          (hash-set! font-paths
+                     (make-key font-family bold italic)
+                     (family->path font-family #:bold bold #:italic italic))))
   (cond
     [(hash-ref font-paths (make-key font-family bold italic) #false)]
     ;; try regular style if style-specific key isn't there for b i or bi
@@ -118,12 +118,12 @@
   ;; convert references to a font family and style to an font path on disk
   ;; we trust it exists because we used `setup-font-path-table` earlier,
   ;; but if not, fallback fonts will kick in, on the idea that a missing font shouldn't stop the show
-  (define this-font-family (hash-ref! attrs (attr-key-name :font-family) default-font-family))
+  (define this-font-family (hash-ref! attrs :font-family default-font-family))
   (match (string-downcase this-font-family)
     [(? font-path-string? ps) (path->complete-path ps)]
     [_
-     (define this-bold (hash-ref! attrs (attr-key-name :font-bold) #false))
-     (define this-italic (hash-ref! attrs (attr-key-name :font-italic) #false))
+     (define this-bold (hash-ref! attrs :font-bold #false))
+     (define this-italic (hash-ref! attrs :font-italic #false))
      (font-attrs->path font-paths this-font-family this-bold this-italic)]))
 
 (define-pass (resolve-font-paths qs)
@@ -137,17 +137,18 @@
                      #:which-attr :font-family
                      #:attr-proc (λ (ak av attrs) (resolve-font-path font-paths av attrs))))
 
+(define (resolved-font-for-family val #:bold [bold #f] #:italic [italic #f])
+  (define qs (list (make-quad #:attrs (make-hasheq
+                                       (list (cons :font-family (string-downcase val))
+                                             (cons :font-bold bold)
+                                             (cons :font-italic italic))))))
+  (last (explode-path (quad-ref (car (resolve-font-paths qs)) :font-family))))
+
 (module+ test
   (require rackunit)
   (define-attr-list debug-attrs
     [:font-family (attr-uncased-string-key 'font-family)])
   (parameterize ([current-attrs debug-attrs])
-    (define (resolved-font-for-family val #:bold [bold #f] #:italic [italic #f])
-      (define qs (list (make-quad #:attrs (make-hasheq
-                                           (list (cons 'font-family (string-downcase val))
-                                                 (cons 'font-bold bold)
-                                                 (cons 'font-italic italic))))))
-      (last (explode-path (quad-ref (car (resolve-font-paths qs)) 'font-family))))
     (check-equal? (resolved-font-for-family "Heading") (string->path "fira-sans-light.otf"))
     (check-equal? (resolved-font-for-family "CODE") (string->path "fira-mono.otf"))
     (check-equal? (resolved-font-for-family "blockquote" #:bold #t) (string->path "fira-sans-bold.otf"))
