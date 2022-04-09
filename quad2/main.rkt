@@ -21,15 +21,16 @@
                   ;; all attrs start out as symbol-string pairs.
                   ;; we convert keys & values to corresponding higher-level types.
                   upgrade-attr-keys
-                  ;; I think this is wrong. Filling in default values here
-                  ;; will prevent parent values from cascading during linearization
-                  ;; but it would be OK at the top level, to ensure
-                  ;; that there are values that cascade
-                  ;; but that can be done by wrapping in a quad with the default values
+                  ;; I think `fill-default-attr-values` here is wrong.
+                  ;; It will prevent parent values from cascading during linearization.
+                  ;; But it would be OK at the top level, to ensure
+                  ;; that there are values that cascade.
+                  ;; But that can also be done by wrapping in a quad with the default values.
                   #;fill-default-attr-values
                   downcase-string-attr-values
                   convert-boolean-attr-values
                   convert-numeric-attr-values
+                  convert-set-attr-values
 
                   ;; pre-linearization resolutions & parsings =============
                   ;; these need the tree shape

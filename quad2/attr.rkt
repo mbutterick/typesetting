@@ -20,11 +20,11 @@
   (let loop ([xs xs][parent-attrs #false])
     (for ([x (in-list xs)]
           #:when (quad? x))
-         (define attrs (quad-attrs x))
-         (unless (set-member? attrs-seen attrs)
-           (proc attrs parent-attrs)
-           (set-add! attrs-seen attrs))
-         (loop (quad-elems x) attrs))))
+      (define attrs (quad-attrs x))
+      (unless (set-member? attrs-seen attrs)
+        (proc attrs parent-attrs)
+        (set-add! attrs-seen attrs))
+      (loop (quad-elems x) attrs))))
 
 (define (do-attr-iteration qs
                            #:which-attr [which-attr 'all-attributes-signal]
@@ -43,11 +43,11 @@
                   (λ (attrs parent-attrs)
                     (for ([(ak av) (in-hash attrs)]
                           #:when (attr-predicate ak av))
-                         (match (if wants-parent-attrs? (attr-proc ak av attrs parent-attrs) (attr-proc ak av attrs))
-                           ;; void value: do nothing
-                           [(? void?) (void)]
-                           ;; otherwise treat return value as new attr value
-                           [new-av (hash-set! attrs ak new-av)])))))
+                      (match (if wants-parent-attrs? (attr-proc ak av attrs parent-attrs) (attr-proc ak av attrs))
+                        ;; void value: do nothing
+                        [(? void?) (void)]
+                        ;; otherwise treat return value as new attr value
+                        [new-av (hash-set! attrs ak new-av)])))))
 
 (define-pass (upgrade-attr-keys qs)
   ;; convert attr keys from symbols to attr struct types
@@ -55,7 +55,7 @@
   #:pre (list-of quad?)
   #:post (list-of quad?)
   (define attr-lookup-table (for/hasheq ([a (in-list (current-attrs))])
-                                        (values (attr-key-name a) a)))
+                              (values (attr-key-name a) a)))
   (define strict-attrs? (current-strict-attrs?))
   (define (do-upgrade ak av attrs)
     (cond
@@ -77,7 +77,7 @@
   (define mandatory-keys (filter attr-key-mandatory? (current-attrs)))
   (for-each-attrs qs (λ (attrs parent-attrs)
                        (for ([ak (in-list mandatory-keys)])
-                            (hash-ref! attrs ak (attr-key-default ak))))))
+                         (hash-ref! attrs ak (attr-key-default ak))))))
 
 (define-pass (downcase-string-attr-values qs)
   ;; make attribute values lowercase, unless they're case-sensitive
@@ -114,6 +114,21 @@
                                    (or (string->number av)
                                        (raise-argument-error 'convert-numeric-attr-values "numeric string" av)))))
 
+(define-pass (convert-set-attr-values qs)
+  #:pre (list-of quad?)
+  #:post (list-of quad?)
+  (do-attr-iteration qs
+                     #:which-attr attr-set-key?
+                     #:attr-proc (λ (ak av attrs)
+                                   (apply seteq (map string->symbol (string-split av))))))
+
+(module+ test
+  (let ([q (convert-set-attr-values (upgrade-attr-keys (bootstrap-input '(div ((font-features "calt")(font-features-add "")(font-features-subtract "swsh liga"))))))])
+    (check-equal? (quad-ref q :font-features) (seteq 'calt))
+    (check-equal? (quad-ref q :font-features-add) (seteq))
+    (check-equal? (quad-ref q :font-features-subtract) (seteq 'swsh 'liga))))
+
+
 (define-pass (complete-attr-paths qs)
   #:pre (list-of quad?)
   #:post (list-of quad?)
@@ -123,6 +138,7 @@
   (do-attr-iteration qs
                      #:which-attr attr-path-key?
                      #:attr-proc (λ (ak av attrs) (path->complete-path av))))
+
 
 (define-pass (parse-dimension-strings qs)
   #:pre (list-of quad?)
@@ -139,18 +155,18 @@
     [:foo (make-attr-cased-string-key 'foo)]
     [:ps (make-attr-path-key 'ps)]
     [:dim (make-attr-dimension-string-key 'dim)]
-    [:boolt (make-attr-boolean-key 'bool)]
-    [:boolf (make-attr-boolean-key 'bool)]
+    [:boolt (make-attr-boolean-key 'boolt)]
+    [:boolf (make-attr-boolean-key 'boolf)]
     [:num (make-attr-numeric-key 'num)]
     [:num-def-42 (make-attr-numeric-key 'num-def-42 #true 42)])
   (parameterize ([current-attrs debug-attrs])
-    (define (make-q) (make-quad #:attrs (make-hasheq (list (cons :foo "BAR")
-                                                           (cons 'ding "dong")
-                                                           (cons :ps "file.txt")
-                                                           (cons :dim "2in")
-                                                           (cons :boolt "true")
-                                                           (cons :boolf "false")
-                                                           (cons :num "42.5")))))
+    (define (make-q) (make-quad #:attrs (list :foo "BAR"
+                                              'ding "dong"
+                                              :ps "file.txt"
+                                              :dim "2in"
+                                              :boolt "true"
+                                              :boolf "false"
+                                              :num "42.5")))
     (define qs (list (make-q)))
     (check-exn exn? (λ ()
                       (parameterize ([current-strict-attrs? #true])
