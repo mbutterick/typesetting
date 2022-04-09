@@ -32,4 +32,5 @@
   path
   numeric
   boolean
+  set
   unknown)
