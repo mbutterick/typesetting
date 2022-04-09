@@ -1,5 +1,6 @@
 #lang racket/base
 (require racket/match
+         "constants.rkt"
          "struct.rkt")
 (provide (all-defined-out))
 
@@ -13,7 +14,7 @@
                         val))) ...))
 
 (define-guarded-parameters
-  [current-attrs (λ (xs) (and (list? xs) (andmap attr-key? xs))) null]
+  [current-attrs (λ (xs) (and (list? xs) (andmap attr-key? xs))) all-attrs]
   [current-show-timing? boolean? #false]
   [current-strict-attrs? boolean? #false]
   [current-use-preconditions? boolean? #true]
