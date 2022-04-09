@@ -37,14 +37,18 @@
   (apply hash-union! #:combine (λ (v1 v2) v2) qas attrss)
   qas)
 
-(define (quad-attrs? x) (hash-eq? x))
+(define (quad-attrs? x) (and (hash? x) (hash-eq? x)))
 (define (quad-elems? x) (list? x))
 
 (define/contract (make-quad #:tag [tag #false]
                             #:attrs [attrs (make-quad-attrs null)]
                             #:elems [elems null])
-  (() (#:tag quad-tag? #:attrs quad-attrs? #:elems quad-elems?) . ->* . quad?)
-  (let ([attrs (if (immutable? attrs) (make-hasheq (hash->list attrs)) attrs)])
+  (() (#:tag quad-tag? #:attrs (or/c quad-attrs? (listof any/c)) #:elems quad-elems?) . ->* . quad?)
+  (let ([attrs (let loop ([attrs attrs])
+                 (cond
+                   [(list? attrs) (loop (apply hasheq attrs))]
+                   [(immutable? attrs) (make-hasheq (hash->list attrs))]
+                   [else attrs]))])
     (quad-constructor tag attrs elems #false)))
 
 (define (quad-ref q-or-qs key [default-val #false])
