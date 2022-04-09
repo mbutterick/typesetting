@@ -23,7 +23,7 @@
 (define (fonts-in-directory dir)
   (for/list ([font-path (in-directory dir)]
              #:when (member (path-get-extension font-path) font-file-extensions))
-            font-path))
+    font-path))
 
 (define (setup-font-path-table [base-path (current-directory)])
   ;; create a table of font paths that we can use to resolve references to font names.
@@ -45,36 +45,36 @@
          #:when (directory-exists? font-family-subdir)
          [fonts-in-this-directory (in-value (fonts-in-directory font-family-subdir))]
          [font-path (in-list fonts-in-this-directory)])
-        (match-define (list font-path-string family-name)
-          (for/list ([x (list font-path font-family-subdir)])
-                    (path->string (find-relative-path fonts-dir x))))
-        (define path-parts (for/list ([part (in-list (explode-path (string->path (string-downcase font-path-string))))])
-                                     (path->string part)))
-        (define key
-          (cons (string-downcase family-name)
-                (cond
-                  ;; special case: if there's only one style in the family directory,
-                  ;; treat it as the regular style, regardless of name
-                  [(= (length fonts-in-this-directory) 1) 'r]
-                  ;; cases where fonts are in subdirectories named by style
-                  ;; infer style from subdir name
-                  [(and (member "bold" path-parts) (member "italic" path-parts)) 'bi]
-                  [(member "bold" path-parts) 'b]
-                  [(member "italic" path-parts) 'i]
-                  [else
-                   ;; try to infer from filename alone
-                   ;; TODO: what happens when there is no regular style?
-                   (define filename (string-downcase (last path-parts)))
-                   (define filename-contains-bold? (string-contains? filename "bold"))
-                   (define filename-contains-italic? (string-contains? filename "italic"))
-                   (cond
-                     [(and filename-contains-bold? filename-contains-italic?) 'bi]
-                     [filename-contains-bold? 'b]
-                     [filename-contains-italic? 'i]
-                     [else 'r])])))
-        ;; only set value if there's not one there already.
-        ;; this means that we only use the first eligible font we find.
-        (hash-ref! font-paths key font-path))
+    (match-define (list font-path-string family-name)
+      (for/list ([x (list font-path font-family-subdir)])
+        (path->string (find-relative-path fonts-dir x))))
+    (define path-parts (for/list ([part (in-list (explode-path (string->path (string-downcase font-path-string))))])
+                         (path->string part)))
+    (define key
+      (cons (string-downcase family-name)
+            (cond
+              ;; special case: if there's only one style in the family directory,
+              ;; treat it as the regular style, regardless of name
+              [(= (length fonts-in-this-directory) 1) 'r]
+              ;; cases where fonts are in subdirectories named by style
+              ;; infer style from subdir name
+              [(and (member "bold" path-parts) (member "italic" path-parts)) 'bi]
+              [(member "bold" path-parts) 'b]
+              [(member "italic" path-parts) 'i]
+              [else
+               ;; try to infer from filename alone
+               ;; TODO: what happens when there is no regular style?
+               (define filename (string-downcase (last path-parts)))
+               (define filename-contains-bold? (string-contains? filename "bold"))
+               (define filename-contains-italic? (string-contains? filename "italic"))
+               (cond
+                 [(and filename-contains-bold? filename-contains-italic?) 'bi]
+                 [filename-contains-bold? 'b]
+                 [filename-contains-italic? 'i]
+                 [else 'r])])))
+    ;; only set value if there's not one there already.
+    ;; this means that we only use the first eligible font we find.
+    (hash-ref! font-paths key font-path))
   font-paths)
 
 (define (make-key font-family [bold #f] [italic #f])
@@ -100,9 +100,9 @@
       (display "(fontconfig lookup unimplemented)")
       #;(for* ([bold (in-list (list #false #true))]
                [italic (in-list (list #false #true))])
-              (hash-set! font-paths
-                         (make-key font-family bold italic)
-                         (family->path font-family #:bold bold #:italic italic))))
+          (hash-set! font-paths
+                     (make-key font-family bold italic)
+                     (family->path font-family #:bold bold #:italic italic))))
   (cond
     [(hash-ref font-paths (make-key font-family bold italic) #false)]
     ;; try regular style if style-specific key isn't there for b i or bi
@@ -160,25 +160,20 @@
   #:post (list-of quad?)
   
   (define (resolve-font-size-once attrs parent-attrs)
+    (define previous-font-size
+      (cond
+        [(and parent-attrs (hash-ref parent-attrs :font-size #false))]
+        [else default-font-size]))
     (define base-size-adjusted
-      (match (hash-ref attrs :font-size 'missing)
-        ;; if our value represents an adjustment,
-        ;; we apply the adjustment to the previous value
+      (match (hash-ref attrs :font-size #false)
         [(? procedure? proc)
-         (define previous-font-size (cond
-                                      [(and parent-attrs (hash-ref parent-attrs :font-size-previous #false))]
-                                      [else default-font-size]))
+         ;; if our value represents an adjustment,
+         ;; we apply the adjustment to the previous value
          (proc previous-font-size)]
         ;; otherwise we use our value directly
         [(? number? num) num]
-        [other (raise-user-error 'resolve-font-sizes "procedure or number" other)]))
-    ;; we write our new value into both font-size and font-size-previous
-    ;; because as we cascade down, we're likely to come across superseding values
-    ;; of font-size
-    ;; but the font-size-previous will persist
-    ;; because on the next recursion, the current `attrs` will be `parent-attrs`
-    (hash-set*! attrs :font-size base-size-adjusted
-                :font-size-previous base-size-adjusted))
+        [other #false]))
+    (hash-set! attrs :font-size (or base-size-adjusted previous-font-size)))
 
   (for-each-attrs qs resolve-font-size-once))
 

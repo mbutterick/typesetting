@@ -17,5 +17,4 @@
   [:font-path (make-attr-path-key 'font-path)]
   [:font-bold (make-attr-boolean-key 'font-bold #true #false)]
   [:font-italic (make-attr-boolean-key 'font-italic #true #false)]
-  [:font-size (make-attr-dimension-string-key 'font-size #true default-font-size)]
-  [:font-size-previous (make-attr-dimension-string-key 'font-size-previous)])
+  [:font-size (make-attr-dimension-string-key 'font-size #true default-font-size)])
