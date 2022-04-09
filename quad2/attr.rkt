@@ -20,11 +20,11 @@
   (let loop ([xs xs][parent-attrs #false])
     (for ([x (in-list xs)]
           #:when (quad? x))
-         (let ([attrs (quad-attrs x)])
-           (unless (set-member? attrs-seen attrs)
-             (proc attrs parent-attrs)
-             (set-add! attrs-seen attrs))
-           (loop (quad-elems x) attrs)))))
+         (define attrs (quad-attrs x))
+         (unless (set-member? attrs-seen attrs)
+           (proc attrs parent-attrs)
+           (set-add! attrs-seen attrs))
+         (loop (quad-elems x) attrs))))
 
 (define (do-attr-iteration qs
                            #:which-attr [which-attr 'all-attributes-signal]
