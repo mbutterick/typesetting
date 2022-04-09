@@ -20,7 +20,7 @@
   (let loop ([xs xs][parent-attrs #false])
     (for ([x (in-list xs)]
           #:when (quad? x))
-         (let* ([attrs (quad-attrs x)])
+         (let ([attrs (quad-attrs x)])
            (unless (set-member? attrs-seen attrs)
              (proc attrs parent-attrs)
              (set-add! attrs-seen attrs))
@@ -79,7 +79,7 @@
                        (for ([ak (in-list mandatory-keys)])
                             (hash-ref! attrs ak (attr-key-default ak))))))
 
-(define-pass (downcase-attr-values qs)
+(define-pass (downcase-string-attr-values qs)
   ;; make attribute values lowercase, unless they're case-sensitive
   ;; so we can check them more easily later.
   ;; in principle we could do this earlier and recursively process a single quad
@@ -114,7 +114,6 @@
                                    (or (string->number av)
                                        (raise-argument-error 'convert-numeric-attr-values "numeric string" av)))))
 
-
 (define-pass (complete-attr-paths qs)
   #:pre (list-of quad?)
   #:post (list-of quad?)
@@ -133,8 +132,6 @@
   (do-attr-iteration qs
                      #:which-attr attr-dimension-string-key?
                      #:attr-proc (λ (ak av attrs) (parse-dimension av))))
-
-
 
 (module+ test
   (require rackunit)
@@ -162,7 +159,7 @@
                      (parameterize ([current-strict-attrs? #false])
                        (upgrade-attr-keys (list (make-q))))))
     (check-equal? (quad-ref (car (fill-default-attr-values (list (make-q)))) :num-def-42) 42)
-    (check-equal? (quad-ref (car (downcase-attr-values qs)) :foo) "bar")
+    (check-equal? (quad-ref (car (downcase-string-attr-values qs)) :foo) "bar")
     (check-true (complete-path? (quad-ref (car (complete-attr-paths qs)) :ps)))
     (check-equal? (quad-ref (car (parse-dimension-strings qs)) :dim) 144)
     (let ([q (car (convert-boolean-attr-values qs))])

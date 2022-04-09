@@ -58,7 +58,7 @@
                   [(= (length fonts-in-this-directory) 1) 'r]
                   ;; cases where fonts are in subdirectories named by style
                   ;; infer style from subdir name
-                  [(member "bold-italic" path-parts) 'bi]
+                  [(and (member "bold" path-parts) (member "italic" path-parts)) 'bi]
                   [(member "bold" path-parts) 'b]
                   [(member "italic" path-parts) 'i]
                   [else
@@ -159,35 +159,44 @@
   #:pre (list-of quad?)
   #:post (list-of quad?)
   
-  (define (resolve-font-size-once attrs)
-    ;; FIXME: this technique no longer works because
-    ;; it depends on resolving values while attrs are being cascaded
+  (define (resolve-font-size-once attrs parent-attrs)
     (define base-size-adjusted
-      (match (hash-ref attrs :font-size default-font-size)
+      (match (hash-ref attrs :font-size 'missing)
         ;; if our value represents an adjustment,
         ;; we apply the adjustment to the previous value
-        [(? procedure? proc) (proc (hash-ref attrs :font-size-previous default-font-size))]
+        [(? procedure? proc)
+         (define previous-font-size (cond
+                                      [(and parent-attrs (hash-ref parent-attrs :font-size-previous #false))]
+                                      [else default-font-size]))
+         (proc previous-font-size)]
         ;; otherwise we use our value directly
-        [val val]))
+        [(? number? num) num]
+        [other (raise-user-error 'resolve-font-sizes "procedure or number" other)]))
     ;; we write our new value into both font-size and font-size-previous
     ;; because as we cascade down, we're likely to come across superseding values
-    ;; of font-size (but font-size-previous will persist)
-    (hash-set! attrs :font-size base-size-adjusted)
-    (hash-set! attrs :font-size-previous base-size-adjusted))
-  
-  (define font-paths (setup-font-path-table))
-  (do-attr-iteration qs
-                     #:attr-proc (λ (_ __ attrs) (resolve-font-size-once attrs))))
+    ;; of font-size
+    ;; but the font-size-previous will persist
+    ;; because on the next recursion, the current `attrs` will be `parent-attrs`
+    (hash-set*! attrs :font-size base-size-adjusted
+                :font-size-previous base-size-adjusted))
+
+  (for-each-attrs qs resolve-font-size-once))
 
 (module+ test
   (require rackunit)
   (define-attr-list debug-attrs
     [:font-family (make-attr-uncased-string-key 'font-family)])
   (parameterize ([current-attrs debug-attrs])
-    (check-equal? (resolved-font-for-family "Heading") (string->path "fira-sans-light.otf"))
-    (check-equal? (resolved-font-for-family "CODE") (string->path "fira-mono.otf"))
-    (check-equal? (resolved-font-for-family "blockquote" #:bold #t) (string->path "fira-sans-bold.otf"))
-    (check-equal? (resolved-font-for-family "nonexistent-fam") (string->path "SourceSerifPro-Regular.otf")))
+    (check-equal? (resolved-font-for-family "Heading") (build-path "fira-sans-light.otf"))
+    (check-equal? (resolved-font-for-family "CODE") (build-path "fira-mono.otf"))
+    (check-equal? (resolved-font-for-family "blockquote" #:bold #t) (build-path "fira-sans-bold.otf"))
+    (check-equal? (resolved-font-for-family "nonexistent-fam") (build-path "SourceSerifPro-Regular.otf")))
 
-  (define qs (bootstrap-input (make-quad #:tag 'div #:attrs (make-hasheq (list (cons :font-size "100pt"))) #:elems (list (make-quad #:tag 'span #:attrs (make-hasheq (list (cons :font-size-previous "100pt") (cons :font-size "1.5em"))))))))
-  #;(resolve-font-sizes (parse-dimension-strings qs)))
+  (define qs (bootstrap-input
+              (make-quad #:tag 'div
+                         #:attrs (make-hasheq (list (cons :font-size "100pt")))
+                         #:elems (list (make-quad #:tag 'span
+                                                  #:attrs (make-hasheq (list (cons :font-size "1.5em")))
+                                                  #:elems (list (make-quad #:tag 'span
+                                                                           #:attrs (make-hasheq (list (cons :font-size "200%"))))))))))
+  (check-equal? (quad-ref (quad-elems (car (resolve-font-sizes (parse-dimension-strings qs)))) :font-size) 150))

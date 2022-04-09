@@ -22,9 +22,12 @@
                   ;; we convert keys & values to corresponding higher-level types.
                   upgrade-attr-keys
                   fill-default-attr-values
-                  downcase-attr-values
+                  downcase-string-attr-values
                   convert-boolean-attr-values
                   convert-numeric-attr-values
+
+                  ;; pre-linearization resolutions & parsings =============
+                  ;; these need the tree shape
                   parse-dimension-strings
                   resolve-font-sizes
 
@@ -36,7 +39,7 @@
                   ;; because once we linearize, that information is gone.
                   linearize
 
-                  ;; resolutions & parsings =============
+                  ;; post-linearization resolutions & parsings =============
                   resolve-font-paths
                   complete-attr-paths
                   ;; TODO: parse feature strings
@@ -54,18 +57,18 @@
   (require "render.rkt")
   (define (test-compile x)
     (parameterize ([current-wrap-width 13]
-                               [current-attrs all-attrs]
-                               [current-strict-attrs? #t]
-                               [current-show-timing? #f]
-                               [current-use-preconditions? #t]
-                               [current-use-postconditions? #t])
-                  (quad-compile (bootstrap-input x))))
+                   [current-attrs all-attrs]
+                   [current-strict-attrs? #t]
+                   [current-show-timing? #f]
+                   [current-use-preconditions? #t]
+                   [current-use-postconditions? #t])
+      (quad-compile (bootstrap-input x))))
 
   (match (test-compile "Hello this is the earth")
     [(? string? insts)
-    (render insts #:using text-renderer)
-    (render insts #:using drr-renderer)
-    #;(render-to-html drawing-insts)
-    #;(render-to-pdf drawing-insts)
-    ]))
+     (render insts #:using text-renderer)
+     (render insts #:using drr-renderer)
+     #;(render-to-html drawing-insts)
+     #;(render-to-pdf drawing-insts)
+     ]))
 

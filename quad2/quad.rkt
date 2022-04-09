@@ -47,10 +47,14 @@
   (let ([attrs (if (immutable? attrs) (make-hasheq (hash->list attrs)) attrs)])
     (quad-constructor tag attrs elems #false)))
 
-(define (quad-ref q key [default-val #false])
+(define (quad-ref q-or-qs key [default-val #false])
   (unless (attr-key? key)
     (raise-argument-error 'quad-ref "attr-key?" key))
-  (hash-ref (quad-attrs q) key default-val))
+  (hash-ref (quad-attrs (match q-or-qs
+                          [(? quad? q) q]
+                          [(cons q _) q]
+                          [_ (raise-argument-error 'quad-ref "quad or list of quads" q-or-qs)])) key default-val))
+
 (define (quad-set! q key val)
   (hash-set! (quad-attrs q) key val))
 
