@@ -36,7 +36,7 @@
                   ;; these need the tree shape
                   parse-dimension-strings
                   resolve-font-sizes
-                  #;resolve-font-features
+                  resolve-font-features
 
                   ;; linearization =============
                   ;; we postpone this step until we're certain any

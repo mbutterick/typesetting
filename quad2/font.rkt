@@ -3,6 +3,7 @@
          racket/match
          racket/runtime-path
          racket/list
+         racket/set
          racket/string
          fontland/font-path
          "quad.rkt"
@@ -23,7 +24,7 @@
 (define (fonts-in-directory dir)
   (for/list ([font-path (in-directory dir)]
              #:when (member (path-get-extension font-path) font-file-extensions))
-    font-path))
+            font-path))
 
 (define (setup-font-path-table [base-path (current-directory)])
   ;; create a table of font paths that we can use to resolve references to font names.
@@ -45,36 +46,36 @@
          #:when (directory-exists? font-family-subdir)
          [fonts-in-this-directory (in-value (fonts-in-directory font-family-subdir))]
          [font-path (in-list fonts-in-this-directory)])
-    (match-define (list font-path-string family-name)
-      (for/list ([x (list font-path font-family-subdir)])
-        (path->string (find-relative-path fonts-dir x))))
-    (define path-parts (for/list ([part (in-list (explode-path (string->path (string-downcase font-path-string))))])
-                         (path->string part)))
-    (define key
-      (cons (string-downcase family-name)
-            (cond
-              ;; special case: if there's only one style in the family directory,
-              ;; treat it as the regular style, regardless of name
-              [(= (length fonts-in-this-directory) 1) 'r]
-              ;; cases where fonts are in subdirectories named by style
-              ;; infer style from subdir name
-              [(and (member "bold" path-parts) (member "italic" path-parts)) 'bi]
-              [(member "bold" path-parts) 'b]
-              [(member "italic" path-parts) 'i]
-              [else
-               ;; try to infer from filename alone
-               ;; TODO: what happens when there is no regular style?
-               (define filename (string-downcase (last path-parts)))
-               (define filename-contains-bold? (string-contains? filename "bold"))
-               (define filename-contains-italic? (string-contains? filename "italic"))
-               (cond
-                 [(and filename-contains-bold? filename-contains-italic?) 'bi]
-                 [filename-contains-bold? 'b]
-                 [filename-contains-italic? 'i]
-                 [else 'r])])))
-    ;; only set value if there's not one there already.
-    ;; this means that we only use the first eligible font we find.
-    (hash-ref! font-paths key font-path))
+        (match-define (list font-path-string family-name)
+          (for/list ([x (list font-path font-family-subdir)])
+                    (path->string (find-relative-path fonts-dir x))))
+        (define path-parts (for/list ([part (in-list (explode-path (string->path (string-downcase font-path-string))))])
+                                     (path->string part)))
+        (define key
+          (cons (string-downcase family-name)
+                (cond
+                  ;; special case: if there's only one style in the family directory,
+                  ;; treat it as the regular style, regardless of name
+                  [(= (length fonts-in-this-directory) 1) 'r]
+                  ;; cases where fonts are in subdirectories named by style
+                  ;; infer style from subdir name
+                  [(and (member "bold" path-parts) (member "italic" path-parts)) 'bi]
+                  [(member "bold" path-parts) 'b]
+                  [(member "italic" path-parts) 'i]
+                  [else
+                   ;; try to infer from filename alone
+                   ;; TODO: what happens when there is no regular style?
+                   (define filename (string-downcase (last path-parts)))
+                   (define filename-contains-bold? (string-contains? filename "bold"))
+                   (define filename-contains-italic? (string-contains? filename "italic"))
+                   (cond
+                     [(and filename-contains-bold? filename-contains-italic?) 'bi]
+                     [filename-contains-bold? 'b]
+                     [filename-contains-italic? 'i]
+                     [else 'r])])))
+        ;; only set value if there's not one there already.
+        ;; this means that we only use the first eligible font we find.
+        (hash-ref! font-paths key font-path))
   font-paths)
 
 (define (make-key font-family [bold #f] [italic #f])
@@ -100,9 +101,9 @@
       (display "(fontconfig lookup unimplemented)")
       #;(for* ([bold (in-list (list #false #true))]
                [italic (in-list (list #false #true))])
-          (hash-set! font-paths
-                     (make-key font-family bold italic)
-                     (family->path font-family #:bold bold #:italic italic))))
+              (hash-set! font-paths
+                         (make-key font-family bold italic)
+                         (family->path font-family #:bold bold #:italic italic))))
   (cond
     [(hash-ref font-paths (make-key font-family bold italic) #false)]
     ;; try regular style if style-specific key isn't there for b i or bi
@@ -195,3 +196,52 @@
                                                   #:elems (list (make-quad #:tag 'span
                                                                            #:attrs (make-hasheq (list (cons :font-size "200%"))))))))))
   (check-equal? (quad-ref (quad-elems (car (resolve-font-sizes (parse-dimension-strings qs)))) :font-size) 150))
+
+
+(define-pass (resolve-font-features qs)
+  ;; put a :font-features field in every quad,
+  ;; Along the way, resolve any :font-features-add and :font-features-subtract attrs.
+  #:pre (list-of quad?)
+  #:post (λ (qs)
+           (for/and ([q (in-list qs)])
+                    (define attrs (quad-attrs q))
+                    (and
+                     (hash-has-key? attrs :font-features)
+                     (not (hash-has-key? attrs :font-features-add))
+                     (not (hash-has-key? attrs :font-features-subtract)))))
+
+  (define (resolve-font-features-once attrs parent-attrs)
+    ;; if attrs already has an explicit :font-features key, we don't need to calculate it
+    (unless (hash-has-key? attrs :font-features)
+      ;; otherwise we calculate :font-features by looking at the parent features
+      ;; and adding / removing any indicated.
+      (define previous-features
+        (let ([parent-attrs (or parent-attrs (hash))])
+          (hash-ref parent-attrs :font-features default-no-features)))
+      (define features-to-add (hash-ref attrs :font-features-add default-no-features))
+      (define features-to-subtract (hash-ref attrs :font-features-subtract default-no-features))
+      ;; TODO: which order of operations is preferable: add then remove, or remove then add?
+      (define these-features
+        (set-subtract (set-union previous-features features-to-add) features-to-subtract))
+      (hash-set! attrs :font-features these-features))
+    ;; now that we've got :font-features, we can delete :font-features-add and :font-features-remove
+    (hash-remove! attrs :font-features-add)
+    (hash-remove! attrs :font-features-subtract))
+
+  (for-each-attrs qs resolve-font-features-once))
+
+
+(module+ test
+  (let ([qs (bootstrap-input
+             (make-quad #:tag 'div
+                        #:attrs (make-hasheq (list (cons :font-features "ss01 liga")))
+                        #:elems (list (make-quad #:tag 'span
+                                                 #:attrs (make-hasheq (list
+                                                                       (cons :font-features-add "swsh")
+                                                                       (cons :font-features-subtract "liga")))
+                                                 #:elems (list (make-quad #:tag 'span
+                                                                          #:attrs (make-hasheq (list (cons :font-features "hist")))))))))])
+    (define q (car (resolve-font-features (convert-set-attr-values (upgrade-attr-keys qs)))))
+    (check-equal? (quad-ref q :font-features) (seteq 'ss01 'liga))
+    (check-equal? (quad-ref (car (quad-elems q)) :font-features) (seteq 'ss01 'swsh))
+    (check-equal? (quad-ref (car (quad-elems (car (quad-elems q)))) :font-features) (seteq 'hist))))
