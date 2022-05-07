@@ -6,7 +6,7 @@
 
 (define default-font-family "text")
 (define default-font-size 12)
-(define default-features (seteq))
+(define default-no-features (seteq))
 
 (define-syntax-rule (define-attr-list LIST-NAME
                       [ATTR-NAME ATTR-EXPR] ...)
@@ -27,6 +27,6 @@
   [:font-bold (make-attr-boolean-key 'font-bold #true #false)]
   [:font-italic (make-attr-boolean-key 'font-italic #true #false)]
   [:font-size (make-attr-dimension-string-key 'font-size #true default-font-size)]
-  [:font-features (make-attr-set-key 'font-features default-features)]
-  [:font-features-add (make-attr-set-key 'font-features-add default-features)]
-  [:font-features-remove (make-attr-set-key 'font-features-remove default-features)])
+  [:font-features (make-attr-set-key 'font-features default-no-features)]
+  [:font-features-add (make-attr-set-key 'font-features-add default-no-features)]
+  [:font-features-subtract (make-attr-set-key 'font-features-subtract default-no-features)])
