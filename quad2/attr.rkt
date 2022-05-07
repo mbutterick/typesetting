@@ -12,6 +12,9 @@
          "param.rkt")
 (provide (all-defined-out))
 
+(module+ test
+  (require rackunit))
+
 (define (for-each-attrs xs proc)
   ;; apply `proc` to each set of attrs in `xs`.
   ;; recursively descend from top to bottom.
@@ -20,11 +23,11 @@
   (let loop ([xs xs][parent-attrs #false])
     (for ([x (in-list xs)]
           #:when (quad? x))
-      (define attrs (quad-attrs x))
-      (unless (set-member? attrs-seen attrs)
-        (proc attrs parent-attrs)
-        (set-add! attrs-seen attrs))
-      (loop (quad-elems x) attrs))))
+         (define attrs (quad-attrs x))
+         (unless (set-member? attrs-seen attrs)
+           (proc attrs parent-attrs)
+           (set-add! attrs-seen attrs))
+         (loop (quad-elems x) attrs))))
 
 (define (do-attr-iteration qs
                            #:which-attr [which-attr 'all-attributes-signal]
@@ -41,13 +44,19 @@
       [other (raise-argument-error 'do-attr-iteration "key predicate" other)]))
   (for-each-attrs qs
                   (λ (attrs parent-attrs)
-                    (for ([(ak av) (in-hash attrs)]
-                          #:when (attr-predicate ak av))
-                      (match (if wants-parent-attrs? (attr-proc ak av attrs parent-attrs) (attr-proc ak av attrs))
-                        ;; void value: do nothing
-                        [(? void?) (void)]
-                        ;; otherwise treat return value as new attr value
-                        [new-av (hash-set! attrs ak new-av)])))))
+                    ;; we don't iterate with `in-hash` (or `in-hash-keys`) because
+                    ;; `attrs` might get mutated during the loop,
+                    ;; which invalidates the reference `in-hash` is using
+                    (for* ([ak (in-list (hash-keys attrs))]
+                           [av (in-value (hash-ref attrs ak))]
+                           #:when (attr-predicate ak av))
+                          (match (if wants-parent-attrs?
+                                     (attr-proc ak av attrs parent-attrs)
+                                     (attr-proc ak av attrs))
+                            ;; void value: do nothing
+                            [(? void?) (void)]
+                            ;; otherwise treat return value as new attr value
+                            [new-av (hash-set! attrs ak new-av)])))))
 
 (define-pass (upgrade-attr-keys qs)
   ;; convert attr keys from symbols to attr struct types
@@ -55,16 +64,15 @@
   #:pre (list-of quad?)
   #:post (list-of quad?)
   (define attr-lookup-table (for/hasheq ([a (in-list (current-attrs))])
-                              (values (attr-key-name a) a)))
+                                        (values (attr-key-name a) a)))
   (define strict-attrs? (current-strict-attrs?))
   (define (do-upgrade ak av attrs)
     (cond
       [(attr-key? ak) av]
       [(symbol? ak)
        (match (hash-ref attr-lookup-table ak :unknown-key)
-         [(== :unknown-key eq?)
-          #:when strict-attrs?
-          (raise-argument-error 'upgrade-attr-keys "known attr" ak)]
+         [(== :unknown-key eq?) #:when strict-attrs?
+                                (raise-argument-error 'upgrade-attr-keys "known attr" ak)]
          [attr-key
           (hash-remove! attrs ak)
           (hash-set! attrs attr-key av)])]
@@ -77,7 +85,7 @@
   (define mandatory-keys (filter attr-key-mandatory? (current-attrs)))
   (for-each-attrs qs (λ (attrs parent-attrs)
                        (for ([ak (in-list mandatory-keys)])
-                         (hash-ref! attrs ak (attr-key-default ak))))))
+                            (hash-ref! attrs ak (attr-key-default ak))))))
 
 (define-pass (downcase-string-attr-values qs)
   ;; make attribute values lowercase, unless they're case-sensitive
@@ -150,7 +158,6 @@
                      #:attr-proc (λ (ak av attrs) (parse-dimension av))))
 
 (module+ test
-  (require rackunit)
   (define-attr-list debug-attrs
     [:foo (make-attr-cased-string-key 'foo)]
     [:ps (make-attr-path-key 'ps)]
