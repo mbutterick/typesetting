@@ -21,17 +21,14 @@
                   ;; all attrs start out as symbol-string pairs.
                   ;; we convert keys & values to corresponding higher-level types.
                   upgrade-attr-keys
-                  ;; I think `fill-default-attr-values` here is wrong.
-                  ;; It will prevent parent values from cascading during linearization.
-                  ;; But it would be OK at the top level, to ensure
-                  ;; that there are values that cascade.
-                  ;; But that can also be done by wrapping in a quad with the default values.
-                  #;fill-default-attr-values
                   downcase-string-attr-values
                   convert-boolean-attr-values
                   convert-numeric-attr-values
                   convert-set-attr-values
                   convert-path-attr-values
+
+                  ;; wrap default values around top level
+                  set-top-level-attr-values
 
                   ;; pre-linearization resolutions & parsings =============
                   ;; these need the tree shape
@@ -55,7 +52,9 @@
                   merge-adjacent-strings
                   split-whitespace
                   split-into-single-char-quads
-                  ;; TODO: missing glyphs
+                  fill-missing-font-path
+                  #;remove-font-without-char
+                  insert-fallback-font
                   layout
                   make-drawing-insts
                   stackify)))
@@ -64,7 +63,7 @@
   (require "render.rkt")
   (define (test-compile x)
     (parameterize ([current-wrap-width 13]
-                   [current-attrs all-attrs]
+                   [current-attr-keys all-attr-keys]
                    [current-strict-attrs? #t]
                    [current-show-timing? #f]
                    [current-use-preconditions? #t]

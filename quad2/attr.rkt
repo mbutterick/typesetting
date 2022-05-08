@@ -42,7 +42,6 @@
            (λ (ak _) (pred ak)) ; 1 arity implies key-only test
            pred)]
       [other (raise-argument-error 'do-attr-iteration "key predicate" other)]))
-  (define no-value-signal (gensym))
   (for-each-attrs qs
                   (λ (attrs parent-attrs)
                     ;; we don't iterate with `in-hash` (or `in-hash-keys`) because
@@ -64,7 +63,7 @@
   ;; also lets us validate keys strictly, if we want
   #:pre (list-of quad?)
   #:post (list-of quad?)
-  (define attr-lookup-table (for/hasheq ([a (in-list (current-attrs))])
+  (define attr-lookup-table (for/hasheq ([a (in-list (current-attr-keys))])
                                         (values (attr-key-name a) a)))
   (define strict-attrs? (current-strict-attrs?))
   (define (do-upgrade ak av attrs)
@@ -80,13 +79,15 @@
       [else (raise-argument-error 'upgrade-attr-keys "symbol or attr" ak)]))
   (do-attr-iteration qs #:attr-proc do-upgrade))
 
-(define-pass (fill-default-attr-values qs)
+(define-pass (set-top-level-attr-values qs)
+  ;; put the default values for mandatory keys at the top level
+  ;; so that when we linearize, they will percolate downward
   #:pre (list-of quad?)
   #:post (list-of quad?)
-  (define mandatory-keys (filter attr-key-mandatory? (current-attrs)))
-  (for-each-attrs qs (λ (attrs parent-attrs)
-                       (for ([ak (in-list mandatory-keys)])
-                            (hash-ref! attrs ak (attr-key-default ak))))))
+  (define mandatory-attrs (for/hasheq ([ak (in-list (current-attr-keys))]
+                                       #:when (attr-key-mandatory? ak))
+                                      (values ak (attr-key-default ak))))
+  (list (make-quad #:attrs mandatory-attrs #:elems qs)))
 
 (define-pass (downcase-string-attr-values qs)
   ;; make attribute values lowercase, unless they're case-sensitive
@@ -179,7 +180,7 @@
     [:boolf (make-attr-boolean-key 'boolf)]
     [:num (make-attr-numeric-key 'num)]
     [:num-def-42 (make-attr-numeric-key 'num-def-42 #true 42)])
-  (parameterize ([current-attrs debug-attrs])
+  (parameterize ([current-attr-keys debug-attrs])
     (define (make-q) (make-quad #:attrs (list :foo "BAR"
                                               'ding "dong"
                                               :ps (string->path "file.txt")
@@ -194,7 +195,7 @@
     (check-not-exn (λ ()
                      (parameterize ([current-strict-attrs? #false])
                        (upgrade-attr-keys (list (make-q))))))
-    (check-equal? (quad-ref (car (fill-default-attr-values (list (make-q)))) :num-def-42) 42)
+    (check-equal? (quad-ref (car (set-top-level-attr-values (list (make-q)))) :num-def-42) 42)
     (check-equal? (quad-ref (car (downcase-string-attr-values qs)) :foo) "bar")
     (check-true (complete-path? (quad-ref (car (complete-attr-paths qs)) :ps)))
     (check-equal? (quad-ref (car (parse-dimension-strings qs)) :dim) 144)

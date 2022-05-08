@@ -4,6 +4,7 @@
          racket/hash
          txexpr
          (for-syntax racket/base racket/syntax)
+         "constants.rkt"
          "struct.rkt")
 (provide (all-defined-out))
 
@@ -51,16 +52,26 @@
                    [else attrs]))])
     (quad-constructor tag attrs elems #false)))
 
-(define (quad-ref q-or-qs key [default-val #false])
+(define (quad-ref q-or-qs key [default-val #false] #:set-default-if-missing [set-default-if-missing? #false])
   (unless (attr-key? key)
     (raise-argument-error 'quad-ref "attr-key?" key))
-  (hash-ref (quad-attrs (match q-or-qs
-                          [(? quad? q) q]
-                          [(cons q _) q]
-                          [_ (raise-argument-error 'quad-ref "quad or list of quads" q-or-qs)])) key default-val))
+  (define hash-reffer (if set-default-if-missing? hash-ref! hash-ref))
+  (hash-reffer (quad-attrs (match q-or-qs
+                             [(? quad? q) q]
+                             [(cons q _) q]
+                             [_ (raise-argument-error 'quad-ref "quad or list of quads" q-or-qs)])) key default-val))
 
 (define (quad-set! q key val)
   (hash-set! (quad-attrs q) key val))
+
+(define (quad-update! q key updater)
+  (hash-update! (quad-attrs q) key updater))
+
+(define (quad-ref! q-or-qs key default-val)
+  (quad-ref q-or-qs key default-val #:set-default-if-missing #true))
+
+(define (quad-has-key? q-or-qs key)
+  (not (eq? (quad-ref q-or-qs key no-value-signal) no-value-signal)))
 
 (define-syntax (define-quad-field stx)
   (syntax-case stx ()
@@ -72,6 +83,9 @@
            (define (SETTER q val) (quad-set! q 'FIELD val))))]))
 
 #;(define-quad-field posn)
+
+(define (simple-quad? x)
+  (and (quad? x) (<= (length (quad-elems x)) 1)))
 
 (define (has-no-position? q) (not (has-position? q)))
 (define (has-position? q) (quad-posn q))

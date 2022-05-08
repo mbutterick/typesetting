@@ -7,9 +7,6 @@
          "quad.rkt")
 (provide (all-defined-out))
 
-(define (simple-quad? x)
-  (and (quad? x) (<= (length (quad-elems x)) 1)))
-
 (define-pass (split-into-single-char-quads qs)
   ;; break list of quads into single characters (keystrokes)
   #:pre (list-of simple-quad?)

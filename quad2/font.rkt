@@ -12,11 +12,14 @@
          "param.rkt"
          "struct.rkt"
          "dimension.rkt"
-         "attr.rkt")
+         "attr.rkt"
+         (prefix-in unicode: (combine-in "unicode/emoji.rkt" "unicode/math.rkt")))
 (provide (all-defined-out))
 
 (define-runtime-path quad2-fonts-dir "default-fonts")
 (define-runtime-path default-font-face "default-fonts/default/SourceSerifPro-Regular.otf")
+(define-runtime-path default-math-face "default-fonts/fallback-math/NotoSansMath-Regular.ttf")
+(define-runtime-path default-emoji-face "default-fonts/fallback-emoji/NotoEmoji-Regular.ttf")
 (define top-font-directory "fonts")
 (define font-file-extensions '(#".otf" #".ttf" #".woff" #".woff2"))
 
@@ -116,17 +119,7 @@
        (member (path-get-extension (string->path x)) font-file-extensions)
        #true))
 
-(define (resolve-font-path font-paths attrs)
-  ;; convert references to a font family and style to an font path on disk
-  ;; we trust it exists because we used `setup-font-path-table` earlier,
-  ;; but if not, fallback fonts will kick in, on the idea that a missing font shouldn't stop the show
-  (define this-font-family (hash-ref attrs :font-family (λ () (error 'need-default-font-family))))
-  (match (string-downcase this-font-family)
-    [(? font-path-string? ps) (path->complete-path ps)]
-    [_
-     (define this-bold (hash-ref attrs :font-bold (λ () (error 'need-default-font-bold))))
-     (define this-italic (hash-ref attrs :font-italic (λ () (error 'need-default-font-italic))))
-     (font-attrs->path font-paths this-font-family this-bold this-italic)]))
+
 
 (define-pass (resolve-font-paths qs)
   ;; convert references to a font family and style to an font path on disk
@@ -135,6 +128,19 @@
   #:pre (list-of quad?)
   #:post (list-of quad?)
   (define font-paths (setup-font-path-table))
+
+  (define (resolve-font-path font-paths attrs)
+    ;; convert references to a font family and style to an font path on disk
+    ;; we trust it exists because we used `setup-font-path-table` earlier,
+    ;; but if not, fallback fonts will kick in, on the idea that a missing font shouldn't stop the show
+    ;; we know we have :font-family because this pass is restricted to that key
+    (match (string-downcase (hash-ref attrs :font-family))
+      [(? font-path-string? ps) (path->complete-path ps)]
+      [this-font-family
+       (define this-bold (hash-ref attrs :font-bold (λ () (error 'need-default-font-bold))))
+       (define this-italic (hash-ref attrs :font-italic (λ () (error 'need-default-font-italic))))
+       (font-attrs->path font-paths this-font-family this-bold this-italic)]))
+  
   (do-attr-iteration qs
                      #:which-attr :font-family
                      #:attr-proc (λ (_ __ attrs) (resolve-font-path font-paths attrs))))
@@ -182,7 +188,7 @@
   (require rackunit)
   (define-attr-list debug-attrs
     [:font-family (make-attr-uncased-string-key 'font-family)])
-  (parameterize ([current-attrs debug-attrs])
+  (parameterize ([current-attr-keys debug-attrs])
     (check-equal? (resolved-font-for-family "Heading") (build-path "fira-sans-light.otf"))
     (check-equal? (resolved-font-for-family "CODE") (build-path "fira-mono.otf"))
     (check-equal? (resolved-font-for-family "blockquote" #:bold #t) (build-path "fira-sans-bold.otf"))
@@ -245,3 +251,55 @@
     (check-equal? (quad-ref q :font-features) (seteq 'ss01 'liga))
     (check-equal? (quad-ref (car (quad-elems q)) :font-features) (seteq 'ss01 'swsh))
     (check-equal? (quad-ref (car (quad-elems (car (quad-elems q)))) :font-features) (seteq 'hist))))
+
+
+(define (simple-quad-with-font-path-key? q)
+  (and (simple-quad? q)
+       (match (quad-ref q :font-path no-value-signal)
+         [(or #false (? complete-path?)) #true]
+         [_ #false])))
+
+(define-pass (fill-missing-font-path qs)
+  ;; ensure every quad has a valid :font-path value
+  ;; if it has no value, use #false
+  #:pre (list-of quad?)
+  #:post (list-of simple-quad-with-font-path-key?)
+  (for ([q (in-list qs)])
+       (quad-ref! q :font-path #false)))
+
+(define-pass (remove-font-without-char qs)
+  ;; TODO: missing glyphs
+  ;; at this point we have a font-path for each character
+  ;; but we don't know if the character is in that font.
+  ;; for chars whose font is missing, we mark the font-path as #false.
+  #:pre (list-of simple-quad-with-font-path-key?)
+  #:post (list-of simple-quad-with-font-path-key?)
+  (error 'remove-font-without-char-unimplemented)
+  qs
+  )
+
+(define (simple-quad-with-complete-font-path? q)
+  (and (simple-quad? q) (complete-path? (quad-ref q :font-path))))
+
+(define-pass (insert-fallback-font qs)
+  ;; for chars whose font is missing (that is, :font-path is #false)
+  ;; set a new fallback font based on whether char is emoji, math, or other
+  #:pre (list-of simple-quad-with-font-path-key?)
+  #:post (list-of simple-quad-with-complete-font-path?)
+  (for ([q (in-list qs)])
+       (quad-update! q :font-path (λ (val)
+                                    (or
+                                     val
+                                     (match (quad-elems q)
+                                       [(cons (? string? str) _)
+                                        (match (string-ref str 0)
+                                          ;; TODO: how to determine fallback priority for alphabetic chars?
+                                          ;; they are all `math?`
+                                          ;; for now we will use math face for everything that's not emoji
+                                          ;; later: test default-font-face to see if it contains the char,
+                                          ;; and if not, use math
+                                          [(? unicode:emoji? c) default-emoji-face]
+                                          #;[(? unicode:math? c) default-math-face]
+                                          [_ default-math-face])]
+                                       [_ default-math-face])))))
+  qs)
