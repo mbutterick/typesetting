@@ -31,6 +31,7 @@
                   convert-boolean-attr-values
                   convert-numeric-attr-values
                   convert-set-attr-values
+                  convert-path-attr-values
 
                   ;; pre-linearization resolutions & parsings =============
                   ;; these need the tree shape

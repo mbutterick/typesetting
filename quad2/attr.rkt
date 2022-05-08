@@ -123,6 +123,15 @@
                                    (or (string->number av)
                                        (raise-argument-error 'convert-numeric-attr-values "numeric string" av)))))
 
+(define-pass (convert-path-attr-values qs)
+  #:pre (list-of quad?)
+  #:post (list-of quad?)
+  (do-attr-iteration qs
+                     #:which-attr attr-path-key?
+                     #:attr-proc (λ (ak av attrs)
+                                   (or (string->path av)
+                                       (raise-argument-error 'convert-path-attr-values "path string" av)))))
+
 (define-pass (convert-set-attr-values qs)
   #:pre (list-of quad?)
   #:post (list-of quad?)
@@ -141,12 +150,15 @@
 (define-pass (complete-attr-paths qs)
   #:pre (list-of quad?)
   #:post (list-of quad?)
-  ;; convert every pathlike thing to a complete path (well, path string, because it's inside an attr)
+  ;; convert every path value to a complete path
   ;; so we don't get tripped up later by relative paths
   ;; relies on `current-directory` being parameterized to source file's dir
   (do-attr-iteration qs
                      #:which-attr attr-path-key?
-                     #:attr-proc (λ (ak av attrs) (path->complete-path av))))
+                     #:attr-proc (λ (ak av attrs)
+                                   (unless (path? av)
+                                     (raise-argument-error 'complete-attr-paths "path" av))
+                                   (path->complete-path av))))
 
 
 (define-pass (parse-dimension-strings qs)
@@ -170,7 +182,7 @@
   (parameterize ([current-attrs debug-attrs])
     (define (make-q) (make-quad #:attrs (list :foo "BAR"
                                               'ding "dong"
-                                              :ps "file.txt"
+                                              :ps (string->path "file.txt")
                                               :dim "2in"
                                               :boolt "true"
                                               :boolf "false"
