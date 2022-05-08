@@ -49,7 +49,6 @@
                   ;; post-linearization resolutions & parsings =============
                   resolve-font-paths
                   complete-attr-paths
-                  ;; TODO: parse feature strings
                     
                   mark-text-runs
                   merge-adjacent-strings
