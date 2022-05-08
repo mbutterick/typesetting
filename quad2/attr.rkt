@@ -42,14 +42,15 @@
            (λ (ak _) (pred ak)) ; 1 arity implies key-only test
            pred)]
       [other (raise-argument-error 'do-attr-iteration "key predicate" other)]))
+  (define no-value-signal (gensym))
   (for-each-attrs qs
                   (λ (attrs parent-attrs)
                     ;; we don't iterate with `in-hash` (or `in-hash-keys`) because
                     ;; `attrs` might get mutated during the loop,
                     ;; which invalidates the reference `in-hash` is using
                     (for* ([ak (in-list (hash-keys attrs))]
-                           [av (in-value (hash-ref attrs ak))]
-                           #:when (attr-predicate ak av))
+                           [av (in-value (hash-ref attrs ak no-value-signal))]
+                           #:when (and (not (eq? av no-value-signal)) (attr-predicate ak av)))
                           (match (if wants-parent-attrs?
                                      (attr-proc ak av attrs parent-attrs)
                                      (attr-proc ak av attrs))
