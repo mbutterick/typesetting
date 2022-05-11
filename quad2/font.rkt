@@ -13,6 +13,7 @@
          "struct.rkt"
          "dimension.rkt"
          "attr.rkt"
+         "glyphrun.rkt"
          (prefix-in unicode: (combine-in "unicode/emoji.rkt" "unicode/math.rkt")))
 (provide (all-defined-out))
 
@@ -268,15 +269,17 @@
        (quad-ref! q :font-path #false)))
 
 (define-pass (remove-font-without-char qs)
-  ;; TODO: missing glyphs
-  ;; at this point we have a font-path for each character
+  ;; at this point we have a font-path value for each character
+  ;; (which might be #false)
   ;; but we don't know if the character is in that font.
   ;; for chars whose font is missing, we mark the font-path as #false.
   #:pre (list-of simple-quad-with-font-path-key?)
   #:post (list-of simple-quad-with-font-path-key?)
-  (error 'remove-font-without-char-unimplemented)
-  qs
-  )
+  (for* ([q (in-list qs)]
+         [font-path (in-value (quad-ref q :font-path))]
+         #:when font-path
+         #:unless (char-in-font? font-path (car (quad-elems q))))
+        (quad-set! q :font-path #false)))
 
 (define (simple-quad-with-complete-font-path? q)
   (and (simple-quad? q) (complete-path? (quad-ref q :font-path))))
@@ -301,5 +304,4 @@
                                           [(? unicode:emoji? c) default-emoji-face]
                                           #;[(? unicode:math? c) default-math-face]
                                           [_ default-math-face])]
-                                       [_ default-math-face])))))
-  qs)
+                                       [_ default-math-face]))))))

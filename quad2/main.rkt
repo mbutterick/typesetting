@@ -53,7 +53,7 @@
                   split-whitespace
                   split-into-single-char-quads
                   fill-missing-font-path
-                  #;remove-font-without-char
+                  remove-font-without-char
                   insert-fallback-font
                   layout
                   make-drawing-insts
