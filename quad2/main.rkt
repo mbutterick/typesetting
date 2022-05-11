@@ -10,7 +10,8 @@
          "constants.rkt"
          "param.rkt"
          racket/list
-         racket/match)
+         racket/match
+         racket/file)
 
 (define quad-compile
   (make-pipeline (list
@@ -74,7 +75,7 @@
     [(? string? insts)
      (render insts #:using text-renderer)
      (render insts #:using drr-renderer)
-     #;(render-to-html drawing-insts)
+     (render insts #:using (html-renderer (build-path (find-system-path 'desk-dir) "test.html")))
      #;(render-to-pdf drawing-insts)
      ]))
 

@@ -1,9 +1,8 @@
 #lang debug racket/base
-(require "pipeline.rkt"
-         "draw.rkt"
-         "layout.rkt"
+(require "draw.rkt"
          "log.rkt"
-         "glyphrun.rkt")
+         xml
+         txexpr)
 (provide (all-defined-out))
 
 (struct $renderer (doc-start-func
@@ -11,9 +10,9 @@
                    page-start-func
                    page-end-func
                    text-func
+                   set-font-func
                    move-func
-                   return-func
-                   set-font-func) #:transparent)
+                   return-func) #:transparent)
 
 (define current-renderer (make-parameter ($renderer void void void void void void void void)))
 
@@ -40,12 +39,12 @@
                                               (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n"))
        (set! results (cons str results)))
      (λ (str) (hash-set! char-pos-table current-loc str))
+     void
      (λ (x y) (set! current-loc (make-rectangular x y)))
      (λ ()
        (unless (pair? results)
          (error 'text-renderer-failed))
-       (for-each displayln results))
-     void)))
+       (for-each displayln results)))))
 
 (require racket/gui)
 
@@ -72,8 +71,6 @@
      void
      (λ (charint)
        (send dc draw-text (string (integer->char charint)) (real-part current-loc) (imag-part current-loc)))
-     (λ (x y) (set! current-loc (make-rectangular x y)))
-     (λ () (for-each displayln (map (λ (target) (make-object image-snip% target)) targets)))
      (λ (ps)
        ;; racket/draw can't load arbitrary user fonts from a path
        ;; https://github.com/racket/racket/issues/1348
@@ -81,7 +78,58 @@
        ;; holding & propagating Panose-like metadata about the font
        ;; but it would allow slightly more accurate rendering for contexts
        ;; that don't support fonts by path
-       (log-quad2-warning (format "can't load font ~a" ps))))))
+       (log-quad2-warning (format "can't load font ~a" ps)))
+     (λ (x y) (set! current-loc (make-rectangular x y)))
+     (λ () (for-each displayln (map (λ (target) (make-object image-snip% target)) targets))))))
+
+(define (html-renderer html-file)
+  #;(doc-start-func
+     doc-end-func
+     page-start-func
+     page-end-func
+     text-func
+     set-font-func
+     move-func
+     return-func)
+  (let ([xmax 0]
+        [ymax 0]
+        [em-scale 30]
+        [page-quads null]
+        [current-loc 0+0i]
+        [pages null]
+        [fonts (make-hasheqv)]
+        [current-font ""])
+    ($renderer
+     void
+     void
+     (λ (width height)
+       (set! page-quads null)
+       (set! xmax width)
+       (set! ymax height))
+     (λ ()
+       (set! pages (cons `(div ((class "page")
+                                (style ,(format "position: relative;width:~a;height:~a;border:1px solid black;background:white" (* xmax em-scale) (* ymax em-scale)))) ,@(reverse page-quads)) pages))
+       (set! page-quads null))
+     (λ (charint)
+       (set! page-quads (cons
+                         `(div ((style ,(format "position: absolute;left:~a;top:~a;font-family;~a" (* em-scale (real-part current-loc)) (* em-scale (imag-part current-loc)) current-font)))
+                                ,(string (integer->char charint))) page-quads)))
+     (λ (ps)
+       (set! current-font (hash-ref! fonts ps (λ () (gensym 'font)))))
+     (λ (x y) (set! current-loc (make-rectangular x y)))
+     (λ ()
+       (with-output-to-file html-file
+         #:exists 'replace
+         (λ ()
+           #;(displayln "<!DOCTYPE html>")
+           (display-xml/content
+            (xexpr->xml `(html
+                          (head (style ((type "text/css"))
+                                       ,(string-join
+                                         (for/list ([(ps fontsym) (in-hash fonts)])
+                                                   (format "@font-face { font-family: \"~a\";\nsrc: file(\"~a\");}" fontsym ps)))))
+                          (body ((style "background: gray"))
+                                ,@pages))))))))))
 
 (define (render inst-str #:using [renderer (current-renderer)])
   (let/ec exit
