@@ -272,7 +272,8 @@
   ;; at this point we have a font-path value for each character
   ;; (which might be #false)
   ;; but we don't know if the character is in that font.
-  ;; for chars whose font is missing, we mark the font-path as #false.
+  ;; for quads with a font-path that doesn't contain the char,
+  ;; we change the font-path to be #false.
   #:pre (list-of simple-quad-with-font-path-key?)
   #:post (list-of simple-quad-with-font-path-key?)
   (for* ([q (in-list qs)]

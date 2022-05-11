@@ -59,7 +59,7 @@
                   make-drawing-insts
                   stackify)))
 
-(module+ test
+(module+ main
   (require "render.rkt")
   (define (test-compile x)
     (parameterize ([current-wrap-width 13]
