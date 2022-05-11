@@ -134,7 +134,7 @@
     ;; we trust it exists because we used `setup-font-path-table` earlier,
     ;; but if not, fallback fonts will kick in, on the idea that a missing font shouldn't stop the show
     ;; we know we have :font-family because this pass is restricted to that key
-    (match (string-downcase (hash-ref attrs :font-family))
+    (match (hash-ref attrs :font-family)
       [(? font-path-string? ps) (path->complete-path ps)]
       [this-font-family
        (define this-bold (hash-ref attrs :font-bold (λ () (error 'need-default-font-bold))))
