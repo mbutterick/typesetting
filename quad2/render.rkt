@@ -83,14 +83,6 @@
      (λ () (for-each displayln (map (λ (target) (make-object image-snip% target)) targets))))))
 
 (define (html-renderer html-file)
-  #;(doc-start-func
-     doc-end-func
-     page-start-func
-     page-end-func
-     text-func
-     set-font-func
-     move-func
-     return-func)
   (let ([xmax 0]
         [ymax 0]
         [em-scale 30]
@@ -108,11 +100,11 @@
        (set! ymax height))
      (λ ()
        (set! pages (cons `(div ((class "page")
-                                (style ,(format "position: relative;width:~a;height:~a;border:1px solid black;background:white" (* xmax em-scale) (* ymax em-scale)))) ,@(reverse page-quads)) pages))
+                                (style ,(format "position: relative;width:~apx;height:~apx;border:1px solid black;background:white" (* xmax em-scale) (* ymax em-scale)))) ,@(reverse page-quads)) pages))
        (set! page-quads null))
      (λ (charint)
        (set! page-quads (cons
-                         `(div ((style ,(format "position: absolute;left:~a;top:~a;font-family;~a" (* em-scale (real-part current-loc)) (* em-scale (imag-part current-loc)) current-font)))
+                         `(div ((style ,(format "position: absolute;left:~apx;top:~apx;font-family:~a" (* em-scale (real-part current-loc)) (* em-scale (imag-part current-loc)) current-font)))
                                 ,(string (integer->char charint))) page-quads)))
      (λ (ps)
        (set! current-font (hash-ref! fonts ps (λ () (gensym 'font)))))
@@ -121,14 +113,14 @@
        (with-output-to-file html-file
          #:exists 'replace
          (λ ()
-           #;(displayln "<!DOCTYPE html>")
+           (displayln "<!DOCTYPE html>")
            (display-xml/content
             (xexpr->xml `(html
                           (head (style ((type "text/css"))
                                        ,(string-join
                                          (for/list ([(ps fontsym) (in-hash fonts)])
-                                                   (format "@font-face { font-family: \"~a\";\nsrc: file(\"~a\");}" fontsym ps)))))
-                          (body ((style "background: gray"))
+                                                   (format "@font-face { font-family: \"~a\";\nsrc: url(\"~a\");}" fontsym ps)))))
+                          (body ((style "background: #ddd"))
                                 ,@pages))))))))))
 
 (define (render inst-str #:using [renderer (current-renderer)])
