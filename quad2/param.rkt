@@ -19,3 +19,10 @@
   [current-strict-attrs? boolean? #false]
   [current-use-preconditions? boolean? #true]
   [current-use-postconditions? boolean? #true])
+
+
+(define (number-or-false? x) (or (eq? #false x) (number? x)))
+
+(define-guarded-parameters
+  [debug-page-width number-or-false? #false]
+  [debug-page-height number-or-false? #false])

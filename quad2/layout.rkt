@@ -25,26 +25,40 @@
 
 (define/contract (rect-contains-point? rect pt)
   ($rect? $point? . -> . boolean?)
-  (and (<= (min-x rect) ($point-x pt) (max-x rect))
-       (<= (min-y rect) ($point-y pt) (max-y rect))))
+  ;; https://developer.apple.com/documentation/foundation/1391317-nspointinrect/
+  ;; "Point-in-rectangle functions generally assume that the “upper” and “left” edges of a rectangle are inside the rectangle boundaries, while the “lower” and “right” edges are outside the boundaries. This method treats the “upper” and “left” edges of the rectangle as the ones containing the origin of the rectangle."
+  (and
+   ;; IOW the point (min-x, min-y) is inside rect,
+   (<= (min-x rect) ($point-x pt))
+   (<= (min-y rect) ($point-y pt))
+   ;; and the point (max-x, max-y) is not
+   (< ($point-x pt) (max-x rect))
+   (< ($point-y pt) (max-y rect))))
 
-(define/contract (rect-contains-rect? outer inner)
+(define/contract (rect-contains-rect? outer-aRect inner-bRect)
   ($rect? $rect? . -> . boolean?)
-  (and (rect-contains-point? outer ($rect-origin inner))
-       (rect-contains-point? outer ($point (max-x inner) (max-y inner)))))
+  ;; https://developer.apple.com/documentation/foundation/1391177-nscontainsrect
+  ;; "true if aRect completely encloses bRect. For this condition to be true, bRect cannot be empty, and must not extend beyond aRect in any direction."
+  ;; thus a rect always contains itself.
+  ;; TODO: why can't bRect be empty?
+  (and (<= (min-x outer-aRect) (min-x inner-bRect)) (<= (max-x inner-bRect) (max-x outer-aRect))
+       (<= (min-y outer-aRect) (min-y inner-bRect)) (<= (max-y inner-bRect) (max-y outer-aRect))))
 
 (define-pass (layout qs)
   #:pre (list-of has-no-position?)
   #:post (list-of has-position?)
   (define frame ($rect ($point 0 0) ($size (current-wrap-width) 30)))
   (define (quad-fits? q posn)
-    (define q-size (size q))
-    (define quad-rect ($rect posn q-size))
-    (and (rect-contains-rect? frame quad-rect) posn))
-  (for/fold ([posn ($point 0 0)]
+    (rect-contains-rect? frame ($rect posn (size q))))
+  (for/fold ([posn0 ($point 0 0)]
              #:result qs)
             ([q (in-list qs)])
-    (define first-posn-on-next-line ($point 0 (add1 ($point-y posn))))
-    (define winning-posn (or (ormap (λ (posn) (quad-fits? q posn)) (list posn first-posn-on-next-line)) (error 'no-posn-that-fits)))
-    (set-quad-posn! q winning-posn)
-    (posn-add winning-posn (advance q))))
+    (define first-posn-on-next-line ($point 0 (add1 ($point-y posn0))))
+    (define other-possible-posns (list first-posn-on-next-line))
+    (define posn1 (for/first ([posn (in-list (cons posn0 other-possible-posns))]
+                              #:when (quad-fits? q posn))
+                             posn))
+    (unless posn1
+      (error 'no-posn-that-fits))
+    (set-quad-posn! q posn1)
+    (posn-add posn1 (advance q))))

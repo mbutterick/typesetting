@@ -7,6 +7,8 @@
 (define default-font-family "text")
 (define default-font-size 12)
 (define default-no-features (seteq))
+(define default-page-size "letter")
+(define default-page-orientation "tall")
 
 (struct no-value ())
 (define no-value-signal (no-value))
@@ -32,4 +34,10 @@
   [:font-size (make-attr-dimension-string-key 'font-size #true default-font-size)]
   [:font-features (make-attr-set-key 'font-features #true default-no-features)]
   [:font-features-add (make-attr-set-key 'font-features-add #false default-no-features)]
-  [:font-features-subtract (make-attr-set-key 'font-features-subtract #false default-no-features)])
+  [:font-features-subtract (make-attr-set-key 'font-features-subtract #false default-no-features)]
+
+  [:page-size (make-attr-uncased-string-key 'page-size #true default-page-size)]
+  [:page-orientation (make-attr-uncased-string-key 'page-orientation #true default-page-orientation)]
+  [:page-width (make-attr-dimension-string-key 'page-width)]
+  [:page-height (make-attr-dimension-string-key 'page-height)]
+  )

@@ -19,7 +19,7 @@
            (for/list ([q (in-list qs)])
                      (append
                       (match (quad-ref q :font-path)
-                        [(== current-font) (list)]
+                        [(== current-font) null]
                         [font-path
                          (set! current-font font-path)
                          (list ($font font-path))])
@@ -27,7 +27,7 @@
                         [(quad? q)
                          (if (pair? (quad-elems q))
                              (list ($move (quad-posn q)) ($text (char->integer (car (string->list (car (quad-elems q)))))))
-                             (list))]
+                             null)]
                         [else (error 'render-unknown-thing)]))))
          ($page 'end) ($doc 'end))))
 

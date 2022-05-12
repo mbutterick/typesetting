@@ -9,6 +9,7 @@
          "font.rkt"
          "constants.rkt"
          "param.rkt"
+         "page.rkt"
          racket/list
          racket/match
          racket/file)
@@ -36,6 +37,7 @@
                   parse-dimension-strings
                   resolve-font-sizes
                   resolve-font-features
+                  parse-page-sizes
 
                   ;; linearization =============
                   ;; we postpone this step until we're certain any
@@ -63,7 +65,9 @@
 (module+ main
   (require "render.rkt")
   (define (test-compile x)
-    (parameterize ([current-wrap-width 13]
+    (define characters-in-line 13)
+    (define monospaced-em-width 0.6)
+    (parameterize ([current-wrap-width (* characters-in-line monospaced-em-width default-font-size)]
                    [current-attr-keys all-attr-keys]
                    [current-strict-attrs? #t]
                    [current-show-timing? #f]
@@ -71,8 +75,9 @@
                    [current-use-postconditions? #t])
       (quad-compile (bootstrap-input x))))
 
-  (match (test-compile "Hello this is the earth")
+  (match (test-compile "X")
     [(? string? insts)
+     (displayln insts)
      (render insts #:using text-renderer)
      (render insts #:using drr-renderer)
      (render insts #:using (html-renderer (build-path (find-system-path 'desk-dir) "test.html")))

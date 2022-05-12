@@ -20,12 +20,13 @@
   ;; recursively descend from top to bottom.
   ;; but also track which attrs are visited and skip any already visited.
   (define attrs-seen (mutable-seteq))
+  (define wants-parent-attrs? (= (procedure-arity proc) 2))
   (let loop ([xs xs][parent-attrs #false])
     (for ([x (in-list xs)]
           #:when (quad? x))
          (define attrs (quad-attrs x))
          (unless (set-member? attrs-seen attrs)
-           (proc attrs parent-attrs)
+           (if wants-parent-attrs? (proc attrs parent-attrs) (proc attrs))
            (set-add! attrs-seen attrs))
          (loop (quad-elems x) attrs))))
 
