@@ -53,6 +53,7 @@
   (for/fold ([posn0 ($point 0 0)]
              #:result qs)
             ([q (in-list qs)])
+    #RRR q
     (define first-posn-on-next-line ($point 0 (add1 ($point-y posn0))))
     (define other-possible-posns (list first-posn-on-next-line))
     (define posn1 (for/first ([posn (in-list (cons posn0 other-possible-posns))]

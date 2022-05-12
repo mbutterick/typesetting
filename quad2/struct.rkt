@@ -1,5 +1,6 @@
 #lang racket/base
-(require (for-syntax racket/base racket/syntax))
+(require (for-syntax racket/base racket/syntax)
+         racket/struct)
 (provide (all-defined-out))
 
 (struct $drawing-inst () #:transparent)
@@ -9,7 +10,10 @@
 (struct $doc $drawing-inst (inst) #:transparent)
 (struct $page $drawing-inst (inst) #:transparent)
 
-(struct attr-key (name mandatory? default) #:transparent)
+(struct attr-key (name mandatory? default) #:transparent
+  #:methods gen:custom-write
+  [(define (write-proc val out mode)
+     (fprintf out (format ":~a" (attr-key-name val))))])
 
 (define (make-attr-key name [mandatory? #false] [default #false])
   (attr-key name mandatory? default))
