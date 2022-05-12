@@ -18,21 +18,16 @@
        (not (quad-has-key? x :page-orientation))))
 
 (define (parse-page-size attrs)
-  ;; if set, debug-page-width and debug-page-height override the requested width & height
-  (define width (or (debug-page-width) (hash-ref attrs :page-width #false)))
-  (define height (or (debug-page-height) (hash-ref attrs :page-height #false)))
-  (define size (hash-ref attrs :page-size default-page-size))
-  (define orientation (hash-ref attrs :page-orientation default-page-orientation))
-
   ;; parsed-width and parsed-height are derived from named size & orientation
   (match-define (list parsed-width parsed-height)
     (sort
-     (page-sizes-ref size default-page-size)
+     (page-sizes-ref (hash-ref attrs :page-size default-page-size))
      ;; for portrait, shorter edge is width
-     (if (member orientation '("portrait" "tall")) < >)))
+     (if (member (hash-ref attrs :page-orientation default-page-orientation) '("portrait" "tall")) < >)))
   
-  (hash-set! attrs :page-width (or width parsed-width))
-  (hash-set! attrs :page-height (or height parsed-height))
+  ;; if set, debug-page-width and debug-page-height override the requested width & height
+  (hash-set! attrs :page-width (or (debug-page-width) (hash-ref attrs :page-width #false) parsed-width))
+  (hash-set! attrs :page-height (or (debug-page-height) (hash-ref attrs :page-height #false) parsed-height))
   (hash-remove! attrs :page-size)
   (hash-remove! attrs :page-orientation)
   attrs)
