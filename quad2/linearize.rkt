@@ -13,11 +13,11 @@
   #:post (list-of simple-quad?)
   (append*
    (for/list ([q (in-list qs)])
-     (match q
-       [(quad _ _ (list (? string? str)) _)
-        (for/list ([c (in-string str)])
-          (struct-copy quad q [elems (list (string c))]))]
-       [_ (list q)]))))
+             (match q
+               [(quad _ _ (list (? string? str)) _)
+                (for/list ([c (in-string str)])
+                          (struct-copy quad q [elems (list (string c))]))]
+               [_ (list q)]))))
 
 (define-pass (linearize qs)
   ;; convert a single quad into a list of quads, with the attributes propagated downward
@@ -102,3 +102,12 @@
 
 (module+ test
   (mark-text-runs smlqs))
+
+(define-pass (append-boq-and-eoq qs)
+  #:pre (list-of simple-quad?)
+  #:post (λ (qs) (match qs
+                   [(list (? boq-quad?) (? simple-quad?) ... (? eoq-quad?)) #true]
+                   [_ #false]))
+  (set-quad-attrs! boq (quad-attrs (first qs)))
+  (set-quad-attrs! eoq (quad-attrs (last qs)))
+  (append (list boq) qs (list eoq)))

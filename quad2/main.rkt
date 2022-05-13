@@ -38,6 +38,8 @@
    resolve-font-sizes
    resolve-font-features
    parse-page-sizes
+   resolve-font-paths
+   complete-attr-paths
 
    ;; linearization =============
    ;; we postpone this step until we're certain any
@@ -45,11 +47,10 @@
    ;; has been absorbed into the attrs
    ;; (e.g., cascading font sizes)
    ;; because once we linearize, that information is gone.
-   (print-pass linearize)
+   linearize
+   (print-pass append-boq-and-eoq)
 
    ;; post-linearization resolutions & parsings =============
-   resolve-font-paths
-   complete-attr-paths
                     
    mark-text-runs
    merge-adjacent-strings
@@ -59,7 +60,7 @@
    remove-font-without-char
    insert-fallback-font
    layout
-   make-drawing-insts
+   (print-pass make-drawing-insts)
    stackify))
 
 (module+ main

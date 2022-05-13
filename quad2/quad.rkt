@@ -25,7 +25,7 @@
                              (? quad-attrs?)
                              (? quad-elems?)) #true]
                       [_ #false])
-              (error 'no-dice))
+              (raise-user-error 'quad-constructor (format "failed: ~v" (list tag attrs elems posn))))
             (values tag attrs elems posn)))
              
 (define (quad-tag? x) (match x
@@ -109,3 +109,10 @@
 
 (module+ test
   (define q (make-quad #:tag 'div #:attrs (make-hasheq '((hello . "world"))) #:elems (list "fine"))))
+
+
+
+(struct boq-quad quad ())
+(define boq (boq-quad #f (make-hasheq) null #f))
+(struct eoq-quad quad ())
+(define eoq (eoq-quad #f (make-hasheq) null #f))
