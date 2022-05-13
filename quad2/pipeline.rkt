@@ -6,7 +6,6 @@
 (provide (all-defined-out))
 
 (struct pipeline (passes)
-  #:constructor-name make-pipeline
   #:guard (λ (procs name)
             (unless ((list-of procedure?) procs)
               (raise-argument-error 'bad-input-to-compiler-constructor "list of procedures" procs))
@@ -22,6 +21,12 @@
             (time (displayln pass) (thunk))
             (thunk))))))
 
+(define (make-pipeline . passes)
+  (pipeline passes))
+
+(define (print-pass . passes)
+  (apply make-pipeline (append passes (list pass-printer))))
+
 (define (compiler-append c passes)
   (make-pipeline (append (pipeline-passes c) passes)))
 
@@ -33,22 +38,26 @@
         EXPRS ...)
      #`(define PASS-NAME
          (make-pipeline
-          (list
-           (procedure-rename
-            #,(syntax/loc stx
-                (λ (ARG)
-                  (when (current-use-preconditions?)
-                    (unless (PRECOND-PROC ARG)
-                      (raise-argument-error 'PASS-NAME (format "~a (as precondition)" 'PRECOND-PROC) ARG)))
-                  ;; a pass can be functional or mutational.
-                  ;; if it returns void, assume mutational
-                  ;; and return the input item.
-                  (define res (match (let () EXPRS ...)
-                                [(? void?) ARG]
-                                [val val]))
-                  (begin0
-                    res
-                    (when (current-use-postconditions?)
-                      (unless (POSTCOND-PROC res)
-                        (raise-argument-error 'PASS-NAME (format "~a (as postcondition)" 'POSTCOND-PROC) res))))))
-            'PASS-NAME))))]))
+          (procedure-rename
+           #,(syntax/loc stx
+               (λ (ARG)
+                 (when (current-use-preconditions?)
+                   (unless (PRECOND-PROC ARG)
+                     (raise-argument-error 'PASS-NAME (format "~a (as precondition)" 'PRECOND-PROC) ARG)))
+                 ;; a pass can be functional or mutational.
+                 ;; if it returns void, assume mutational
+                 ;; and return the input item.
+                 (define res (match (let () EXPRS ...)
+                               [(? void?) ARG]
+                               [val val]))
+                 (begin0
+                   res
+                   (when (current-use-postconditions?)
+                     (unless (POSTCOND-PROC res)
+                       (raise-argument-error 'PASS-NAME (format "~a (as postcondition)" 'POSTCOND-PROC) res))))))
+           'PASS-NAME)))]))
+
+(define-pass (pass-printer qs)
+  #:pre values
+  #:post values
+  (for-each println qs))
