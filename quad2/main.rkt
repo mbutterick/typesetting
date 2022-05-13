@@ -48,10 +48,8 @@
    ;; (e.g., cascading font sizes)
    ;; because once we linearize, that information is gone.
    linearize
-   (print-pass append-boq-and-eoq)
-
-   ;; post-linearization resolutions & parsings =============
-                    
+   
+   ;; post-linearization resolutions & parsings ============= 
    mark-text-runs
    merge-adjacent-strings
    split-whitespace
@@ -59,8 +57,10 @@
    fill-missing-font-path
    remove-font-without-char
    insert-fallback-font
+   append-bop-and-eop
+   append-boq-and-eoq
    layout
-   (print-pass make-drawing-insts)
+   make-drawing-insts
    stackify))
 
 (module+ main
@@ -79,8 +79,8 @@
   (match (test-compile "X")
     [(? string? insts)
      (displayln insts)
-     (render insts #:using text-renderer)
-     (render insts #:using drr-renderer)
+     #;(render insts #:using text-renderer)
+     #;(render insts #:using drr-renderer)
      (render insts #:using (html-renderer (build-path (find-system-path 'desk-dir) "test.html")))
      #;(render-to-pdf drawing-insts)
      ]))

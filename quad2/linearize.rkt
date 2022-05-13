@@ -103,10 +103,21 @@
 (module+ test
   (mark-text-runs smlqs))
 
-(define-pass (append-boq-and-eoq qs)
+(define-pass (append-bop-and-eop qs)
+  ;; force document to have one page
   #:pre (list-of simple-quad?)
   #:post (λ (qs) (match qs
-                   [(list (? boq-quad?) (? simple-quad?) ... (? eoq-quad?)) #true]
+                   [(list (? bop-quad?) (? simple-quad?) ... (? eop-quad?)) #true]
+                   [_ #false]))
+  (define bop (bop-quad #f (quad-attrs (first qs)) null #f))
+  (define eop (eop-quad #f (quad-attrs (last qs)) null #f))
+  (append (list bop) qs (list eop)))
+
+(define-pass (append-boq-and-eoq qs)
+  ;; attach the boq and eoq signals
+  #:pre (list-of simple-quad?)
+  #:post (λ (qs) (match qs
+                   [(list (== boq) (? simple-quad?) ... (== eoq)) #true]
                    [_ #false]))
   (set-quad-attrs! boq (quad-attrs (first qs)))
   (set-quad-attrs! eoq (quad-attrs (last qs)))

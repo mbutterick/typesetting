@@ -52,7 +52,9 @@
                    [else attrs]))])
     (quad-constructor tag attrs elems #false)))
 
-(define (quad-ref q-or-qs key [default-val #false] #:set-default-if-missing [set-default-if-missing? #false])
+(define (quad-ref q-or-qs key
+                  [default-val (λ () (error (format "quad-ref: no value for key ~a" key)))]
+                  #:set-default-if-missing [set-default-if-missing? #false])
   (unless (attr-key? key)
     (raise-argument-error 'quad-ref "attr-key?" key))
   (define hash-reffer (if set-default-if-missing? hash-ref! hash-ref))
@@ -110,9 +112,11 @@
 (module+ test
   (define q (make-quad #:tag 'div #:attrs (make-hasheq '((hello . "world"))) #:elems (list "fine"))))
 
-
-
-(struct boq-quad quad ())
-(define boq (boq-quad #f (make-hasheq) null #f))
-(struct eoq-quad quad ())
-(define eoq (eoq-quad #f (make-hasheq) null #f))
+(define boq (let ()
+              (struct boq-quad quad ())
+              (boq-quad #f (make-hasheq) null #f)))
+(define eoq (let ()
+              (struct eoq-quad quad ())
+              (eoq-quad #f (make-hasheq) null #f)))
+(struct bop-quad quad ())
+(struct eop-quad quad ())

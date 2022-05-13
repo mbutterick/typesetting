@@ -7,8 +7,10 @@
 (struct $move $drawing-inst (posn) #:transparent) ; an absolute location in coordinate system (not relative to last loc)
 (struct $text $drawing-inst (charint) #:transparent)
 (struct $font $drawing-inst (path-string) #:transparent)
-(struct $doc $drawing-inst (inst) #:transparent)
-(struct $page $drawing-inst (inst) #:transparent)
+(struct $doc-start $drawing-inst () #:transparent)
+(struct $doc-end $drawing-inst () #:transparent)
+(struct $page-start $drawing-inst (x y) #:transparent)
+(struct $page-end $drawing-inst () #:transparent)
 
 (struct attr-key (name mandatory? default) #:transparent
   #:methods gen:custom-write

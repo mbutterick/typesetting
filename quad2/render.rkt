@@ -42,8 +42,8 @@
      void
      (λ (x y) (set! current-loc (make-rectangular x y)))
      (λ ()
-       (unless (pair? results)
-         (error 'text-renderer-failed))
+       #;(unless (pair? results)
+           (error 'text-renderer-failed))
        (for-each displayln results)))))
 
 (require racket/gui)
@@ -70,7 +70,8 @@
          (send dc set-text-foreground "black")))
      void
      (λ (charint)
-       (send dc draw-text (string (integer->char charint)) (real-part current-loc) (imag-part current-loc)))
+       (when dc
+         (send dc draw-text (string (integer->char charint)) (real-part current-loc) (imag-part current-loc))))
      (λ (ps)
        ;; racket/draw can't load arbitrary user fonts from a path
        ;; https://github.com/racket/racket/issues/1348
@@ -100,12 +101,12 @@
        (set! ymax height))
      (λ ()
        (set! pages (cons `(div ((class "page")
-                                (style ,(format "position: relative;width:~apx;height:~apx;border:1px solid black;background:white" (* xmax em-scale) (* ymax em-scale)))) ,@(reverse page-quads)) pages))
+                                (style ,(format "position: relative;width:~apx;height:~apx;border:1px solid black;background:white" xmax ymax))) ,@(reverse page-quads)) pages))
        (set! page-quads null))
      (λ (charint)
        (set! page-quads (cons
                          `(div ((style ,(format "position: absolute;left:~apx;top:~apx;font-family:~a" (* em-scale (real-part current-loc)) (* em-scale (imag-part current-loc)) current-font)))
-                                ,(string (integer->char charint))) page-quads)))
+                               ,(string (integer->char charint))) page-quads)))
      (λ (ps)
        (set! current-font (hash-ref! fonts ps (λ () (gensym 'font)))))
      (λ (x y) (set! current-loc (make-rectangular x y)))
