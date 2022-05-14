@@ -44,6 +44,8 @@
   (string-join
    (for/list ([x (in-list xs)])
              (string-join (map ~a (match x
+                                    ;; TODO: embed these code-generating functions
+                                    ;; as properties of the structs
                                     [($move ($point x y)) (list y x 'move)]
                                     [($text charint) (list charint 'text)]
                                     [($font path-string) (list path-string 'set-font)]
