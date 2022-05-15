@@ -29,9 +29,9 @@
                             (set! current-font font-path)
                             (list ($font font-path))])
                          (if (pair? (quad-elems q))
-                             (list ($move (quad-posn q)) ($text (char->integer (car (string->list (car (quad-elems q)))))))
+                             (list ($move (quad-origin q)) ($text (char->integer (car (string->list (car (quad-elems q)))))))
                              null))]
-                       [else (error 'render-unknown-thing)])))))
+                       [else (raise-argument-error 'make-drawing-insts "known thing" q)])))))
 
 (define valid-tokens '(doc-start doc-end page-start page-end text move set-font))
 
