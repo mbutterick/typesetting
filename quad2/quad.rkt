@@ -2,6 +2,9 @@
 (require racket/contract
          racket/match
          racket/hash
+         racket/list
+         racket/string
+         racket/format
          txexpr
          (for-syntax racket/base racket/syntax)
          "constants.rkt"
@@ -15,18 +18,36 @@
 (define current-wrap-width (make-parameter 5))
 (define current-page-size (make-parameter ($size 10 10)))
 
-(define (list-of proc) (λ (x) (and (list? x) (andmap proc x))))
+(define (list-of proc)
+  (λ (x)
+    (and (list? x)
+         (for/and ([xi (in-list x)])
+                  (or (proc xi)
+                      (let ([procname (object-name proc)])
+                        (raise-argument-error
+                         (string->symbol (format "list-of ~a" procname))
+                         (symbol->string procname) xi)))))))
 
-(struct quad (tag attrs elems posn) #:transparent #:mutable
-  #:constructor-name quad-constructor
-  #:guard (λ (tag attrs elems posn name)
-            (unless (match (list tag attrs elems)
-                      [(list (? quad-tag?)
-                             (? quad-attrs?)
-                             (? quad-elems?)) #true]
-                      [_ #false])
-              (raise-user-error 'quad-constructor (format "failed: ~v" (list tag attrs elems posn))))
-            (values tag attrs elems posn)))
+(define-syntax-rule (auto-struct NAME (FIELD ...) . ARGS)
+  (struct NAME (FIELD ...) . ARGS))
+
+(auto-struct quad (tag attrs elems origin size)
+             #:transparent #:mutable
+             #:constructor-name quad-new
+             #:methods gen:custom-write
+             [(define (write-proc val out mode)
+                (let* ([fields (filter-map (λ (f) (f val)) (list quad-tag quad-attrs quad-elems quad-origin quad-size))]
+                       [fields (if (null? fields) (list #f) fields)])
+                  (fprintf out (format "<~a ~a>"
+                                       (or (car fields) "quad")
+                                       (string-join (map ~v (cdr fields)) " ")))))])
+
+(define (quad-new-default)
+  (apply quad-new (make-list (procedure-arity quad-new) #f)))
+
+(define-syntax-rule (quad-copy Q . ARGS)
+  ;; TODO: struct-copy is questionable
+  (struct-copy quad Q . ARGS))
              
 (define (quad-tag? x) (match x
                         [(or (? symbol?) #false) #true]
@@ -50,7 +71,14 @@
                    [(list? attrs) (loop (apply hasheq attrs))]
                    [(immutable? attrs) (make-hasheq (hash->list attrs))]
                    [else attrs]))])
-    (quad-constructor tag attrs elems #false)))
+    (define newq (quad-new-default))
+    (when tag (set-quad-tag! newq tag))
+    (when attrs (set-quad-attrs! newq attrs))
+    (when elems (set-quad-elems! newq elems))
+    newq))
+
+(define (initialize-attrs! q)
+  (set-quad-attrs! q (make-hasheq)))
 
 (define (quad-ref q-or-qs key
                   [default-val (λ () (error (format "quad-ref: no value for key ~a" key)))]
@@ -58,10 +86,15 @@
   (unless (attr-key? key)
     (raise-argument-error 'quad-ref "attr-key?" key))
   (define hash-reffer (if set-default-if-missing? hash-ref! hash-ref))
-  (hash-reffer (quad-attrs (match q-or-qs
-                             [(? quad? q) q]
-                             [(cons q _) q]
-                             [_ (raise-argument-error 'quad-ref "quad or list of quads" q-or-qs)])) key default-val))
+  (define q (match q-or-qs
+              [(? quad? q) q]
+              [(cons q _) q]
+              [_ (raise-argument-error 'quad-ref "quad or list of quads" q-or-qs)]))
+  (when (and set-default-if-missing? (not (quad-attrs q)))
+    (set-quad-attrs! q (make-hasheq)))
+  (match (quad-attrs q)
+    [(? quad-attrs? attrs) (hash-reffer attrs key default-val)]
+    [_ (default-val)]))
 
 (define (quad-set! q key val)
   (hash-set! (quad-attrs q) key val))
@@ -87,10 +120,12 @@
 #;(define-quad-field posn)
 
 (define (simple-quad? x)
-  (and (quad? x) (<= (length (quad-elems x)) 1)))
+  (and (quad? x) (if (list? (quad-elems x))
+                     (<= (length (quad-elems x)) 1)
+                     #true)))
 
 (define (has-no-position? q) (not (has-position? q)))
-(define (has-position? q) (quad-posn q))
+(define (has-position? q) (quad-origin q))
 
 (define (txexpr->quad x)
   (match x
@@ -112,11 +147,9 @@
 (module+ test
   (define q (make-quad #:tag 'div #:attrs (make-hasheq '((hello . "world"))) #:elems (list "fine"))))
 
-(define boq (let ()
-              (struct boq-quad quad ())
-              (boq-quad #f (make-hasheq) null #f)))
-(define eoq (let ()
-              (struct eoq-quad quad ())
-              (eoq-quad #f (make-hasheq) null #f)))
-(struct bop-quad quad ())
-(struct eop-quad quad ())
+(define boq (make-quad #:tag 'boq-quad))
+(define eoq (make-quad #:tag 'eoq-quad))
+(define (bop-quad) (make-quad #:tag 'bop-quad))
+(define (bop-quad? x) (and (quad? x) (eq? (quad-tag x) 'bop-quad)))
+(define (eop-quad) (make-quad #:tag 'eop-quad))
+(define (eop-quad? x) (and (quad? x) (eq? (quad-tag x) 'eop-quad)))

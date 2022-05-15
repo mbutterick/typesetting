@@ -13,10 +13,10 @@
   #:post (list-of simple-quad?)
   (append*
    (for/list ([q (in-list qs)])
-             (match q
-               [(quad _ _ (list (? string? str)) _)
+             (match (quad-elems q)
+               [(list (? string? str))
                 (for/list ([c (in-string str)])
-                          (struct-copy quad q [elems (list (string c))]))]
+                          (quad-copy q [elems (list (string c))]))]
                [_ (list q)]))))
 
 (define-pass (linearize qs)
@@ -62,7 +62,9 @@
           [(null? head) e0]
           [else
            (define qs-to-merge (cons e0 head))
-           (struct-copy quad e0 [elems (list (string-join (append-map quad-elems qs-to-merge) ""))])])
+           (define merged-str (string-join (append-map quad-elems qs-to-merge) ""))
+           (set-quad-elems! e0 (list merged-str))
+           e0])
         (merge tail))])))
 
 (module+ test
@@ -84,7 +86,8 @@
                       ;; so we just ignore those.
                       (for/list ([(substr idx) (in-indexed (regexp-match* whitespace-pat str #:gap-select? #t))]
                                  #:unless (zero? (string-length substr)))
-                                (struct-copy quad q [elems (list (if (even? idx) substr word-space))]))]
+                                (set-quad-elems! q (list (if (even? idx) substr word-space)))
+                                q)]
                      [_ (list q)]))))
                                        
 (module+ test
@@ -106,11 +109,16 @@
 (define-pass (append-bop-and-eop qs)
   ;; force document to have one page
   #:pre (list-of simple-quad?)
-  #:post (λ (qs) (match qs
-                   [(list (? bop-quad?) (? simple-quad?) ... (? eop-quad?)) #true]
-                   [_ #false]))
-  (define bop (bop-quad #f (quad-attrs (first qs)) null #f))
-  (define eop (eop-quad #f (quad-attrs (last qs)) null #f))
+  #:post (λ (qs)
+           (unless (bop-quad? (first qs))
+             (error 'not-a-bop-quad))
+           (unless (eop-quad? (last qs))
+             (error 'not-an-eop-quad))
+           ((list-of simple-quad?) (drop-right (cdr qs) 1)))
+  (define bop (bop-quad))
+  (define eop (eop-quad))
+  (set-quad-attrs! bop (quad-attrs (first qs)))
+  (set-quad-attrs! eop (quad-attrs (last qs)))
   (append (list bop) qs (list eop)))
 
 (define-pass (append-boq-and-eoq qs)
