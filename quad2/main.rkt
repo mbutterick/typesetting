@@ -76,7 +76,7 @@
                    [current-use-postconditions? #t])
       (quad-compile (bootstrap-input x))))
 
-  (match (test-compile "X")
+  (match (test-compile "WHO")
     [(? string? insts)
      (displayln insts)
      #;(render insts #:using text-renderer)
