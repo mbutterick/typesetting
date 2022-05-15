@@ -1,5 +1,6 @@
 #lang debug racket/base
 (require racket/match
+         racket/string
          (for-syntax racket/base)
          "param.rkt"
          "quad.rkt")
@@ -24,11 +25,9 @@
 (define (make-pipeline . passes)
   (pipeline passes))
 
-(define (print-pass . passes)
-  (apply make-pipeline (append passes (list pass-printer))))
-
 (define (compiler-append c passes)
   (make-pipeline (append (pipeline-passes c) passes)))
+
 
 (define-syntax (define-pass stx)
   (syntax-case stx ()
@@ -41,9 +40,15 @@
           (procedure-rename
            #,(syntax/loc stx
                (λ (ARG)
+                 (define ((make-failure-handler failure-msg) exn)
+                   (raise (make-exn:fail:contract
+                           (string-replace (exn-message exn) "contract violation" (string-append "contract violation in " failure-msg)) (exn-continuation-marks exn))))
+                 
                  (when (current-use-preconditions?)
-                   (unless (PRECOND-PROC ARG)
-                     (raise-argument-error 'PASS-NAME (format "~a (as precondition)" 'PRECOND-PROC) ARG)))
+                   (define failure-msg (format "~a pass (as precondition)" 'PASS-NAME))
+                   (with-handlers ([exn:fail:contract? (make-failure-handler failure-msg)])
+                     (unless (PRECOND-PROC ARG)
+                       (raise-argument-error 'PASS-NAME (symbol->string 'PRECOND-PROC) ARG))))
                  ;; a pass can be functional or mutational.
                  ;; if it returns void, assume mutational
                  ;; and return the input item.
@@ -53,11 +58,13 @@
                  (begin0
                    res
                    (when (current-use-postconditions?)
-                     (unless (POSTCOND-PROC res)
-                       (raise-argument-error 'PASS-NAME (format "~a (as postcondition)" 'POSTCOND-PROC) res))))))
+                     (define failure-msg (format "~a pass (as postcondition)" 'PASS-NAME))
+                     (with-handlers ([exn:fail:contract? (make-failure-handler failure-msg)])
+                       (unless (POSTCOND-PROC res)
+                         (raise-argument-error 'PASS-NAME (symbol->string 'POSTCOND-PROC) ARG)))))))
            'PASS-NAME)))]))
 
-(define-pass (pass-printer qs)
+(define-pass (print-pass qs)
   #:pre values
   #:post values
   (for-each println qs))
