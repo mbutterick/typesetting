@@ -57,15 +57,13 @@
     ($renderer
      void
      void
-     (let ([em-scale 30]
-           [my-face (match (get-face-list 'mono)
+     (let ([my-face (match (get-face-list 'mono)
                       [(? null?) (error 'no-mono-font-available)]
                       [(cons face _) face])])
        (λ (width height)
-         (define target (make-bitmap (* em-scale width) (* em-scale height)))
+         (define target (make-bitmap width height))
          (set! targets (cons target targets))
          (set! dc (new bitmap-dc% [bitmap target]))
-         (send dc scale em-scale em-scale) 
          (send dc set-font (make-font #:size 1 #:face my-face))
          (send dc set-text-foreground "black")))
      void
