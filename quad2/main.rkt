@@ -12,6 +12,7 @@
          "constants.rkt"
          "param.rkt"
          "page.rkt"
+         "text.rkt"
          racket/match)
 
 (define quad-compile
@@ -41,9 +42,6 @@
    parse-dimension-strings
    resolve-font-sizes
    resolve-font-features
-   parse-page-sizes
-   resolve-font-paths
-   complete-attr-paths
 
    ;; linearization =============
    ;; we postpone this step until we're certain any
@@ -54,17 +52,21 @@
    linearize
    
    ;; post-linearization resolutions & parsings ============= 
+   parse-page-sizes
+   print-pass
+   resolve-font-paths
+   print-pass
+   complete-attr-paths
    mark-text-runs
    merge-adjacent-strings
    split-whitespace
    split-into-single-char-quads
-   
-   print-pass
    fill-missing-font-path
    remove-font-without-char
    insert-fallback-font
    append-bop-and-eop
-   append-boq-and-eoq
+   append-bod-and-eod
+   measure-text-runs
    layout
    make-drawing-insts
    stackify))
@@ -82,9 +84,9 @@
                    [current-use-postconditions? #t])
       (quad-compile (bootstrap-input x))))
 
-  (match (test-compile "WHO")
+  (match (test-compile "Whomever")
     [(? string? insts)
-     (displayln insts)
+     #;(displayln insts)
      #;(render insts #:using text-renderer)
      #;(render insts #:using drr-renderer)
      (render insts #:using (html-renderer (build-path (find-system-path 'desk-dir) "test.html")))

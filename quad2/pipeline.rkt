@@ -58,7 +58,7 @@
                    (define failure-msg (format "~a pass (as precondition)" 'PASS-NAME))
                    (with-handlers ([exn:fail:contract? (make-failure-handler failure-msg)])
                      (unless (PRECOND-PROC ARG)
-                       (raise-argument-error 'PASS-NAME (symbol->string 'PRECOND-PROC) ARG))))
+                       (raise-argument-error 'PASS-NAME (format "~a" 'PRECOND-PROC) ARG))))
                  ;; a pass can be functional or mutational.
                  ;; if it returns void, assume mutational
                  ;; and return the input item.
@@ -71,7 +71,7 @@
                      (define failure-msg (format "~a pass (as postcondition)" 'PASS-NAME))
                      (with-handlers ([exn:fail:contract? (make-failure-handler failure-msg)])
                        (unless (POSTCOND-PROC res)
-                         (raise-argument-error 'PASS-NAME (symbol->string 'POSTCOND-PROC) ARG)))))))
+                         (raise-argument-error 'PASS-NAME (format "~a" 'POSTCOND-PROC) ARG)))))))
            'PASS-NAME)))]))
 
 (define-pass (print-pass qs)

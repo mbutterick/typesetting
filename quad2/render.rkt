@@ -102,7 +102,7 @@
        (set! page-quads null))
      (λ (charint)
        (set! page-quads (cons
-                         `(div ((style ,(format "position: absolute;left:~apx;top:~apx;font-family:~a" (real-part current-loc) (imag-part current-loc) current-font)))
+                         `(div ((style ,(format "position: absolute;left:~apx;top:~apx;font-family:~a;font-size:~apx" (real-part current-loc) (imag-part current-loc) current-font 12)))
                                ,(string (integer->char charint))) page-quads)))
      (λ (ps)
        (set! current-font (hash-ref! fonts ps (λ () (gensym 'font)))))

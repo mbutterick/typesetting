@@ -136,9 +136,31 @@
 (module+ test
   (define q (make-quad #:tag 'div #:attrs (make-hasheq '((hello . "world"))) #:elems (list "fine"))))
 
-(define boq (make-quad #:tag 'boq-quad))
-(define eoq (make-quad #:tag 'eoq-quad))
+(define bod (make-quad #:tag 'bod-quad))
+(define eod (make-quad #:tag 'eod-quad))
 (define (bop-quad) (make-quad #:tag 'bop-quad))
 (define (bop-quad? x) (and (quad? x) (eq? (quad-tag x) 'bop-quad)))
 (define (eop-quad) (make-quad #:tag 'eop-quad))
 (define (eop-quad? x) (and (quad? x) (eq? (quad-tag x) 'eop-quad)))
+
+(define (insert-at-beginning qs x)
+  (unless (andmap quad? qs)
+    (raise-argument-error 'insert-at-beginning "list of quads" qs))
+  (unless (quad? x)
+    (raise-argument-error 'insert-at-beginning "quad" x))
+  (cond
+    [(pair? qs)
+     (set-quad-attrs! x (quad-attrs (first qs)))
+     (cons x qs)]
+    [else (list x)]))
+
+(define (insert-at-end qs x)
+  (unless (andmap quad? qs)
+    (raise-argument-error 'insert-at-end "list of quads" qs))
+  (unless (quad? x)
+    (raise-argument-error 'insert-at-end "quad" x))
+  (cond
+    [(pair? qs)
+     (set-quad-attrs! x (quad-attrs (last qs)))
+     (append qs (list x))]
+    [else (list x)]))

@@ -38,7 +38,13 @@
                                             [else (list (mq (list e)))])))])))))
 
 (module+ test
-  (define q (make-quad #:attrs (hasheq 'foo 42) #:elems (list (make-quad #:elems (list "Hi" "    idiot" (make-quad #:attrs (hasheq 'bar 84) #:elems '("There")) " Eve" "ry" "one" (make-quad #:attrs (hasheq 'zam 108) #:elems null))))))
+  (define q (make-quad #:attrs (hasheq 'foo 42)
+                       #:elems (list (make-quad
+                                      #:attrs (make-hasheq)
+                                      #:elems (list "Hi" "    idiot"
+                                                    (make-quad #:attrs (hasheq 'bar 84)
+                                                               #:elems '("There")) " Eve" "ry" "one" (make-quad #:attrs (hasheq 'zam 108)
+                                                                                                                #:elems null))))))
   (define lqs (linearize (list q)))
   lqs)
 
@@ -115,18 +121,12 @@
            (unless (eop-quad? (last qs))
              (error 'not-an-eop-quad))
            ((list-of simple-quad?) (drop-right (cdr qs) 1)))
-  (define bop (bop-quad))
-  (define eop (eop-quad))
-  (set-quad-attrs! bop (quad-attrs (first qs)))
-  (set-quad-attrs! eop (quad-attrs (last qs)))
-  (append (list bop) qs (list eop)))
+ (insert-at-end (insert-at-beginning qs (bop-quad)) (eop-quad)))
 
-(define-pass (append-boq-and-eoq qs)
+(define-pass (append-bod-and-eod qs)
   ;; attach the boq and eoq signals
   #:pre (list-of simple-quad?)
   #:post (λ (qs) (match qs
-                   [(list (== boq) (? simple-quad?) ... (== eoq)) #true]
+                   [(list (== bod) (? simple-quad?) ... (== eod)) #true]
                    [_ #false]))
-  (set-quad-attrs! boq (quad-attrs (first qs)))
-  (set-quad-attrs! eoq (quad-attrs (last qs)))
-  (append (list boq) qs (list eoq)))
+  (insert-at-end (insert-at-beginning qs bod) eod))

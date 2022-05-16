@@ -8,14 +8,6 @@
   ($point? $size? . -> . $point?)
   ($point (+ ($point-x p0) ($size-width p1)) (+ ($point-y p0) ($size-height p1))))
 
-(define/contract (size q)
-  (quad? . -> . $size?)
-  (quad-size q))
-
-(define/contract (advance q)
-  (quad? . -> . $size?)
-  (quad-size q))
-
 (define (min-x rect) ($point-x ($rect-origin rect)))
 (define (width rect) ($size-width ($rect-size rect)))
 (define (max-x rect) (+ (min-x rect) (width rect)))
@@ -49,22 +41,29 @@
   (set-quad-size! q ($size (length (or (quad-elems q) null)) 0))
   q)
 
+(define (has-size? x)
+  (and (quad? x) (quad-size x)))
+
 (define-pass (layout qs)
-  #:pre (list-of has-no-position?)
-  #:post (list-of has-position?)
+  ;; TODO: stronger pre & postcondition.
+  ;; but `has-size?` is too strong for precondition,
+  ;; and `has-position?` is too strong for postcondition.
+  ;; because we need to preserve signals like bop and eop
+  #:pre (list-of quad?)
+  #:post (list-of quad?)
   (define frame ($rect ($point 0 0) ($size (current-wrap-width) 30)))
   (define (quad-fits? q posn)
-    (rect-contains-rect? frame ($rect posn (size q))))
+    (rect-contains-rect? frame ($rect posn (quad-size q))))
   (for/fold ([posn0 ($point 0 0)]
-             #:result (filter has-position? qs))
-            ([q (in-list (map make-debug-size qs))]
+             #:result qs)
+            ([q (in-list qs)]
              #:when (quad-size q))
     (define first-posn-on-next-line ($point 0 (add1 ($point-y posn0))))
     (define other-possible-posns (list first-posn-on-next-line))
     (define posn1 (for/first ([posn (in-list (cons posn0 other-possible-posns))]
                               #:when (quad-fits? q posn))
-                             posn))
+                    posn))
     (unless posn1
       (error 'no-posn-that-fits))
     (set-quad-origin! q posn1)
-    (posn-add posn1 (advance q))))
+    (posn-add posn1 ($size ($size-width (quad-size q)) 0))))
