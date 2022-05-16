@@ -18,16 +18,6 @@
 (define current-wrap-width (make-parameter 5))
 (define current-page-size (make-parameter ($size 10 10)))
 
-(define (list-of proc)
-  (λ (x)
-    (and (list? x)
-         (for/and ([xi (in-list x)])
-                  (or (proc xi)
-                      (let ([procname (object-name proc)])
-                        (raise-argument-error
-                         (string->symbol (format "list-of ~a" procname))
-                         (symbol->string procname) xi)))))))
-
 (define-syntax-rule (auto-struct NAME (FIELD ...) . ARGS)
   (struct NAME (FIELD ...) . ARGS))
 
@@ -36,11 +26,10 @@
              #:constructor-name quad-new
              #:methods gen:custom-write
              [(define (write-proc val out mode)
-                (let* ([fields (filter-map (λ (f) (f val)) (list quad-tag quad-attrs quad-elems quad-origin quad-size))]
-                       [fields (if (null? fields) (list #f) fields)])
-                  (fprintf out (format "<~a ~a>"
-                                       (or (car fields) "quad")
-                                       (string-join (map ~v (cdr fields)) " ")))))])
+                ;; cdr because struct->vector puts struct descriptor in first slot
+                (define fields (cdr (vector->list (struct->vector val))))
+                ;; cdr because tag is in first position
+                (fprintf out (format "<~a>" (string-join (cons (~a (or (quad-tag val) "quad")) (map ~v (filter values (cdr fields)))) " "))))])
 
 (define (quad-new-default)
   (apply quad-new (make-list (procedure-arity quad-new) #f)))
@@ -63,8 +52,8 @@
 (define (quad-elems? x) (list? x))
 
 (define/contract (make-quad #:tag [tag #false]
-                            #:attrs [attrs (make-quad-attrs null)]
-                            #:elems [elems null])
+                            #:attrs [attrs #f]
+                            #:elems [elems #f])
   (() (#:tag quad-tag? #:attrs (or/c quad-attrs? (listof any/c)) #:elems quad-elems?) . ->* . quad?)
   (let ([attrs (let loop ([attrs attrs])
                  (cond

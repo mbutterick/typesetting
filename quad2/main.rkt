@@ -6,20 +6,23 @@
          "layout.rkt"
          "draw.rkt"
          "attr.rkt"
+         "quad-passes.rkt"
          "attr-passes.rkt"
          "font.rkt"
          "constants.rkt"
          "param.rkt"
          "page.rkt"
-         racket/list
-         racket/match
-         racket/file)
+         racket/match)
 
 (define quad-compile
   (make-pipeline
    ;; each pass in the pipeline is at least
    ;; (list-of quad?) -> (list-of quad?)
-                  
+
+   ;; quad prep ==============
+   install-default-attrs
+   install-default-elems
+   
    ;; attribute prep =============
    ;; all attrs start out as symbol-string pairs.
    ;; we convert keys & values to corresponding higher-level types.
@@ -55,6 +58,8 @@
    merge-adjacent-strings
    split-whitespace
    split-into-single-char-quads
+   
+   print-pass
    fill-missing-font-path
    remove-font-without-char
    insert-fallback-font

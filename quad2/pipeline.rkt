@@ -6,6 +6,16 @@
          "quad.rkt")
 (provide (all-defined-out))
 
+(define (list-of proc)
+  (λ (x)
+    (and (list? x)
+         (for/and ([xi (in-list x)])
+           (or (proc xi)
+               (let ([procname (object-name proc)])
+                 (raise-argument-error
+                  (string->symbol (format "list-of ~a" procname))
+                  (symbol->string procname) xi)))))))
+
 (struct pipeline (passes)
   #:guard (λ (procs name)
             (unless ((list-of procedure?) procs)
