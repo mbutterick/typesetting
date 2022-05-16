@@ -1,13 +1,11 @@
 #lang debug racket/base
-(require racket/list
-         racket/string
+(require racket/string
          racket/format
          racket/match
+         "attr.rkt"
          "quad.rkt"
          "pipeline.rkt"
-         "struct.rkt"
-         "layout.rkt"
-         "constants.rkt")
+         "struct.rkt")
 (provide (all-defined-out))
 
 (define-pass (make-drawing-insts qs)

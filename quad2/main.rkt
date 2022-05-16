@@ -6,6 +6,7 @@
          "layout.rkt"
          "draw.rkt"
          "attr.rkt"
+         "attr-passes.rkt"
          "font.rkt"
          "constants.rkt"
          "param.rkt"

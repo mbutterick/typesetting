@@ -1,6 +1,7 @@
 #lang debug racket/base
 (require "quad.rkt"
          "attr.rkt"
+         "attr-passes.rkt"
          "pipeline.rkt"
          "constants.rkt"
          "param.rkt"

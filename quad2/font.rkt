@@ -5,16 +5,15 @@
          racket/list
          racket/set
          racket/string
-         fontland/font-path
+         "attr.rkt"
          "quad.rkt"
          "constants.rkt"
          "pipeline.rkt"
          "param.rkt"
          "struct.rkt"
-         "dimension.rkt"
-         "attr.rkt"
+         "attr-passes.rkt"
          "glyphrun.rkt"
-         (prefix-in unicode: (combine-in "unicode/emoji.rkt" "unicode/math.rkt")))
+         (prefix-in unicode: (combine-in "unicode/emoji.rkt")))
 (provide (all-defined-out))
 
 (define-runtime-path quad2-fonts-dir "default-fonts")
