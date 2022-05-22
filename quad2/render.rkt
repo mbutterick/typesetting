@@ -33,10 +33,10 @@
        ;; fill in a character grid
        (define str (string-join
                     (for/list ([y (in-range ymax)])
-                              (list->string
-                               (map integer->char
-                                    (for/list ([x (in-range xmax)])
-                                              (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n"))
+                      (list->string
+                       (map integer->char
+                            (for/list ([x (in-range xmax)])
+                              (hash-ref char-pos-table (make-rectangular x y) (char->integer #\space)))))) "\n"))
        (set! results (cons str results)))
      (λ (str) (hash-set! char-pos-table current-loc str))
      void
@@ -117,27 +117,53 @@
                           (head (style ((type "text/css"))
                                        ,(string-join
                                          (for/list ([(ps fontsym) (in-hash fonts)])
-                                                   (format "@font-face { font-family: \"~a\";\nsrc: url(\"~a\");}" fontsym ps)))))
+                                           (format "@font-face { font-family: \"~a\";\nsrc: url(\"~a\");}" fontsym ps)))))
                           (body ((style "background: #ddd"))
                                 ,@pages))))))))))
 
+(define-syntax (cond-eq stx)
+  (syntax-case stx (else)
+    [(MAC ARG [SYM . BODY] ... [else ELSEBODY])
+     #'(cond
+         [(eq? ARG SYM) . BODY] ...
+         [else ELSEBODY])]
+    [(MAC ARG CLAUSE ...)
+     #'(MAC ARG CLAUSE ... [else (void)])]))
+
 (define (render inst-str #:using [renderer (current-renderer)])
+  (match-define ($renderer
+                 doc-start-func
+                 doc-end-func
+                 page-start-func
+                 page-end-func
+                 text-func
+                 set-font-func
+                 move-func
+                 return-func) renderer)
   (let/ec exit
     (for/fold ([stack null]
                #:result (void))
               ([tok (in-port read (open-input-string inst-str))])
-      (define next-stack (cons tok stack))
-      (cond
-        [(memq tok valid-tokens)
-         (match next-stack
-           [(list* 'doc-start rest) (($renderer-doc-start-func renderer)) rest]
-           [(list* 'doc-end _) (exit (($renderer-doc-end-func renderer)))]
-           [(list* 'page-start x y rest) (($renderer-page-start-func renderer) x y) rest]
-           [(list* 'page-end rest) (($renderer-page-end-func renderer)) rest]
-           [(list* 'text charint rest) (($renderer-text-func renderer) charint) rest]
-           [(list* 'set-font path-string rest) (($renderer-set-font-func renderer) (symbol->string path-string)) rest]
-           [(list* 'move x y rest) (($renderer-move-func renderer) x y) rest]
-           [_ next-stack])]
-        [else next-stack])))
-  (($renderer-return-func renderer)))
+      (cond-eq tok
+               ['doc-start (doc-start-func) stack]
+               ['doc-end (exit (doc-end-func)) (error 'should-never-reach)]
+               ['page-start
+                (match-define (list* x y tail) stack)
+                (page-start-func x y)
+                tail]
+               ['page-end (page-end-func) stack]
+               ['text
+                (match-define (cons charint tail) stack)
+                (text-func charint)
+                tail]
+               ['set-font
+                (match-define (cons path-string tail) stack)
+                (set-font-func (symbol->string path-string))
+                tail]
+               ['move
+                (match-define (list* x y tail) stack)
+                (move-func x y)
+                tail]
+               [else (cons tok stack)])))
+  (return-func))
 
