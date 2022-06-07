@@ -19,7 +19,8 @@
 (define font-paths (make-hash))
 
 (define top-font-directory "fonts")
-(define font-file-extensions '(#".otf" #".ttf" #".woff"))
+(define base-extensions '(".otf" ".ttf" ".woff"))
+(define font-file-extensions (map string->bytes/utf-8 (append base-extensions (map string-upcase base-extensions))))
 
 (define (fonts-in-directory dir)
   (for/list ([font-path (in-directory dir)]
