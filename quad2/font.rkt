@@ -22,7 +22,8 @@
 (define-runtime-path default-math-face "default-fonts/fallback-math/NotoSansMath-Regular.ttf")
 (define-runtime-path default-emoji-face "default-fonts/fallback-emoji/NotoEmoji-Regular.ttf")
 (define top-font-directory "fonts")
-(define font-file-extensions '(#".otf" #".ttf" #".woff" #".woff2"))
+(define base-extensions '(".otf" ".ttf" ".woff" ".woff2"))
+(define font-file-extensions (map string->bytes/utf-8 (append base-extensions (map string-upcase base-extensions))))
 
 
 (define (fonts-in-directory dir)
