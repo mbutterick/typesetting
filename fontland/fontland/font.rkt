@@ -67,14 +67,14 @@ https://github.com/mbutterick/fontkit/blob/master/src/TTFFont.js
 (define (font-italic-angle font) (hash-ref (get-post-table font) 'italicAngle))
 
 (define (font-cap-height font)
-  (if (has-table? font #"OS/2")
-      (hash-ref (get-OS/2-table font) 'capHeight)
-      (font-ascent font)))
+  (cond
+    [(and (has-table? font #"OS/2") (hash-ref (get-OS/2-table font) 'capHeight #false))]
+    [else (font-ascent font)]))
 
 (define (font-x-height font)
-  (if (has-table? font #"OS/2")
-      (hash-ref (get-OS/2-table font) 'xHeight)
-      0))
+  (cond
+    [(has-table? font #"OS/2") (hash-ref (get-OS/2-table font) 'xHeight #false)]
+    [else 0]))
 
 (define (font-bbox font)
   (define head-table (get-head-table font))
