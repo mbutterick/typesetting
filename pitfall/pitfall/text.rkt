@@ -56,7 +56,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
 
 (define (do-underline doc x y width) (do-horiz-line doc x y width 'underline))
 
-(define (add-text doc x y str features)
+(define (add-text doc x y str features character-tracking)
   (match-define (list encoded-char-strs positions) (encode (pdf-current-font doc) str features))
   
   (define scale (/ (pdf-current-font-size doc) 1000.0))
@@ -78,29 +78,35 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (when (positive? (length commands))
       (add-content doc (format "[~a] TJ" (string-join (reverse commands) " ")))
       (set! commands empty)))
-  
+
   (for/fold ([previous-had-offset #f] [x x])
             ([(posn idx) (in-indexed positions)])
     (define has-offset
-      (cond
-        ;; If we have an x or y offset, we have to break out of the current TJ command
-        ;; so we can move the text position.
-        [(or (not (zero? (glyph-position-x-offset posn))) (not (zero? (glyph-position-y-offset posn))))
-         (flush idx)
-         (add-content doc ; Move the text position and flush just the current character
-                      (format "1 0 0 1 ~a ~a Tm"
-                              (numberizer (+ x (* (glyph-position-x-offset posn) scale)))
-                              (numberizer (+ y (* (glyph-position-y-offset posn) scale)))))
-         (flush (add1 idx))
-         #true]
-        [else
-         ;; If the last character had an offset, reset the text position
-         (when previous-had-offset
-           (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer x) (numberizer y))))
-         ;; Group segments that don't have any advance adjustments
-         (unless (zero? (- (glyph-position-x-advance posn) (glyph-position-advance-width posn)))
-           (add-segment (add1 idx)))
-         #false]))
+      ;; if our TJ command had tracking, we want to move to a position
+      ;; that is adjusted for the tracking that would've happened
+      ;; if we were still within the TJ.
+      (let ([tracking-adjustment (* idx character-tracking)])
+        (cond
+          ;; If we have an x or y offset, we have to break out of the current TJ command
+          ;; so we can move the text position.
+          [(or (not (zero? (glyph-position-x-offset posn)))
+               (not (zero? (glyph-position-y-offset posn))))
+           ; Move the text position and flush just the current character
+           (flush idx)     
+           (add-content doc 
+                        (format "1 0 0 1 ~a ~a Tm"
+                                (numberizer (+ x (* (glyph-position-x-offset posn) scale) tracking-adjustment))
+                                (numberizer (+ y (* (glyph-position-y-offset posn) scale)))))
+           (flush (add1 idx))
+           #true]
+          [else
+           ;; If the last character had an offset, reset the text position
+           (when previous-had-offset
+             (add-content doc (format "1 0 0 1 ~a ~a Tm" (numberizer (+ x tracking-adjustment)) (numberizer y))))
+           ;; Group segments that don't have any advance adjustments
+           (unless (zero? (- (glyph-position-x-advance posn) (glyph-position-advance-width posn)))
+             (add-segment (add1 idx)))
+           #false])))
     (values has-offset (+ x (* (glyph-position-x-advance posn) scale))))
       
   (flush (vector-length positions)))
@@ -172,7 +178,7 @@ https://github.com/mbutterick/pdfkit/blob/master/lib/mixins/text.coffee
     (add-content doc (format "~a Tc" character-tracking)))
 
   ;; Add the actual text
-  (add-text doc x next-y str features)
+  (add-text doc x next-y str features character-tracking)
 
   ;; end the text object
   (add-content doc "ET")
