@@ -6,6 +6,16 @@
          "quad.rkt")
 (provide (all-defined-out))
 
+(define (list-of proc)
+  (λ (x)
+    (and (list? x)
+         (for/and ([xi (in-list x)])
+           (or (proc xi)
+               (let ([procname (object-name proc)])
+                 (raise-argument-error
+                  (string->symbol (format "list-of ~a" procname))
+                  (symbol->string procname) xi)))))))
+
 (struct pipeline (passes)
   #:guard (λ (procs name)
             (unless ((list-of procedure?) procs)
@@ -48,7 +58,7 @@
                    (define failure-msg (format "~a pass (as precondition)" 'PASS-NAME))
                    (with-handlers ([exn:fail:contract? (make-failure-handler failure-msg)])
                      (unless (PRECOND-PROC ARG)
-                       (raise-argument-error 'PASS-NAME (symbol->string 'PRECOND-PROC) ARG))))
+                       (raise-argument-error 'PASS-NAME (format "~a" 'PRECOND-PROC) ARG))))
                  ;; a pass can be functional or mutational.
                  ;; if it returns void, assume mutational
                  ;; and return the input item.
@@ -61,7 +71,7 @@
                      (define failure-msg (format "~a pass (as postcondition)" 'PASS-NAME))
                      (with-handlers ([exn:fail:contract? (make-failure-handler failure-msg)])
                        (unless (POSTCOND-PROC res)
-                         (raise-argument-error 'PASS-NAME (symbol->string 'POSTCOND-PROC) ARG)))))))
+                         (raise-argument-error 'PASS-NAME (format "~a" 'POSTCOND-PROC) ARG)))))))
            'PASS-NAME)))]))
 
 (define-pass (print-pass qs)

@@ -6,19 +6,24 @@
          "layout.rkt"
          "draw.rkt"
          "attr.rkt"
+         "quad-passes.rkt"
+         "attr-passes.rkt"
          "font.rkt"
          "constants.rkt"
          "param.rkt"
          "page.rkt"
-         racket/list
-         racket/match
-         racket/file)
+         "text.rkt"
+         racket/match)
 
 (define quad-compile
   (make-pipeline
    ;; each pass in the pipeline is at least
    ;; (list-of quad?) -> (list-of quad?)
-                  
+
+   ;; quad prep ==============
+   install-default-attrs
+   install-default-elems
+   
    ;; attribute prep =============
    ;; all attrs start out as symbol-string pairs.
    ;; we convert keys & values to corresponding higher-level types.
@@ -37,9 +42,6 @@
    parse-dimension-strings
    resolve-font-sizes
    resolve-font-features
-   parse-page-sizes
-   resolve-font-paths
-   complete-attr-paths
 
    ;; linearization =============
    ;; we postpone this step until we're certain any
@@ -50,6 +52,11 @@
    linearize
    
    ;; post-linearization resolutions & parsings ============= 
+   parse-page-sizes
+   print-pass
+   resolve-font-paths
+   print-pass
+   complete-attr-paths
    mark-text-runs
    merge-adjacent-strings
    split-whitespace
@@ -58,7 +65,8 @@
    remove-font-without-char
    insert-fallback-font
    append-bop-and-eop
-   append-boq-and-eoq
+   append-bod-and-eod
+   measure-text-runs
    layout
    make-drawing-insts
    stackify))
@@ -76,9 +84,9 @@
                    [current-use-postconditions? #t])
       (quad-compile (bootstrap-input x))))
 
-  (match (test-compile "WHO")
+  (match (test-compile "Whomever")
     [(? string? insts)
-     (displayln insts)
+     #;(displayln insts)
      #;(render insts #:using text-renderer)
      #;(render insts #:using drr-renderer)
      (render insts #:using (html-renderer (build-path (find-system-path 'desk-dir) "test.html")))

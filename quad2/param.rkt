@@ -1,6 +1,7 @@
 #lang racket/base
 (require racket/match
          "constants.rkt"
+         "attr.rkt"
          "struct.rkt")
 (provide (all-defined-out))
 
