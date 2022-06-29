@@ -560,7 +560,7 @@ Pass these functions to @racket[current-solver].
 generator?]{
 The default solver. Conducts an exhaustive, deterministic search of the state space. @italic{Backtracking} means that when the solver reaches a dead end in the search space, it unwinds to the last successful variable assignment and tries again. The details of its behavior are modified by @racket[current-select-variable], @racket[current-inference], and @racket[current-node-consistency].
 
-The advantage of the backtracking solver: it proceeds through the search space in a systematic matter. If there is a solution, the backtracking solver will find it. Eventually. 
+The advantage of the backtracking solver: it proceeds through the search space in a systematic manner. If there is a solution, the backtracking solver will find it. Eventually. 
 
 The disadvantage: the same. Some search spaces are so huge, and the solutions so rare, that concentrating the effort on searching any particular branch is likely to be futile. For a more probabilistic approach, try @racket[min-conflicts-solver].
 }
