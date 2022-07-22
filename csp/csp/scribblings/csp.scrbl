@@ -670,5 +670,5 @@ Check whether @racket[_x] is a valid CSP variable name, which today can mean any
 
 This module is licensed under the MIT license.
 
-Source repository at @link["http://github.com/mbutterick/csp"]{http://github.com/mbutterick/csp}. Suggestions & corrections welcome.
+Source repository at @link["http://git.matthewbutterick.com/mbutterick/typesetting"]{http://git.matthewbutterick.com/mbutterick/typesetting}. Suggestions & corrections welcome.
 

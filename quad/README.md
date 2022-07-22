@@ -1,4 +1,4 @@
-## Quad ![Build Status](https://github.com/mbutterick/quad/workflows/CI/badge.svg)
+## Quad
 
 
 A work-in-progress document processor written in [Racket](http://racket-lang.org). 
@@ -39,7 +39,7 @@ http://docs.racket-lang.org/quad
 
 ## Questions
 
-Can be posted in the [`pollen-users` discussion area.](https://github.com/mbutterick/pollen-users/)
+Can be posted in the [Quad forum](https://forums.matthewbutterick.com/c/quad/).
 
 
 ## License

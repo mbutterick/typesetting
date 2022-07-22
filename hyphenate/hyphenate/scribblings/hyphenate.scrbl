@@ -236,5 +236,5 @@ There is no way to use @racket[hyphenate] in ``polyglot'' mode, where English an
 
 This module is released under the MIT license.
 
-Source repository at @link["http://github.com/mbutterick/hyphenate"]{http://github.com/mbutterick/hyphenate}. Suggestions & corrections welcome.
+Source repository at @link["http://git.matthewbutterick.com/mbutterick/typesetting"]{http://git.matthewbutterick.com/mbutterick/typesetting}. Suggestions & corrections welcome.
 

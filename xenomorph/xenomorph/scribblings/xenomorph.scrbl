@@ -1861,5 +1861,5 @@ The following values are deemed to be resolvable: any @racket[exact-nonnegative-
 This module is licensed under the MIT license.
 
 
-Source repository at @link["http://github.com/mbutterick/xenomorph"]{http://github.com/mbutterick/xenomorph}. Suggestions & corrections welcome.
+Source repository at @link["http://git.matthewbutterick.com/mbutterick/typesetting"]{http://git.matthewbutterick.com/mbutterick/typesetting}. Suggestions & corrections welcome.
 

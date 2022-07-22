@@ -71,7 +71,7 @@ For the most part, neither Quad nor Quadwriter rely much on @racketmodname[racke
 
 A demo app built with Quad. It takes a text-based source file as input, calculates the typesetting and layout, and then outputs a PDF.
 
-You can fiddle with it & then submit issues and feature requests at the @link["http://github.com/mbutterick/quad"]{Quad repo}. 
+You can fiddle with it & then submit issues and feature requests at the @link["https://git.matthewbutterick.com/mbutterick/typesetting/src/branch/main/quad"]{Quad repo}. 
 
 
 @section{Quadwriter quick tour}
@@ -963,7 +963,7 @@ Some things I personally plan to use Quad for:
 
 @subsection{Getting more help}
 
-Questions about Quad and Quadwriter can be posted in the @link["https://github.com/mbutterick/pollen-users/"]{@tt{pollen-users} discussion area.} 
+Questions about Quad and Quadwriter can be posted in the @link["https://forums.matthewbutterick.com/c/quad/"]{Quad forum.} 
 
 
 @subsection{Why is it called Quad?}

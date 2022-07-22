@@ -1,4 +1,4 @@
-## hyphenate ![Build Status](https://github.com/mbutterick/hyphenate/workflows/CI/badge.svg)
+## hyphenate
 
 
 Racket implementation of the Knuth–Liang hyphenation algorithm.
